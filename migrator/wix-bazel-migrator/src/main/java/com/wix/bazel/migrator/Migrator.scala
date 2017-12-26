@@ -1,0 +1,126 @@
+package com.wix.bazel.migrator
+
+import better.files.{File, FileOps}
+import com.wix.bazel.migrator.model.Target.MavenJar
+import com.wix.bazel.migrator.model.{ExternalModule, Package, Scope, ScopeTranslation, SourceModule}
+import com.wix.bazel.migrator.transform._
+import com.wix.build.maven.analysis.{ThirdPartyConflict, ThirdPartyConflicts, ThirdPartyValidator}
+import com.wixpress.build.bazel.{BazelLocalWorkspace, BazelRepository, FileSystemBazelLocalWorkspace}
+import com.wixpress.build.maven
+import com.wixpress.build.maven._
+import com.wixpress.build.sync.BazelMavenSynchronizer
+
+/*
+  should probably allow to customize:
+  1. if DiskBasedClasspathResolver.reset or .init (save running time if there haven't been maven changes)
+  2. If to persist the transformation results (if we want to later only quickly iterate over the writer)
+  3. If to proceed to writing
+  later maybe also to add ability to reset the git repository, maybe also to clone the repo
+  the first 3 will enable deleting the "Generator" object and just build a run configuration which does it
+ */
+object Migrator extends MigratorApp {
+  println(s"starting migration with configuration [$configuration]")
+
+  val thirdPartyConflicts = checkConflictsInThirdPartyDependencies(aetherResolver)
+  val bazelPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
+  if (configuration.failOnSevereConflicts) failIfFoundSevereConflictsIn(thirdPartyConflicts)
+
+
+  writeBazelRc()
+  writeWorkspace()
+  writeInternal()
+  writeExternal()
+
+  private def transform() = {
+    val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
+    val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
+    val mutuallyExclusiveCompositeDependencyAnalyzer = if (repoRoot.toString.contains("wix-framework")) new CompositeDependencyAnalyzer(
+      cachingCodotaDependencyAnalyzer,
+      new ManualInfoDependencyAnalyzer(sourceModules)) else cachingCodotaDependencyAnalyzer
+    val transformer = new BazelTransformer(mutuallyExclusiveCompositeDependencyAnalyzer)
+    val bazelPackages: Set[Package] = transformer.transform(codeModules)
+    Persister.persistTransformationResults(bazelPackages)
+    bazelPackages
+  }
+
+  private def writeBazelRc(): Unit =
+    new BazelRcWriter(repoRoot).write()
+
+  private def writeWorkspace(): Unit =
+    new WorkspaceWriter(repoRoot).write()
+
+  private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(bazelPackages)
+
+  private def writeExternal(): Unit = {
+    val bazelRepo = new NoPersistenceBazelRepository(repoRoot.toScala)
+    val internalCoordinates = codeModules.map(_.externalModule).map(toCoordinates)
+    val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
+      resolver = aetherResolver,
+      globalExcludes = internalCoordinates
+    )
+
+    val mavenSynchronizer = new BazelMavenSynchronizer(filteringResolver,bazelRepo)
+    val additionalDependenciesUsedInRepo = collectExternalDependenciesUsedByRepoModules(codeModules)
+    mavenSynchronizer.sync(managedDependenciesArtifact, additionalDependenciesUsedInRepo)
+
+  }
+
+  private def collectExternalDependenciesUsedByRepoModules(repoModules: Set[SourceModule]): Set[Dependency] = {
+    //the mess here is mainly due to conversion from Map[Scope->Targets] to Set[Dependency] and the domain gap between migrator and resolver, (hopefully) will be resolved soon
+    val scopedeExternalDependencies: Set[Map[Scope, Set[ExternalModule]]] =
+      repoModules.map(_.dependencies.scopedDependencies).map(_.mapValues(_.collect { case mavenJar: MavenJar => mavenJar.originatingExternalCoordinates }))
+    val dependencies: Set[Dependency] = scopedeExternalDependencies.flatMap(_.map(a => a._2.map(toDependency(a._1)))).flatten
+    dependencies
+  }
+
+
+  private def print(thirdPartyConflicts: ThirdPartyConflicts): Unit = {
+    printIfNotEmpty(thirdPartyConflicts.fail, "FAIL")
+    printIfNotEmpty(thirdPartyConflicts.warn, "WARN")
+  }
+
+  private def checkConflictsInThirdPartyDependencies(resolver: MavenDependencyResolver):ThirdPartyConflicts = {
+    val managedDependencies = aetherResolver.managedDependenciesOf(managedDependenciesArtifact).map(toExternalModule)
+    val thirdPartyConflicts = new ThirdPartyValidator(codeModules, managedDependencies).checkForConflicts()
+    print(thirdPartyConflicts)
+    thirdPartyConflicts
+  }
+
+  private def printIfNotEmpty(conflicts: Set[ThirdPartyConflict],level:String): Unit = {
+    if (conflicts.nonEmpty) {
+      println(s"[$level] ********  Found conflicts with third party dependencies ********")
+      conflicts.map(_.toString).toList.sorted.foreach(println)
+      println(s"[$level] ***********************************************************")
+    }
+  }
+
+  private def toDependency(scope: Scope)(externalModule: ExternalModule): Dependency = {
+    maven.Dependency(toCoordinates(externalModule), MavenScope.of(ScopeTranslation.toMaven(scope)))
+  }
+
+  private def toCoordinates(externalModule: ExternalModule) = Coordinates(
+    groupId = externalModule.groupId,
+    artifactId = externalModule.artifactId,
+    version = externalModule.version,
+    classifier = externalModule.classifier,
+    packaging = externalModule.packaging)
+
+  private def toExternalModule(dependency: Dependency) = {
+    val coordinates = dependency.coordinates
+    ExternalModule(coordinates.groupId, coordinates.artifactId, coordinates.version, coordinates.classifier)
+  }
+
+  private def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {
+    if (conflicts.fail.nonEmpty) {
+      throw new RuntimeException("Found failing third party conflicts (look for \"Found conflicts\" in log)")
+    }
+  }
+}
+
+class NoPersistenceBazelRepository(local: File) extends BazelRepository {
+
+  override def localWorkspace(branchName: String): BazelLocalWorkspace = new FileSystemBazelLocalWorkspace(local)
+
+  override def persist(branchName: String, changedFilePaths: Set[String], message: String): Unit = {
+  }
+}

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.wixpress.build</groupId>
+    <artifactId>bazel-deps-synchronizer</artifactId>
+    <version>1.10.0-SNAPSHOT</version>
+
+    <parent>
+        <groupId>com.wixpress.common</groupId>
+        <artifactId>wix-scala-parent-ng</artifactId>
+        <version>100.0.0-SNAPSHOT</version>
+        <relativePath/>
+    </parent>
+    <developers>
+        <developer>
+            <name>Or Shachar</name>
+            <email>ors@wix.com</email>
+            <roles>
+                <role>owner</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Ittai Zeidman</name>
+            <email>ittaiz@wix.com</email>
+            <roles>
+                <role>maintainer</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Natan Silintsky</name>
+            <email>natans@wix.com</email>
+            <roles>
+                <role>maintainer</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <properties>
+        <jgit.version>4.8.0.201706111038-r</jgit.version>
+        <gitblit.version>1.8.0</gitblit.version>
+        <org.apache.maven.maven-artifact.version>3.5.0</org.apache.maven.maven-artifact.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.wixpress.build</groupId>
+            <artifactId>maven-dependency-resolver-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>${jgit.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.wixpress.build</groupId>
+            <artifactId>maven-dependency-resolver</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-scala_${scala.dependencies.version}</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-artifact</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.pathikrit</groupId>
+            <artifactId>better-files_${scala.dependencies.version}</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wixpress.build</groupId>
+            <artifactId>maven-dependency-resolver-testkit</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.gitblit</groupId>
+            <artifactId>gitblit</artifactId>
+            <version>${gitblit.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.aggregate</groupId>
+                    <artifactId>jetty-all</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
