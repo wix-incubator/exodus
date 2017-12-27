@@ -244,6 +244,21 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
         }
       }
 
+      "given a single dependency x with long dependency chain" >> {
+        "should return the last dependency in the chain" in new ctx {
+          def dependencies = {1 to 100}
+            .map(n => aDependency(s"dep-$n"))
+
+          override def remoteArtifacts =
+            (anArtifact(dependencies.head.coordinates) +:
+              dependencies.tail.zipWithIndex.map(tuple=>anArtifact(tuple._1.coordinates).withDependency(dependencies(tuple._2)))).toSet
+
+
+          mavenDependencyResolver.dependencyClosureOf(Set(dependencies.last), Set.empty) must contain(
+            DependencyNode(dependencies.head, Set.empty)
+          )
+        }
+      }
     }
 
   }
