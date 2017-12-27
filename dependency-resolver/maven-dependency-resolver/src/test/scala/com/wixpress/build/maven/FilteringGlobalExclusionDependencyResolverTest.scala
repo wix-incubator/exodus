@@ -199,7 +199,7 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
   }
 
   private def testRetainTransitiveDependency(directExcludedDependencyScope: MavenScope, transitiveDependencyScope: MavenScope, resultingScope: MavenScope): Fragment = {
-    s"when direct dependency in ${directExcludedDependencyScope.name} scope and transtive dependency in ${transitiveDependencyScope.name} scope, synthesized dependency should be in scope ${resultingScope.name}" in new Context {
+    s"when direct dependency in ${directExcludedDependencyScope.name} scope and transitive dependency in ${transitiveDependencyScope.name} scope, synthesized dependency should be in scope ${resultingScope.name}" in new Context {
       val directExcludedDependency = randomDependency(artifactIdPrefix = "excluded", withScope = directExcludedDependencyScope)
       val transitiveDependency = randomDependency(artifactIdPrefix = "transitive", withScope = transitiveDependencyScope)
       val resolver = new FakeMavenDependencyResolver(
