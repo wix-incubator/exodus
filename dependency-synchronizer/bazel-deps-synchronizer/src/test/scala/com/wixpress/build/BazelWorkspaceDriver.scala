@@ -2,6 +2,7 @@ package com.wixpress.build
 
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.{Coordinates, Exclusion}
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
 
@@ -28,13 +29,13 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
     bazelRepo.overwriteWorkspace(newWorkspace)
   }
 
-  private def findWorkspaceRuleBy(coordinates: Coordinates) = {
+  private def findWorkspaceRuleBy(coordinates: Coordinates): Option[MavenJarRule] = {
     val workspaceFile = bazelRepo.workspaceContent()
     val workspaceRuleName = coordinates.workspaceRuleName
     BazelWorkspaceFile.Parser(workspaceFile).findMavenJarRuleBy(workspaceRuleName)
   }
 
-  def findLibraryRuleBy(coordinates: Coordinates) = {
+  def findLibraryRuleBy(coordinates: Coordinates): Option[LibraryRule] = {
     val packageName = LibraryRule.packageNameBy(coordinates)
     val targetName = coordinates.libraryRuleName
     val maybeBuildFile = bazelRepo.buildFileContent(packageName)

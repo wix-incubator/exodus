@@ -2,6 +2,7 @@ package com.wixpress.build.bazel
 
 import com.wixpress.build.maven.Coordinates
 import org.specs2.mutable.SpecificationWithJUnit
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class MavenJarRuleTest extends SpecificationWithJUnit {
   val someCoordinates = Coordinates(

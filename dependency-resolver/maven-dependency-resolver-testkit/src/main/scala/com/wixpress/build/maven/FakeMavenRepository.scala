@@ -34,8 +34,12 @@ class FakeMavenRepository(port: Int = 0) {
   }
 
   def addArtifacts(artifact: ArtifactDescriptor*): Unit = addArtifacts(artifact.toSet)
+  def addCoordinates(coordinatesSet: Coordinates*): Unit = addCoordinates(coordinatesSet.toSet)
 
   def addArtifacts(artifacts: Set[ArtifactDescriptor]): Unit = artifacts.foreach(addSingleArtifact)
+  def addCoordinates(coordinatesSet: Set[Coordinates]): Unit = coordinatesSet.foreach(addSingleCoordinates)
+
+  def addSingleCoordinates(coordinates: Coordinates): Unit = addSingleArtifact(ArtifactDescriptor.anArtifact(coordinates))
 
   def addSingleArtifact(artifact: ArtifactDescriptor): Unit = {
     val xml = artifact.pomXml

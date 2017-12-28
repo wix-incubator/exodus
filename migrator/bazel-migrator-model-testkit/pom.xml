@@ -12,6 +12,7 @@
         <groupId>com.wixpress.common</groupId>
         <artifactId>wix-scala-parent-ng</artifactId>
         <version>100.0.0-SNAPSHOT</version>
+        <relativePath/>
     </parent>
 
     <dependencies>

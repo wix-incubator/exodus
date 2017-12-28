@@ -12,6 +12,7 @@ import org.eclipse.jgit.transport.RefSpec
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.util.Try
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class FakeRemoteRepository {
 

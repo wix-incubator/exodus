@@ -1,11 +1,11 @@
 package com.wix.bazel.migrator
 
-import better.files.{File, FileOps}
+import better.files.FileOps
 import com.wix.bazel.migrator.model.Target.MavenJar
-import com.wix.bazel.migrator.model.{ExternalModule, Package, Scope, ScopeTranslation, SourceModule}
+import com.wix.bazel.migrator.model.{Package, Scope, ScopeTranslation, SourceModule}
 import com.wix.bazel.migrator.transform._
 import com.wix.build.maven.analysis.{ThirdPartyConflict, ThirdPartyConflicts, ThirdPartyValidator}
-import com.wixpress.build.bazel.{BazelLocalWorkspace, BazelRepository, FileSystemBazelLocalWorkspace}
+import com.wixpress.build.bazel.NoPersistenceBazelRepository
 import com.wixpress.build.maven
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.BazelMavenSynchronizer
@@ -67,9 +67,9 @@ object Migrator extends MigratorApp {
 
   private def collectExternalDependenciesUsedByRepoModules(repoModules: Set[SourceModule]): Set[Dependency] = {
     //the mess here is mainly due to conversion from Map[Scope->Targets] to Set[Dependency] and the domain gap between migrator and resolver, (hopefully) will be resolved soon
-    val scopedeExternalDependencies: Set[Map[Scope, Set[ExternalModule]]] =
+    val scopedExternalDependencies: Set[Map[Scope, Set[Coordinates]]] =
       repoModules.map(_.dependencies.scopedDependencies).map(_.mapValues(_.collect { case mavenJar: MavenJar => mavenJar.originatingExternalCoordinates }))
-    val dependencies: Set[Dependency] = scopedeExternalDependencies.flatMap(_.map(a => a._2.map(toDependency(a._1)))).flatten
+    val dependencies: Set[Dependency] = scopedExternalDependencies.flatMap(_.map(a => a._2.map(toDependency(a._1)))).flatten
     dependencies
   }
 
@@ -80,7 +80,7 @@ object Migrator extends MigratorApp {
   }
 
   private def checkConflictsInThirdPartyDependencies(resolver: MavenDependencyResolver):ThirdPartyConflicts = {
-    val managedDependencies = aetherResolver.managedDependenciesOf(managedDependenciesArtifact).map(toExternalModule)
+    val managedDependencies = aetherResolver.managedDependenciesOf(managedDependenciesArtifact).map(toCoordinates)
     val thirdPartyConflicts = new ThirdPartyValidator(codeModules, managedDependencies).checkForConflicts()
     print(thirdPartyConflicts)
     thirdPartyConflicts
@@ -94,33 +94,25 @@ object Migrator extends MigratorApp {
     }
   }
 
-  private def toDependency(scope: Scope)(externalModule: ExternalModule): Dependency = {
+  private def toDependency(scope: Scope)(externalModule: Coordinates): Dependency = {
     maven.Dependency(toCoordinates(externalModule), MavenScope.of(ScopeTranslation.toMaven(scope)))
   }
 
-  private def toCoordinates(externalModule: ExternalModule) = Coordinates(
+  private def toCoordinates(externalModule: Coordinates) = Coordinates(
     groupId = externalModule.groupId,
     artifactId = externalModule.artifactId,
     version = externalModule.version,
     classifier = externalModule.classifier,
     packaging = externalModule.packaging)
 
-  private def toExternalModule(dependency: Dependency) = {
+  private def toCoordinates(dependency: Dependency) = {
     val coordinates = dependency.coordinates
-    ExternalModule(coordinates.groupId, coordinates.artifactId, coordinates.version, coordinates.classifier)
+    Coordinates(coordinates.groupId, coordinates.artifactId, coordinates.version, classifier = coordinates.classifier)
   }
 
   private def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {
     if (conflicts.fail.nonEmpty) {
       throw new RuntimeException("Found failing third party conflicts (look for \"Found conflicts\" in log)")
     }
-  }
-}
-
-class NoPersistenceBazelRepository(local: File) extends BazelRepository {
-
-  override def localWorkspace(branchName: String): BazelLocalWorkspace = new FileSystemBazelLocalWorkspace(local)
-
-  override def persist(branchName: String, changedFilePaths: Set[String], message: String): Unit = {
   }
 }

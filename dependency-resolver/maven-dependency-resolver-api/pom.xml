@@ -24,6 +24,12 @@
             <version>${resolverVersion}</version>
         </dependency>
         <dependency>
+            <groupId>com.wixpress.build</groupId>
+            <artifactId>maven-model</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <dependency>
             <groupId>org.specs2</groupId>
             <artifactId>specs2-core_${scala.dependencies.version}</artifactId>
             <scope>test</scope>

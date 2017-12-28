@@ -1,5 +1,7 @@
 package com.wix.bazel.migrator.model
 
+import com.wixpress.build.maven.Coordinates
+
 sealed trait Target {
   def name: String
 
@@ -21,7 +23,7 @@ object Target {
 
   case class MavenJar(name: String,
                       belongingPackageRelativePath: String,
-                      originatingExternalCoordinates: ExternalModule) extends AnalyzedFromMavenTarget
+                      originatingExternalCoordinates: Coordinates) extends AnalyzedFromMavenTarget
 
   case class Resources(name: String,
                        belongingPackageRelativePath: String,

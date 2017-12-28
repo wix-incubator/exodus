@@ -10,10 +10,11 @@ import org.apache.maven.model.Model
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
 
 import scala.collection.JavaConverters._
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
-class MavenBuildSystem(repoRoot: Path, remoteMavenRepositoryUrl: String) {
+class MavenBuildSystem(repoRoot: Path, remoteMavenRepositoryUrls: List[String]) {
 
-  private val aetherResolver = new AetherMavenDependencyResolver(List(remoteMavenRepositoryUrl))
+  private val aetherResolver = new AetherMavenDependencyResolver(remoteMavenRepositoryUrls)
 
   def modules(): Set[SourceModule] = {
     readRootModules()
@@ -127,7 +128,7 @@ class MavenBuildSystem(repoRoot: Path, remoteMavenRepositoryUrl: String) {
 
   private def sourceModuleFrom(modulePath: Path, model: Model) =
     SourceModule(relativePathFromRoot(modulePath),
-      pomToExternalModule(model), moduleDependenciesIn(modulePath))
+      pomToCoordinates(model), moduleDependenciesIn(modulePath))
 
   private def moduleDependenciesIn(modulePath: Path) = {
     val scopedResourcesTargets = existingResources(modulePath)
@@ -149,8 +150,8 @@ class MavenBuildSystem(repoRoot: Path, remoteMavenRepositoryUrl: String) {
 
   private def toMavenJar(dependency: Dependency): (Scope, MavenJar) = {
     val coordinates = dependency.coordinates
-    val module = ExternalModule(coordinates.groupId, coordinates.artifactId, coordinates.version, coordinates.classifier, coordinates.packaging) //classifier isn't tested
-    (ScopeTranslation.fromMaven(dependency.scope.name), TargetForExternalModule(module).toTarget)
+    val module = Coordinates(coordinates.groupId, coordinates.artifactId, coordinates.version, coordinates.packaging, coordinates.classifier) //classifier isn't tested
+    (ScopeTranslation.fromMaven(dependency.scope.name), TargetForCoordinates(module).toTarget)
   }
 
   private def collectTargets(modulePath: Path)(folderNames: Set[String]): Set[AnalyzedFromMavenTarget] =
@@ -162,11 +163,8 @@ class MavenBuildSystem(repoRoot: Path, remoteMavenRepositoryUrl: String) {
   private def toTarget(relative: String): Target.Resources =
     Target.Resources("resources", relative)
 
-  private def pomToExternalModule(model: Model) =
-    ExternalModule(getGroupIdOrParentGroupId(model),
-      model.getArtifactId,
-      getVersionOrParentVersion(model)
-    )
+  private def pomToCoordinates(model: Model) =
+    Coordinates(getGroupIdOrParentGroupId(model), model.getArtifactId, getVersionOrParentVersion(model))
 
   private def relativePathFromRoot(modulePath: Path) =
     repoRoot.relativize(modulePath).toString
@@ -183,9 +181,9 @@ object MavenBuildSystem {
   private val PotentialResources = Map(Scope.PROD_RUNTIME -> Set("main"), Scope.TEST_RUNTIME -> Set("test", "it", "e2e"))
 }
 
-private case class TargetForExternalModule(module: ExternalModule) {
+private case class TargetForCoordinates(module: Coordinates) {
   def toTarget: Target.MavenJar = Target.MavenJar(
-    module.toCoordinates.libraryRuleName,
+    module.libraryRuleName,
     MavenToBazel.groupIdToPackage(module.groupId),
     module)
 }

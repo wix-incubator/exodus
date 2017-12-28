@@ -3,6 +3,7 @@ package com.wixpress.build.maven
 import java.nio.file.{Files, Path}
 
 import better.files.File
+import com.wixpress.build.maven.AetherDependencyConversions._
 import com.wixpress.build.maven.resolver.ManualRepositorySystemFactory
 import org.apache.maven.model.Model
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
@@ -10,7 +11,7 @@ import org.apache.maven.repository.internal.MavenRepositorySystemUtils
 import org.eclipse.aether.DefaultRepositorySystemSession
 import org.eclipse.aether.artifact.{Artifact, DefaultArtifact}
 import org.eclipse.aether.collection.{CollectRequest, CollectResult}
-import org.eclipse.aether.graph.{Dependency => AetherDependency, DependencyNode => AetherDependencyNode}
+import org.eclipse.aether.graph.{Dependency => AetherDependency, DependencyNode => AetherDependencyNode, Exclusion => AetherExclusion}
 import org.eclipse.aether.repository.LocalRepository
 import org.eclipse.aether.repository.RemoteRepository.{Builder => RemoteRepositoryBuilder}
 import org.eclipse.aether.resolution.{ArtifactDescriptorRequest, ArtifactDescriptorResult}
@@ -21,6 +22,7 @@ import org.eclipse.aether.util.repository.SimpleArtifactDescriptorPolicy
 
 import scala.collection.JavaConverters._
 
+
 class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends MavenDependencyResolver {
 
   private val repositorySystem = ManualRepositorySystemFactory.newRepositorySystem
@@ -30,17 +32,22 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
     tempDir.toJava.deleteOnExit()
     tempDir
   }
+  private val forcedManagedDependencies = Set(
+    Dependency(Coordinates.deserialize("org.reflections:reflections:0.9.10"), MavenScope.Compile)
+  )
 
   override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = {
-      val artifactDescriptor = artifactDescriptorOf(descriptorRequest(artifact))
-      dependenciesSetFrom(artifactDescriptor.getManagedDependencies.asScala)
+    val artifactDescriptor = artifactDescriptorOf(descriptorRequest(artifact))
+    dependenciesSetFrom(artifactDescriptor.getManagedDependencies.asScala)
   }
 
-  private def artifactDescriptorOf(request: ArtifactDescriptorRequest):ArtifactDescriptorResult  =
-    withSession(repositorySystem.readArtifactDescriptor(_, request))
+  private def descriptorRequest(of: Coordinates): ArtifactDescriptorRequest = descriptorRequest(of.asAetherArtifact)
 
   override def directDependenciesOf(coordinates: Coordinates): Set[Dependency] =
-      directDependenciesOf(artifactFromCoordinates(coordinates))
+    directDependenciesOf(artifactFromCoordinates(coordinates))
+
+  private def artifactFromCoordinates(artifact: Coordinates) =
+    new DefaultArtifact(artifact.groupId, artifact.artifactId, artifact.packaging.getOrElse(""), artifact.version)
 
   def directDependenciesOf(pathToPom: Path): Set[Dependency] =
     directDependenciesOf(artifactFromPath(pathToPom))
@@ -50,8 +57,15 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
     dependenciesSetFrom(artifactDescriptor.getDependencies.asScala)
   }
 
-  private def artifactFromCoordinates(artifact: Coordinates) =
-    new DefaultArtifact(artifact.groupId, artifact.artifactId, artifact.packaging.getOrElse(""), artifact.version)
+  private def artifactDescriptorOf(request: ArtifactDescriptorRequest): ArtifactDescriptorResult =
+    withSession(repositorySystem.readArtifactDescriptor(_, request))
+
+  private def descriptorRequest(of: Artifact): ArtifactDescriptorRequest = {
+    val artifactReq = new ArtifactDescriptorRequest
+    artifactReq.setArtifact(of)
+    artifactReq.setRepositories(remoteRepositories)
+    artifactReq
+  }
 
   private def artifactFromPath(pathToPom: Path) = {
     val project = (new MavenXpp3Reader).read(Files.newBufferedReader(pathToPom))
@@ -83,7 +97,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
 
   private def fromAetherDependencyNode(node: AetherDependencyNode): DependencyNode = {
     DependencyNode(
-      baseDependency = Dependency.fromAetherDependency(node.getDependency),
+      baseDependency = node.getDependency.asDependency,
       dependencies = dependenciesSetFromDependencyNodes(node.getChildren.asScala)
     )
   }
@@ -94,7 +108,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
 
   private def dependenciesSetFrom(dependencies: Iterable[AetherDependency]): Set[Dependency] = {
     dependencies
-      .map(Dependency.fromAetherDependency)
+      .map(_.asDependency)
       .map(validatedDependency)
       .toSet
   }
@@ -113,32 +127,12 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
 
   private def foundTokenIn(value: String): Boolean = value.contains("$")
 
-  private def descriptorRequest(of: Coordinates): ArtifactDescriptorRequest = descriptorRequest(of.asAetherArtifact)
-
-  private def descriptorRequest(of: Artifact): ArtifactDescriptorRequest = {
-    val artifactReq = new ArtifactDescriptorRequest
-    artifactReq.setArtifact(of)
-    artifactReq.setRepositories(remoteRepositories)
-    artifactReq
-  }
-
   private def withSession[T](f: DefaultRepositorySystemSession => T): T = {
     val localRepo = new LocalRepository(tmpLocalRepoPath.pathAsString)
     val session = MavenRepositorySystemUtils.newSession
     session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(true, true))
     session.setLocalRepositoryManager(repositorySystem.newLocalRepositoryManager(session, localRepo))
     f(session)
-  }
-
-  private def remoteRepositories = {
-    def mapper(repo: (String, Int)) = {
-      val repoURL = repo._1
-      val repoIndex = repo._2
-      new RemoteRepositoryBuilder(s"repo$repoIndex", "default", repoURL).build()
-    }
-
-    val repoList = remoteRepoURLs.zipWithIndex.map(mapper).asJava
-    repoList
   }
 
   private def dependencyNodesOf(collectResult: CollectResult) = {
@@ -166,21 +160,79 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
       .setRepositories(remoteRepositories)
   }
 
-  private val forcedManagedDependencies = Set(
-      Dependency(Coordinates.deserialize("org.reflections:reflections:0.9.10"),MavenScope.Compile)
-    )
+  private def remoteRepositories = {
+    def mapper(repo: (String, Int)) = {
+      val repoURL = repo._1
+      val repoIndex = repo._2
+      new RemoteRepositoryBuilder(s"repo$repoIndex", "default", repoURL).build()
+    }
 
-  private implicit class DependencySetExtended(set:Set[Dependency]){
-    def addOrOverride(otherSet:Set[Dependency]):Set[Dependency] = {
-      val filteredOriginalSet = set.filterNot(original=>
-        otherSet.exists(other=>
+    val repoList = remoteRepoURLs.zipWithIndex.map(mapper).asJava
+    repoList
+  }
+
+  private implicit class DependencySetExtended(set: Set[Dependency]) {
+    def addOrOverride(otherSet: Set[Dependency]): Set[Dependency] = {
+      val filteredOriginalSet = set.filterNot(original =>
+        otherSet.exists(other =>
           original.coordinates.equalsIgnoringVersion(other.coordinates)))
       filteredOriginalSet ++ otherSet
     }
   }
+
 }
 
 object TestAetherResolver extends App {
   // checks that only runtime/compile scope deps suffice to start that instance
   val aetherResolver = new AetherMavenDependencyResolver(List("https://repo1.maven.org/maven2"))
+}
+
+object AetherDependencyConversions {
+
+  implicit class `AetherDependency --> Dependency`(aetherDependency: AetherDependency) {
+    def asDependency: Dependency =
+      Dependency(
+        coordinates = aetherDependency.getArtifact.asCoordinates,
+        scope = MavenScope.of(aetherDependency.getScope),
+        exclusions = aetherDependency.getExclusions.asScala.map(_.asExclusion).toSet
+      )
+
+  }
+
+  implicit class `Dependency --> AetherDependency`(dep: Dependency) {
+    def asAetherDependency: AetherDependency = new AetherDependency(
+      dep.coordinates.asAetherArtifact,
+      dep.scope.name,
+      false,
+      dep.exclusions.map(_.asAetherExclusion).asJava)
+
+  }
+
+
+  implicit class `Coordinates --> AetherArtifact`(c: Coordinates) {
+    def asAetherArtifact: Artifact = new DefaultArtifact(c.serialized)
+  }
+
+  implicit class `AetherArtifact --> Coordinates`(artifact: Artifact) {
+    def asCoordinates: Coordinates =
+      Coordinates(
+        artifact.getGroupId,
+        artifact.getArtifactId,
+        artifact.getVersion,
+        Option(artifact.getExtension).filter(!_.isEmpty),
+        Option(artifact.getClassifier).filter(!_.isEmpty))
+  }
+
+  implicit class `Exclusion --> AetherExclusion`(exclusion: Exclusion) {
+    private val AnyWildCard = "*"
+
+    def asAetherExclusion: AetherExclusion =
+      new AetherExclusion(exclusion.groupId, exclusion.artifactId, AnyWildCard, AnyWildCard)
+  }
+
+
+  implicit class `AetherExclusion --> Exclusion`(aetherExclusion: AetherExclusion) {
+    def asExclusion: Exclusion = Exclusion(aetherExclusion.getGroupId, aetherExclusion.getArtifactId)
+  }
+
 }

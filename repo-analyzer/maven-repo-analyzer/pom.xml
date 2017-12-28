@@ -43,6 +43,18 @@
         </dependency>
         <dependency>
             <groupId>com.wixpress.build</groupId>
+            <artifactId>maven-model</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.wixpress.build</groupId>
+            <artifactId>maven-bazel-model-translation</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.wixpress.build</groupId>
             <artifactId>maven-dependency-resolver-testkit</artifactId>
             <scope>test</scope>
         </dependency>

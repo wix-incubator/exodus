@@ -14,6 +14,7 @@ import com.wix.bazel.migrator.Retry._
 import com.wix.bazel.migrator.model._
 import com.wix.bazel.migrator.transform.AnalyzeFailure.MissingAnalysisInCodota
 import com.wix.bazel.migrator.transform.FailureMetadata.InternalDepMissingExtended
+import com.wixpress.build.maven.Coordinates
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -126,11 +127,11 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
 
   private def internalDependencies(currentModule: SourceModule, internalDeps: GenIterable[java.util.Collection[OptionalInternalDependency]], isTestCode: Boolean): Either[AnalyzeFailure, List[Dependency]] = EitherSequence.sequence {
     val internalAndMaybeExternalDependencies = retainOnlySupportedFilesIn(internalDeps).map { dependencyGroup =>
-      val dependencyGroupAsExternalModules: Iterable[Either[AnalyzeFailure, (ExternalModule, String)]] =
+      val dependencyGroupAsCoordinatesSet: Iterable[Either[AnalyzeFailure, (Coordinates, String)]] =
         dependencyGroup.map { dep =>
           externalModuleFromCodotaArtifactName(dep.getArtifactName).right.map(module => (module, dep.getFilepath))
         }
-      EitherSequence.sequence(dependencyGroupAsExternalModules).right.flatMap {
+      EitherSequence.sequence(dependencyGroupAsCoordinatesSet).right.flatMap {
         externalModulesAndFilePaths =>
           val moduleToFilePath = externalModulesAndFilePaths.toMap
           findSourceModule(currentModule, moduleToFilePath.keySet, modules, isTestCode).right.flatMap {
@@ -159,7 +160,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   private def retainOnlySupportedFilesIn(internalDeps: GenIterable[java.util.Collection[OptionalInternalDependency]]) =
     internalDeps.map(_.asScala.filter(depInfo => supportedFile(depInfo.getFilepath))).filter(_.nonEmpty)
 
-  private def externalModuleFromCodotaArtifactName(artifactName: String): Either[AnalyzeFailure, ExternalModule] = {
+  private def externalModuleFromCodotaArtifactName(artifactName: String): Either[AnalyzeFailure, Coordinates] = {
     eitherRetry() {
       codotaClient.readArtifact(artifactName).getProject
     }.augment(FailureMetadata.MissingArtifactInCodota(artifactName)).right.map { project: ProjectInfo =>
@@ -167,13 +168,13 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
       val version = modules
         .find(artifact => artifact.externalModule.artifactId == project.getArtifactId && artifact.externalModule.groupId == project.getGroupId).map(_.externalModule.version).getOrElse(project.getVersion)
       val classifier = if (representsTestJar(artifactName)) Some("tests") else None
-      ExternalModule(project.getGroupId, project.getArtifactId, version, classifier)
+      Coordinates(project.getGroupId, project.getArtifactId, version, classifier = classifier)
     }
   }
 
   private def representsTestJar(artifactName: String): Boolean = artifactName.endsWith("[tests]") //codota convention
 
-  private def findSourceModule(currentModule: SourceModule, codotaSuggestionModules: Set[ExternalModule], repoModules: Set[SourceModule], isTestCode: Boolean): Either[AnalyzeFailure, Option[SourceModule]] = {
+  private def findSourceModule(currentModule: SourceModule, codotaSuggestionModules: Set[Coordinates], repoModules: Set[SourceModule], isTestCode: Boolean): Either[AnalyzeFailure, Option[SourceModule]] = {
       //if the current module is one of the ones in the list we'll choose it over the others since it's likely that
       //if we have two sources with the same name in the same package in two different modules
       // the code has a dependency on the source in the same module and not a neighboring module
@@ -190,7 +191,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
     }
   }
 
-  private def currentModuleIsSuggested(currentModule: SourceModule, codotaSuggestionModules: Set[ExternalModule], isPartOfTestCode: Boolean) =
+  private def currentModuleIsSuggested(currentModule: SourceModule, codotaSuggestionModules: Set[Coordinates], isPartOfTestCode: Boolean) =
     codotaSuggestionModules.contains(currentModule.externalModule) ||
       (isPartOfTestCode && codotaSuggestionModules.contains(currentModule.externalModule.copy(classifier = Some("tests"))))
 
@@ -214,7 +215,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
     else
       module
 
-  private def suggestedIn(codotaSuggestionModules: Set[ExternalModule])(sourceModule: SourceModule) =
+  private def suggestedIn(codotaSuggestionModules: Set[Coordinates])(sourceModule: SourceModule) =
     codotaSuggestionModules.contains(sourceModule.externalModule)
 
   private def fail(failure: AnalyzeFailure) = throw new AnalyzeException(failure)

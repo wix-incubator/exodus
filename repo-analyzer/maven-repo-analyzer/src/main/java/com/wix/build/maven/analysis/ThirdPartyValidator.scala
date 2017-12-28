@@ -1,9 +1,10 @@
 package com.wix.build.maven.analysis
 
 import com.wix.bazel.migrator.model.Target.MavenJar
-import com.wix.bazel.migrator.model.{ExternalModule, SourceModule}
+import com.wix.bazel.migrator.model.SourceModule
+import com.wixpress.build.maven.Coordinates
 
-class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies: Set[ExternalModule]) {
+class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies: Set[Coordinates]) {
 
   private val simplifiedModuleToDependenciesMap = sourceModules.map(moduleToDependencies).toMap
 
@@ -28,17 +29,17 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
       .map(multipleVersionDependencyConflict)
       .toSet
 
-  private def hasMultipleVersions(identifierToModules: ((String, String), Set[ExternalModule])) =
+  private def hasMultipleVersions(identifierToModules: ((String, String), Set[Coordinates])) =
     identifierToModules._2.size > 1
 
-  private def groupIdAndArtifactId(module: ExternalModule) = (module.groupId, module.artifactId)
+  private def groupIdAndArtifactId(module: Coordinates) = (module.groupId, module.artifactId)
 
   private def conflictsWithManagedDependencies: Set[ThirdPartyConflict] = {
     val conflictedDependencies = thirdPartyDependencies -- managedDependencies
     conflictedDependencies.map(overrideOrUnManagedConflict)
   }
 
-  private def overrideOrUnManagedConflict(conflictedDependency: ExternalModule) = {
+  private def overrideOrUnManagedConflict(conflictedDependency: Coordinates) = {
     val dependencyWithSomeConsumers = dependencyWithLimitedConsumers(conflictedDependency)
     managedDependencies.find(basedOnGroupIdAndArtifactIdOf(conflictedDependency)) match {
       case Some(managedDependency) => CollisionWithManagedDependencyConflict(dependencyWithSomeConsumers, managedDependency.version)
@@ -46,7 +47,7 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
     }
   }
 
-  private def basedOnGroupIdAndArtifactIdOf(dependency: ExternalModule)(otherDependency: ExternalModule) = {
+  private def basedOnGroupIdAndArtifactIdOf(dependency: Coordinates)(otherDependency: Coordinates) = {
     dependency.groupId == otherDependency.groupId && dependency.artifactId == otherDependency.artifactId
   }
 
@@ -57,14 +58,14 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
   private def moduleToDependencies(sourceModule: SourceModule) =
     sourceModule.externalModule -> anyScopeDependenciesOf(sourceModule)
 
-  private def isIntraOrganizationDependency(dependency: ExternalModule) = dependency.version.endsWith("SNAPSHOT")
+  private def isIntraOrganizationDependency(dependency: Coordinates) = dependency.version.endsWith("SNAPSHOT")
 
-  private def multipleVersionDependencyConflict(identifierToModules: ((String, String), Set[ExternalModule])): MultipleVersionDependencyConflict =
+  private def multipleVersionDependencyConflict(identifierToModules: ((String, String), Set[Coordinates])): MultipleVersionDependencyConflict =
     identifierToModules match {
       case ((groupId, artifactId), modules) => MultipleVersionDependencyConflict(groupId, artifactId, modules.map(dependencyWithLimitedConsumers))
     }
 
-  private def dependencyWithLimitedConsumers(dependency: ExternalModule) = {
+  private def dependencyWithLimitedConsumers(dependency: Coordinates) = {
     val MaxConsumersToSample = 5
     val limitedConsumers = simplifiedModuleToDependenciesMap.filter(_._2.contains(dependency))
       .keySet.take(MaxConsumersToSample)

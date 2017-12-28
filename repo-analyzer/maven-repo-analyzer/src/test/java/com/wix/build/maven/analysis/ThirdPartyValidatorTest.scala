@@ -1,10 +1,11 @@
 package com.wix.build.maven.analysis
 
 import com.wix.bazel.migrator.model.Target.MavenJar
-import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, ExternalModule, ModuleDependencies, SourceModule, Scope => MavenScope}
+import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, ModuleDependencies, SourceModule, Scope => MavenScope}
 import com.wix.bazel.migrator.model.makers.ModuleMaker
 import ThirdPartyValidatorTest._
 import com.wix.bazel.migrator.model.makers.ModuleMaker.anExternalModule
+import com.wixpress.build.maven.Coordinates
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -69,7 +70,7 @@ class ThirdPartyValidatorTest extends SpecificationWithJUnit {
     }
 
     "only conflicts in third party dependencies (exclude the source module)" in new ctx {
-      private val moduleA = aModule(artifactId = "module-a", dependencies = Set.empty[ExternalModule])
+      private val moduleA = aModule(artifactId = "module-a", dependencies = Set.empty[Coordinates])
       private val moduleB = aModule(artifactId = "module-b", dependencies = Set(moduleA.externalModule))
       private val moduleC = aModule(artifactId = "module-c", dependencies = Set(moduleA.externalModule.copy(version = "some-other-version")))
       private val sourceModules = Set(moduleA, moduleB, moduleC)
@@ -100,7 +101,7 @@ class ThirdPartyValidatorTest extends SpecificationWithJUnit {
     }
 
     "un-managed dependency conflict when dependency of multi-module project is not in managed dependency" in new ctx {
-      val moduleA = aModule(artifactId = "module-a", dependencies = Set.empty[ExternalModule])
+      val moduleA = aModule(artifactId = "module-a", dependencies = Set.empty[Coordinates])
       val moduleB: SourceModule = aModule(artifactId = "module-b", dependencies = Set(someDependency))
       val sourceModules = Set(moduleA, moduleB)
 
@@ -148,25 +149,25 @@ class ThirdPartyValidatorTest extends SpecificationWithJUnit {
 
 object ThirdPartyValidatorTest {
 
-  private val emptyManagedDependencies = Set.empty[ExternalModule]
+  private val emptyManagedDependencies = Set.empty[Coordinates]
 
   private val dontCareDependency = dependency("dont.care", "dont-care", "dont-care")
 
   implicit class ModuleDependenciesExtended(moduleDependencies: ModuleDependencies) {
-    def withScopedDependencies(scope: MavenScope, dependencies: Set[ExternalModule]): ModuleDependencies = {
+    def withScopedDependencies(scope: MavenScope, dependencies: Set[Coordinates]): ModuleDependencies = {
       val dependenciesAsMavenJar: Set[AnalyzedFromMavenTarget] = dependencies.map(aMavenJar)
       moduleDependencies.copy(scopedDependencies = moduleDependencies.scopedDependencies + ((scope, dependenciesAsMavenJar)))
     }
   }
 
-  private def aMavenJar(externalModule: ExternalModule) = MavenJar("dont.care", "dont-care", externalModule)
+  private def aMavenJar(externalModule: Coordinates) = MavenJar("dont.care", "dont-care", externalModule)
 
   private def dependency(groupId: String, artifactId: String, version: String) = anExternalModule(groupId, artifactId, version)
 
-  private def lotsOfModulesThatDependOn(quantity: Int, dependency: ExternalModule): Set[SourceModule] =
+  private def lotsOfModulesThatDependOn(quantity: Int, dependency: Coordinates): Set[SourceModule] =
     (1 to quantity).map(num => aModule(s"module$num", Set(dependency))).toSet
 
-  private def aModule(artifactId: String, dependencies: Set[ExternalModule]): SourceModule =
+  private def aModule(artifactId: String, dependencies: Set[Coordinates]): SourceModule =
     aModule(artifactId, ModuleDependencies().withScopedDependencies(MavenScope.PROD_COMPILE, dependencies))
 
 
@@ -174,7 +175,7 @@ object ThirdPartyValidatorTest {
     ModuleMaker.aModule(anExternalModule(artifactId), moduleDependencies)
   }
 
-  private def dependencyWithConsumers(dependency: ExternalModule, consumers: SourceModule*) =
+  private def dependencyWithConsumers(dependency: Coordinates, consumers: SourceModule*) =
     DependencyWithConsumers(dependency, consumers.map(_.externalModule).toSet)
 
 }

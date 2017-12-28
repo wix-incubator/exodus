@@ -4,7 +4,7 @@ import com.wixpress.build.maven.Coordinates
 
 import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
-
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 object BazelWorkspaceFile {
 

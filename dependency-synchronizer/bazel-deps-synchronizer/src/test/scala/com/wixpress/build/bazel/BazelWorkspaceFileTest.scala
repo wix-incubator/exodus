@@ -3,6 +3,7 @@ package com.wixpress.build.bazel
 import org.specs2.mutable.SpecificationWithJUnit
 import CoordinatesTestBuilders._
 import com.wixpress.build.maven.Coordinates
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class BazelWorkspaceFileTest extends SpecificationWithJUnit {
 

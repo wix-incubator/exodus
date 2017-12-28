@@ -7,13 +7,22 @@ import org.apache.maven.model.{DependencyManagement, Parent, Dependency => Maven
 import ArtifactDescriptor._
 import scala.collection.JavaConverters._
 
+/**
+  ArtifactDescriptor is a representation of a pom.xml
+  According to Maven In a pom.xml
+    a groupId is optional (defaults to parent's groupId)
+    a packaging is optional (defaults to jar)
+    a version is optional (taken from parent's version)
+
+  It is not a means to retrieve a dependency (which is done via the Coordinates class)
+ */
 case class ArtifactDescriptor(groupId:Option[String],
                               artifactId:String,
                               version:Option[String],
                               packaging:Option[String],
                               dependencies: List[Dependency] = List.empty,
                               managedDependencies: List[Dependency] = List.empty,
-                              parentCoordinates: Option[Coordinates]=None) {
+                              parentCoordinates: Option[Coordinates] = None) {
 
 
   def withParent(parentCoordinates: Coordinates): ArtifactDescriptor =

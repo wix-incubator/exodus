@@ -7,6 +7,7 @@ import com.wix.bazel.migrator.model.makers.ModuleMaker._
 import com.wix.bazel.migrator.transform.makers.CodeMaker._
 import com.wix.bazel.migrator.transform.makers.DependencyMaker._
 import com.wix.bazel.migrator.transform.makers.Repo
+import com.wixpress.build.maven.Coordinates
 import org.specs2.matcher.{AlwaysMatcher, MatchFailure, Matcher, MustExpectable}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -583,7 +584,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       }
 
   def mavenJarTarget(name: String,
-                     externalModule: ExternalModule
+                     externalModule: Coordinates
                     ): Matcher[Target.MavenJar] =
     be_===(name) ^^ {
       (_: Target.MavenJar).name aka "target name"

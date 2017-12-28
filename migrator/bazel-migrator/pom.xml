@@ -6,12 +6,17 @@
 
     <groupId>com.wixpress</groupId>
     <artifactId>bazel-migrator</artifactId>
+    <!-- bazel-transformer-->
+    <!-- bazel-graph-transformer-->
+    <!-- bazel-internal-graph-transformer-->
+    <!-- bazel-internal-code-transformer-->
     <version>0.0.1-SNAPSHOT</version>
 
     <parent>
         <groupId>com.wixpress.common</groupId>
         <artifactId>wix-scala-parent-ng</artifactId>
         <version>100.0.0-SNAPSHOT</version>
+        <relativePath/>
     </parent>
 
     <dependencies>

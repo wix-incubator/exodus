@@ -6,78 +6,7 @@ import org.specs2.specification.Scope
 //noinspection TypeAnnotation
 class CoordinatesTest extends SpecificationWithJUnit {
 
-  trait baseCtx extends Scope {
-    val someGroupId = "some.group"
-    val someArtifactId = "some-artifact"
-    val someVersion = "someVersion"
-    val packaging = "pack"
-    val classifier = "class"
-    val baseCoordinates = Coordinates(
-      groupId = someGroupId,
-      artifactId = someArtifactId,
-      version = someVersion
-    )
-  }
-
-
-  trait equalityCtx extends baseCtx {
-
-    implicit class extendedCoordinates(coordinates: Coordinates) {
-      private def otherOption(optionalString: Option[String]) = Some(optionalString.map(_ + "-other").getOrElse("other"))
-
-      def withDifferentGroupId = coordinates.copy(groupId = coordinates.groupId + "-other")
-
-      def withDifferentArtifactId = coordinates.copy(artifactId = coordinates.artifactId + "-other")
-
-      def withDifferentVersion = coordinates.copy(version = coordinates.version + "-other")
-
-      def withDifferentClassifier = coordinates.copy(classifier = otherOption(coordinates.classifier))
-
-      def withDifferentPackaging = coordinates.copy(packaging = otherOption(coordinates.packaging))
-    }
-
-    val coordinatesWithDifferentVersionPackagingAndClassifier = baseCoordinates.copy(
-      version = "other-version",
-      packaging = Some("other-packaging"),
-      classifier = Some("other-classifier")
-    )
-
-    val coordinatesWithDifferentPackagingAndClassifier = baseCoordinates.copy(
-      version = "other-version",
-      packaging = Some("other-packaging"),
-      classifier = Some("other-classifier")
-    )
-
-    val coordinatesWithDifferentGroupId = baseCoordinates.copy(groupId = "other.group")
-    val coordinatesWithDifferentArtifactId = baseCoordinates.copy(artifactId = "other-artifact")
-  }
-
   "Coordinates" should {
-
-
-    "return the name of matching scala library target to given maven coordinates" in new baseCtx {
-      val expectedName = baseCoordinates.artifactId.replace('-', '_').replace('.', '_')
-
-      baseCoordinates.libraryRuleName mustEqual expectedName
-    }
-
-    "return the name of matching scala library target to given maven coordinates with classifier" in new baseCtx {
-      val someClassifier = "some-classifier"
-      val coordinatesWithClassifier = baseCoordinates.copy(classifier = Some(someClassifier))
-
-      coordinatesWithClassifier.libraryRuleName mustEqual "some_artifact_some_classifier"
-    }
-
-    "return the name of the matching workspace rule name for given maven coordinates" in new baseCtx {
-      baseCoordinates.workspaceRuleName mustEqual "some_group_some_artifact"
-    }
-
-    "return the name of the matching workspace rule name for given maven coordinates with classifier" in new baseCtx {
-      val someClassifier = "some-classifier"
-      val coordinatesWithClassifier = baseCoordinates.copy(classifier = Some(someClassifier))
-
-      coordinatesWithClassifier.workspaceRuleName mustEqual "some_group_some_artifact_some_classifier"
-    }
 
     "set packaging to jar when not defined" in new baseCtx {
       val coordinates = Coordinates("group", "artifact", "version")
@@ -93,9 +22,9 @@ class CoordinatesTest extends SpecificationWithJUnit {
 
     "serialize (groupId,artifactId,packaging,version) Coordinates to colon string, given packaging is not jar" in new baseCtx {
       val extendedCoordinates = baseCoordinates.copy(packaging = Some(packaging))
-
       val expectedColonRepresentation =
         s"${extendedCoordinates.groupId}:${extendedCoordinates.artifactId}:$packaging:${extendedCoordinates.version}"
+
       extendedCoordinates.serialized mustEqual expectedColonRepresentation
     }
 
@@ -135,22 +64,6 @@ class CoordinatesTest extends SpecificationWithJUnit {
       Coordinates.deserialize(colonString) mustEqual extendedCoordinates
     }
 
-    "convert to notification port topic" in new baseCtx {
-      val topic = baseCoordinates.asTopic
-
-      topic mustEqual baseCoordinates.serialized.replace(":", "_")
-    }
-
-    "convert to aether artifact" in new baseCtx {
-      val aetherArtifact = baseCoordinates.asAetherArtifact
-
-      aetherArtifact.getGroupId mustEqual baseCoordinates.groupId
-      aetherArtifact.getArtifactId mustEqual baseCoordinates.artifactId
-      aetherArtifact.getVersion mustEqual baseCoordinates.version
-      aetherArtifact.getClassifier mustEqual baseCoordinates.classifier.getOrElse("")
-      aetherArtifact.getExtension mustEqual baseCoordinates.packaging.get
-    }
-
     "check equality based on groupId and artifactId" in new equalityCtx {
       baseCoordinates.equalsOnGroupIdAndArtifactId(baseCoordinates.withDifferentGroupId) must beFalse
       baseCoordinates.equalsOnGroupIdAndArtifactId(baseCoordinates.withDifferentArtifactId) must beFalse
@@ -168,4 +81,51 @@ class CoordinatesTest extends SpecificationWithJUnit {
     }
 
   }
+
+  abstract class baseCtx extends Scope {
+    val someGroupId = "some.group"
+    val someArtifactId = "some-artifact"
+    val someVersion = "someVersion"
+    val packaging = "pack"
+    val classifier = "class"
+    val baseCoordinates = Coordinates(
+      groupId = someGroupId,
+      artifactId = someArtifactId,
+      version = someVersion
+    )
+  }
+
+
+  abstract class equalityCtx extends baseCtx {
+
+    implicit class extendedCoordinates(coordinates: Coordinates) {
+      private def otherOption(optionalString: Option[String]) = Some(optionalString.map(_ + "-other").getOrElse("other"))
+
+      def withDifferentGroupId = coordinates.copy(groupId = coordinates.groupId + "-other")
+
+      def withDifferentArtifactId = coordinates.copy(artifactId = coordinates.artifactId + "-other")
+
+      def withDifferentVersion = coordinates.copy(version = coordinates.version + "-other")
+
+      def withDifferentClassifier = coordinates.copy(classifier = otherOption(coordinates.classifier))
+
+      def withDifferentPackaging = coordinates.copy(packaging = otherOption(coordinates.packaging))
+    }
+
+    val coordinatesWithDifferentVersionPackagingAndClassifier = baseCoordinates.copy(
+      version = "other-version",
+      packaging = Some("other-packaging"),
+      classifier = Some("other-classifier")
+    )
+
+    val coordinatesWithDifferentPackagingAndClassifier = baseCoordinates.copy(
+      version = "other-version",
+      packaging = Some("other-packaging"),
+      classifier = Some("other-classifier")
+    )
+
+    val coordinatesWithDifferentGroupId = baseCoordinates.copy(groupId = "other.group")
+    val coordinatesWithDifferentArtifactId = baseCoordinates.copy(artifactId = "other-artifact")
+  }
+
 }

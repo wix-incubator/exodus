@@ -12,12 +12,14 @@
         <groupId>com.wixpress.common</groupId>
         <artifactId>wix-scala-parent-ng</artifactId>
         <version>100.0.0-SNAPSHOT</version>
+        <relativePath/>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>com.wixpress.build</groupId>
             <artifactId>maven-dependency-resolver-api</artifactId>
+            <version>1.10.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.specs2</groupId>

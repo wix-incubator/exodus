@@ -10,6 +10,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
   private val logger = LoggerFactory.getLogger(this.getClass)
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, BranchName, targetRepository)
+  private val conflictResolution = new HighestVersionConflictResolution()
 
   def sync(dependencyManagementSource: Coordinates, targetRepositoryOverridesAndAdditions: Set[Dependency] = Set.empty): Unit = {
     logger.info(s"starting sync with managed dependencies in $dependencyManagementSource")
@@ -29,7 +30,6 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     val modifiedFiles = new BazelDependenciesWriter(localCopy).writeDependencies(dependenciesToUpdate)
     persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates))
   }
-
   private def newDependencyNodes(
                                   dependencyManagementSource: Coordinates,
                                   targetRepoDependencies: Set[Dependency],
@@ -50,21 +50,8 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
   private def uniqueDependenciesFrom(managedDependencies: Set[Dependency], targetRepoDependencies: Set[Dependency]) = {
     val managedDependenciesFiltered = managedDependencies.filterNot(isOverriddenIn(targetRepoDependencies))
-    managedDependenciesFiltered ++ reduceMultipleVersionsToHighest(targetRepoDependencies).forceCompileScope
+    managedDependenciesFiltered ++ conflictResolution.resolve(targetRepoDependencies).forceCompileScope
   }
-
-  private def reduceMultipleVersionsToHighest(possiblyConflictedDependencies: Set[Dependency]) = {
-    possiblyConflictedDependencies.groupBy(_.coordinates.workspaceRuleName)
-      .mapValues(highestVersionIn)
-      .values.toSet
-  }
-
-  private def highestVersionIn(dependencies:Set[Dependency]):Dependency = {
-    dependencies.maxBy(d => {
-      new ComparableVersion(d.coordinates.version)
-    })
-  }
-
 
   private def isOverriddenIn(targetRepoDependencies:Set[Dependency])(dependency: Dependency): Boolean ={
     targetRepoDependencies.exists(_.coordinates.equalsIgnoringVersion(dependency.coordinates))
@@ -76,6 +63,23 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
 }
 
+class HighestVersionConflictResolution {
+  def resolve(possiblyConflictedDependencies: Set[Dependency]): Set[Dependency] =
+    possiblyConflictedDependencies.groupBy(groupIdArtifactIdClassifier)
+      .mapValues(highestVersionIn)
+      .values.toSet
+
+  private def groupIdArtifactIdClassifier(dependency: Dependency) = {
+    import dependency.coordinates._
+    (groupId, artifactId, classifier)
+  }
+
+  private def highestVersionIn(dependencies:Set[Dependency]):Dependency =
+    dependencies.maxBy(d => new ComparableVersion(d.coordinates.version))
+
+
+
+}
 
 object BazelMavenSynchronizer {
   val BranchName = "bazel-managed-deps-sync"

@@ -1,6 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wixpress.build.maven.{Coordinates, Dependency, Exclusion, MavenScope}
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class BazelDependenciesReader(localWorkspace: BazelLocalWorkspace) {
 

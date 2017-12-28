@@ -5,32 +5,14 @@ import java.nio.file.{Files, Path}
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.wix.bazel.migrator.MavenToBazel.groupIdToPackage
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target.{Jvm, MavenJar, Resources, TargetDependency}
-import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, CodePurpose, ExternalModule, Language, Package, Scope, SourceModule, Target, TestType}
+import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, CodePurpose, Language, Package, Scope, SourceModule, Target, TestType}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
-
-private case class TargetForExternalModule(module: ExternalModule) {
-  def toTarget: Target = Target.MavenJar(
-    module.toCoordinates.libraryRuleName,
-    groupIdToPackage(module.groupId),
-    module)
-}
-
-private object MavenToBazel {
-  def sanitizeMavenCoordinateToBazelWorkspaceName(coordinate: String): String =
-    coordinate.replace('.', '_').replace('-', '_')
-
-  def groupIdToPackage(groupId: String): String = s"third_party/${groupId.replace('.', '/')}"
-
-  def coordinatesToGenericWorkspaceName(externalModule: ExternalModule): String = {
-    externalModule.toCoordinates.workspaceRuleName
-  }
-}
-
+import com.wixpress.build.maven.Coordinates
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 object PrintJvmTargetsSources {
   def main(args: Array[String]) {
@@ -81,17 +63,17 @@ object Writer extends MigratorApp {
 }
 
 class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModule]) {
-  private val repoArtifactsExternalToSource: Map[ExternalModule, SourceModule] =
+  private val repoArtifactsExternalToSource: Map[Coordinates, SourceModule] =
     externalCoordinatesOfRepoArtifacts.map(sourceModule => (sourceModule.externalModule, sourceModule)).toMap
 
   private val relativePathToSource: Map[String, SourceModule] =
     externalCoordinatesOfRepoArtifacts.map(module => (module.relativePathFromMonoRepoRoot, module)).toMap
 
-  private val repoArtifactsCoordinates: Set[ExternalModule] = externalCoordinatesOfRepoArtifacts.map(_.externalModule)
-  private val thirdPartyDepsAsTargetsOfRepoArtifacts: Map[ExternalModule, Map[Scope, Set[MavenJar]]] = buildThirdPartyDependenciesTargetsOfRepoArtifacts
-  private val thirdPartyDepsAsSerializedTargetsOfRepoArtifacts: TrieMap[ExternalModule, Map[Scope, Set[String]]] = TrieMap.empty
+  private val repoArtifactsCoordinates: Set[Coordinates] = externalCoordinatesOfRepoArtifacts.map(_.externalModule)
+  private val thirdPartyDepsAsTargetsOfRepoArtifacts: Map[Coordinates, Map[Scope, Set[MavenJar]]] = buildThirdPartyDependenciesTargetsOfRepoArtifacts
+  private val thirdPartyDepsAsSerializedTargetsOfRepoArtifacts: TrieMap[Coordinates, Map[Scope, Set[String]]] = TrieMap.empty
 
-  private def buildThirdPartyDependenciesTargetsOfRepoArtifacts: Map[ExternalModule, Map[Scope, Set[MavenJar]]] =
+  private def buildThirdPartyDependenciesTargetsOfRepoArtifacts: Map[Coordinates, Map[Scope, Set[MavenJar]]] =
     repoArtifactsExternalToSource.mapValues(thirdPartyDependencies)
 
   private val sourcesPackageWriter = new SourcesPackageWriter(repoRoot.toPath)
@@ -159,7 +141,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
   private def partOfRepoArtifacts(module: MavenJar): Boolean =
     repoArtifactsCoordinates.exists(sameCoordinatesWithoutVersion(module.originatingExternalCoordinates))
 
-  private def sameCoordinatesWithoutVersion(module: ExternalModule)(repoArtifact: ExternalModule) =
+  private def sameCoordinatesWithoutVersion(module: Coordinates)(repoArtifact: Coordinates) =
     repoArtifact.groupId == module.groupId && repoArtifact.artifactId == module.artifactId
 
   private def packageBuildDescriptorPath(bazelPackage: Package): Path =
@@ -378,8 +360,8 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     }
   }
 
-  private def workspaceNameTargetName(originalTargetName: String, externalCoordinates: ExternalModule): (String, String) = {
-    (MavenToBazel.coordinatesToGenericWorkspaceName(externalCoordinates), originalTargetName)
+  private def workspaceNameTargetName(originalTargetName: String, externalCoordinates: Coordinates): (String, String) = {
+    (externalCoordinates.workspaceRuleName, originalTargetName)
   }
 
   private def writeDependencies(dependencies: Set[String]): String = {

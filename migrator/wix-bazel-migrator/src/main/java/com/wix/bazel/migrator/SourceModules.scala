@@ -11,6 +11,6 @@ case class SourceModules(codeModules: Set[SourceModule]) {
 }
 
 object SourceModules {
-  def apply(repoRoot: File) = new SourceModules(new MavenBuildSystem(repoRoot.toPath, WixMavenBuildSystem.RemoteRepo).modules())
+  def apply(repoRoot: File) = new SourceModules(new MavenBuildSystem(repoRoot.toPath, List(WixMavenBuildSystem.RemoteRepo)).modules())
   def of(repoRoot: File) = apply(repoRoot)
 }

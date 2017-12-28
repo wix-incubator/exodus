@@ -12,6 +12,7 @@
         <groupId>com.wixpress.common</groupId>
         <artifactId>wix-scala-parent-ng</artifactId>
         <version>100.0.0-SNAPSHOT</version>
+        <relativePath/>
     </parent>
     
     <properties>
@@ -76,6 +77,7 @@
         <dependency>
             <groupId>com.wixpress.build</groupId>
             <artifactId>bazel-deps-synchronizer</artifactId>
+            <version>1.10.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.wixpress.hoopoe</groupId>

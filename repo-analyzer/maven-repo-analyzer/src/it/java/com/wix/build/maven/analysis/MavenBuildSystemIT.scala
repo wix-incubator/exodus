@@ -32,9 +32,8 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
         registerInMavenRepository(module.modules.values)
       }
 
-      def asExternal(module:MavenModule): ExternalModule = {
-        ExternalModule(module.groupId.get, module.artifactId, module.version.get)
-      }
+      def asExternal(module:MavenModule): Coordinates =
+        Coordinates(module.groupId.get, module.artifactId, module.version.get)
 
 
       override def around[R: AsResult](r: => R): Result = {
@@ -55,7 +54,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
 
       val fakeMavenRepository = new FakeMavenRepository(0)
       fakeMavenRepository.start()
-      val buildSystem = new MavenBuildSystem(repo.root, fakeMavenRepository.url)
+      val buildSystem = new MavenBuildSystem(repo.root, List(fakeMavenRepository.url))
 
       def repo: Repo
     }
@@ -68,7 +67,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(sourceModule(relativePathFromMonoRepoRoot = "",
-        externalModule = be_===(ExternalModule("group-id", "artifact-id", "some-version")))))
+        externalModule = be_===(Coordinates("group-id", "artifact-id", "some-version")))))
     }
 
     "SourceModules for the non pom modules in a multi module repository" in new ctx {
@@ -106,7 +105,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(sourceModule(
-        externalModule = be_===(ExternalModule("group", "artifact", "parent-version")))))
+        externalModule = be_===(Coordinates("group", "artifact", "parent-version")))))
     }
 
     "SourceModule in the repo for an artifact which gets its groupId from its parent" in new ctx {
@@ -119,7 +118,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(sourceModule(
-        externalModule = be_===(ExternalModule("parent-group", "artifact", "version")))))
+        externalModule = be_===(Coordinates("parent-group", "artifact", "version")))))
     }
 
     "resource folders as scoped dependencies of the SourceModule" in new ctx {
@@ -159,13 +158,13 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
     }
 
     "direct external dependencies" in new ctx {
-      def someExternalModule = ExternalModule("com.google.guava", "guava", "19")
-      def someExternalModuleWithClassifier = ExternalModule("com.example", "foo","15", Some("classifier"))
-      def someTestExternalModule = ExternalModule("com.google.foo", "bar", "17")
+      def someCoordinates = Coordinates("com.google.guava", "guava", "19")
+      def someCoordinatesWithClassifier = Coordinates("com.example", "foo", "15", classifier = Some("classifier"))
+      def someTestCoordinates = Coordinates("com.google.foo", "bar", "17")
 
       lazy val repo = Repo(SomeCodeModule
-        .withJars(Scope.PROD_COMPILE -> Set(someExternalModule, someExternalModuleWithClassifier))
-        .withJars(Scope.TEST_COMPILE -> Set(someTestExternalModule)))
+        .withJars(Scope.PROD_COMPILE -> Set(someCoordinates, someCoordinatesWithClassifier))
+        .withJars(Scope.TEST_COMPILE -> Set(someTestCoordinates)))
 
       val sourceModules = buildSystem.modules()
 
@@ -174,13 +173,13 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
           Map(Scope.PROD_COMPILE ->
             Set(Target.MavenJar(name = "guava",
               belongingPackageRelativePath = "third_party/com/google/guava",
-              originatingExternalCoordinates = someExternalModule),
+              originatingExternalCoordinates = someCoordinates),
               Target.MavenJar(name = "foo_classifier",
                 belongingPackageRelativePath = "third_party/com/example",
-                originatingExternalCoordinates = someExternalModuleWithClassifier)),
+                originatingExternalCoordinates = someCoordinatesWithClassifier)),
             Scope.TEST_COMPILE -> Set(Target.MavenJar(name = "bar",
               belongingPackageRelativePath = "third_party/com/google/foo",
-              originatingExternalCoordinates = someTestExternalModule))))
+              originatingExternalCoordinates = someTestCoordinates))))
         )))
     }
 
@@ -213,10 +212,10 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
     }
 
     "direct external dependencies with pom packaging" in new ctx {
-      def someExternalModule = ExternalModule("some.package", "foo", "dontcare",packaging = Some("pom"))
+      def someCoordinates = Coordinates("some.package", "foo", "dontcare", packaging = Some("pom"))
 
       lazy val repo = Repo(SomeCodeModule
-        .withJars(Scope.PROD_COMPILE -> Set(someExternalModule)))
+        .withJars(Scope.PROD_COMPILE -> Set(someCoordinates)))
 
       val sourceModules = buildSystem.modules()
 
@@ -225,7 +224,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
           Map(Scope.PROD_COMPILE ->
             Set(Target.MavenJar(name = "foo",
               belongingPackageRelativePath = "third_party/some/package",
-              originatingExternalCoordinates = someExternalModule)))))
+              originatingExternalCoordinates = someCoordinates)))))
         ))
     }
 
@@ -295,13 +294,13 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
   }
 
   def sourceModule(relativePathFromMonoRepoRoot: String,
-                   externalModule: Matcher[ExternalModule]): Matcher[SourceModule] =
+                   externalModule: Matcher[Coordinates]): Matcher[SourceModule] =
     sourceModule(be_===(relativePathFromMonoRepoRoot), externalModule)
 
   def sourceModule(relativePathFromMonoRepoRoot: Matcher[String] =
                    AlwaysMatcher[String](),
-                   externalModule: Matcher[ExternalModule] =
-                   AlwaysMatcher[ExternalModule](),
+                   externalModule: Matcher[Coordinates] =
+                   AlwaysMatcher[Coordinates](),
                    dependencies: Matcher[ModuleDependencies] =
                    AlwaysMatcher[ModuleDependencies]()): Matcher[SourceModule] =
     relativePathFromMonoRepoRoot ^^ {
@@ -314,15 +313,15 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
         (_: SourceModule).dependencies aka "module dependencies"
       }
 
-  def moduleGavStartsWith(prefix: String): Matcher[ExternalModule] =
+  def moduleGavStartsWith(prefix: String): Matcher[Coordinates] =
     startWith(prefix) ^^ {
-      (_: ExternalModule).groupId aka "groupId"
+      (_: Coordinates).groupId aka "groupId"
     } and
       startWith(prefix) ^^ {
-        (_: ExternalModule).artifactId aka "artifactId"
+        (_: Coordinates).artifactId aka "artifactId"
       } and
       startWith(prefix) ^^ {
-        (_: ExternalModule).version aka "version"
+        (_: Coordinates).version aka "version"
       }
 
 }
@@ -441,8 +440,8 @@ case class MavenModule(groupId: Option[String] = None,
                        modules: Map[String, MavenModule] = Map.empty,
                        parent: Option[MavenModule] = None,
                        resourceFolders: Set[String] = Set.empty,
-                       dependencies: Set[(Scope, Set[ExternalModule])] = Set.empty) {
-  def withJars(dependenciesOfScope: (Scope, Set[ExternalModule])): MavenModule =
+                       dependencies: Set[(Scope, Set[Coordinates])] = Set.empty) {
+  def withJars(dependenciesOfScope: (Scope, Set[Coordinates])): MavenModule =
     copy(dependencies = dependencies + dependenciesOfScope)
 
   //due to current limitation with how we work with Aether/FakeMavenRepository
@@ -481,11 +480,11 @@ object SynchronizerConversion {
 
   implicit class MavenModule2ArtifactDescriptor(module: MavenModule) {
 
-    def toDependency(scopedExternalModules: (Scope, Set[ExternalModule])): Set[SyncronizerDependency] = {
-      scopedExternalModules._2.map(toDependency(scopedExternalModules._1))
+    def toDependency(scopedCoordinatess: (Scope, Set[Coordinates])): Set[SyncronizerDependency] = {
+      scopedCoordinatess._2.map(toDependency(scopedCoordinatess._1))
     }
 
-    def toDependency(scope: Scope)(externalModule: ExternalModule): SyncronizerDependency = {
+    def toDependency(scope: Scope)(externalModule: Coordinates): SyncronizerDependency = {
       val coordinates = Coordinates(
         groupId = externalModule.groupId,
         artifactId = externalModule.artifactId,

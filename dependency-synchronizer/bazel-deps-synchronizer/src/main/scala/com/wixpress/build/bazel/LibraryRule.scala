@@ -2,6 +2,7 @@ package com.wixpress.build.bazel
 
 import LibraryRule.RuleType
 import com.wixpress.build.maven.{Coordinates, Exclusion}
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 case class LibraryRule(
                         name: String,

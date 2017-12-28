@@ -7,6 +7,7 @@ import com.wixpress.build.maven._
 import org.specs2.matcher.{Matcher, SomeCheckedMatcher}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 import scala.util.matching.Regex
 
