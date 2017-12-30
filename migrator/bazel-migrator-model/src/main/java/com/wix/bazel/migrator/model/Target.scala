@@ -16,7 +16,6 @@ object Target {
   case class Jvm(name: String,
                  sources: Set[String],
                  belongingPackageRelativePath: String,
-                 language: Language,
                  dependencies: Set[TargetDependency],
                  codePurpose: CodePurpose,
                  originatingSourceModule: SourceModule) extends Target

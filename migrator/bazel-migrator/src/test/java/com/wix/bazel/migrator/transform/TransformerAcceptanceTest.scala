@@ -64,10 +64,9 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       val packages = transformer.transform(repo.modules)
 
       packages must contain(
-        aPackage(relativePath = endingWith("com/wix/lib2"), target = a(jvmTarget(name = "lib2",
-          dependencies = contain(exactly(
-            aTargetDependency(name = "lib", belongsToPackage = endingWith("com/wix/lib")),
-            aTargetDependency(name = "otherLib", belongsToPackage = endingWith("com/wix/otherLib")))))))
+        aPackage(relativePath = endingWith("com/wix/lib2"), target = a(jvmTarget(name = "lib2", dependencies = contain(exactly(
+                    aTargetDependency(name = "lib", belongsToPackage = endingWith("com/wix/lib")),
+                    aTargetDependency(name = "otherLib", belongsToPackage = endingWith("com/wix/otherLib")))))))
       )
     }
 
@@ -122,8 +121,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       packages must contain(exactly(
         aPackage(relativePath = endingWith("/com/wix"),
-          target = a(jvmTarget(name = aggregatorOf("lib1/sub1", "lib1/sub2", "lib2/sub1", "lib2/sub2"),
-            sources = contain(exactly("/lib1/sub1", "/lib1/sub2", "/lib2/sub1", "/lib2/sub2")), dependencies = beEmpty))
+          target = a(jvmTarget(name = aggregatorOf("lib1/sub1", "lib1/sub2", "lib2/sub1", "lib2/sub2"), sources = contain(exactly("/lib1/sub1", "/lib1/sub2", "/lib2/sub1", "/lib2/sub2")), dependencies = beEmpty))
         )))
     }
 
@@ -177,7 +175,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       packages must contain(exactly(
         aPackage(relativePath = startingWithAndEndingWith("/group2-dirs/artifact2-dirs", "com/wix/group2/artifact2"),
           target = a(jvmTarget(name = "artifact2", dependencies = contain(
-            aTargetDependency(name = "artifact1", belongsToPackage = startingWithAndEndingWith("/group1-dirs/artifact1-dirs", "com/wix/group1/artifact1")))))),
+                      aTargetDependency(name = "artifact1", belongsToPackage = startingWithAndEndingWith("/group1-dirs/artifact1-dirs", "com/wix/group1/artifact1")))))),
         aPackage(relativePath = startingWithAndEndingWith("/group1-dirs/artifact1-dirs", "com/wix/group1/artifact1"))
       ))
     }
@@ -201,7 +199,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
           target = a(jvmTarget(name = aggregatorOf("artifact2", "artifact3")))),
         aPackage(relativePath = startingWithAndEndingWith("/group1-dirs/artifact1-dirs", "com/wix/group1/artifact1"),
           target = a(jvmTarget(name = "artifact1", dependencies = contain(
-            aTargetDependency(name = aggregatorOf("artifact2", "artifact3"), belongsToPackage = endingWith("group2"))))))
+                      aTargetDependency(name = aggregatorOf("artifact2", "artifact3"), belongsToPackage = endingWith("group2"))))))
       ))
     }
 
@@ -218,70 +216,6 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       transformer.transform(repo.modules) must
         throwAn[IllegalArgumentException]("a cycle between two different modules or two top level source dirs and that isn't supported")
-    }
-
-    "externalize if the target is of type Java when only java source files exist for it" in new Context {
-      def repo = Repo().withCode(code(filePath = "com/wix/lib/Code.java"))
-
-      val packages = transformer.transform(repo.modules)
-
-      packages must contain(
-        aPackage(target = a(jvmTarget(name = "lib", language = beEqualTo(Language.Java))))
-      )
-    }
-
-    "externalize if the target is of type Scala when only scala source files exist for it" in new Context {
-      def repo = Repo().withCode(code(filePath = "com/wix/lib/Code.scala"))
-
-      val packages = transformer.transform(repo.modules)
-
-      packages must contain(
-        aPackage(target = a(jvmTarget(name = "lib", language = beEqualTo(Language.Scala))))
-      )
-    }
-
-    "externalize if the target is of type JavaScala when both java and scala source files exist for it" in new Context {
-      def repo = Repo()
-        .withCode(code(filePath = "com/wix/lib/Code.scala"))
-        .withCode(code(filePath = "com/wix/lib/Code2.java"))
-
-      val packages = transformer.transform(repo.modules)
-
-      packages must contain(
-        aPackage(target = a(jvmTarget(name = "lib", language = beEqualTo(Language.JavaScala))))
-      )
-    }
-
-    "remember the rule type even across a cycle" in new Context {
-      def repo = {
-        val someFilePath = "com/wix/lib/Code.java"
-        val otherFilePath = "com/wix/lib2/Code2.java"
-        Repo()
-          .withCode(code(filePath = someFilePath, dependencies = List(dependency(filePath = otherFilePath))))
-          .withCode(code(filePath = otherFilePath, dependencies = List(dependency(filePath = someFilePath))))
-      }
-
-      val packages = transformer.transform(repo.modules)
-
-      packages must contain(
-        aPackage(target = a(jvmTarget(name = aggregatorOf("lib", "lib2"), language = beEqualTo(Language.Java))))
-      )
-    }
-
-    "externalize if the target is of type JavaScala across a cycle" in new Context {
-      def repo = {
-        val someFilePath = "com/wix/lib/Code.java"
-        val otherFilePath = "com/wix/lib2/Code2.scala"
-        Repo()
-          .withCode(code(filePath = someFilePath, dependencies = List(dependency(filePath = otherFilePath))))
-          .withCode(code(filePath = otherFilePath, dependencies = List(dependency(filePath = someFilePath))))
-      }
-
-      val packages = transformer.transform(repo.modules)
-
-      packages must contain(
-        aPackage(target = a(jvmTarget(name = aggregatorOf("lib", "lib2"), language = beEqualTo(Language.JavaScala))))
-      )
     }
 
     "reflect the relative source dir in the created package path" in new Context {
@@ -370,8 +304,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       val packages = transformer.transform(repo.modules)
       packages.flatMap(_.targets) must contain(
-        a(jvmTarget(name = "lib",
-          originatingSourceModule = be_===(aModule("some-rel-path", anExternalModule("someGroupId", "someArtifactId", "someVersion"))))
+        a(jvmTarget(name = "lib", originatingSourceModule = be_===(aModule("some-rel-path", anExternalModule("someGroupId", "someArtifactId", "someVersion"))))
         ))
     }
 
@@ -481,11 +414,10 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       val packages = transformer.transform(repo.modules)
 
       packages must contain(
-        aPackage(relativePath = endingWith("com/wix/user"), target = a(jvmTarget(name = "user",
-          dependencies = contain(exactly(
-            aTargetDependency(name = "lib1", belongsToPackage = endingWith("com/wix/lib1"), isCompileDependency = beTrue),
-            aTargetDependency(name = "lib2", belongsToPackage = endingWith("com/wix/lib2"), isCompileDependency = beFalse))
-          ))))
+        aPackage(relativePath = endingWith("com/wix/user"), target = a(jvmTarget(name = "user", dependencies = contain(exactly(
+                    aTargetDependency(name = "lib1", belongsToPackage = endingWith("com/wix/lib1"), isCompileDependency = beTrue),
+                    aTargetDependency(name = "lib2", belongsToPackage = endingWith("com/wix/lib2"), isCompileDependency = beFalse))
+                  ))))
       )
     }
 
@@ -505,10 +437,9 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       val packages = transformer.transform(repo.modules)
 
       packages must contain(
-        aPackage(relativePath = endingWith("com/wix/lib"), target = a(jvmTarget(name = "lib",
-          dependencies = contain(exactly(
-            aTargetDependency(name = "someLib"),
-            aTargetDependency(name = "someOtherLib"))))))
+        aPackage(relativePath = endingWith("com/wix/lib"), target = a(jvmTarget(name = "lib", dependencies = contain(exactly(
+                    aTargetDependency(name = "someLib"),
+                    aTargetDependency(name = "someOtherLib"))))))
       )
     }
 
@@ -550,7 +481,6 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
   def jvmTarget(name: String,
                 sources: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
                 dependencies: Matcher[Set[TargetDependency]] = AlwaysMatcher[Set[TargetDependency]](),
-                language: Matcher[Language] = AlwaysMatcher[Language](),
                 codePurpose: Matcher[CodePurpose] = AlwaysMatcher[CodePurpose](),
                 originatingSourceModule: Matcher[SourceModule] = AlwaysMatcher[SourceModule]()
                ): Matcher[Target.Jvm] = {
@@ -562,9 +492,6 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       } and
       dependencies ^^ {
         (_: Target.Jvm).dependencies aka "dependencies"
-      } and
-      language ^^ {
-        (_: Target.Jvm).language aka "rule type"
       } and
       codePurpose ^^ {
         (_: Target.Jvm).codePurpose aka "code purpose"

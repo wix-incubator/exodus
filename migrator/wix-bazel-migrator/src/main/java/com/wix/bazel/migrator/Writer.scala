@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target.{Jvm, MavenJar, Resources, TargetDependency}
-import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, CodePurpose, Language, Package, Scope, SourceModule, Target, TestType}
+import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, CodePurpose, Package, Scope, SourceModule, Target, TestType}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -158,7 +158,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
 
   private def writeTarget(target: Target): String = {
     target match {
-      case jvmLibrary: Target.Jvm => writeJvm(jvmLibrary, jvmLibrary.language)
+      case jvmLibrary: Target.Jvm => writeJvm(jvmLibrary)
       case resources: Target.Resources => writeResources(resources)
       case mavenJar: Target.MavenJar => throw new IllegalArgumentException(
         "we shouldn't get here since currently maven targets" +
@@ -227,7 +227,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
      """.stripMargin
   }
 
-  private def writeJvm(target: Target.Jvm, ruleType: Language): String = {
+  private def writeJvm(target: Jvm) = {
     val serializedDependenciesByScope = target.dependencies.flatMap(writeDependency(target))
 
     val serializedModuleDependenciesByScope =

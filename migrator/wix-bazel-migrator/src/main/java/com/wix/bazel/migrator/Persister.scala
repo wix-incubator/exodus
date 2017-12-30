@@ -10,7 +10,7 @@ import java.util
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.wix.bazel.migrator.model.{CodePurpose, Language, Package, Target, TestType}
+import com.wix.bazel.migrator.model.{CodePurpose, Package, Target, TestType}
 
 import scala.collection.JavaConverters._
 
@@ -20,7 +20,6 @@ object Persister {
   private val mavenCache = Paths.get("classpathModules.cache")
   private val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
     .addMixIn(classOf[Target], classOf[TypeAddingMixin])
-    .addMixIn(classOf[Language], classOf[TypeAddingMixin])
     .addMixIn(classOf[CodePurpose], classOf[TypeAddingMixin])
     .addMixIn(classOf[TestType], classOf[TypeAddingMixin])
 

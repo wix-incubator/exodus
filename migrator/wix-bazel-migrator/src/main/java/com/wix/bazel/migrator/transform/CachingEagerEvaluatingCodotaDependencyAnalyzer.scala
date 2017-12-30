@@ -21,7 +21,6 @@ class CachingEagerEvaluatingCodotaDependencyAnalyzer(sourceModules: Set[SourceMo
     .registerModule(DefaultScalaModule)
     .registerModule(new RelativePathSupportingModule)
     .addMixIn(classOf[Target], classOf[TypeAddingMixin])
-    .addMixIn(classOf[Language], classOf[TypeAddingMixin])
     .addMixIn(classOf[CodePurpose], classOf[TypeAddingMixin])
     .addMixIn(classOf[TestType], classOf[TypeAddingMixin])
 
