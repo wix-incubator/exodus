@@ -27,25 +27,25 @@ class InternalFileDepsOverridesDependencyAnalyzer(sourceModules: SourceModules, 
     overridesToCodes(isCompileDependency = true)(overrides)
 
   private def overridesToCodes(isCompileDependency: Boolean)(overrides: Map[String, Map[String, List[String]]]) =
-    overrides.map { case (relativePath, moduleDeps) =>
-      moduleForRelativePath(relativePath) -> moduleDeps.map { case (code, codeDeps) =>
-        Code(codePathFrom(relativePath + "/" + code), codeDeps.map(dependencyOn(isCompileDependency)))
+    overrides.map { case (moduleRelativePath, moduleDeps) =>
+      moduleForRelativePath(moduleRelativePath) -> moduleDeps.map { case (code, codeDeps) =>
+        Code(codePathFrom(moduleRelativePath, code), codeDeps.map(dependencyOn(isCompileDependency, moduleRelativePath)))
     }.toList
   }
 
   private def moduleForRelativePath(relativeModulePath: String) =
     sourceModules.findByRelativePath(relativeModulePath).get
 
-  private def codePathFrom(relativeFilePath: String) = {
+  private def codePathFrom(moduleRelativePath: String, relativeFilePath: String) = {
     val filePathParts = relativeFilePath.split('/')
-    val indexOfSrc = filePathParts.indexOf("src")
-    CodePath(moduleForRelativePath(filePathParts.slice(0, indexOfSrc).mkString("/")),
-      filePathParts.slice(indexOfSrc, indexOfSrc + 3).mkString("/"),
-      Paths.get(filePathParts.slice(indexOfSrc + 3, filePathParts.length).mkString("/")))
+    CodePath(moduleForRelativePath(moduleRelativePath),
+      //Assuming relative path starts with "src" and is always three parts (src/main/scala, etc)
+      filePathParts.slice(0, 3).mkString("/"),
+      Paths.get(filePathParts.slice(3, filePathParts.length).mkString("/")))
   }
 
-  private def dependencyOn(isCompileDependency: Boolean)(relativeFilePath: String): Dependency =
-    Dependency(codePathFrom(relativeFilePath), isCompileDependency)
+  private def dependencyOn(isCompileDependency: Boolean, moduleRelativePath: String)(relativeFilePath: String): Dependency =
+    Dependency(codePathFrom(moduleRelativePath, relativeFilePath), isCompileDependency)
 
 
 }
