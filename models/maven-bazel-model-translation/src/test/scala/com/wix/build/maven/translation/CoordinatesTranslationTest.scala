@@ -1,7 +1,7 @@
-package com.wixpress.build.maven
+package com.wix.build.maven.translation
 
+import com.wixpress.build.maven.Coordinates
 import org.specs2.mutable.SpecificationWithJUnit
-import org.specs2.specification.Scope
 
 //noinspection TypeAnnotation
 class CoordinatesTranslationTest extends SpecificationWithJUnit {
