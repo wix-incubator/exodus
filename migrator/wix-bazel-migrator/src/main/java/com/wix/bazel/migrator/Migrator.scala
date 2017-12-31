@@ -36,7 +36,11 @@ object Migrator extends MigratorApp {
     val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
     val mutuallyExclusiveCompositeDependencyAnalyzer = if (repoRoot.toString.contains("wix-framework")) new CompositeDependencyAnalyzer(
       cachingCodotaDependencyAnalyzer,
-      new ManualInfoDependencyAnalyzer(sourceModules)) else cachingCodotaDependencyAnalyzer
+      new ManualInfoDependencyAnalyzer(sourceModules),
+      new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath)) else new CompositeDependencyAnalyzer(
+      cachingCodotaDependencyAnalyzer,
+      new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath))
+
     val transformer = new BazelTransformer(mutuallyExclusiveCompositeDependencyAnalyzer)
     val bazelPackages: Set[Package] = transformer.transform(codeModules)
     Persister.persistTransformationResults(bazelPackages)
