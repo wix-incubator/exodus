@@ -28,18 +28,18 @@ pipeline {
                     if (env.IT == "false") {
                         unstable_by_exit_code("""|#!/bin/bash
                                              |bazel test \\
-                                             |      ${env.BAZEL_FLAGS} \\
-                                             |      //...
+                                             |${env.BAZEL_FLAGS} \\
+                                             |${TEST_TARGET_NAME}
                                              |""".stripMargin())
                     } else {
                         unstable_by_exit_code("""|#!/bin/bash
                                              |export DOCKER_HOST=$env.TEST_DOCKER_HOST
                                              |bazel test \\
-                                             |      --strategy=TestRunner=standalone \\
-                                             |      ${env.BAZEL_FLAGS} \\
-                                             |      --test_env=DOCKER_HOST \\
-                                             |      --jobs=1 \\
-                                             |      //...
+                                             |--strategy=TestRunner=standalone \\
+                                             |${env.BAZEL_FLAGS} \\
+                                             |--test_env=DOCKER_HOST \\
+                                             |--jobs=1 \\
+                                             |${TEST_TARGET_NAME}
                                              |""".stripMargin())
                     }
                 }
