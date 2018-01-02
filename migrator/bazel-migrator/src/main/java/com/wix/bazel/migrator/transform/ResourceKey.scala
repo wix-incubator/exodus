@@ -43,7 +43,7 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
     if (Target.Resources.applicablePackage(packageRelativePath))
       Target.Resources("resources", packageRelativePath, targetDependencies.map(_.target))
     else {
-      val codes = keyToCodes.getOrElse(this, throw new IllegalStateException(s"can't find resourceKey = $this \n in keyToCodes map: $keyToCodes")).view
+      val codes = keyToCodes.getOrElse(this, Set.empty).view
       val codePurpose = CodePurpose(packageRelativePath, codes.map(_.testType))
       Target.Jvm(name, sources, packageRelativePath, targetDependencies, codePurpose, codeDirPath.module)
     }
