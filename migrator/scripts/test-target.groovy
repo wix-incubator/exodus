@@ -24,7 +24,7 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    if (${IT} == "false") {
+                    if (env.IT == "false") {
                         unstable_by_exit_code("""|#!/bin/bash
                                              |bazel test \\
                                              |      --test_tag_filters=UT,-IT \\
