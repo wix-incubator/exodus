@@ -27,7 +27,6 @@ pipeline {
                     if (env.IT == "false") {
                         unstable_by_exit_code("""|#!/bin/bash
                                              |bazel test \\
-                                             |      --test_tag_filters=UT,-IT \\
                                              |      ${env.BAZEL_FLAGS} \\
                                              |      ${TEST_TARGET_LABEL}
                                              |""".stripMargin())
@@ -35,7 +34,6 @@ pipeline {
                         unstable_by_exit_code("""|#!/bin/bash
                                              |export DOCKER_HOST=$env.TEST_DOCKER_HOST
                                              |bazel test \\
-                                             |      --test_tag_filters=IT \\
                                              |      --strategy=TestRunner=standalone \\
                                              |      ${env.BAZEL_FLAGS} \\
                                              |      --test_env=DOCKER_HOST \\
