@@ -47,6 +47,7 @@ pipeline {
                                              |export DOCKER_HOST=$env.TEST_DOCKER_HOST
                                              |bazel test \\
                                              |      --test_tag_filters=IT \\
+                                             |      --strategy=TestRunner=standalone \\
                                              |      ${env.BAZEL_FLAGS} \\
                                              |      --test_env=DOCKER_HOST \\
                                              |      --jobs=1 \\
