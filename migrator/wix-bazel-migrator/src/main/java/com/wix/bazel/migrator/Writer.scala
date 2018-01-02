@@ -223,7 +223,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       val existingManifestLabel = s"//${sourceModule.relativePathFromMonoRepoRoot}:coordinates"
       s"""
          |    data = ["$existingManifestLabel"$additionalDataDeps],
-         |    jvm_flags = ["-Dexisting.manifest=$$(execpath $existingManifestLabel)"$additionalJvmFlags],
+         |    jvm_flags = ["-Dexisting.manifest=$$(location $existingManifestLabel)"$additionalJvmFlags],
      """.stripMargin
   }
 
