@@ -5,7 +5,8 @@ pipeline {
         timestamps()
     }
     environment {
-        BAZEL_FLAGS = '''|--strategy=Scalac=worker \\
+        BAZEL_FLAGS = '''|-k \\
+                         |--strategy=Scalac=worker \\
                          |--experimental_sandbox_base=/dev/shm \\
                          |--sandbox_tmpfs_path=/tmp \\
                          |--test_output=errors \\
