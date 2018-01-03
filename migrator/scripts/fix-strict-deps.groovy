@@ -74,7 +74,7 @@ def build_and_fix() {
     status = sh(
             script: '''|#!/bin/bash
                        |# tee would output the stdout to file but will swallow the exit code
-                       |bazel build --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
+                       |bazel build -k --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
                        |# retrieve the exit code
                        |exit ${PIPESTATUS[0]}
                        |'''.stripMargin(),
