@@ -18,7 +18,8 @@ trait MigratorApp extends App {
   def codeModules = sourceModules.codeModules
   def codotaToken = configuration.codotaToken
   lazy val codotaDependencyAnalyzer = new CodotaDependencyAnalyzer(repoRoot, codeModules, codotaToken)
-  val managedDependenciesArtifact = Coordinates.deserialize("com.wixpress.common:third-party-dependencies:pom:100.0.0-SNAPSHOT")
+  val thirdPartyDependencySource = Coordinates.deserialize("com.wixpress.common:third-party-dependencies:pom:100.0.0-SNAPSHOT")
+  val managedDependenciesArtifact = Coordinates.deserialize("com.wixpress.common:wix-master-parent:pom:100.0.0-SNAPSHOT")
 
   private def staleFactorInHours = sys.props.getOrElse("num.hours.classpath.cache.is.fresh","24").toInt
 

@@ -15,6 +15,7 @@ case class LibraryRule(
   private def serializedExclusions = if (exclusions.isEmpty) "" else
     "\n" + exclusions.map(e => s"    # EXCLUDES ${e.serialized}").mkString("\n")
 
+  def withRuntimeDeps(runtimeDeps: Set[String]): LibraryRule = this.copy(runtimeDeps = runtimeDeps)
 
   def serialized: String =
     s"""$RuleType(
@@ -49,7 +50,7 @@ case class LibraryRule(
 
 object LibraryRule {
 
-  private def fileLabelFor(coordinates: Coordinates):Set[String] = coordinates.packaging match {
+  private def fileLabelFor(coordinates: Coordinates): Set[String] = coordinates.packaging match {
     case Some("jar") => Set(s"@${coordinates.workspaceRuleName}//jar:file")
     case Some("pom") => Set.empty
     case _ => throw new RuntimeException(s"packaging not supported for ${coordinates.serialized}")
@@ -65,7 +66,7 @@ object LibraryRule {
       jars = fileLabelFor(artifact),
       exports = if (artifact.packaging.contains("pom")) compileTimeDependencies.map(labelBy) else Set.empty,
       runtimeDeps = runtimeDependencies.map(labelBy),
-      compileTimeDeps = if (artifact.packaging.contains("pom")) Set.empty  else compileTimeDependencies.map(labelBy),
+      compileTimeDeps = if (artifact.packaging.contains("pom")) Set.empty else compileTimeDependencies.map(labelBy),
       exclusions = exclusions
     )
 

@@ -12,14 +12,14 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, BranchName, targetRepository)
   private val conflictResolution = new HighestVersionConflictResolution()
 
-  def sync(dependencyManagementSource: Coordinates, targetRepositoryOverridesAndAdditions: Set[Dependency] = Set.empty): Unit = {
+  def sync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]): Unit = {
     logger.info(s"starting sync with managed dependencies in $dependencyManagementSource")
     val localCopy = targetRepository.localWorkspace("master")
     val originalWorkspaceFile = localCopy.workspaceContent()
 
     val dependenciesToUpdate = newDependencyNodes(
       dependencyManagementSource,
-      targetRepositoryOverridesAndAdditions,
+      dependencies,
       originalWorkspaceFile,
       localCopy
     )
@@ -32,7 +32,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
   }
   private def newDependencyNodes(
                                   dependencyManagementSource: Coordinates,
-                                  targetRepoDependencies: Set[Dependency],
+                                  dependencies: Set[Dependency],
                                   workspaceFile: String,
                                   localWorkspace: BazelLocalWorkspace) = {
 
@@ -42,19 +42,14 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
     val currentDependenciesFromBazel = new BazelDependenciesReader(localWorkspace).allDependenciesAsMavenDependencies()
 
-    val dependenciesToSync = uniqueDependenciesFrom(managedDependenciesFromMaven, targetRepoDependencies)
+    val dependenciesToSync = uniqueDependenciesFrom(dependencies)
     val newManagedDependencies = dependenciesToSync diff currentDependenciesFromBazel
 
     mavenDependencyResolver.dependencyClosureOf(newManagedDependencies, managedDependenciesFromMaven)
   }
 
-  private def uniqueDependenciesFrom(managedDependencies: Set[Dependency], targetRepoDependencies: Set[Dependency]) = {
-    val managedDependenciesFiltered = managedDependencies.filterNot(isOverriddenIn(targetRepoDependencies))
-    managedDependenciesFiltered ++ conflictResolution.resolve(targetRepoDependencies).forceCompileScope
-  }
-
-  private def isOverriddenIn(targetRepoDependencies:Set[Dependency])(dependency: Dependency): Boolean ={
-    targetRepoDependencies.exists(_.coordinates.equalsIgnoringVersion(dependency.coordinates))
+  private def uniqueDependenciesFrom(possiblyConflictedDependencySet: Set[Dependency]) = {
+    conflictResolution.resolve(possiblyConflictedDependencySet).forceCompileScope
   }
 
   private implicit class DependenciesExtended(dependencies:Set[Dependency]) {
@@ -76,8 +71,6 @@ class HighestVersionConflictResolution {
 
   private def highestVersionIn(dependencies:Set[Dependency]):Dependency =
     dependencies.maxBy(d => new ComparableVersion(d.coordinates.version))
-
-
 
 }
 

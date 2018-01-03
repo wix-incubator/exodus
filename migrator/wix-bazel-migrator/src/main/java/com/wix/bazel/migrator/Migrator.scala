@@ -64,8 +64,11 @@ object Migrator extends MigratorApp {
     )
 
     val mavenSynchronizer = new BazelMavenSynchronizer(filteringResolver,bazelRepo)
-    val additionalDependenciesUsedInRepo = collectExternalDependenciesUsedByRepoModules(codeModules)
-    mavenSynchronizer.sync(managedDependenciesArtifact, additionalDependenciesUsedInRepo)
+    val externalDependencies = new DependencyCollector(aetherResolver)
+      .withManagedDependenciesOf(thirdPartyDependencySource)
+      .addOrOverrideDependencies(collectExternalDependenciesUsedByRepoModules(codeModules))
+      .dependencySet()
+    mavenSynchronizer.sync(managedDependenciesArtifact, externalDependencies)
 
   }
 
@@ -84,7 +87,7 @@ object Migrator extends MigratorApp {
   }
 
   private def checkConflictsInThirdPartyDependencies(resolver: MavenDependencyResolver):ThirdPartyConflicts = {
-    val managedDependencies = aetherResolver.managedDependenciesOf(managedDependenciesArtifact).map(toCoordinates)
+    val managedDependencies = aetherResolver.managedDependenciesOf(thirdPartyDependencySource).map(toCoordinates)
     val thirdPartyConflicts = new ThirdPartyValidator(codeModules, managedDependencies).checkForConflicts()
     print(thirdPartyConflicts)
     thirdPartyConflicts

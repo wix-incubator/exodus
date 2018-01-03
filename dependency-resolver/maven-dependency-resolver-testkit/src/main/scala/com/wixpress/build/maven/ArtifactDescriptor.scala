@@ -101,9 +101,9 @@ object ArtifactDescriptor {
       managedDependencies = managedDeps
     )
 
-  def rootFor(jar: Coordinates): ArtifactDescriptor = anArtifact(jar)
+  def rootFor(coordinates: Coordinates): ArtifactDescriptor = anArtifact(coordinates)
 
-  def withSingleDependency(baseJar: Coordinates, dependency: Dependency): ArtifactDescriptor = anArtifact(baseJar,List(dependency))
+  def withSingleDependency(coordinates: Coordinates, dependency: Dependency): ArtifactDescriptor = anArtifact(coordinates,List(dependency))
 
 
   implicit class CoordinatesExtended(dependency: Dependency) {

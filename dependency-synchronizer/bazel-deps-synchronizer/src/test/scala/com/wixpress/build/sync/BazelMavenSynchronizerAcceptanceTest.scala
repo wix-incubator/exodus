@@ -2,6 +2,7 @@ package com.wixpress.build.sync
 
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{overrideCoordinatesFrom, runtimeOverrides}
 import com.wixpress.build.bazel._
+import com.wixpress.build.maven.MavenMakers.aDependency
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.BazelMavenSynchronizer.PersistMessageHeader
 import com.wixpress.build.{BazelWorkspaceDriver, MavenJarInBazel}
@@ -12,50 +13,50 @@ import org.specs2.specification.Scope
 //noinspection TypeAnnotation
 class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
-  "Bazel Maven Synchronizer, following an update in maven dependency manager," >> {
-    "and given it's a root artifact" should {
+  "Bazel Maven Synchronizer," >> {
+    "when asked to sync one maven root dependency" should {
       "update maven jar version in bazel based repo" in new baseCtx {
-        givenBazelWorkspaceWithMavenJars(rootMavenJarFrom(baseJar))
-        val updatedJar = baseJar.copy(version = "new-version")
+        val existingDependency = aDependency("existing").withVersion("old-version")
+        givenBazelWorkspaceWithDependency(rootMavenJarFrom(existingDependency))
+        val updatedDependency = existingDependency.withVersion("new-version")
         val updatedResolver = updatedDependencyResolverWith(
-          managedDependencies = Set(dependencyOn(updatedJar)),
-          artifacts = Set(ArtifactDescriptor.rootFor(updatedJar))
+          artifacts = Set(ArtifactDescriptor.rootFor(updatedDependency.coordinates))
         )
 
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver, Set(updatedDependency))
 
-        bazelDriver.versionOfMavenJar(baseJar) must beSome(updatedJar.version)
+        bazelDriver.versionOfMavenJar(existingDependency.coordinates) must beSome(updatedDependency.version)
       }
 
       "insert new maven jar to bazel based repo" in new blankBazelWorkspaceAndNewManagedRootDependency {
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver, Set(newDependency))
 
-        bazelDriver.versionOfMavenJar(baseJar) must beSome(newJar.version)
+        bazelDriver.versionOfMavenJar(newDependency.coordinates) must beSome(newDependency.version)
       }
 
       "add new target in package under third_party" in new blankBazelWorkspaceAndNewManagedRootDependency {
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver, Set(newDependency))
 
-        bazelMustHaveRuleFor(jar = newJar, runtimeDependencies = Set.empty)
+        bazelMustHaveRuleFor(jar = newDependency.coordinates, runtimeDependencies = Set.empty)
       }
 
       "make sure new BUILD files in third_parties has appropriate header" in new blankBazelWorkspaceAndNewManagedRootDependency {
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver, Set(newDependency))
 
-        val buildFileContent = fakeLocalWorkspace.buildFileContent(LibraryRule.packageNameBy(newJar))
+        val buildFileContent = fakeLocalWorkspace.buildFileContent(LibraryRule.packageNameBy(newDependency.coordinates))
 
         buildFileContent must beSome
         buildFileContent.get must startWith(BazelBuildFile.DefaultHeader)
       }
 
       "persist the change with proper message" in new blankBazelWorkspaceAndNewManagedRootDependency {
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver, Set(newDependency))
 
         val expectedChange = Change(
-          filePaths = Set("WORKSPACE", LibraryRule.buildFilePathBy(baseJar)),
+          filePaths = Set("WORKSPACE", LibraryRule.buildFilePathBy(newDependency.coordinates)),
           message =
             s"""$PersistMessageHeader
-               | - ${baseJar.serialized}
+               | - ${newDependency.coordinates.serialized}
                |""".stripMargin
         )
 
@@ -63,36 +64,36 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
       }
 
     }
-    "and given it has dependencies" should {
+    "when asked to sync one maven dependency that has dependencies" should {
 
       "update maven jar version for it and for its direct dependency" in new baseCtx {
-        givenBazelWorkspaceWithMavenJars(
-          rootMavenJarFrom(dependencyJar),
-          basicArtifactWithRuntimeDependency(baseJar, dependencyJar)
+        givenBazelWorkspaceWithDependency(
+          rootMavenJarFrom(transitiveDependency),
+          basicArtifactWithRuntimeDependency(baseDependency.coordinates, transitiveDependency.coordinates)
         )
 
-        val updatedJar = baseJar.copy(version = "new-version")
-        val updatedDependencyJar = dependencyJar.copy(version = "new-version")
-        val updatedJarArtifact = ArtifactDescriptor.withSingleDependency(updatedJar, dependencyOn(updatedDependencyJar))
-        val updatedDependencyArtifact = ArtifactDescriptor.rootFor(updatedDependencyJar)
+        val updatedBaseDependency = baseDependency.withVersion("new-version")
+        val updatedTransitiveDependency = transitiveDependency.withVersion("new-version")
+        val updatedJarArtifact = ArtifactDescriptor.withSingleDependency(updatedBaseDependency.coordinates,
+          updatedTransitiveDependency)
+        val updatedDependencyArtifact = ArtifactDescriptor.rootFor(updatedTransitiveDependency.coordinates)
         val updatedResolver = updatedDependencyResolverWith(
-          managedDependencies = Set(dependencyOn(updatedJar)),
           artifacts = Set(updatedJarArtifact, updatedDependencyArtifact)
         )
 
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver, Set(updatedBaseDependency))
 
-        bazelDriver.versionOfMavenJar(baseJar) must beSome(updatedJar.version)
-        bazelDriver.versionOfMavenJar(dependencyJar) must beSome(updatedDependencyJar.version)
+        bazelDriver.versionOfMavenJar(baseDependency.coordinates) must beSome(updatedBaseDependency.version)
+        bazelDriver.versionOfMavenJar(transitiveDependency.coordinates) must beSome(updatedTransitiveDependency.version)
 
       }
 
       "reflect runtime dependencies in appropriate third_party target" in new blankBazelWorkspaceAndNewManagedArtifactWithDependency {
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver, Set(baseDependency))
 
         bazelMustHaveRuleFor(
-          jar = baseJar,
-          runtimeDependencies = Set(dependencyJar)
+          jar = baseDependency.coordinates,
+          runtimeDependencies = Set(transitiveDependency.coordinates)
         )
       }
 
@@ -100,82 +101,80 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         givenNoDependenciesInBazelWorkspace()
 
         val someExclusion = Exclusion("some.ex.group", "some-excluded-artifact")
-        val baseJarArtifact = ArtifactDescriptor.withSingleDependency(baseJar, dependencyOn(dependencyJar))
-        val dependencyJarArtifact = ArtifactDescriptor.rootFor(dependencyJar)
+        val baseDependencyArtifact = ArtifactDescriptor.withSingleDependency(baseDependency.coordinates,
+          transitiveDependency.withScope(MavenScope.Runtime))
+        val dependencyJarArtifact = ArtifactDescriptor.rootFor(transitiveDependency.coordinates)
         val updatedResolver = updatedDependencyResolverWith(
-          managedDependencies = Set(dependencyOn(baseJar, exclusions = Set(someExclusion))),
-          artifacts = Set(baseJarArtifact, dependencyJarArtifact)
+          artifacts = Set(baseDependencyArtifact, dependencyJarArtifact)
         )
 
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver, Set(baseDependency.withExclusions(Set(someExclusion))))
 
         bazelMustHaveRuleFor(
-          jar = baseJar,
-          runtimeDependencies = Set(dependencyJar),
+          jar = baseDependency.coordinates,
+          runtimeDependencies = Set(transitiveDependency.coordinates),
           exclusions = Set(someExclusion)
         )
       }
 
       "reflect third party overrides in appropriate third_party target" in new baseCtx {
+        private val injectedRuntimeDep = "some-label"
         givenBazelWorkspace(
           mavenJarsInBazel = Set.empty,
-          overrides = runtimeOverrides(overrideCoordinatesFrom(baseJar), "some-label")
+          overrides = runtimeOverrides(overrideCoordinatesFrom(baseDependency.coordinates), injectedRuntimeDep)
         )
-        val baseJarArtifact = ArtifactDescriptor.rootFor(baseJar)
-        val dependencyJarArtifact = ArtifactDescriptor.rootFor(dependencyJar)
+        val baseJarArtifact = ArtifactDescriptor.rootFor(baseDependency.coordinates)
+        val dependencyJarArtifact = ArtifactDescriptor.rootFor(transitiveDependency.coordinates)
         val updatedResolver = updatedDependencyResolverWith(
-          managedDependencies = Set(dependencyOn(baseJar)),
           artifacts = Set(baseJarArtifact)
         )
 
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver,Set(baseDependency))
 
-        bazelDriver.findLibraryRuleBy(baseJar) must beSome(LibraryRule.of(baseJar).copy(runtimeDeps = Set("some-label")))
+        bazelDriver.findLibraryRuleBy(baseDependency.coordinates) must beSome(LibraryRule.of(baseDependency.coordinates).withRuntimeDeps(Set(injectedRuntimeDep)))
       }
 
       "create appropriate third_party target for the new transitive dependency" in new blankBazelWorkspaceAndNewManagedArtifactWithDependency {
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver,Set(baseDependency))
 
-        bazelMustHaveRuleFor(jar = dependencyJar, runtimeDependencies = Set.empty)
+        bazelMustHaveRuleFor(jar = transitiveDependency.coordinates, runtimeDependencies = Set.empty)
       }
 
 
       "update appropriate third_party target for updated jar that introduced new dependency" in new baseCtx {
-        givenBazelWorkspaceWithMavenJars(rootMavenJarFrom(baseJar))
-        val updatedJar = baseJar.copy(version = "new-version")
-        val updatedJarArtifact = ArtifactDescriptor.withSingleDependency(updatedJar, dependencyOn(dependencyJar))
-        val dependencyArtifact = ArtifactDescriptor.rootFor(dependencyJar)
+        givenBazelWorkspaceWithDependency(rootMavenJarFrom(baseDependency))
+        val updatedBaseDependency = baseDependency.withVersion("new-version")
+        val updatedJarArtifact = ArtifactDescriptor.withSingleDependency(updatedBaseDependency.coordinates, transitiveDependency)
+        val dependencyArtifact = ArtifactDescriptor.rootFor(transitiveDependency.coordinates)
         val updatedResolver = updatedDependencyResolverWith(
-          managedDependencies = Set(dependencyOn(updatedJar)),
           artifacts = Set(updatedJarArtifact, dependencyArtifact)
         )
 
-        syncBasedOn(updatedResolver)
+        syncBasedOn(updatedResolver,Set(updatedBaseDependency))
 
-        bazelMustHaveRuleFor(jar = dependencyJar, runtimeDependencies = Set.empty)
+        bazelMustHaveRuleFor(jar = transitiveDependency.coordinates, runtimeDependencies = Set.empty)
       }
 
       "ignore provided/test scope dependencies for appropriate third_party target" in new baseCtx {
-        val otherDependencyJar = Coordinates("some.group", "other-dep", "some-version")
+        val otherTransitiveDependency = aDependency("other-transitive")
         givenNoDependenciesInBazelWorkspace()
         val baseJarArtifact = ArtifactDescriptor.anArtifact(
-          baseJar,
+          baseDependency.coordinates,
           List(
-            dependencyOn(jar = dependencyJar, scope = MavenScope.Provided),
-            dependencyOn(jar = otherDependencyJar, scope = MavenScope.Test))
+            transitiveDependency.withScope(MavenScope.Provided),
+            otherTransitiveDependency.withScope(MavenScope.Test))
         )
-        val dependencyJarArtifact = ArtifactDescriptor.rootFor(dependencyJar)
-        val otherDependencyJarArtifact = ArtifactDescriptor.rootFor(otherDependencyJar)
+        val dependencyJarArtifact = ArtifactDescriptor.rootFor(transitiveDependency.coordinates)
+        val otherDependencyJarArtifact = ArtifactDescriptor.rootFor(otherTransitiveDependency.coordinates)
         val updatedResolver = updatedDependencyResolverWith(
-          managedDependencies = Set(dependencyOn(baseJar)),
           artifacts = Set(baseJarArtifact, dependencyJarArtifact, otherDependencyJarArtifact)
         )
         val synchronizer = new BazelMavenSynchronizer(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(managedDependencyArtifact)
+        synchronizer.sync(dependencyManagementArtifact, Set(baseDependency))
 
         bazelMustHaveRuleFor(
-          jar = baseJar,
+          jar = baseDependency.coordinates,
           runtimeDependencies = Set.empty
         )
       }
@@ -183,44 +182,20 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
       "reflect compile time scope dependencies for appropriate third_party target" in new baseCtx {
         givenNoDependenciesInBazelWorkspace()
         val baseJarArtifact = ArtifactDescriptor.withSingleDependency(
-          baseJar,
-          dependencyOn(jar = dependencyJar, scope = MavenScope.Compile)
+          baseDependency.coordinates,
+          transitiveDependency.withScope(MavenScope.Compile)
         )
-        val dependencyJarArtifact = ArtifactDescriptor.rootFor(dependencyJar)
+        val dependencyJarArtifact = ArtifactDescriptor.rootFor(transitiveDependency.coordinates)
         val updatedResolver = updatedDependencyResolverWith(
-          managedDependencies = Set(dependencyOn(baseJar)),
           artifacts = Set(baseJarArtifact, dependencyJarArtifact)
         )
         val synchronizer = new BazelMavenSynchronizer(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(managedDependencyArtifact)
+        synchronizer.sync(dependencyManagementArtifact,Set(baseDependency))
 
         bazelMustHaveRuleFor(
-          jar = baseJar,
-          compileTimeDependencies = Set(dependencyJar),
-          runtimeDependencies = Set.empty
-        )
-      }
-
-      "update dependency that was in extra-dependencies" in new baseCtx {
-        givenNoDependenciesInBazelWorkspace()
-        val baseJarArtifact = ArtifactDescriptor.withSingleDependency(
-          baseJar,
-          dependencyOn(jar = dependencyJar, scope = MavenScope.Compile))
-
-        val dependencyJarArtifact = ArtifactDescriptor.rootFor(dependencyJar)
-        val updatedResolver = updatedDependencyResolverWith(
-          managedDependencies = Set.empty,
-          artifacts = Set(baseJarArtifact, dependencyJarArtifact)
-        )
-        val baseJarDependency = Dependency(baseJar, MavenScope.Runtime)
-        val synchronizer = new BazelMavenSynchronizer(updatedResolver, fakeBazelRepository)
-
-        synchronizer.sync(managedDependencyArtifact, Set(baseJarDependency))
-
-        bazelMustHaveRuleFor(
-          jar = baseJar,
-          compileTimeDependencies = Set(dependencyJar),
+          jar = baseDependency.coordinates,
+          compileTimeDependencies = Set(transitiveDependency.coordinates),
           runtimeDependencies = Set.empty
         )
       }
@@ -228,22 +203,22 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
       "update dependency that was in extra-dependencies overriding version of managed dependency" in new baseCtx {
         givenNoDependenciesInBazelWorkspace()
 
-        val baseJarArtifact = ArtifactDescriptor.withSingleDependency(baseJar, dependencyOn(dependencyJar))
-        val dependencyArtifact = ArtifactDescriptor.rootFor(dependencyJar)
+        val baseDependencyArtifact = ArtifactDescriptor.withSingleDependency(baseDependency.coordinates, transitiveDependency.withScope(MavenScope.Runtime))
+        val dependencyArtifact = ArtifactDescriptor.rootFor(transitiveDependency.coordinates)
 
-        val managedJar = baseJar.copy(version = "managed")
-        val managedJarArtifact = ArtifactDescriptor.rootFor(managedJar)
+        val baseDependencyWithManagedVersion = baseDependency.withVersion("managed")
+        val managedDependencyArtifact = ArtifactDescriptor.rootFor(baseDependencyWithManagedVersion.coordinates)
 
         val updatedResolver = updatedDependencyResolverWith(
-          managedDependencies = Set(Dependency(managedJarArtifact.coordinates, MavenScope.Compile)),
-          artifacts = Set(baseJarArtifact, managedJarArtifact, dependencyArtifact)
+          managedDependencies = Set(baseDependencyWithManagedVersion.withScope(MavenScope.Compile)),
+          artifacts = Set(baseDependencyArtifact, managedDependencyArtifact, dependencyArtifact)
         )
-        val baseJarDependency = Dependency(baseJar, MavenScope.Runtime)
+
         val synchronizer = new BazelMavenSynchronizer(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(managedDependencyArtifact, Set(baseJarDependency))
+        synchronizer.sync(dependencyManagementArtifact, Set(baseDependency))
 
-        bazelDriver.versionOfMavenJar(baseJar) must beSome(baseJar.version)
+        bazelDriver.versionOfMavenJar(baseDependency.coordinates) must beSome(baseDependency.version)
       }
 
       "refer only to the highest version per dependency that was in extra-dependencies" in new baseCtx {
@@ -256,9 +231,24 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         )
         val synchronizer = new BazelMavenSynchronizer(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(managedDependencyArtifact, someCoordinatesOfMultipleVersions.map(_.asDependency))
+        synchronizer.sync(dependencyManagementArtifact, someCoordinatesOfMultipleVersions.map(_.asDependency))
 
         bazelDriver.versionOfMavenJar(Coordinates("some-group", "some-artifact", "dont-care")) must beSome("3.5.8")
+      }
+
+      "bound version of transitive dependency according to managed dependencies" in new baseCtx{
+        val transitiveManagedDependency = transitiveDependency.withVersion("managed")
+        val updatedResolver = updatedDependencyResolverWith(
+          managedDependencies = Set(transitiveManagedDependency),
+          artifacts = Set(
+            baseDependency.asArtifactWithSingleDependency(transitiveDependency),
+            transitiveDependency.asRootArtifact,
+            transitiveManagedDependency.asRootArtifact)
+          )
+
+        syncBasedOn(updatedResolver,Set(baseDependency))
+
+        bazelDriver.versionOfMavenJar(transitiveDependency.coordinates) must beSome(transitiveManagedDependency.version)
       }
     }
   }
@@ -273,12 +263,10 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
       exclusions = Set.empty
     )
 
-  private def dependencyOn(jar: Coordinates, exclusions: Set[Exclusion] = Set.empty, scope: MavenScope = MavenScope.Runtime) =
-    Dependency(jar, scope, exclusions)
 
-  private def rootMavenJarFrom(jar: Coordinates) = {
+  private def rootMavenJarFrom(dependency: Dependency) = {
     MavenJarInBazel(
-      artifact = jar,
+      artifact = dependency.coordinates,
       runtimeDependencies = Set.empty,
       compileTimeDependencies = Set.empty,
       exclusions = Set.empty
@@ -300,31 +288,33 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
   abstract class blankBazelWorkspaceAndNewManagedArtifactWithDependency extends baseCtx {
     givenNoDependenciesInBazelWorkspace()
 
-    val baseJarArtifact = ArtifactDescriptor.withSingleDependency(baseJar, dependencyOn(dependencyJar, scope = MavenScope.Runtime))
-    val dependencyJarArtifact = ArtifactDescriptor.rootFor(dependencyJar)
+    val baseJarArtifact = ArtifactDescriptor.withSingleDependency(
+      coordinates = baseDependency.coordinates,
+      dependency = transitiveDependency.copy(scope = MavenScope.Runtime))
+    val dependencyJarArtifact = ArtifactDescriptor.rootFor(transitiveDependency.coordinates)
     val updatedResolver = updatedDependencyResolverWith(
-      managedDependencies = Set(dependencyOn(baseJar)),
+      managedDependencies = Set.empty,
       artifacts = Set(baseJarArtifact, dependencyJarArtifact)
     )
   }
 
   trait blankBazelWorkspaceAndNewManagedRootDependency extends baseCtx {
-    val newJar = baseJar
+    val newDependency = aDependency("new-dep")
     givenNoDependenciesInBazelWorkspace()
-    val newManagedDependency = dependencyOn(newJar)
-    val newArtifact = ArtifactDescriptor.rootFor(newJar)
-    val updatedResolver = updatedDependencyResolverWith(Set(newManagedDependency), Set(newArtifact))
+    val newArtifact = ArtifactDescriptor.rootFor(newDependency.coordinates)
+    val updatedResolver = updatedDependencyResolverWith(artifacts = Set(newArtifact))
   }
 
   trait baseCtx extends Scope {
     val fakeLocalWorkspace = new FakeLocalBazelWorkspace
     val fakeBazelRepository = new InMemoryBazelRepository(fakeLocalWorkspace)
     val bazelDriver = new BazelWorkspaceDriver(fakeLocalWorkspace)
-    val baseJar = Coordinates("some.group", "artifact", "some-version")
-    val dependencyJar = Coordinates("some.group", "dep", "other-version")
-    val managedDependencyArtifact = Coordinates("some.group", "deps-management", "1.0", Some("pom"))
 
-    def givenBazelWorkspaceWithMavenJars(mavenJarInBazel: MavenJarInBazel*) = {
+    val baseDependency = aDependency("base")
+    val transitiveDependency = aDependency("transitive")
+    val dependencyManagementArtifact = Coordinates("some.group", "deps-management", "1.0", Some("pom"))
+
+    def givenBazelWorkspaceWithDependency(mavenJarInBazel: MavenJarInBazel*) = {
       givenBazelWorkspace(mavenJarInBazel.toSet)
     }
 
@@ -333,12 +323,12 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
       fakeLocalWorkspace.setThirdPartyOverrides(overrides)
     }
 
-    def updatedDependencyResolverWith(managedDependencies: Set[Dependency], artifacts: Set[ArtifactDescriptor]) =
+    def updatedDependencyResolverWith(managedDependencies: Set[Dependency] = Set.empty, artifacts: Set[ArtifactDescriptor]) =
       new FakeMavenDependencyResolver(managedDependencies, artifacts)
 
-    def syncBasedOn(resolver: FakeMavenDependencyResolver) = {
+    def syncBasedOn(resolver: FakeMavenDependencyResolver, dependencies: Set[Dependency]) = {
       val synchronizer = new BazelMavenSynchronizer(resolver, fakeBazelRepository)
-      synchronizer.sync(managedDependencyArtifact)
+      synchronizer.sync(dependencyManagementArtifact, dependencies)
     }
 
     def bazelMustHaveRuleFor(
@@ -356,9 +346,15 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
     }
 
     protected def givenNoDependenciesInBazelWorkspace() = {
-      givenBazelWorkspaceWithMavenJars()
+      givenBazelWorkspaceWithDependency()
     }
 
+  }
+
+  private implicit class `Dependency to Artifact`(baseDependency: Dependency){
+    def asRootArtifact: ArtifactDescriptor = ArtifactDescriptor.rootFor(baseDependency.coordinates)
+    def asArtifactWithSingleDependency(dependency: Dependency): ArtifactDescriptor =
+      ArtifactDescriptor.withSingleDependency(baseDependency.coordinates,dependency)
   }
 
 }
