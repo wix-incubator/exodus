@@ -60,7 +60,7 @@ object Migrator extends MigratorApp {
     aetherResolver
       .managedDependenciesOf(managedDependenciesArtifact)
       .filter(_.coordinates.artifactId == "hoopoe-specs2")
-      .filter(_.coordinates.packaging.contains("jar"))
+      .filter(_.coordinates.packaging.contains("pom"))
   }
 
   private def writeExternal(): Unit = {
