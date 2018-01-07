@@ -55,6 +55,14 @@ object Migrator extends MigratorApp {
 
   private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(bazelPackages)
 
+  // hack to add hoopoe-specs2 (and possibly other needed dependencies)
+  private def constantDependencies = {
+    aetherResolver
+      .managedDependenciesOf(managedDependenciesArtifact)
+      .filter(_.coordinates.artifactId == "hoopoe-specs2")
+      .filter(_.coordinates.packaging.contains("jar"))
+  }
+
   private def writeExternal(): Unit = {
     val bazelRepo = new NoPersistenceBazelRepository(repoRoot.toScala)
     val internalCoordinates = codeModules.map(_.externalModule).map(toCoordinates)
@@ -64,8 +72,10 @@ object Migrator extends MigratorApp {
     )
 
     val mavenSynchronizer = new BazelMavenSynchronizer(filteringResolver,bazelRepo)
+
     val externalDependencies = new DependencyCollector(aetherResolver)
       .withManagedDependenciesOf(thirdPartyDependencySource)
+      .addOrOverrideDependencies(constantDependencies)
       .addOrOverrideDependencies(collectExternalDependenciesUsedByRepoModules(codeModules))
       .dependencySet()
     mavenSynchronizer.sync(managedDependenciesArtifact, externalDependencies)
