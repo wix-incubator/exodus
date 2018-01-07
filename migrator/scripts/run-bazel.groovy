@@ -14,7 +14,8 @@ pipeline {
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
-        PATH = "$BAZEL_HOME/bin:$PATH"
+        JAVA_HOME = tool name: 'jdk8u152'
+        PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
     stages {
         stage('checkout') {
@@ -83,7 +84,7 @@ def unstable_by_exit_code(phase, some_script) {
             currentBuild.result = 'UNSTABLE'
             break
         case 4:
-        echo "***NO ${phase} TESTS WERE FOUND! IF YOU HAVE SUCH TESTS PLEASE DEBUG THIS WITH THE BAZEL PEOPLE***"
+            echo "***NO ${phase} TESTS WERE FOUND! IF YOU HAVE SUCH TESTS PLEASE DEBUG THIS WITH THE BAZEL PEOPLE***"
             break
         default:
             currentBuild.result = 'FAILURE'

@@ -7,7 +7,8 @@ pipeline {
         REPO_NAME = find_repo_name()
         bazel_log_file = "bazel-build.log"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
-        PATH = "$BAZEL_HOME/bin:$PATH"
+        JAVA_HOME = tool name: 'jdk8u152'
+        PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
     stages {
         stage('checkout') {
