@@ -24,9 +24,8 @@ pipeline {
         }
         stage('build') {
             steps {
-                script {
-                    sh "bazel build --strategy=Scalac=worker //..."
-                }
+                sh "bazel info"
+                sh "bazel build --strategy=Scalac=worker //..."
             }
         }
         stage('UT') {
@@ -72,6 +71,7 @@ pipeline {
 
 @SuppressWarnings("GroovyUnusedDeclaration")
 def unstable_by_exit_code(phase, some_script) {
+    echo "Running " + some_script
     return_code = a = sh(script: some_script, returnStatus: true)
     switch (a) {
         case 0:
