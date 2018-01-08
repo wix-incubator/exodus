@@ -20,7 +20,7 @@ class SourceResourceKeyTest extends SpecWithJUnit with TypedEqual {
     }
 
     "support construction from a file in a single-module project which is itself the root" in {
-      val codePath = sourceCodePath("SomeFile.java", aModule(""), "src/main/java/com")
+      val codePath = sourceCodePath("com/SomeFile.java", aModule(""), "src/main/java")
 
       val resourceKey = ResourceKey.fromCodePath(codePath)
 
