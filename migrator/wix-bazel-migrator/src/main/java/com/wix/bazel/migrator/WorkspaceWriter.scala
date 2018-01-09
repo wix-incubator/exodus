@@ -49,10 +49,6 @@ class WorkspaceWriter(repoRoot: File) {
          |${importFwIfThisIsNotFw(workspaceName)}
          |load("@core_server_build_tools//:repositories.bzl", "scala_repositories")
          |scala_repositories()
-         |
-         |load("@io_bazel_rules_scala/scala:toolchains.bzl", "scala_register_toolchains")
-         |scala_register_toolchains()
-         |
          |load("@wix_framework//test-infrastructures-modules/mysql-testkit/downloader:mysql_installer.bzl", "mysql_default_version", "mysql")
          |mysql_default_version()
          |mysql("5.7", "latest")
