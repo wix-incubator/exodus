@@ -61,7 +61,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   codotaClient.setToken(codotaToken)
 
 
-  private def extensionSupported(filePath: String) = filePath.endsWith("java") || filePath.endsWith("scala")
+  private def extensionSupported(filePath: String) = filePath.endsWith("java") || filePath.endsWith("scala") || filePath.endsWith("proto")
 
   private def supportedFile(filePath: String) = !sourceFilesOverrides.mutedFile(filePath) && extensionSupported(filePath)
 
