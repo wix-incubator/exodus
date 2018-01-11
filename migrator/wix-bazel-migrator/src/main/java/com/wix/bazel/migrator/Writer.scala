@@ -163,7 +163,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
        |proto_library(
        |    name = "${proto.name}",
        |    srcs = glob(["**/*.proto"]),
-       |    deps = ${writeDependencies(proto.dependencies.map(writeSourceDependency))}
+       |    deps = [${writeDependencies(proto.dependencies.map(writeSourceDependency))}],
        |    visibility = ["//visibility:public"],
        |)
        |
