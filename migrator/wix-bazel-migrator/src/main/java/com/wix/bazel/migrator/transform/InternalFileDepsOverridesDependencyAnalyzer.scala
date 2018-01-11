@@ -42,7 +42,8 @@ class InternalFileDepsOverridesDependencyAnalyzer(sourceModules: SourceModules, 
   }
 
   private def moduleForRelativePath(relativeModulePath: String) =
-    sourceModules.findByRelativePath(relativeModulePath).get
+  sourceModules.findByRelativePath(relativeModulePath).getOrElse(throw new IllegalArgumentException(s"Unknown relative module path $relativeModulePath"))
+
 
   private def codePathFrom(relativeFilePath: String) = {
     val filePathParts = relativeFilePath.split('/')
