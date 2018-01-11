@@ -1,6 +1,7 @@
 package com.wixpress.build.bazel
 
-import com.wixpress.build.maven.{Exclusion, MavenMakers}
+import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.maven.{Coordinates, Exclusion, MavenMakers}
 import org.specs2.mutable.SpecificationWithJUnit
 
 class LibraryRuleTest extends SpecificationWithJUnit {
@@ -12,15 +13,6 @@ class LibraryRuleTest extends SpecificationWithJUnit {
       rule.serialized must beEqualIgnoringSpaces(
         """scala_import(
           |    name = "name",
-          |    jars = [
-          |
-          |    ],
-          |    deps = [
-          |
-          |    ],
-          |    runtime_deps = [
-          |
-          |    ]
           |)""".stripMargin)
     }
 
@@ -97,6 +89,23 @@ class LibraryRuleTest extends SpecificationWithJUnit {
       val actualPackageName = LibraryRule.packageNameBy(someCoordinates)
       val expectedPackageName = s"third_party/${someCoordinates.groupId.replace('.', '/')}"
       actualPackageName mustEqual expectedPackageName
+    }
+
+    "return scala_import rule in case given regular jar coordinates" in {
+      val coordinates = MavenMakers.someCoordinates("some-artifact")
+      LibraryRule.of(coordinates) mustEqual LibraryRule(
+        name = coordinates.libraryRuleName,
+        jars = Set(s"@${coordinates.workspaceRuleName}//jar:file")
+      )
+    }
+
+    "return proto_library rule in case given proto coordinates" in {
+      val coordinates = Coordinates("g", "a", "v", Some("zip"),Some("proto"))
+      LibraryRule.of(coordinates) mustEqual LibraryRule(
+        ruleType = "proto_library",
+        name = coordinates.libraryRuleName,
+        sources = Set(s"@${coordinates.workspaceRuleName}//:archive")
+      )
     }
 
   }

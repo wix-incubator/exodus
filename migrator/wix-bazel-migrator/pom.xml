@@ -40,6 +40,11 @@
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>com.wixpress.build</groupId>
+            <artifactId>bazel-external-graph-transformer</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>com.codota</groupId>
             <artifactId>manual-sdk</artifactId>
             <version>3.0</version>

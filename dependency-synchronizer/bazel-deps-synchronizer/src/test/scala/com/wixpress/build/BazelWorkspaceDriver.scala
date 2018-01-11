@@ -14,11 +14,11 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
   }
 
   def versionOfMavenJar(coordinates: Coordinates): Option[String] = {
-    bazelExternalDependencyFor(coordinates).mavenJarRule.map(_.coordinates).map(_.version)
+    bazelExternalDependencyFor(coordinates).mavenCoordinates.map(_.version)
   }
 
   def bazelExternalDependencyFor(coordinates: Coordinates): BazelExternalDependency = {
-    val maybeWorkspaceRule = findWorkspaceRuleBy(coordinates)
+    val maybeWorkspaceRule = findRealCoordinatesOf(coordinates)
     val maybeLibraryRule = findLibraryRuleBy(coordinates)
     BazelExternalDependency(maybeWorkspaceRule, maybeLibraryRule)
   }
@@ -29,10 +29,10 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
     bazelRepo.overwriteWorkspace(newWorkspace)
   }
 
-  private def findWorkspaceRuleBy(coordinates: Coordinates): Option[MavenJarRule] = {
+  private def findRealCoordinatesOf(coordinates: Coordinates): Option[Coordinates] = {
     val workspaceFile = bazelRepo.workspaceContent()
     val workspaceRuleName = coordinates.workspaceRuleName
-    BazelWorkspaceFile.Parser(workspaceFile).findMavenJarRuleBy(workspaceRuleName)
+    BazelWorkspaceFile.Parser(workspaceFile).findCoordinatesByName(workspaceRuleName)
   }
 
   def findLibraryRuleBy(coordinates: Coordinates): Option[LibraryRule] = {
@@ -60,7 +60,7 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
   private def addMavenJarToWorkspace(currentWorkspace: String, mavenJar: Coordinates) = {
     s"""$currentWorkspace
        |
-       |${MavenJarRule(mavenJar).serialized}
+       |${WorkspaceRule.of(mavenJar).serialized}
        |
        |""".stripMargin
   }
@@ -69,4 +69,4 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
 
 case class MavenJarInBazel(artifact: Coordinates, runtimeDependencies: Set[Coordinates], compileTimeDependencies: Set[Coordinates], exclusions: Set[Exclusion])
 
-case class BazelExternalDependency(mavenJarRule: Option[MavenJarRule], libraryRule: Option[LibraryRule])
+case class BazelExternalDependency(mavenCoordinates: Option[Coordinates], libraryRule: Option[LibraryRule])

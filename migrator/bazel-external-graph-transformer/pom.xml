@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.wixpress.build</groupId>
-    <artifactId>bazel-migrator-model-testkit</artifactId>
+    <artifactId>bazel-external-graph-transformer</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
     <parent>
@@ -26,9 +26,33 @@
             <artifactId>maven-model</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.specs2</groupId>
+            <artifactId>specs2-core_${scala.dependencies.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.specs2</groupId>
+            <artifactId>specs2-common_${scala.dependencies.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.specs2</groupId>
             <artifactId>specs2-matcher_${scala.dependencies.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.specs2</groupId>
+            <artifactId>specs2-junit_${scala.dependencies.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wixpress.build</groupId>
+            <artifactId>bazel-migrator-model-testkit</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

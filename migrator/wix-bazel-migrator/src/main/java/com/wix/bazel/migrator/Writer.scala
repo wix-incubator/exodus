@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path}
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
-import com.wix.bazel.migrator.model.Target.{Jvm, MavenJar, Resources, TargetDependency}
+import com.wix.bazel.migrator.model.Target._
 import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, CodePurpose, Package, Scope, SourceModule, Target, TestType}
 
 import scala.annotation.tailrec
@@ -156,10 +156,31 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
   private def writePackage(serializedTargets: Set[String]) =
     DefaultPublicVisibility + LoadScalaHack + serializedTargets.toSeq.sorted.mkString("\n\n")
 
+  private def writeProto(proto: Target.Proto): String = {
+    s"""
+       |load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_scala_proto_library")
+       |
+       |proto_library(
+       |    name = "${proto.name}",
+       |    srcs = glob(["**/*.proto"]),
+       |    deps = ${writeDependencies(proto.dependencies.map(writeSourceDependency))}
+       |    visibility = ["//visibility:public"],
+       |)
+       |
+       |wix_scala_proto_library(
+       |    name = "${proto.name}_scala",
+       |    deps = [":${proto.name}"],
+       |    visibility = ["//visibility:public"],
+       |)
+     """.stripMargin
+  }
+  
+
   private def writeTarget(target: Target): String = {
     target match {
       case jvmLibrary: Target.Jvm => writeJvm(jvmLibrary)
       case resources: Target.Resources => writeResources(resources)
+      case proto: Target.Proto => writeProto(proto)
       case mavenJar: Target.MavenJar => throw new IllegalArgumentException(
         "we shouldn't get here since currently maven targets" +
           s" are dropped in favor of copying deps from maven dependency, target=$mavenJar")
@@ -378,6 +399,9 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       case mavenDep: MavenJar =>
         writeDependency(mavenDep.belongingPackageRelativePath,
           neverLinkPotentialSuffix(scope, workspaceNameTargetName(targetNameOrDefault(mavenDep), mavenDep.originatingExternalCoordinates)._2))
+      case proto: Proto =>
+        writeDependency(proto.belongingPackageRelativePath,
+          proto.name + "_scala")
       case _ => writeSourceDependency(dependency)
     }
   }
@@ -421,6 +445,9 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       case jvmDependency: Jvm =>
         val scopeOfCurrentDependency = scopeOf(originatingTarget, dependency.isCompileDependency)
         Set(scopeOfCurrentDependency -> Set(writeDependency(scopeOfCurrentDependency)(jvmDependency)))
+      case proto: Proto =>
+        val scopeOfCurrentDependency = scopeOf(originatingTarget, dependency.isCompileDependency)
+        Set(scopeOfCurrentDependency -> Set(writeDependency(proto.belongingPackageRelativePath,proto.name + "_scala")))
       case mavenTarget: MavenJar =>
         throw new IllegalArgumentException(
           "we shouldn't get here since currently maven targets" +

@@ -13,7 +13,7 @@ object BazelWorkspaceFile {
       Builder(newWorkspaceWithMavenJar(coordinates))
 
     private def newWorkspaceWithMavenJar(coordinates: Coordinates) = {
-      regexOfMavenJarWithNameMatching(coordinates.workspaceRuleName)
+      regexOfWorkspaceRuleWithNameMatching(coordinates.workspaceRuleName)
         .findFirstMatchIn(content) match {
         case Some(matched) => updateMavenJar(content, coordinates, matched)
         case None => appendMavenJar(content, coordinates)
@@ -21,52 +21,38 @@ object BazelWorkspaceFile {
     }
 
     private def updateMavenJar(workspace: String, coordinates: Coordinates, matched: Regex.Match): String = {
-      val newMavenJarRule = MavenJarRule(coordinates).serialized
+      val newMavenJarRule = WorkspaceRule.of(coordinates).serialized
       workspace.take(matched.start) + newMavenJarRule + workspace.drop(matched.end)
     }
 
     private def appendMavenJar(workspace: String, coordinates: Coordinates): String =
       s"""$workspace
          |
-         |${MavenJarRule(coordinates).serialized}
+         |${WorkspaceRule.of(coordinates).serialized}
          |""".stripMargin
 
   }
 
   case class Parser(content: String) {
-    private val NameFilter = """name\s*?=\s*?"(.+?)"""".r("name")
     private val ArtifactFilter = "artifact\\s*?=\\s*?\"(.+?)\"".r("artifact")
 
-    def allMavenJarRules: Set[MavenJarRule] = {
+    def allMavenCoordinates: Set[Coordinates] = {
       splitToStringsWithMavenJarsInside(content)
-        .map(parseMavenJarRule)
+        .map(parseCoordinates)
         .flatten
         .toSet
     }
 
-    def findMavenJarRuleBy(name: String): Option[MavenJarRule] =
+    def findCoordinatesByName(name: String): Option[Coordinates] =
       findMavenJarByName(name = name, within = content)
         .map(extractFullMatchText)
-        .flatMap(parseMavenJarRule)
+        .flatMap(parseCoordinates)
 
 
-    private def parseMavenJarRule(jar: String) = {
-      val maybeName = NameFilter.findFirstMatchIn(jar)
-        .map(_.group("name"))
-
-      val maybeCoordinates = ArtifactFilter.findFirstMatchIn(jar)
+    private def parseCoordinates(jar: String) = {
+      ArtifactFilter.findFirstMatchIn(jar)
         .map(_.group("artifact"))
         .map(Coordinates.deserialize)
-
-      maybeName match {
-        case None =>
-          //TODO: add a test about maven_jar without proper name and THINK about what the feature should be
-          println("missing name in maven_jar definition:")
-          println(s"'$jar'")
-          None
-        case Some(_) =>
-          maybeCoordinates.map(MavenJarRule(_))
-      }
     }
 
   }
@@ -74,14 +60,13 @@ object BazelWorkspaceFile {
   private def extractFullMatchText(aMatch: Match): String = aMatch.group(0)
 
   private def splitToStringsWithMavenJarsInside(workspace: String) =
-    for (m <- GeneralMavenJarRegex.findAllMatchIn(workspace)) yield m.group(0)
+    for (m <- GeneralWorkspaceRuleRegex.findAllMatchIn(workspace)) yield m.group(0)
 
   private def findMavenJarByName(name: String, within: String) =
-    regexOfMavenJarWithNameMatching(name).findFirstMatchIn(within)
+    regexOfWorkspaceRuleWithNameMatching(name).findFirstMatchIn(within)
 
-  private val GeneralMavenJarRegex = regexOfMavenJarWithNameMatching(".+?")
+  private val GeneralWorkspaceRuleRegex = regexOfWorkspaceRuleWithNameMatching(".+?")
 
-  private def regexOfMavenJarWithNameMatching(pattern: String) =
-    ("""(?s)maven_jar\(\s*?name\s*?=\s*?"""" + pattern + """"\s*?,\s*?artifact\s*?=\s*?".+?"\s*?,?\s*?\)""").r
-
+  private def regexOfWorkspaceRuleWithNameMatching(pattern: String) =
+    ("(?s)([^\\s]+)" + """\(\s*?name\s*?=\s*?"""" + pattern +"""",[\s#]*?artifact.*?\)""").r
 }

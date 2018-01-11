@@ -1,26 +1,60 @@
 package com.wixpress.build.bazel
 
-import org.specs2.mutable.SpecificationWithJUnit
-import CoordinatesTestBuilders._
+import com.wixpress.build.bazel.CoordinatesTestBuilders._
 import com.wixpress.build.maven.Coordinates
-import com.wix.build.maven.translation.MavenToBazelTranslations._
+import org.specs2.mutable.SpecificationWithJUnit
+import org.specs2.specification.Scope
 
+//noinspection TypeAnnotation
 class BazelWorkspaceFileTest extends SpecificationWithJUnit {
 
-  "WORKSPACE file parser" should {
-    val workspace = createWorkspaceWith(jars)
-    val parser = BazelWorkspaceFile.Parser(workspace)
 
-    "return correct set of maven jar rules" in {
-      parser.allMavenJarRules mustEqual toWorkspaceRulesSet(jars)
+  "WORKSPACE file parser" should {
+    trait ctx extends Scope{
+      val mavenJarCoordiantes = Coordinates.deserialize("some.group:some-artifact:some-version")
+      val workspaceWithMavenJar =
+        s"""
+           |maven_jar(
+           |    name = "maven_jar_name",
+           |    artifact = "${mavenJarCoordiantes.serialized}",
+           |)
+           |""".stripMargin
+
+      val protoCoordinates = Coordinates.deserialize("some.group:some-artifact:zip:proto:some-version")
+      val workspaceWithNewHttpArchive =
+        s"""
+           |new_http_archive(
+           |    name = "proto_name",
+           |    # artifact = "${protoCoordinates.serialized}",
+           |)
+           |""".stripMargin
+
+      val combinedWorkspace = workspaceWithNewHttpArchive + workspaceWithMavenJar
+    }
+    
+    "extract coordinates from maven_jar rule" in new ctx{
+      val coordinates = BazelWorkspaceFile.Parser(workspaceWithMavenJar).allMavenCoordinates
+
+      coordinates must contain(mavenJarCoordiantes)
     }
 
-    "find specific maven jar rule by name" in {
-      val mavenJarRuleName = artifactA.workspaceRuleName
+    "extract coordinates from new_http_archive rule" in new ctx {
+      val coordinates = BazelWorkspaceFile.Parser(workspaceWithNewHttpArchive).allMavenCoordinates
 
-      val retrievedRule = parser.findMavenJarRuleBy(mavenJarRuleName)
+      coordinates must contain(protoCoordinates)
+    }
 
-      retrievedRule must beSome(MavenJarRule(artifactA))
+    "extract multiple from new_http_archive rule" in new ctx{
+      val rules = BazelWorkspaceFile.Parser(combinedWorkspace).allMavenCoordinates
+      rules must containTheSameElementsAs(Seq(protoCoordinates,mavenJarCoordiantes))
+    }
+
+    "find specific coordinates according to workspace rule name" in new ctx{
+      val mavenJarRuleName ="maven_jar_name"
+
+      val retrievedCoordiantes = BazelWorkspaceFile.Parser(combinedWorkspace).findCoordinatesByName(mavenJarRuleName)
+
+      retrievedCoordiantes must beSome(mavenJarCoordiantes)
     }
 
   }
@@ -41,7 +75,7 @@ class BazelWorkspaceFileTest extends SpecificationWithJUnit {
       val expectedWorkspace =
         s"""$workspace
            |
-           |${MavenJarRule(newJar).serialized}
+           |${WorkspaceRule.of(newJar).serialized}
            |""".stripMargin
 
       BazelWorkspaceFile.Builder(workspace).withMavenJar(newJar).content mustEqual expectedWorkspace
@@ -51,7 +85,7 @@ class BazelWorkspaceFileTest extends SpecificationWithJUnit {
   val jars = List(artifactA, artifactB, artifactC)
 
   private def toMavenJarRule(coordinates: Coordinates) =
-    MavenJarRule(coordinates)
+    WorkspaceRule.of(coordinates)
 
   private def toWorkspaceRulesSet(jars: List[Coordinates]) =
     jars.toSet.map(toMavenJarRule)
@@ -60,7 +94,7 @@ class BazelWorkspaceFileTest extends SpecificationWithJUnit {
     val firstJar: Coordinates = coordinates.head
     val restOfJars = coordinates.tail
 
-    val rest = restOfJars.map(MavenJarRule(_)).map(_.serialized).mkString("\n\n")
+    val rest = restOfJars.map(WorkspaceRule.of).map(_.serialized).mkString("\n\n")
 
     s"""git_repository(
        |    name = "io_bazel_rules_scala",
@@ -68,7 +102,7 @@ class BazelWorkspaceFileTest extends SpecificationWithJUnit {
        |    commit = "bfb5bf01086e89c779edc9c828bbb79ae1f01579",
        |)
        |
-       |${MavenJarRule(firstJar).serialized}
+       |${WorkspaceRule.of(firstJar).serialized}
        |
        |load("@io_bazel_rules_scala//scala:scala.bzl", "scala_repositories")
        |scala_repositories()

@@ -2,7 +2,8 @@ package com.wixpress.build.sync.e2e
 
 import better.files.File
 import com.gitblit.utils.JGitUtils
-import com.wixpress.build.bazel.{BazelWorkspaceFile, MavenJarRule}
+import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.bazel.BazelWorkspaceFile
 import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.sync.BazelMavenSynchronizer
 import org.eclipse.jgit.api.Git
@@ -12,7 +13,6 @@ import org.eclipse.jgit.transport.RefSpec
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.util.Try
-import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class FakeRemoteRepository {
 
@@ -88,9 +88,9 @@ class FakeRemoteRepository {
   def hasWorkspaceRuleFor(coordinates: Coordinates): Try[String] = {
     val mavenJarRuleName = coordinates.workspaceRuleName
     updatedContentOfFileIn(BazelMavenSynchronizer.BranchName, "WORKSPACE").map((workspaceContent) => {
-      val maybeRule: Option[MavenJarRule] = BazelWorkspaceFile.Parser(workspaceContent).findMavenJarRuleBy(mavenJarRuleName)
+      val maybeRule: Option[Coordinates] = BazelWorkspaceFile.Parser(workspaceContent).findCoordinatesByName(mavenJarRuleName)
       maybeRule match {
-        case Some(rule) if rule.coordinates == coordinates => "success"
+        case Some(c) if c == coordinates => "success"
         case _ => throw new RuntimeException(s"Could not find workspace rule for $coordinates in bazel remote repository")
       }
     })

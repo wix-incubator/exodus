@@ -49,7 +49,6 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         localWorkspace.workspaceContent() must containMavenJarRuleFor(baseDependency.coordinates)
       }
 
-
       "write scala_import rule to appropriate BUILD file" in new newRootDependencyNodeCtx {
         val node: DependencyNode = aRootDependencyNode(baseDependency)
         writer.writeDependencies(node)
@@ -61,6 +60,28 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         writer.writeDependencies(aRootDependencyNode(baseDependency))
 
         localWorkspace.buildFileContent(matchingPackage) must beSome(contain(BazelBuildFile.DefaultHeader))
+      }
+
+    }
+
+    "given one new proto dependency" should {
+      trait protoDependencyNodeCtx extends emptyBazelWorkspaceCtx {
+        val protoCoordinates = Coordinates("some.group","some-artifact","version",Some("zip"),Some("proto"))
+        val protoDependency = Dependency(protoCoordinates,MavenScope.Compile)
+        val matchingPackage = packageNameBy(protoCoordinates)
+      }
+
+      "write new_http_archive rule to WORKSPACE" in new protoDependencyNodeCtx {
+        writer.writeDependencies(aRootDependencyNode(protoDependency))
+
+        localWorkspace.workspaceContent() must containHttpArchiveRuleFor(protoCoordinates)
+      }
+
+      "write proto_library rule to appropriate BUILD file" in new protoDependencyNodeCtx {
+        val node: DependencyNode = aRootDependencyNode(protoDependency)
+        writer.writeDependencies(node)
+
+        localWorkspace.buildFileContent(matchingPackage) must containProtoRuleForRootDependency(protoCoordinates)
       }
 
     }
@@ -83,12 +104,9 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
                |    jars = [
                |        "@${baseDependency.coordinates.workspaceRuleName}//jar:file"
                |    ],
-               |    deps = [
-               |
-                |    ],
                |    runtime_deps = [
                |     "${labelOf(transitiveDependency)}"
-               |    ]
+               |    ],
                |)""".stripMargin
           )
         )
@@ -107,9 +125,6 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
                |    deps = [
                |      "${labelOf(transitiveDependency)}"
                |    ],
-               |    runtime_deps = [
-               |
-               |    ]
                |)""".stripMargin
           )
         )
@@ -128,18 +143,9 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
           containsIgnoringSpaces(
             s"""scala_import(
                |    name = "${baseDependency.coordinates.libraryRuleName}",
-               |    jars = [
-               |
-               |    ],
                |    exports = [
                |       "${labelOf(transitiveDependency)}"
                |    ],
-               |    deps = [
-               |
-               |    ],
-               |    runtime_deps = [
-               |
-               |    ]
                |)""".stripMargin
           ))
       }
@@ -168,9 +174,6 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
                |    deps = [
                |      $serializedLabelsOfTransitiveDependencies
                |    ],
-               |    runtime_deps = [
-               |
-                 |    ]
                |)""".stripMargin
           )
         )
@@ -190,12 +193,6 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
                |    jars = [
                |        "@${baseDependency.coordinates.workspaceRuleName}//jar:file"
                |    ],
-               |    deps = [
-               |
-               |    ],
-               |    runtime_deps = [
-               |
-               |    ]
                |    # EXCLUDES ${exclusion.serialized}
                |)""".stripMargin
           )
@@ -276,9 +273,6 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
                |    deps = [
                |      "${labelOf(newTransitiveDependency)}"
                |    ],
-               |    runtime_deps = [
-               |
-               |    ]
                |)""".stripMargin
           )
         )
@@ -301,12 +295,6 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
                |    jars = [
                |       "@${originalBaseDependency.coordinates.workspaceRuleName}//jar:file"
                |    ],
-               |    deps = [
-               |
-               |    ],
-               |    runtime_deps = [
-               |
-               |    ]
                |    # EXCLUDES ${someExclusion.serialized}
                |)""".stripMargin
           )
@@ -371,12 +359,16 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
          |    jars = [
          |        "@${coordinates.workspaceRuleName}//jar:file"
          |    ],
-         |    deps = [
-         |
+         |)
+      """.stripMargin))
+
+  private def containProtoRuleForRootDependency(coordinates: Coordinates): SomeCheckedMatcher[String] =
+    beSome(containsIgnoringSpaces(
+      s"""proto_library(
+         |    name = "${coordinates.libraryRuleName}",
+         |    srcs = [
+         |        "@${coordinates.workspaceRuleName}//:archive"
          |    ],
-         |    runtime_deps = [
-         |
-         |    ]
          |)
       """.stripMargin))
 
@@ -385,6 +377,16 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       s"""maven_jar(
          |    name = "${coordinates.workspaceRuleName}",
          |    artifact = "${coordinates.serialized}",
+         |)""".stripMargin)
+  }
+
+  private def containHttpArchiveRuleFor(coordinates: Coordinates) = {
+    contain(
+      s"""new_http_archive(
+         |    name = "${coordinates.workspaceRuleName}",
+         |    # artifact = "${coordinates.serialized}",
+         |    url = "${WorkspaceRule.MavenRepoBaseURL}${coordinates.asRepoURLSuffix}",
+         |    build_file_content = ARCHIVE_BUILD_FILE_CONTENT,
          |)""".stripMargin)
   }
 

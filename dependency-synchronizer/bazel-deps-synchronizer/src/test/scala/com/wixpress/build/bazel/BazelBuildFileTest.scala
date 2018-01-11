@@ -19,13 +19,34 @@ class BazelBuildFileTest extends SpecificationWithJUnit {
           """
             |scala_import(
             |  name = "guava",
-            |  jars = [
-            |
-            |  ]
             |)
           """.stripMargin
 
         BazelBuildFile(buildFile).ruleByName("guava") must beSome(LibraryRule(name = "guava"))
+      }
+
+      "parse proto_library target" in {
+        val buildFile =
+          """
+            |proto_library(
+            |   name = "proto",
+            |   srcs = [
+            |      "s1",
+            |      "s2"
+            |   ],
+            |   deps = [
+            |      "d1",
+            |      "d2"
+            |   ]
+            |)
+          """.stripMargin
+
+        BazelBuildFile(buildFile).ruleByName("proto") must beSome(
+          LibraryRule(
+            ruleType = "proto_library",
+            name = "proto",
+            compileTimeDeps = Set("d1","d2"),
+            sources = Set("s1","s2")))
       }
 
       "parse target of root target, with no excludes" in {
@@ -159,9 +180,6 @@ class BazelBuildFileTest extends SpecificationWithJUnit {
           """
             |scala_import(
             |  name = "rule1",
-            |  jars = [
-            |     None
-            |  ]
             |)
             |
             |scala_import(

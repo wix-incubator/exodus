@@ -7,9 +7,8 @@ class BazelDependenciesReader(localWorkspace: BazelLocalWorkspace) {
 
   def allDependenciesAsMavenDependencies(): Set[Dependency] = {
     val workspaceParser = BazelWorkspaceFile.Parser(localWorkspace.workspaceContent())
-    val rules = workspaceParser.allMavenJarRules
+    val rules = workspaceParser.allMavenCoordinates
     rules
-      .map(_.coordinates)
       .map(toDependency)
   }
 

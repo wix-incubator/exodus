@@ -1,10 +1,8 @@
 package com.wix.build.maven.analysis
 
-import com.wix.bazel.migrator.model.Target.MavenJar
-import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, ModuleDependencies, SourceModule, Scope => MavenScope}
-import com.wix.bazel.migrator.model.makers.ModuleMaker
-import ThirdPartyValidatorTest._
-import com.wix.bazel.migrator.model.makers.ModuleMaker.anExternalModule
+import com.wix.bazel.migrator.model.makers.ModuleMaker._
+import com.wix.bazel.migrator.model.{ModuleDependencies, SourceModule, Scope => MavenScope}
+import com.wix.build.maven.analysis.ThirdPartyValidatorTest._
 import com.wixpress.build.maven.Coordinates
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.SpecificationWithJUnit
@@ -153,27 +151,10 @@ object ThirdPartyValidatorTest {
 
   private val dontCareDependency = dependency("dont.care", "dont-care", "dont-care")
 
-  implicit class ModuleDependenciesExtended(moduleDependencies: ModuleDependencies) {
-    def withScopedDependencies(scope: MavenScope, dependencies: Set[Coordinates]): ModuleDependencies = {
-      val dependenciesAsMavenJar: Set[AnalyzedFromMavenTarget] = dependencies.map(aMavenJar)
-      moduleDependencies.copy(scopedDependencies = moduleDependencies.scopedDependencies + ((scope, dependenciesAsMavenJar)))
-    }
-  }
-
-  private def aMavenJar(externalModule: Coordinates) = MavenJar("dont.care", "dont-care", externalModule)
-
   private def dependency(groupId: String, artifactId: String, version: String) = anExternalModule(groupId, artifactId, version)
 
   private def lotsOfModulesThatDependOn(quantity: Int, dependency: Coordinates): Set[SourceModule] =
     (1 to quantity).map(num => aModule(s"module$num", Set(dependency))).toSet
-
-  private def aModule(artifactId: String, dependencies: Set[Coordinates]): SourceModule =
-    aModule(artifactId, ModuleDependencies().withScopedDependencies(MavenScope.PROD_COMPILE, dependencies))
-
-
-  private def aModule(artifactId: String, moduleDependencies: ModuleDependencies): SourceModule = {
-    ModuleMaker.aModule(anExternalModule(artifactId), moduleDependencies)
-  }
 
   private def dependencyWithConsumers(dependency: Coordinates, consumers: SourceModule*) =
     DependencyWithConsumers(dependency, consumers.map(_.externalModule).toSet)

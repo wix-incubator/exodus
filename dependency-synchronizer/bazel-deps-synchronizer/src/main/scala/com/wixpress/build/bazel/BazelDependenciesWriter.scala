@@ -24,9 +24,6 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
     dependencyNodes.foreach(writeLibraryRule)
 
   private def writeLibraryRule(dependencyNode: DependencyNode): Unit = {
-    if (protoZip(dependencyNode.baseDependency.coordinates)) {
-      return
-    }
     val coordinates = dependencyNode.baseDependency.coordinates
     val bazelPackageOfDependency = LibraryRule.packageNameBy(coordinates)
     val buildFileContent =

@@ -35,4 +35,8 @@ object Target {
       ApplicabilityPattern.findFirstIn(packageRelativePath).isDefined
   }
 
+  case class Proto(name: String,
+                   belongingPackageRelativePath: String,
+                   dependencies: Set[Target]) extends Target
+
 }

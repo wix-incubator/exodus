@@ -35,6 +35,24 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
       reader.allDependenciesAsMavenDependencies() must contain(defaultDependency("some.group", "some-dep", "some-version"))
     }
 
+    "a dependency for bazel workspace with 1 proto dependency" in new emptyBazelWorkspaceCtx {
+      localWorkspace.overwriteWorkspace(
+        """
+          |new_http_archive(
+          |    name = "some_group_some_dep",
+          |    # artifact = "some.group:some-dep:zip:proto:some-version",
+          |    url = "https://repo.dontcare.com",
+          |    build_file_content = DONT_CARE
+          |)
+          |""".stripMargin)
+
+      reader.allDependenciesAsMavenDependencies() must contain(
+        Dependency(
+          Coordinates("some.group", "some-dep", "some-version",Some("zip"),Some("proto")),
+          MavenScope.Compile
+        ))
+    }
+
     "a dependency for bazel workspace with 1 dependency that has an exclusion" in new emptyBazelWorkspaceCtx {
       localWorkspace.overwriteWorkspace(
         """

@@ -40,9 +40,13 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
       (concatSubPackagesToCompositeName(subPackagesWithDotsInsteadOfEmptyStrings), subPackagesWithDotsInsteadOfEmptyStrings)
     }
 
+    //TODO need to have "something" that generates a Target given a resource key.
+    //This should probably take into account the sourceDir (resources/proto) the codes (or maybe just the extensions)
     if (Target.Resources.applicablePackage(packageRelativePath))
       Target.Resources("resources", packageRelativePath, targetDependencies.map(_.target))
-    else {
+    else if (codeDirPath.relativeSourceDirPathFromModuleRoot.endsWith("proto")) {
+        Target.Proto(name = "proto", packageRelativePath, dependencies = targetDependencies.map(_.target))
+    } else {
       val codes = keyToCodes.getOrElse(this, Set.empty).view
       val codePurpose = CodePurpose(packageRelativePath, codes.map(_.testType))
       Target.Jvm(name, sources, packageRelativePath, targetDependencies, codePurpose, codeDirPath.module)
@@ -61,7 +65,7 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
 private[transform] object ResourceKey {
 
   def fromCodePath(sourceCodePath: CodePath): ResourceKey = {
-    ResourceKey(SourceCodeDirPath(sourceCodePath.module, sourceCodePath.relativeSourceDirPathFromModuleRoot), extractSourcePackageFrom(sourceCodePath.filePath))
+    ResourceKey(SourceCodeDirPath(sourceCodePath.module, sourceCodePath.relativeSourceDirPathFromModuleRoot), extractSourcePackageFrom(sourceCodePath.relativeSourceDirPathFromModuleRoot, sourceCodePath.filePath))
   }
 
   def combine(source: ResourceKey, target: ResourceKey): ResourceKey = {
@@ -75,8 +79,15 @@ private[transform] object ResourceKey {
     ResourceKey(source.codeDirPath, sharedPackage, relativeSubPackages)
   }
 
-  private def extractSourcePackageFrom(filePath: Path): String =
-    Option(filePath.getParent).map(_.toString).getOrElse("")
+  private def extractSourcePackageFrom(relativeSourceDirPathFromModuleRoot: String, filePath: Path): String =
+  //TODO we need to have PackageResourceKey (existing one) SourceDirResourceKey (proto) and maybe also FileResourceKey (for finer grain targets)
+  //Need to think how the Transformer gets the chain of "Foos" that build a ResourceKey from a code according to rules
+  //rules can be static ( always do package/file) be based on source dir (for proto always do some strategy) or module based
+  if (relativeSourceDirPathFromModuleRoot.endsWith("proto")) {
+      ""
+    } else {
+      Option(filePath.getParent).map(_.toString).getOrElse("")
+    }
 
   private def commonPrefix(packages: Set[String]): String = {
     //val noSlashPackages = packages.toSeq.map(_.replace('/', Char.MinValue))

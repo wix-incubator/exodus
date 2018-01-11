@@ -80,6 +80,15 @@ class CoordinatesTest extends SpecificationWithJUnit {
       baseCoordinates.equalsIgnoringVersion(baseCoordinates.withDifferentPackaging) must beFalse
     }
 
+    "return URL suffix for coordinates without classifier" in {
+      val coordinates = Coordinates(groupId = "some.group.id",artifactId = "artifact-id",version = "version",packaging = Some("jar"))
+      coordinates.asRepoURLSuffix mustEqual "/some/group/id/artifact-id/version/artifact-id-version.jar"
+    }
+
+    "return URL suffix for coordinates with classifier" in {
+      val coordinates = Coordinates(groupId = "some.group.id",artifactId = "artifact-id",version = "version",packaging = Some("jar"),classifier = Some("proto"))
+      coordinates.asRepoURLSuffix mustEqual "/some/group/id/artifact-id/version/artifact-id-version-proto.jar"
+    }
   }
 
   abstract class baseCtx extends Scope {

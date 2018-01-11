@@ -4,15 +4,14 @@ import com.wix.bazel.migrator.model.Target.TargetDependency
 import com.wix.bazel.migrator.model.TestType._
 import com.wix.bazel.migrator.model._
 import com.wix.bazel.migrator.model.makers.ModuleMaker._
+import com.wix.bazel.migrator.model.Matchers._
 import com.wix.bazel.migrator.transform.makers.CodeMaker._
 import com.wix.bazel.migrator.transform.makers.DependencyMaker._
 import com.wix.bazel.migrator.transform.makers.Repo
 import com.wixpress.build.maven.Coordinates
-import org.specs2.matcher.{AlwaysMatcher, MatchFailure, Matcher, MustExpectable}
+import org.specs2.matcher.{AlwaysMatcher, Matcher}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
-
-import scala.reflect._
 
 class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
@@ -443,21 +442,64 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       )
     }
 
+    "create a single proto target from all protos in a source dir" in new Context {
+      def repo = Repo().withCode(
+        code(relativeSourceDirPathFromModuleRoot = "src/main/proto", filePath = "com/wix/lib/Model.proto")
+      ).withCode(
+        code(relativeSourceDirPathFromModuleRoot = "src/main/proto", filePath = "com/wix/other-lib/Model2.proto")
+      )
+
+      val packages = transformer.transform(repo.modules)
+
+      packages must contain(exactly(
+        aPackage(relativePath = endingWith("src/main/proto"),
+          target = a(protoTarget(name = "proto", belongsToPackage = endingWith("src/main/proto"))))
+      ))
+    }
+
+    "add dependencies to proto" in new Context {
+      def repo = {
+        Repo()
+          .withCode(someProtoCode(moduleRelativePath = "/proto-root"))
+          .withCode(someProtoCodeWithDependency(moduleRelativePath = "/proto-leaf", dependingOnModule = "/proto-root"))
+      }
+
+      val packages = transformer.transform(repo.modules)
+
+      packages must contain(exactly(
+        aPackage(relativePath = startingWith("/proto-root"),
+          target = a(protoTarget(
+            name = "proto",
+            dependencies = beEmpty))),
+        aPackage(relativePath = startingWith("/proto-leaf"),
+          target = a(protoTarget(
+            name = "proto",
+            dependencies = contain(exactly(
+                aTarget(name = "proto", belongsToPackage = startingWith("/proto-root"))))
+          )))
+      ))
+    }
+
+
     //two different types, compile wins?
     //cycles?
   }
+
+  private def someProtoCode(moduleRelativePath: String) =
+    code(module = aModule(relativePathFromMonoRepoRoot = moduleRelativePath),
+      relativeSourceDirPathFromModuleRoot = "src/main/proto", filePath = "Blah.proto")
+
+  private def someProtoCodeWithDependency(moduleRelativePath: String, dependingOnModule: String) =
+    someProtoCode(moduleRelativePath).copy(dependencies =
+      List(dependency(module = aModule(dependingOnModule),
+        relativeSourceDirPathFromModuleRoot = "src/main/proto",
+        filePath = "Blah.proto")))
 
   //TODO [Tests] see if i can come up with a better name that reflects that here we only care about the module rel path and package path and *don't* care about the source dir rel path
   //maybe 'matchRegardlessOfSourceDirPath' ?
   def startingWithAndEndingWith(modulePath: String, packagePath: String): Matcher[String] = {
     startingWith(modulePath) and endingWith(packagePath)
   }
-
-  def a[A, T: ClassTag](matcher: Matcher[T]): Matcher[A] =
-    beLike[A] {
-      case value: T => matcher(MustExpectable[T](value))
-      case value => MatchFailure("", s"is not of type ${classTag[T].runtimeClass.getSimpleName}", MustExpectable(value))
-    }
 
   def aTargetDependency(name: String,
               belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
@@ -468,38 +510,6 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
     } and isCompileDependency ^^ {
       (_: TargetDependency).isCompileDependency aka "is compile dependency"
     }
-
-  def aTarget(name: String,
-              belongsToPackage: Matcher[String] = AlwaysMatcher[String]()
-             ): Matcher[Target] =
-    be_===(name) ^^ {
-      (_: Target).name aka "target name"
-    } and belongsToPackage ^^ {
-      (_: Target).belongingPackageRelativePath aka "belonging package relative path"
-    }
-
-  def jvmTarget(name: String,
-                sources: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
-                dependencies: Matcher[Set[TargetDependency]] = AlwaysMatcher[Set[TargetDependency]](),
-                codePurpose: Matcher[CodePurpose] = AlwaysMatcher[CodePurpose](),
-                originatingSourceModule: Matcher[SourceModule] = AlwaysMatcher[SourceModule]()
-               ): Matcher[Target.Jvm] = {
-    be_===(name) ^^ {
-      (_: Target.Jvm).name aka "target name"
-    } and
-      sources ^^ {
-        (_: Target.Jvm).sources aka "sources"
-      } and
-      dependencies ^^ {
-        (_: Target.Jvm).dependencies aka "dependencies"
-      } and
-      codePurpose ^^ {
-        (_: Target.Jvm).codePurpose aka "code purpose"
-      } and
-      originatingSourceModule ^^ {
-        (_: Target.Jvm).originatingSourceModule aka "originating source module"
-      }
-  }
 
   def resourcesTarget(name: String,
                       belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
@@ -519,23 +529,6 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       be_===(externalModule) ^^ {
         (_: Target.MavenJar).originatingExternalCoordinates aka "external coordinates"
       }
-
-  def aPackageWithMultipleTargets(relativePath: Matcher[String] = AlwaysMatcher[String](),
-                                  targets: Matcher[Set[Target]],
-                                  originatingSourceModule: Matcher[SourceModule] = AlwaysMatcher[SourceModule]()): Matcher[Package] = {
-    relativePath ^^ {
-      (_: Package).relativePathFromMonoRepoRoot aka "relative path from mono repo root"
-    } and targets ^^ {
-      (_: Package).targets aka "targets"
-    } and originatingSourceModule ^^ {
-      (_: Package).originatingSourceModule aka "originating source module"
-    }
-  }
-
-  def aPackage(relativePath: Matcher[String] = AlwaysMatcher[String](),
-               target: Matcher[Target] = AlwaysMatcher[Target](),
-               originatingSourceModule: Matcher[SourceModule] = AlwaysMatcher[SourceModule]()): Matcher[Package] =
-    aPackageWithMultipleTargets(relativePath, contain(target), originatingSourceModule)
 
   def aggregatorOf(targets: String*): String = "agg=" + targets.mkString("+")
 

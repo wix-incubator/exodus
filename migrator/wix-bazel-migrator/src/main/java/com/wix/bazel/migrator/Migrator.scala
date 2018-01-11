@@ -24,7 +24,7 @@ object Migrator extends MigratorApp {
   val thirdPartyConflicts = checkConflictsInThirdPartyDependencies(aetherResolver)
   val bazelPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
   if (configuration.failOnSevereConflicts) failIfFoundSevereConflictsIn(thirdPartyConflicts)
-
+  val protoBazelPackages = new ExternalProtoTransformer().transform(bazelPackages)
 
   writeBazelRc()
   writeWorkspace()
@@ -53,7 +53,7 @@ object Migrator extends MigratorApp {
   private def writeWorkspace(): Unit =
     new WorkspaceWriter(repoRoot).write()
 
-  private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(bazelPackages)
+  private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(protoBazelPackages)
 
   // hack to add hoopoe-specs2 (and possibly other needed dependencies)
   private def constantDependencies = {
