@@ -21,7 +21,7 @@ pipeline {
         }
         stage('build') {
             steps {
-                sh "bazel build ${TEST_TARGET_LABEL}"
+                sh "bazel build ${TARGET_LABEL}"
             }
         }
     }
