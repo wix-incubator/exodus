@@ -250,7 +250,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   }
 
   private def sourceDirFor(module: SourceModule, filePath: String): Option[String] =
-    Seq("src/main/java", "src/main/scala", "src/test/java", "src/test/scala", "src/it/java", "src/it/scala", "src/e2e/java", "src/e2e/scala").find { srcDir: String =>
+    Seq("src/main/java", "src/main/scala", "src/main/proto", "src/test/java", "src/test/scala", "src/test/proto", "src/it/java", "src/it/scala", "src/e2e/java", "src/e2e/scala").find { srcDir: String =>
       val path = Paths.get(repoRoot.getAbsolutePath, module.relativePathFromMonoRepoRoot, srcDir, filePath)
       Files.exists(path)
     }
