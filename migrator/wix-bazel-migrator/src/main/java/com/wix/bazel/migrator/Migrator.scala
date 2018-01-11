@@ -56,11 +56,12 @@ object Migrator extends MigratorApp {
   private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(protoBazelPackages)
 
   // hack to add hoopoe-specs2 (and possibly other needed dependencies)
-  private def constantDependencies = {
+  private def constantDependencies: Set[Dependency] = {
     aetherResolver
       .managedDependenciesOf(managedDependenciesArtifact)
       .filter(_.coordinates.artifactId == "hoopoe-specs2")
-      .filter(_.coordinates.packaging.contains("pom"))
+      .filter(_.coordinates.packaging.contains("pom")) +
+      Dependency(Coordinates.deserialize("com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT"),MavenScope.Compile)
   }
 
   private def writeExternal(): Unit = {
