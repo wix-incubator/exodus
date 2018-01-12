@@ -74,7 +74,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       "write new_http_archive rule to WORKSPACE" in new protoDependencyNodeCtx {
         writer.writeDependencies(aRootDependencyNode(protoDependency))
 
-        localWorkspace.workspaceContent() must containHttpArchiveRuleFor(protoCoordinates)
+        localWorkspace.workspaceContent() must containMavenArchiveRuleFor(protoCoordinates)
       }
 
       "write proto_library rule to appropriate BUILD file" in new protoDependencyNodeCtx {
@@ -376,17 +376,15 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     contain(
       s"""maven_jar(
          |    name = "${coordinates.workspaceRuleName}",
-         |    artifact = "${coordinates.serialized}",
+         |    artifact = "${coordinates.serialized}"
          |)""".stripMargin)
   }
 
-  private def containHttpArchiveRuleFor(coordinates: Coordinates) = {
+  private def containMavenArchiveRuleFor(coordinates: Coordinates) = {
     contain(
-      s"""new_http_archive(
+      s"""maven_archive(
          |    name = "${coordinates.workspaceRuleName}",
-         |    # artifact = "${coordinates.serialized}",
-         |    url = "${WorkspaceRule.MavenRepoBaseURL}${coordinates.asRepoURLSuffix}",
-         |    build_file_content = ARCHIVE_BUILD_FILE_CONTENT,
+         |    artifact = "${coordinates.serialized}"
          |)""".stripMargin)
   }
 

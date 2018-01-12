@@ -11,21 +11,21 @@ class BazelWorkspaceFileTest extends SpecificationWithJUnit {
 
   "WORKSPACE file parser" should {
     trait ctx extends Scope{
-      val mavenJarCoordiantes = Coordinates.deserialize("some.group:some-artifact:some-version")
+      val mavenJarCoordinates = Coordinates.deserialize("some.group:some-artifact:some-version")
       val workspaceWithMavenJar =
         s"""
            |maven_jar(
            |    name = "maven_jar_name",
-           |    artifact = "${mavenJarCoordiantes.serialized}",
+           |    artifact = "${mavenJarCoordinates.serialized}"
            |)
            |""".stripMargin
 
       val protoCoordinates = Coordinates.deserialize("some.group:some-artifact:zip:proto:some-version")
       val workspaceWithNewHttpArchive =
         s"""
-           |new_http_archive(
+           |maven_archive(
            |    name = "proto_name",
-           |    # artifact = "${protoCoordinates.serialized}",
+           |    artifact = "${protoCoordinates.serialized}"
            |)
            |""".stripMargin
 
@@ -35,26 +35,26 @@ class BazelWorkspaceFileTest extends SpecificationWithJUnit {
     "extract coordinates from maven_jar rule" in new ctx{
       val coordinates = BazelWorkspaceFile.Parser(workspaceWithMavenJar).allMavenCoordinates
 
-      coordinates must contain(mavenJarCoordiantes)
+      coordinates must contain(mavenJarCoordinates)
     }
 
-    "extract coordinates from new_http_archive rule" in new ctx {
+    "extract coordinates from maven_archive rule" in new ctx {
       val coordinates = BazelWorkspaceFile.Parser(workspaceWithNewHttpArchive).allMavenCoordinates
 
       coordinates must contain(protoCoordinates)
     }
 
-    "extract multiple from new_http_archive rule" in new ctx{
+    "extract multiple from maven_archive rule" in new ctx{
       val rules = BazelWorkspaceFile.Parser(combinedWorkspace).allMavenCoordinates
-      rules must containTheSameElementsAs(Seq(protoCoordinates,mavenJarCoordiantes))
+      rules must containTheSameElementsAs(Seq(protoCoordinates,mavenJarCoordinates))
     }
 
     "find specific coordinates according to workspace rule name" in new ctx{
       val mavenJarRuleName ="maven_jar_name"
 
-      val retrievedCoordiantes = BazelWorkspaceFile.Parser(combinedWorkspace).findCoordinatesByName(mavenJarRuleName)
+      val retrievedCoordinates = BazelWorkspaceFile.Parser(combinedWorkspace).findCoordinatesByName(mavenJarRuleName)
 
-      retrievedCoordiantes must beSome(mavenJarCoordiantes)
+      retrievedCoordinates must beSome(mavenJarCoordinates)
     }
 
   }
@@ -86,9 +86,6 @@ class BazelWorkspaceFileTest extends SpecificationWithJUnit {
 
   private def toMavenJarRule(coordinates: Coordinates) =
     WorkspaceRule.of(coordinates)
-
-  private def toWorkspaceRulesSet(jars: List[Coordinates]) =
-    jars.toSet.map(toMavenJarRule)
 
   private def createWorkspaceWith(coordinates: List[Coordinates]) = {
     val firstJar: Coordinates = coordinates.head

@@ -6,13 +6,6 @@ case class Coordinates(groupId: String,
                        packaging: Option[String] = Some("jar"),
                        classifier: Option[String] = None) {
 
-  def asRepoURLSuffix: String = {
-    val classifierPart = if (classifier.isEmpty) "" else s"-${classifier.get}"
-    val finalName = s"$artifactId-$version$classifierPart.${packaging.get}"
-    val parts = groupId.split('.') :+ artifactId :+ version :+ finalName
-    "/" + parts.mkString("/")
-  }
-
   def equalsOnGroupIdAndArtifactId(otherCoordinates: Coordinates): Boolean = {
     this.groupId == otherCoordinates.groupId &&
       this.artifactId == otherCoordinates.artifactId

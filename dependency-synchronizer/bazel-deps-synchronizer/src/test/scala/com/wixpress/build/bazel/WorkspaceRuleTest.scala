@@ -18,13 +18,13 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
       val expectedMavenJarRuleText =
         s"""maven_jar(
            |    name = "${someCoordinates.workspaceRuleName}",
-           |    artifact = "${someCoordinates.serialized}",
+           |    artifact = "${someCoordinates.serialized}"
            |)""".stripMargin
 
       WorkspaceRule.of(someCoordinates).serialized mustEqual expectedMavenJarRuleText
     }
 
-    "return valid new_http_archive to given proto coordiantes" in  {
+    "return valid maven_archive to given proto coordinates" in  {
       val someArchiveCoordinates = Coordinates(
         groupId = "some.group.id",
         artifactId = "artifact-id",
@@ -33,11 +33,9 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         classifier = Some("proto")
       )
       val expectedWorkspaceRuleText =
-        s"""new_http_archive(
+        s"""maven_archive(
            |    name = "${someArchiveCoordinates.workspaceRuleName}",
-           |    # artifact = "${someArchiveCoordinates.serialized}",
-           |    url = "${WorkspaceRule.MavenRepoBaseURL}${someArchiveCoordinates.asRepoURLSuffix}",
-           |    build_file_content = ARCHIVE_BUILD_FILE_CONTENT,
+           |    artifact = "${someArchiveCoordinates.serialized}"
            |)""".stripMargin
 
       WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText

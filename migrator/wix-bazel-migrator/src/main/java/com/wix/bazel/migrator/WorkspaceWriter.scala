@@ -39,7 +39,7 @@ class WorkspaceWriter(repoRoot: File) {
          |    artifact = "commons-io:commons-io:jar:2.5",
          |)
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
-         |core_server_build_tools_version="ce4c3a7fee21abcecf9971d2d4019edaa89fc188" # update this as needed
+         |core_server_build_tools_version="c3d4bac21e572db1f3aa72fc8bf6747fe1359bfb" # update this as needed
          |
          |git_repository(
          |             name = "core_server_build_tools",
@@ -100,9 +100,8 @@ class WorkspaceWriter(repoRoot: File) {
          |    strip_prefix = "protobuf-74bf45f379b35e1d103940f35d7a04545b0235d4",
          |)
          |
-         |ARCHIVE_BUILD_FILE_CONTENT = 'filegroup(name = "archive", srcs = glob(["**/*"], visibility = ["//visibility:public"]))'
-      """.
-        stripMargin
+         |load("@core_server_build_tools//:macros.bzl", "maven_archive")
+      """.stripMargin
 
     writeToDisk(workspaceFileContents)
     writeToDiskWixExtensionsBuildFile()
