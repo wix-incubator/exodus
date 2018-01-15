@@ -20,7 +20,9 @@ pipeline {
         }
         stage('mvn') {
             steps {
-                sh "${env.MAVEN_INSTALL}"
+                dir("${env.REPO_NAME}") {
+                    sh "${env.MAVEN_INSTALL}"
+                }
             }
         }
     }
