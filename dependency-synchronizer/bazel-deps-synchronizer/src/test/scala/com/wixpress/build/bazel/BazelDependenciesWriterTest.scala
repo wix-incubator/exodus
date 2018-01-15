@@ -1,6 +1,5 @@
 package com.wixpress.build.bazel
 
-import com.wixpress.build.bazel.LibraryRule.packageNameBy
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{compileTimeOverrides, overrideCoordinatesFrom, runtimeOverrides}
 import com.wixpress.build.maven.MavenMakers.{aDependency, aRootDependencyNode}
 import com.wixpress.build.maven._
@@ -8,6 +7,7 @@ import org.specs2.matcher.{Matcher, SomeCheckedMatcher}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.bazel.LibraryRule.packageNameBy
 
 import scala.util.matching.Regex
 
@@ -71,17 +71,17 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val matchingPackage = packageNameBy(protoCoordinates)
       }
 
-      "write new_http_archive rule to WORKSPACE" in new protoDependencyNodeCtx {
+      "write maven_proto rule to WORKSPACE" in new protoDependencyNodeCtx {
         writer.writeDependencies(aRootDependencyNode(protoDependency))
 
-        localWorkspace.workspaceContent() must containMavenArchiveRuleFor(protoCoordinates)
+        localWorkspace.workspaceContent() must containMavenProtoRuleFor(protoCoordinates)
       }
 
-      "write proto_library rule to appropriate BUILD file" in new protoDependencyNodeCtx {
+      "change only WORKSPACE file" in new protoDependencyNodeCtx {
         val node: DependencyNode = aRootDependencyNode(protoDependency)
-        writer.writeDependencies(node)
+        val changedFiles = writer.writeDependencies(node)
 
-        localWorkspace.buildFileContent(matchingPackage) must containProtoRuleForRootDependency(protoCoordinates)
+        changedFiles must contain(exactly("WORKSPACE"))
       }
 
     }
@@ -138,7 +138,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         writer.writeDependencies(dependencyNode)
 
-        val maybeBuildFile: Option[String] = localWorkspace.buildFileContent(LibraryRule.packageNameBy(baseCoordinates))
+        val maybeBuildFile: Option[String] = localWorkspace.buildFileContent(packageNameBy(baseCoordinates))
         maybeBuildFile must beSome(
           containsIgnoringSpaces(
             s"""scala_import(
@@ -241,7 +241,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val originalBaseDependency = aDependency("some-dep")
         val originalDependencyNode = aRootDependencyNode(originalBaseDependency)
         writer.writeDependencies(originalDependencyNode)
-        val packageOfDependency = LibraryRule.packageNameBy(originalBaseDependency.coordinates)
+        val packageOfDependency = packageNameBy(originalBaseDependency.coordinates)
       }
 
       "update version of maven_jar rule" in new updateDependencyNodeCtx {
@@ -320,7 +320,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         writeArtifactsAsRootDependencies(someArtifact, otherArtifactWithSameGroupId)
 
-        val buildFile = localWorkspace.buildFileContent(LibraryRule.packageNameBy(someArtifact))
+        val buildFile = localWorkspace.buildFileContent(packageNameBy(someArtifact))
         buildFile must containARuleForRootDependency(someArtifact)
         buildFile must containARuleForRootDependency(otherArtifactWithSameGroupId)
       }
@@ -338,13 +338,12 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         writtenFiles must containTheSameElementsAs(Seq(
           "WORKSPACE",
-          LibraryRule.buildFilePathBy(someArtifact),
-          LibraryRule.buildFilePathBy(otherArtifact))
+          LibraryRule.buildFilePathBy(someArtifact).get,
+          LibraryRule.buildFilePathBy(otherArtifact).get)
         )
       }
     }
   }
-
 
   private def containsExactlyOneRuleOfName(name: String): Matcher[String] = (countMatches(s"""name += +"$name"""".r, _: String)) ^^ equalTo(1)
 
@@ -362,16 +361,6 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
          |)
       """.stripMargin))
 
-  private def containProtoRuleForRootDependency(coordinates: Coordinates): SomeCheckedMatcher[String] =
-    beSome(containsIgnoringSpaces(
-      s"""proto_library(
-         |    name = "${coordinates.libraryRuleName}",
-         |    srcs = [
-         |        "@${coordinates.workspaceRuleName}//:archive"
-         |    ],
-         |)
-      """.stripMargin))
-
   private def containMavenJarRuleFor(coordinates: Coordinates) = {
     contain(
       s"""maven_jar(
@@ -380,9 +369,9 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
          |)""".stripMargin)
   }
 
-  private def containMavenArchiveRuleFor(coordinates: Coordinates) = {
+  private def containMavenProtoRuleFor(coordinates: Coordinates) = {
     contain(
-      s"""maven_archive(
+      s"""maven_proto(
          |    name = "${coordinates.workspaceRuleName}",
          |    artifact = "${coordinates.serialized}"
          |)""".stripMargin)

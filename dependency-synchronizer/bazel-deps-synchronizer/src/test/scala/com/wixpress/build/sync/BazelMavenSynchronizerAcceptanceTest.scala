@@ -53,7 +53,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         syncBasedOn(updatedResolver, Set(newDependency))
 
         val expectedChange = Change(
-          filePaths = Set("WORKSPACE", LibraryRule.buildFilePathBy(newDependency.coordinates)),
+          filePaths = Set("WORKSPACE", LibraryRule.buildFilePathBy(newDependency.coordinates).get),
           message =
             s"""$PersistMessageHeader
                | - ${newDependency.coordinates.serialized}

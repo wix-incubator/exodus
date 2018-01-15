@@ -24,7 +24,7 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
       WorkspaceRule.of(someCoordinates).serialized mustEqual expectedMavenJarRuleText
     }
 
-    "return valid maven_archive to given proto coordinates" in  {
+    "return valid maven_proto to given proto coordinates" in  {
       val someArchiveCoordinates = Coordinates(
         groupId = "some.group.id",
         artifactId = "artifact-id",
@@ -33,12 +33,55 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         classifier = Some("proto")
       )
       val expectedWorkspaceRuleText =
+        s"""maven_proto(
+           |    name = "${someArchiveCoordinates.workspaceRuleName}",
+           |    artifact = "${someArchiveCoordinates.serialized}"
+           |)""".stripMargin
+
+      WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText
+    }
+
+    "return valid maven_archive to maven zip artifact that is not proto" in  {
+      val someArchiveCoordinates = Coordinates(
+        groupId = "some.group.id",
+        artifactId = "artifact-id",
+        version = "version",
+        packaging = Some("zip")
+      )
+      val expectedWorkspaceRuleText =
         s"""maven_archive(
            |    name = "${someArchiveCoordinates.workspaceRuleName}",
            |    artifact = "${someArchiveCoordinates.serialized}"
            |)""".stripMargin
 
       WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText
+    }
+
+    "return valid maven_archive to maven tar.gz artifact" in  {
+      val someArchiveCoordinates = Coordinates(
+        groupId = "some.group.id",
+        artifactId = "artifact-id",
+        version = "version",
+        packaging = Some("tar.gz")
+      )
+      val expectedWorkspaceRuleText =
+        s"""maven_archive(
+           |    name = "${someArchiveCoordinates.workspaceRuleName}",
+           |    artifact = "${someArchiveCoordinates.serialized}"
+           |)""".stripMargin
+
+      WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText
+    }
+
+    "throw exception in case undefined packaging" in  {
+      val someArchiveCoordinates = Coordinates(
+        groupId = "some.group.id",
+        artifactId = "artifact-id",
+        version = "version",
+        packaging = Some("strange-packaging")
+      )
+
+      WorkspaceRule.of(someArchiveCoordinates).serialized must throwA[RuntimeException]
     }
 
   }

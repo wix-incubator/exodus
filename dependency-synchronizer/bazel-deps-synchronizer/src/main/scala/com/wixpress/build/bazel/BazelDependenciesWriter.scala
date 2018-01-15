@@ -23,23 +23,29 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
   private def writeLibraryRules(dependencyNodes: Set[DependencyNode]): Unit =
     dependencyNodes.foreach(writeLibraryRule)
 
-  private def writeLibraryRule(dependencyNode: DependencyNode): Unit = {
-    val coordinates = dependencyNode.baseDependency.coordinates
-    val bazelPackageOfDependency = LibraryRule.packageNameBy(coordinates)
-    val buildFileContent =
-      localWorkspace.buildFileContent(bazelPackageOfDependency).getOrElse(BazelBuildFile.DefaultHeader)
-    val buildFileBuilder = BazelBuildFile(buildFileContent).withTarget(libraryRuleBy(dependencyNode))
-    localWorkspace.overwriteBuildFile(bazelPackageOfDependency, buildFileBuilder.content)
-  }
+  private def writeLibraryRule(dependencyNode: DependencyNode): Unit =
+    maybeLibraryRuleBy(dependencyNode).foreach(libraryRule => {
+      val packageName = LibraryRule.packageNameBy(dependencyNode.baseDependency.coordinates)
+      val buildFileContent =
+        localWorkspace.buildFileContent(packageName).getOrElse(BazelBuildFile.DefaultHeader)
+      val buildFileBuilder = BazelBuildFile(buildFileContent).withTarget(libraryRule)
+      localWorkspace.overwriteBuildFile(packageName, buildFileBuilder.content)
+    })
+
+  private def maybeLibraryRuleBy(dependencyNode: DependencyNode) =
+    dependencyNode.baseDependency.coordinates.packaging match {
+      case Some("pom") | Some("jar") => Some(libraryRuleBy(dependencyNode))
+      case _ => None
+    }
 
   private def libraryRuleBy(dependencyNode: DependencyNode) = {
     val runtimeDependenciesOverrides = localWorkspace.thirdPartyOverrides().runtimeDependenciesOverridesOf(
       OverrideCoordinates(dependencyNode.baseDependency.coordinates.groupId,
-      dependencyNode.baseDependency.coordinates.artifactId)
+        dependencyNode.baseDependency.coordinates.artifactId)
     )
     val compileTimeDependenciesOverrides = localWorkspace.thirdPartyOverrides().compileTimeDependenciesOverridesOf(
       OverrideCoordinates(dependencyNode.baseDependency.coordinates.groupId,
-      dependencyNode.baseDependency.coordinates.artifactId)
+        dependencyNode.baseDependency.coordinates.artifactId)
     )
     val rule = LibraryRule.of(
       artifact = dependencyNode.baseDependency.coordinates,
@@ -47,9 +53,8 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
       compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(protoZip),
       exclusions = dependencyNode.baseDependency.exclusions
     )
-
     rule.copy(runtimeDeps = rule.runtimeDeps ++ runtimeDependenciesOverrides,
-              compileTimeDeps = rule.compileTimeDeps ++ compileTimeDependenciesOverrides)
+      compileTimeDeps = rule.compileTimeDeps ++ compileTimeDependenciesOverrides)
   }
 
   private def protoZip(a: Coordinates) = {
@@ -57,6 +62,6 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
   }
 
   private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) =
-    dependencyNodes.map(_.baseDependency.coordinates).map(LibraryRule.buildFilePathBy) + "WORKSPACE"
+    dependencyNodes.map(_.baseDependency.coordinates).flatMap(LibraryRule.buildFilePathBy) + "WORKSPACE"
 
 }

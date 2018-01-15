@@ -158,9 +158,9 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
 
   private def writeProto(proto: Target.Proto): String = {
     s"""
-       |load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_scala_proto_library")
+       |load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")
        |
-       |proto_library(
+       |wix_proto_library(
        |    name = "${proto.name}",
        |    srcs = glob(["**/*.proto"]),
        |    deps = [${writeDependencies(proto.dependencies.map(writeSourceDependency))}],
@@ -174,7 +174,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
        |)
      """.stripMargin
   }
-  
+
 
   private def writeTarget(target: Target): String = {
     target match {
@@ -407,13 +407,18 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
   }
 
   private def writeSourceDependency(dependency: Target) =
-    writeDependency(dependency.belongingPackageRelativePath, targetNameOrDefault(dependency))
+    dependency match {
+      case external : Target.External => writeExternalWorkspaceDependency(external)
+      case _ => writeDependency(dependency.belongingPackageRelativePath, targetNameOrDefault(dependency))
+    }
+
+  private def writeExternalWorkspaceDependency(target: Target.External) =
+    quoted(s"@${target.externalWorkspace}${targetLabel(target.belongingPackageRelativePath, target.name)}")
 
   private def writeDependency(packageRelativePath: String, target: String) =
-    quotedTargetLabel(packageRelativePath, target)
+    quoted(targetLabel(packageRelativePath, target))
 
-  private def quotedTargetLabel(packageRelativePath: String, targetName: String) =
-    s""""${targetLabel(packageRelativePath, targetName)}""""
+  private def quoted(str: String) = s""""$str""""
 
   private def targetLabel(packageRelativePath: String, targetName: String) =
     s"//$packageRelativePath:$targetName"
@@ -447,7 +452,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
         Set(scopeOfCurrentDependency -> Set(writeDependency(scopeOfCurrentDependency)(jvmDependency)))
       case proto: Proto =>
         val scopeOfCurrentDependency = scopeOf(originatingTarget, dependency.isCompileDependency)
-        Set(scopeOfCurrentDependency -> Set(writeDependency(proto.belongingPackageRelativePath,proto.name + "_scala")))
+        Set(scopeOfCurrentDependency -> Set(writeDependency(proto.belongingPackageRelativePath, proto.name + "_scala")))
       case mavenTarget: MavenJar =>
         throw new IllegalArgumentException(
           "we shouldn't get here since currently maven targets" +

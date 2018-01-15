@@ -2,16 +2,16 @@ package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.maven.{Coordinates, Exclusion}
-
+import LibraryRule.RuleType
 case class LibraryRule(
-                        ruleType: String = "scala_import",
                         name: String,
                         sources : Set[String] = Set.empty,
                         jars: Set[String] = Set.empty,
                         exports: Set[String] = Set.empty,
                         runtimeDeps: Set[String] = Set.empty,
                         compileTimeDeps: Set[String] = Set.empty,
-                        exclusions: Set[Exclusion] = Set.empty) {
+                        exclusions: Set[Exclusion] = Set.empty
+                         ) {
 
   private def serializedExclusions = if (exclusions.isEmpty) "" else
     "\n" + exclusions.map(e => s"    # EXCLUDES ${e.serialized}").mkString("\n")
@@ -26,7 +26,7 @@ case class LibraryRule(
       toListEntry("runtime_deps",runtimeDeps)
 
   def serialized: String = {
-    s"""$ruleType(
+    s"""$RuleType(
        |    name = "$name",$serializedAttributes$serializedExclusions
        |)""".stripMargin
   }
@@ -49,9 +49,7 @@ case class LibraryRule(
 
 
 object LibraryRule {
-
-
-
+  val RuleType = "scala_import"
   def of(
           artifact: Coordinates,
           runtimeDependencies: Set[Coordinates] = Set.empty,
@@ -60,20 +58,14 @@ object LibraryRule {
     artifact.packaging match {
       case Some("jar") => jarLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions)
       case Some("pom") => pomLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions)
-      case Some("zip") | Some("tar.gz") if artifact.classifier.contains("proto") => protoLibraryRule(artifact)
-      case _ => throw new RuntimeException(s"packaging not supported for ${artifact.serialized}")
+      case _ => throw new RuntimeException(s"no library rule defined for ${artifact.serialized}")
     }
 
-
-  private def protoLibraryRule(artifact: Coordinates) = {
-    LibraryRule(
-      ruleType = "proto_library",
-      name = artifact.libraryRuleName,
-      sources = Set(s"@${artifact.workspaceRuleName}//:archive")
-    )
-  }
-
-  private def pomLibraryRule(artifact: Coordinates, runtimeDependencies: Set[Coordinates], compileTimeDependencies: Set[Coordinates], exclusions: Set[Exclusion]) = {
+  private def pomLibraryRule(
+                              artifact: Coordinates,
+                              runtimeDependencies: Set[Coordinates],
+                              compileTimeDependencies: Set[Coordinates],
+                              exclusions: Set[Exclusion]) = {
     LibraryRule(
       name = artifact.libraryRuleName,
       jars = Set.empty,
@@ -83,7 +75,11 @@ object LibraryRule {
     )
   }
 
-  private def jarLibraryRule(artifact: Coordinates, runtimeDependencies: Set[Coordinates], compileTimeDependencies: Set[Coordinates], exclusions: Set[Exclusion]) = {
+  private def jarLibraryRule(
+                              artifact: Coordinates,
+                              runtimeDependencies: Set[Coordinates],
+                              compileTimeDependencies: Set[Coordinates],
+                              exclusions: Set[Exclusion]) = {
     LibraryRule(
       name = artifact.libraryRuleName,
       jars = Set(s"@${artifact.workspaceRuleName}//jar:file"),
@@ -93,10 +89,15 @@ object LibraryRule {
     )
   }
   
-  def packageNameBy(coordinates: Coordinates): String = s"third_party/${coordinates.groupId.replace('.', '/')}"
+  def packageNameBy(coordinates: Coordinates): String =  s"third_party/${coordinates.groupId.replace('.', '/')}"
 
-  private def labelBy(coordinates: Coordinates): String = s"//${packageNameBy(coordinates)}:${coordinates.libraryRuleName}"
+  private def labelBy(coordinates: Coordinates): String =  s"//${packageNameBy(coordinates)}:${coordinates.libraryRuleName}"
 
-  def buildFilePathBy(coordinates: Coordinates): String = packageNameBy(coordinates) + "/BUILD"
+  def buildFilePathBy(coordinates: Coordinates): Option[String] = {
+    coordinates.packaging match {
+      case Some("jar") | Some("pom") => Some(packageNameBy (coordinates) + "/BUILD")
+      case _ => None
+    }
+  }
 
 }

@@ -1,11 +1,16 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.maven.{Coordinates, Exclusion, MavenMakers}
+import com.wixpress.build.maven.MavenMakers.someCoordinates
+import com.wixpress.build.maven.{Coordinates, Exclusion}
 import org.specs2.mutable.SpecificationWithJUnit
+import org.specs2.specification.Scope
 
+//noinspection TypeAnnotation
 class LibraryRuleTest extends SpecificationWithJUnit {
-
+  trait ctx extends Scope{
+    def labelBy(artifact:Coordinates) = s"//${LibraryRule.packageNameBy(artifact)}:${artifact.libraryRuleName}"
+  }
   "LibraryRule" should {
     "serialize rule with no attributes" in {
       val rule = LibraryRule(name = "name")
@@ -17,7 +22,7 @@ class LibraryRuleTest extends SpecificationWithJUnit {
     }
 
     "serialize rule jar" in {
-      val rule = LibraryRule(name = "name", jars = Set("@jar_reference"))
+      val rule = LibraryRule(name = "name",jars = Set("@jar_reference"))
 
       rule.serialized must containIgnoringSpaces(
         """jars = [
@@ -84,28 +89,33 @@ class LibraryRuleTest extends SpecificationWithJUnit {
           |],""".stripMargin)
     }
 
-    "return the package of matching scala library target to given maven coordinates" in {
-      val someCoordinates = MavenMakers.someCoordinates("some-artifact")
-      val actualPackageName = LibraryRule.packageNameBy(someCoordinates)
-      val expectedPackageName = s"third_party/${someCoordinates.groupId.replace('.', '/')}"
-      actualPackageName mustEqual expectedPackageName
-    }
-
-    "return scala_import rule in case given regular jar coordinates" in {
-      val coordinates = MavenMakers.someCoordinates("some-artifact")
-      LibraryRule.of(coordinates) mustEqual LibraryRule(
-        name = coordinates.libraryRuleName,
-        jars = Set(s"@${coordinates.workspaceRuleName}//jar:file")
+    "return scala_import rule in case given regular jar coordinates" in new ctx{
+      val artifact = someCoordinates("some-artifact")
+      val runtimeDependencies = Set(someCoordinates("runtime-dep"))
+      val compileDependencies = Set(someCoordinates("compile-dep"))
+      LibraryRule.of(artifact ,runtimeDependencies, compileDependencies ) mustEqual LibraryRule(
+        name = artifact.libraryRuleName,
+        jars = Set(s"@${artifact.workspaceRuleName}//jar:file"),
+        runtimeDeps = runtimeDependencies.map(labelBy),
+        compileTimeDeps = compileDependencies.map(labelBy)
       )
     }
 
-    "return proto_library rule in case given proto coordinates" in {
+    "return scala_import with no jar in case of pom artifact" in new ctx{
+      val artifact = someCoordinates("some-artifact").copy(packaging = Some("pom"))
+      val runtimeDependencies = Set(someCoordinates("runtime-dep"))
+      val compileDependencies = Set(someCoordinates("compile-dep"))
+      LibraryRule.of(artifact ,runtimeDependencies, compileDependencies ) mustEqual LibraryRule(
+        name = artifact.libraryRuleName,
+        jars = Set.empty,
+        runtimeDeps = runtimeDependencies.map(labelBy),
+        exports = compileDependencies.map(labelBy)
+      )
+    }
+
+    "throw runtime exception rule in case of packaging that is not pom or jar" in {
       val coordinates = Coordinates("g", "a", "v", Some("zip"),Some("proto"))
-      LibraryRule.of(coordinates) mustEqual LibraryRule(
-        ruleType = "proto_library",
-        name = coordinates.libraryRuleName,
-        sources = Set(s"@${coordinates.workspaceRuleName}//:archive")
-      )
+      LibraryRule.of(coordinates) must throwA[RuntimeException]
     }
 
   }

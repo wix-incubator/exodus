@@ -54,5 +54,11 @@
             <version>0.0.1-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.wixpress.build</groupId>
+            <artifactId>maven-bazel-model-translation</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

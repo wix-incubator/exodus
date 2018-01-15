@@ -1,20 +1,20 @@
 package com.wix.bazel.migrator.transform
 
 import com.wix.bazel.migrator.model.{Package, Scope, Target}
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class ExternalProtoTransformer {
   def transform(packages: Set[Package]): Set[Package] = packages.map { bazelPackage =>
     bazelPackage.copy(targets = bazelPackage.targets.map {
-      case proto: Target.Proto => {
+      case proto: Target.Proto =>
         val externalProtoArchives = collectExternalProdCompileProtos(bazelPackage)
         addExternalProtoDeps(proto, externalProtoArchives)
-      }
       case target: Target => target
     })
   }
 
   private def addExternalProtoDeps(proto: Target.Proto, externalProtoArchives: Set[Target.MavenJar]) =
-    proto.copy(dependencies = proto.dependencies ++ externalProtoArchives.map(asProtoDependency))
+    proto.copy(dependencies = proto.dependencies ++ externalProtoArchives.map(asExternalProtoDependency))
 
   private def collectExternalProdCompileProtos(bazelPackage: Package) =
     bazelPackage.originatingSourceModule.dependencies.scopedDependencies(Scope.PROD_COMPILE).collect {
@@ -25,6 +25,10 @@ class ExternalProtoTransformer {
     mavenJar.originatingExternalCoordinates.classifier.contains("proto") &&
       mavenJar.originatingExternalCoordinates.packaging.contains("zip")
 
-  private def asProtoDependency(target: Target): Target.Proto =
-    Target.Proto(target.name, target.belongingPackageRelativePath, dependencies = Set.empty)
+  private def asExternalProtoDependency(target: Target.MavenJar): Target.External =
+    Target.External(
+      name = "proto",
+      belongingPackageRelativePath = "",
+      externalWorkspace = target.originatingExternalCoordinates.workspaceRuleName
+    )
 }

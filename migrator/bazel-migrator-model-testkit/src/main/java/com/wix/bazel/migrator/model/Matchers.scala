@@ -22,6 +22,14 @@ object Matchers {
         (_: Target.Proto).dependencies aka "dependencies"
       }
 
+  def externalTarget(name: String,
+                          belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
+                          externalWorkspace: Matcher[String] = AlwaysMatcher[String]()
+                 ): Matcher[Target] =
+    a[Target, Target.External](aTarget(name, belongsToPackage) and externalWorkspace ^^ {
+      (_: Target.External).externalWorkspace
+    })
+
   def aPackageWithMultipleTargets(relativePath: Matcher[String] = AlwaysMatcher[String](),
                                   targets: Matcher[Set[Target]],
                                   originatingSourceModule: Matcher[SourceModule] = AlwaysMatcher[SourceModule]()): Matcher[Package] = {

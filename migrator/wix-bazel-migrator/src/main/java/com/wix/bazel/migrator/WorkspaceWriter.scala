@@ -39,7 +39,7 @@ class WorkspaceWriter(repoRoot: File) {
          |    artifact = "commons-io:commons-io:jar:2.5",
          |)
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
-         |core_server_build_tools_version="c3d4bac21e572db1f3aa72fc8bf6747fe1359bfb" # update this as needed
+         |core_server_build_tools_version="6834265f38faaa102a556f47106ce01ee7f376bd" # update this as needed
          |
          |git_repository(
          |             name = "core_server_build_tools",
@@ -71,7 +71,7 @@ class WorkspaceWriter(repoRoot: File) {
          |load("@io_bazel_rules_scala//scala:toolchains.bzl", "scala_register_toolchains")
          |scala_register_toolchains()
          |
-         |wix_grpc_version="8e01ae420cb3138cba6cb61bab41a37d8bca3a15" # update this as needed
+         |wix_grpc_version="cb3d3743575ed26cc0c11352a906a9708080fad9" # update this as needed
          |
          |git_repository(
          |             name = "wix_grpc",
@@ -79,19 +79,9 @@ class WorkspaceWriter(repoRoot: File) {
          |             commit = wix_grpc_version
          |)
          |
-         |new_http_archive(
-         |    name = "com_wixpress_grpc_extensions_proto",
-         |    build_file = "wix_proto_extensions.BUILD",
-         |    urls = ["http://repo.dev.wixpress.com/artifactory/libs-snapshots-local/com/wixpress/grpc/extensions/1.0.0-SNAPSHOT/extensions-1.0.0-SNAPSHOT-proto.zip"],
-         |)
+         |load("@wix_grpc//src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")
          |
-         |
-         |new_http_archive(
-         |    name = "com_github_googleapis_googleapis",
-         |    build_file = "google_apis.BUILD",
-         |    urls = ["https://github.com/googleapis/googleapis/archive/0c7f6f05a6c5e9b2768bc5b592ef2e18fe48bffc.zip"],
-         |    strip_prefix = "googleapis-0c7f6f05a6c5e9b2768bc5b592ef2e18fe48bffc",
-         |)
+         |grpc_repositories()
          |
          |
          |http_archive(
@@ -100,12 +90,10 @@ class WorkspaceWriter(repoRoot: File) {
          |    strip_prefix = "protobuf-74bf45f379b35e1d103940f35d7a04545b0235d4",
          |)
          |
-         |load("@core_server_build_tools//:macros.bzl", "maven_archive")
+         |load("@core_server_build_tools//:macros.bzl", "maven_archive", "maven_proto")
       """.stripMargin
 
     writeToDisk(workspaceFileContents)
-    writeToDiskWixExtensionsBuildFile()
-    writeToDiskGoogleApisBuildFile()
   }
 
   private def importFwIfThisIsNotFw(workspaceName: String) =
@@ -128,45 +116,5 @@ class WorkspaceWriter(repoRoot: File) {
   private def writeToDisk(workspaceFileContents: String): Unit =
     Files.write(new File(repoRoot, "WORKSPACE").toPath, workspaceFileContents.getBytes)
 
-  private def writeToDiskWixExtensionsBuildFile(): Unit =
-    Files.write(new File(repoRoot, "wix_proto_extensions.BUILD").toPath, WixExtensionsBuildFileContents.getBytes)
-
-  private def writeToDiskGoogleApisBuildFile(): Unit =
-    Files.write(new File(repoRoot, "google_apis.BUILD").toPath, GoogleApisBuildFileContents.getBytes)
-
-  private val GoogleApisBuildFileContents =
-    """
-      |package(default_visibility = ["//visibility:public"])
-      |
-      |WELL_KNOWN_PROTOS = [
-      |    "google/api/annotations.proto",
-      |    "google/api/http.proto",
-      |]
-      |
-      |proto_library(
-      |    name = "well_known_protos",
-      |    srcs = WELL_KNOWN_PROTOS,
-      |    visibility = ["//visibility:public"],
-      |)
-      |
-    """.stripMargin
-  private val WixExtensionsBuildFileContents =
-    """
-      |package(default_visibility = ["//visibility:public"])
-      |
-      |WIX_WELL_KNOWN_PROTOS = [
-      |    "wix/api/annotations.proto",
-      |    "wix/api/callback.proto",
-      |    "wix/api/context.proto",
-      |    "wix/api/validations.proto",
-      |]
-      |
-      |proto_library(
-      |    name = "well_known_protos",
-      |    srcs = WIX_WELL_KNOWN_PROTOS,
-      |    visibility = ["//visibility:public"],
-      |)
-      |
-    """.stripMargin
 
 }

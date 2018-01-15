@@ -125,31 +125,43 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
     EitherSequence.sequence(analyzeFailureOrCodes).fold(fail, _.toList)
   }
 
-  private def internalDependencies(currentModule: SourceModule, internalDeps: GenIterable[java.util.Collection[OptionalInternalDependency]], isTestCode: Boolean): Either[AnalyzeFailure, List[Dependency]] = EitherSequence.sequence {
-    val internalAndMaybeExternalDependencies = retainOnlySupportedFilesIn(internalDeps).map { dependencyGroup =>
-      val dependencyGroupAsCoordinatesSet: Iterable[Either[AnalyzeFailure, (Coordinates, String)]] =
-        dependencyGroup.map { dep =>
-          externalModuleFromCodotaArtifactName(dep.getArtifactName).right.map(module => (module, dep.getFilepath))
-        }
-      EitherSequence.sequence(dependencyGroupAsCoordinatesSet).right.flatMap {
-        externalModulesAndFilePaths =>
-          val moduleToFilePath = externalModulesAndFilePaths.toMap
-          findSourceModule(currentModule, moduleToFilePath.keySet, modules, isTestCode).right.flatMap {
-            case Some(sourceModule) =>
-              val selectedFilePath = moduleToFilePath.getOrElse(sourceModule.externalModule, moduleToFilePath(sourceModule.externalModule.copy(classifier = Some("tests"))))
-              sourceDirEither(sourceModule, selectedFilePath).right.map { sourceDir =>
-                Some(Dependency(CodePath(stripTestClassifierIfExists(sourceModule), sourceDir, Paths.get(selectedFilePath)), isCompileDependency = true))
-              }
-            case None =>
-              Right(None)
-          }
-      }.augment(FailureMetadata.InternalDep(dependencyGroup))
-    }.toList
-    val internalDependencies: List[Either[AnalyzeFailure, Dependency]] = internalAndMaybeExternalDependencies.collect {
-      case Right(Some(d)) => Right(d)
-      case Left(af) => Left(af)
-    }
+  private def internalDependencies(
+                                    currentModule: SourceModule,
+                                    internalDeps: GenIterable[java.util.Collection[OptionalInternalDependency]],
+                                    isTestCode: Boolean): Either[AnalyzeFailure, List[Dependency]] =
+    EitherSequence.sequence {
+    val internalDependencies: List[Either[AnalyzeFailure, Dependency]] = internalDeps.map(_.asScala)
+      .map(retainOnlySupportedFilesIn)
+      .filter(_.nonEmpty)
+      .map(dependencyGroupToDependency(currentModule, isTestCode))
+      .collect {
+        case Right(Some(d)) => Right(d)
+        case Left(af) => Left(af)
+      }.toList
     internalDependencies
+  }
+
+  private def dependencyGroupToDependency(currentModule:SourceModule,isTestCode:Boolean)(dependencyGroup:Iterable[OptionalInternalDependency]): Either[AnalyzeFailure, Option[Dependency]] =
+      EitherSequence.sequence(toCoordinatesSet(dependencyGroup))
+        .right.flatMap(coordinatesSetToDependency(currentModule, isTestCode))
+        .augment(FailureMetadata.InternalDep(dependencyGroup))
+
+  private def toCoordinatesSet(dependencyGroup: Iterable[OptionalInternalDependency]): Iterable[Either[AnalyzeFailure, (Coordinates, String)]] =
+    dependencyGroup.map{ dep =>
+      externalModuleFromCodotaArtifactName(dep.getArtifactName).right.map(module => (module, dep.getFilepath))
+    }
+
+  private def coordinatesSetToDependency(currentModule: SourceModule, isTestCode: Boolean)(externalModulesAndFilePaths: Iterable[(Coordinates, String)]): Either[AnalyzeFailure, Option[Dependency]] = {
+    val moduleToFilePath = externalModulesAndFilePaths.toMap
+    findSourceModule(currentModule, moduleToFilePath.keySet, modules, isTestCode).right.flatMap {
+      case Some(sourceModule) =>
+        val selectedFilePath = moduleToFilePath.getOrElse(sourceModule.externalModule, moduleToFilePath(sourceModule.externalModule.copy(classifier = Some("tests"))))
+        sourceDirEither(sourceModule, selectedFilePath).right.map { sourceDir =>
+          Some(Dependency(CodePath(stripTestClassifierIfExists(sourceModule), sourceDir, Paths.get(selectedFilePath)), isCompileDependency = true))
+        }
+      case None =>
+        Right(None)
+    }
   }
 
   // otherwise SourceModule of "Code" and SourceModule of "Dependency" might be different since
@@ -157,8 +169,8 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   private def stripTestClassifierIfExists(sourceModule: SourceModule) =
     sourceModule.copy(externalModule = sourceModule.externalModule.copy(classifier = None))
 
-  private def retainOnlySupportedFilesIn(internalDeps: GenIterable[java.util.Collection[OptionalInternalDependency]]) =
-    internalDeps.map(_.asScala.filter(depInfo => supportedFile(depInfo.getFilepath))).filter(_.nonEmpty)
+  private def retainOnlySupportedFilesIn(internalDeps: Iterable[OptionalInternalDependency]) =
+    internalDeps.filter(depInfo => supportedFile(depInfo.getFilepath))
 
   private def externalModuleFromCodotaArtifactName(artifactName: String): Either[AnalyzeFailure, Coordinates] = {
     eitherRetry() {
@@ -196,7 +208,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
       (isPartOfTestCode && codotaSuggestionModules.contains(currentModule.externalModule.copy(classifier = Some("tests"))))
 
   private def compileRelevant(scope: Scope, isPartOfTestCode: Boolean) =
-    (scope == Scope.PROD_COMPILE) || (scope == Scope.TEST_COMPILE && isPartOfTestCode)
+    (scope == Scope.PROD_COMPILE) || (scope == Scope.PROVIDED) || (scope == Scope.TEST_COMPILE && isPartOfTestCode)
 
   private def classpathOf(currentModule: SourceModule, repoModules: Set[SourceModule], isPartOfTestCode: Boolean): Set[SourceModule] = {
     currentModule.dependencies.internalDependencies.collect { case (scope, dependenciesOnSourceModules) if compileRelevant(scope, isPartOfTestCode) =>

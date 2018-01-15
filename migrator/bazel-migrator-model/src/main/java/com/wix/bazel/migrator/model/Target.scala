@@ -39,4 +39,8 @@ object Target {
                    belongingPackageRelativePath: String,
                    dependencies: Set[Target]) extends Target
 
+  case class External(name:String,
+                      belongingPackageRelativePath: String,
+                      externalWorkspace:String) extends Target
+
 }

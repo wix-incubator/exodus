@@ -38,21 +38,20 @@ class BazelBuildFile(val content: String) {
     regexOfScalaLibraryRuleWithNameMatching(name).findFirstMatchIn(within)
   }
 
-  private def extractFullMatchText(aMatch: Match) = (aMatch.group(1), aMatch.group(0))
+  private def extractFullMatchText(aMatch: Match) = aMatch.group(0)
 
   private def regexOfScalaLibraryRuleWithNameMatching(pattern: String) =
-    (s"(?s)([^\\s]+)" + """\(\s*?name\s*?=\s*?"""" + pattern +"""".*?\)""").r
+    (s"(?s)${LibraryRule.RuleType}" + """\(\s*?name\s*?=\s*?"""" + pattern +"""".*?\)""").r
 
-  private def parseTargetText(name: String)(rule: (String,String)): Option[LibraryRule] = {
-    val ruleText = rule._2
-    val ruleType = rule._1
-    val jars = extractListByAttribute(JarsFilter,ruleText)
-    val runtimeDeps = extractListByAttribute(RunTimeDepsFilter, ruleText)
-    val compileTimeDeps = extractListByAttribute(CompileTimeDepsFilter, ruleText)
-    val exports = extractListByAttribute(ExportsFilter, ruleText)
-    val exclusions = extractExclusions(ruleText)
-    val sources = extractListByAttribute(SrcsFilter,ruleText)
-    Some(LibraryRule(ruleType, name, sources, jars, exports, runtimeDeps, compileTimeDeps, exclusions))
+  private def parseTargetText(ruleName:String)(ruleText: String): Option[LibraryRule] = {
+    Some(LibraryRule(
+      name = ruleName,
+      sources = extractListByAttribute(SrcsFilter, ruleText),
+      jars = extractListByAttribute(JarsFilter, ruleText),
+      exports = extractListByAttribute(ExportsFilter, ruleText),
+      runtimeDeps = extractListByAttribute(RunTimeDepsFilter, ruleText),
+      compileTimeDeps = extractListByAttribute(CompileTimeDepsFilter, ruleText),
+      exclusions = extractExclusions(ruleText)))
   }
 
   private def extractExclusions(ruleText: String) = {

@@ -16,23 +16,20 @@ case class WorkspaceRule(ruleType: String = "maven_jar",
 }
 
 object WorkspaceRule {
-
-  def of(artifact: Coordinates): WorkspaceRule = {
+  private def ruleTypeBy(artifact:Coordinates): String ={
     artifact.packaging match {
-
-      case Some("jar") | Some("pom") => WorkspaceRule(
-        name = artifact.workspaceRuleName,
-        artifact = artifact
-      )
-
-      case Some("zip") | Some("tar.gz") =>
-        WorkspaceRule(
-          ruleType = "maven_archive",
+      //TODO: "pom" packaging should be disregarded
+      case Some("jar") | Some("pom") => "maven_jar"
+      case Some("zip") if artifact.classifier.contains("proto") => "maven_proto"
+      case Some("zip") | Some("tar.gz") => "maven_archive"
+      case _ => throw new RuntimeException(s"undefined worksapce rule for artifact ${artifact.serialized}")
+    }
+  }
+  def of(artifact: Coordinates): WorkspaceRule = {
+    WorkspaceRule(
+          ruleType = ruleTypeBy(artifact),
           name = artifact.workspaceRuleName,
           artifact = artifact
         )
-
-      case _ => throw new RuntimeException(s"packaging not supported for ${artifact.serialized}")
-    }
   }
 }
