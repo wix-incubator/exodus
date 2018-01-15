@@ -29,7 +29,7 @@ pipeline {
             archiveArtifacts "**/target/**/TEST-*.xml"
         }
         success{
-            build job: "01-run-bazel", propagate: false, wait: false
+            build job: "01-migrate", propagate: false, wait: false
         }
     }
 }
