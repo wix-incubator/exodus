@@ -367,21 +367,17 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
 
   private def writeSources(target: Jvm): Set[String] = {
     target.sources.map { source =>
-      //HACK we shouldn't get it in this format ("/foo" is invalid)
-      val formattedSource =
+      //HACK we shouldn't get it in this format ("." is invalid and so is "/foo")
+      val formattedSource = if (source == ".") {
+        source.drop(1)
+      } else {
         if (source.endsWith("/")) {
           source.dropRight(1)
         } else {
           source
         }
-      //HACK problem when there is a cycle in the root of source dir
-      val formattedBelongingPackageRelativePath =
-        if (!target.belongingPackageRelativePath.endsWith("/") && source.nonEmpty ) {
-          target.belongingPackageRelativePath + "/"
-        } else {
-          target.belongingPackageRelativePath
-        }
-      writeDependency(formattedBelongingPackageRelativePath + formattedSource, "sources")
+      }
+      writeDependency(target.belongingPackageRelativePath + formattedSource, "sources")
     }
   }
 

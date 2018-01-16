@@ -34,7 +34,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       packages must contain(exactly(
         //TODO [Tests] think about maybe replacing startingWithAndEndingWith here with beEqual and use /src/main/java (pro will be easier to understand, con source dir wasn't pushed chronoligcally at the time of the test)
         aPackage(relativePath = startingWithAndEndingWith("/single", "com/wix/lib"),
-          target = a(jvmTarget(name = "lib", sources = contain(exactly("")), dependencies = beEmpty)))
+          target = a(jvmTarget(name = "lib", sources = contain(exactly(".")), dependencies = beEmpty)))
       ))
     }
 
@@ -99,7 +99,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       packages must contain(exactly(
         aPackage(relativePath = endingWith("/com/wix/lib"),
-          target = a(jvmTarget(name = aggregatorOf(".", "sub"), sources = contain(exactly("", "/sub")), dependencies = beEmpty)))
+          target = a(jvmTarget(name = aggregatorOf(".", "sub"), sources = contain(exactly(".", "/sub")), dependencies = beEmpty)))
       ))
     }
 
@@ -157,9 +157,9 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       packages must contain(exactly(
         aPackage(relativePath = startingWithAndEndingWith("/group1-dirs/artifact1-dirs", "com/wix/group1/artifact1"),
-          target = a(jvmTarget(name = "artifact1", sources = contain(exactly("")), dependencies = beEmpty))),
+          target = a(jvmTarget(name = "artifact1", sources = contain(exactly(".")), dependencies = beEmpty))),
         aPackage(relativePath = startingWithAndEndingWith("/group2-dirs/artifact2-dirs", "com/wix/group2/artifact2"),
-          target = a(jvmTarget(name = "artifact2", sources = contain(exactly("")), dependencies = beEmpty)))
+          target = a(jvmTarget(name = "artifact2", sources = contain(exactly(".")), dependencies = beEmpty)))
       ))
     }
 

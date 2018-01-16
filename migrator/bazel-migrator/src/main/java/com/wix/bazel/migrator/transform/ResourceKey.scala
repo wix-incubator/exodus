@@ -34,9 +34,10 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
   def toTarget(keyToCodes: CodesMap, targetDependencies: Set[TargetDependency]): Target = {
     //TODO would really like to extract this somewhere. feels like a different level of abstraction but not sure where and more importantly how to name it
     val (name, sources) = if (sharedSubPackages.isEmpty)
-      (lowestSourcePackage(resourcePackage), Set(""))
+      (lowestSourcePackage(resourcePackage), Set("."))
     else {
-      (concatSubPackagesToCompositeName(sharedSubPackages), sharedSubPackages)
+      val subPackagesWithDotsInsteadOfEmptyStrings = sharedSubPackages.map(replaceEmptyStringWithDot)
+      (concatSubPackagesToCompositeName(subPackagesWithDotsInsteadOfEmptyStrings), subPackagesWithDotsInsteadOfEmptyStrings)
     }
 
     //TODO need to have "something" that generates a Target given a resource key.
@@ -54,8 +55,7 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
 
   private def replaceEmptyStringWithDot(s: String) = if (s.isEmpty) "." else s
 
-  private def concatSubPackagesToCompositeName(packages: Set[String]) = "agg=" +
-    packages.map(_.stripPrefix("/")).map(replaceEmptyStringWithDot).toSeq.sorted.mkString("+")
+  private def concatSubPackagesToCompositeName(packages: Set[String]) = "agg=" + packages.map(_.stripPrefix("/")).toSeq.sorted.mkString("+")
 
   private def lowestSourcePackage(sourcePackage: String): String = sourcePackage.split('/').last
 
