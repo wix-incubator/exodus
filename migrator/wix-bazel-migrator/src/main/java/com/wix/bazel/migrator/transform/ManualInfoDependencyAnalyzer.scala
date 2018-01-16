@@ -46,7 +46,7 @@ class ManualInfoDependencyAnalyzer(sourceModules: SourceModules) extends Depende
       Code(
         codePathFrom("wix-framework/src/main/resources/wix-framework-json-oxm-config.xml"),
         List(
-          dependencyOn("hoopoe-json/src/main/java/com/wixpress/framework/oxm/JacksonObjectMapperFactoryBean.java")
+          dependencyOn("json-modules/hoopoe-json/src/main/java/com/wixpress/framework/oxm/JacksonObjectMapperFactoryBean.java")
         )
       ),
       Code(
@@ -317,7 +317,9 @@ class ManualInfoDependencyAnalyzer(sourceModules: SourceModules) extends Depende
 
   override def allCodeForModule(module: SourceModule): List[Code] = info.getOrElse(module, List.empty[Code])
 
-  private def moduleForRelativePath(relativeModulePath: String) = sourceModules.findByRelativePath(relativeModulePath).get
+  private def moduleForRelativePath(relativeModulePath: String) = sourceModules.findByRelativePath(relativeModulePath).getOrElse(
+    throw new RuntimeException(s"cannot read relative path from $relativeModulePath")
+  )
 
   private def codePathFrom(relativeFilePath: String) = {
     val filePathParts = relativeFilePath.split('/')
