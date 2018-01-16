@@ -30,9 +30,6 @@ pipeline {
         always {
             archiveArtifacts "**/target/**/TEST-*.xml"
         }
-        success{
-            build job: "01-migrate", propagate: false, wait: false
-        }
     }
 }
 
