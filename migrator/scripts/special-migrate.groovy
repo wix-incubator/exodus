@@ -6,7 +6,7 @@ pipeline {
     environment {
         CODOTA_TOKEN = credentials("codota-token")
         REPO_NAME = find_repo_name()
-        BRANCH_NAME = "bazel-new-mig-${env.BUILD_ID}"
+        BRANCH_NAME = "bazel-mig-${env.BUILD_ID}"
     }
     stages {
         stage('checkout') {
