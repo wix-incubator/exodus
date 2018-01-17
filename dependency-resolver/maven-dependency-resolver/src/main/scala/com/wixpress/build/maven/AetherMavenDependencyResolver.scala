@@ -32,9 +32,8 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
     tempDir.toJava.deleteOnExit()
     tempDir
   }
-  private val forcedManagedDependencies = Set(
-    Dependency(Coordinates.deserialize("org.reflections:reflections:0.9.10"), MavenScope.Compile)
-  )
+
+  private val forcedManagedDependencies = Set.empty[Dependency]
 
   override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = {
     val artifactDescriptor = artifactDescriptorOf(descriptorRequest(artifact))
