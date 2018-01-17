@@ -13,6 +13,8 @@ pipeline {
     stages {
         stage('checkout') {
             steps {
+                echo "${env.REPO_NAME}"
+                echo "${env.BRANCH_NAME}"
                 dir("${env.REPO_NAME}") {
                     git "${env.repo_url}", branch "${env.BRANCH_NAME}"
                 }
