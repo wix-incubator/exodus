@@ -10,7 +10,7 @@ class WorkspaceWriter(repoRoot: File) {
     val workspaceFileContents =
       s"""
          |workspace(name = "$workspaceName")
-         |rules_scala_version="5efba86db2591c523fb8d14b9a583ea67b8dc3c1" # update this as needed
+         |rules_scala_version="645fa5b7ed742e611c71588024556ba6cba92dc5" # update this as needed
          |
          |http_archive(
          |             name = "io_bazel_rules_scala",
@@ -29,17 +29,9 @@ class WorkspaceWriter(repoRoot: File) {
          |    artifact = "com.google.jimfs:jimfs:1.1",
          |)
          |
-         |maven_jar(
-         |    name = "guava",
-         |    artifact = "com.google.guava:guava:18.0",
-         |)
          |
-         |maven_jar(
-         |    name = "commonsio",
-         |    artifact = "commons-io:commons-io:jar:2.5",
-         |)
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
-         |core_server_build_tools_version="6834265f38faaa102a556f47106ce01ee7f376bd" # update this as needed
+         |core_server_build_tools_version="6ab689f25e7f348569dff85f039c47b718e4f570" # update this as needed
          |
          |git_repository(
          |             name = "core_server_build_tools",
@@ -71,7 +63,7 @@ class WorkspaceWriter(repoRoot: File) {
          |load("@io_bazel_rules_scala//scala:toolchains.bzl", "scala_register_toolchains")
          |scala_register_toolchains()
          |
-         |wix_grpc_version="cb3d3743575ed26cc0c11352a906a9708080fad9" # update this as needed
+         |wix_grpc_version="30e886addc5b43456104829ee01ae413ba7c8bb5" # update this as needed
          |
          |git_repository(
          |             name = "wix_grpc",
@@ -82,7 +74,6 @@ class WorkspaceWriter(repoRoot: File) {
          |load("@wix_grpc//src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")
          |
          |grpc_repositories()
-         |
          |
          |http_archive(
          |    name = "com_google_protobuf",
