@@ -63,7 +63,7 @@ class WorkspaceWriter(repoRoot: File) {
          |load("@io_bazel_rules_scala//scala:toolchains.bzl", "scala_register_toolchains")
          |scala_register_toolchains()
          |
-         |wix_grpc_version="30e886addc5b43456104829ee01ae413ba7c8bb5" # update this as needed
+         |wix_grpc_version="e1e0e44da3f5ecb3d444ccb5543dec53ae661a95" # update this as needed
          |
          |git_repository(
          |             name = "wix_grpc",
