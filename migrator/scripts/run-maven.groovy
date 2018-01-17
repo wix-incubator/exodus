@@ -28,7 +28,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts "target/**/TEST-*.xml"
+            archiveArtifacts "**/target/**/TEST-*.xml"
         }
     }
 }
