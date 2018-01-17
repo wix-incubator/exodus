@@ -7,14 +7,14 @@ pipeline {
         maven 'M3'
     }
     environment {
-        MAVEN_INSTALL = "mvn clean install -B -Dwix.environment=CI"
+        MAVEN_INSTALL = "mvn clean install -B -Dwix.environment=CI -DtestFailureIgnore=true"
         REPO_NAME = find_repo_name()
     }
     stages {
         stage('checkout') {
             steps {
                 dir("${env.REPO_NAME}") {
-                    git "${env.repo_url}"
+                    git "${env.repo_url}", branch "${env.BRANCH_NAME}"
                 }
             }
         }
@@ -28,7 +28,9 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts "**/target/**/TEST-*.xml"
+            dir("${env.REPO_NAME}") {
+                archiveArtifacts "target/**/TEST-*.xml"
+            }
         }
     }
 }
