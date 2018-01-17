@@ -28,9 +28,7 @@ pipeline {
     }
     post {
         always {
-            dir("${env.REPO_NAME}") {
-                archiveArtifacts "target/**/TEST-*.xml"
-            }
+            archiveArtifacts "target/**/TEST-*.xml"
         }
     }
 }
