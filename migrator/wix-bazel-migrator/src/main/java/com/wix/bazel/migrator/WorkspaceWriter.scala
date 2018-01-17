@@ -10,7 +10,7 @@ class WorkspaceWriter(repoRoot: File) {
     val workspaceFileContents =
       s"""
          |workspace(name = "$workspaceName")
-         |rules_scala_version="645fa5b7ed742e611c71588024556ba6cba92dc5" # update this as needed
+         |rules_scala_version="90082930e81f749ddd01e39758b684d4bf95d456" # update this as needed
          |
          |http_archive(
          |             name = "io_bazel_rules_scala",
