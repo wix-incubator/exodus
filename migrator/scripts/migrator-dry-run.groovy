@@ -2,6 +2,7 @@ pipeline {
     agent any
     options {
         timestamps()
+        throttle(categories: ['migrate'])
     }
     environment {
         CODOTA_TOKEN = credentials("codota-token")
