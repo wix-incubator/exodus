@@ -30,16 +30,14 @@ pipeline {
                 sh 'rm -rf third_party'
                 sh 'find . -path "*/*BUILD" -exec rm -f {} \\;'
                 sh "java -Xmx12G -Dcodota.token=${env.CODOTA_TOKEN} -Dclean.codota.analysis.cache=true -Dskip.classpath=false -Dskip.transformation=false -Dfail.on.severe.conflicts=true -Drepo.root=. -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
-            }
-        }
-        stage('buildifier') {
-            steps {
                 sh "buildozer 'add tags manual' //third_party/...:%scala_import"
                 sh 'buildifier $(find . -iname BUILD -type f)'
             }
         }
         stage('build') {
-            sh "bazel build --strategy=Scalac=worker //..."
+            stepes {
+                sh "bazel build --strategy=Scalac=worker //..."
+            }
         }
         stage('UT') {
             steps {
