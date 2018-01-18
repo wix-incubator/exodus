@@ -35,7 +35,7 @@ pipeline {
             }
         }
         stage('build') {
-            stepes {
+            steps {
                 sh "bazel build --strategy=Scalac=worker //..."
             }
         }
