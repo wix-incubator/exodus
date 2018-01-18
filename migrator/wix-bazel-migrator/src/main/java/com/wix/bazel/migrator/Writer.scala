@@ -370,6 +370,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       //HACK we shouldn't get it in this format ("/foo" is invalid)
       val formattedSource =
         if (source.endsWith("/")) {
+          println(s"[Internal debug message, don't worry] mismatch source detected, ${target.belongingPackageRelativePath}, ${target.name}, ${target.sources}, $source")
           source.dropRight(1)
         } else {
           source
