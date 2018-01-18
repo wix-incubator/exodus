@@ -76,16 +76,14 @@ pipeline {
                     junit "bazel-testlogs/**/test.xml"
                 }
                 try {
-                    dir("wix-bazel-migrator") {
-                        echo "[INFO] creating tar.gz files for migration artifacts..."
-                        sh """|tar czf classpathModules.cache.tar.gz classpathModules.cache
-                              |tar czf cache.tar.gz cache
-                              |tar czf dag.bazel.tar.gz dag.bazel""".stripMargin()
-                    }
+                    echo "[INFO] creating tar.gz files for migration artifacts..."
+                    sh """|tar czf classpathModules.cache.tar.gz classpathModules.cache
+                          |tar czf cache.tar.gz cache
+                          |tar czf dag.bazel.tar.gz dag.bazel""".stripMargin()
                 } catch (err) {
                     echo "[WARN] could not create all tar.gz files ${err}"
                 } finally {
-                    archiveArtifacts "wix-bazel-migrator/classpathModules.cache.tar.gz,wix-bazel-migrator/dag.bazel.tar.gz,wix-bazel-migrator/cache.tar.gz"
+                    archiveArtifacts "classpathModules.cache.tar.gz,dag.bazel.tar.gz,wix-bazel-migrator/cache.tar.gz"
                 }
             }
         }
