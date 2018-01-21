@@ -4,6 +4,7 @@ import com.wix.bazel.migrator.model.TestType.ReduceTestTypesToTestType
 
 sealed trait CodePurpose
 object CodePurpose {
+  val TestSupport = Test(TestType.None)
 
   case class Test(testType: TestType = TestType.None) extends CodePurpose
 

@@ -13,8 +13,15 @@ class ResourcesTest extends SpecificationWithJUnit {
         Resources.applicablePackage(packageRelativePath) ==== isApplicable
       }
     }
-
   }
+  
+  "Resources.apply" should {
+    "return CodePurpose according to package relative path" in {
+      Resources("foo", "src/main/scala").codePurpose must be_===(CodePurpose.Prod()) and
+        (Resources("foo", "src/test/scala").codePurpose must be_===(CodePurpose.TestSupport))
+    }
+  }
+
   val packageRelativePathToApplicability = Seq(
     "/src/main/resources/" -> Applicable,
     "/src/main/java/" -> NotApplicable,
