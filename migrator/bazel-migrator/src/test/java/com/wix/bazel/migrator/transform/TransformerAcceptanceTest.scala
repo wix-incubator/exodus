@@ -307,7 +307,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
         ))
     }
 
-    "classify targets' purpose according to their relative source folders" in new Context {
+    "classify jvm targets' purpose according to their relative source folders" in new Context {
       def repo = {
         Repo()
           .withCode(code(relativeSourceDirPathFromModuleRoot = "/src/test/scala", filePath = "com/wix/testLib/Code.java"))
@@ -481,6 +481,33 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
     }
 
 
+    "classify resources targets' purpose according to their relative source folders" in new Context {
+      def repo = {
+        Repo()
+          .withCode(code(relativeSourceDirPathFromModuleRoot = "/src/test/resources", filePath = "foo.xml"))
+          .withCode(code(relativeSourceDirPathFromModuleRoot = "/src/it/resources", filePath = "foo.xml"))
+          .withCode(code(relativeSourceDirPathFromModuleRoot = "/src/e2e/resources", filePath = "foo.xml"))
+          .withCode(code(relativeSourceDirPathFromModuleRoot = "/src/main/resources", filePath = "foo.xml"))
+      }
+
+      val packages = transformer.transform(repo.modules)
+
+      packages must contain(exactly(
+        aPackage(target = a(resourcesTarget(name = "resources",
+          belongsToPackage = endingWith("src/test/resources"),
+          codePurpose = be_===(CodePurpose.Test(TestType.None))))),
+        aPackage(target = a(resourcesTarget(name = "resources",
+          belongsToPackage = endingWith("src/it/resources"),
+          codePurpose = be_===(CodePurpose.Test(TestType.None))))),
+        aPackage(target = a(resourcesTarget(name = "resources",
+          belongsToPackage = endingWith("src/e2e/resources"),
+          codePurpose = be_===(CodePurpose.Test(TestType.None))))),
+        aPackage(target = a(resourcesTarget(name = "resources",
+          belongsToPackage = endingWith("src/main/resources"),
+          codePurpose = be_===(CodePurpose.Prod()))))
+      ))
+    }
+
     //two different types, compile wins?
     //cycles?
   }
@@ -513,11 +540,14 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
   def resourcesTarget(name: String,
                       belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
-                      dependencies: Matcher[Set[Target]] = AlwaysMatcher[Set[Target]]()
+                      dependencies: Matcher[Set[Target]] = AlwaysMatcher[Set[Target]](),
+                      codePurpose: Matcher[CodePurpose] = AlwaysMatcher[CodePurpose]()
                ): Matcher[Target.Resources] =
     aTarget(name, belongsToPackage) and
       dependencies ^^ {
         (_: Target.Resources).dependencies aka "dependencies"
+      } and codePurpose ^^ {
+        (_: Target.Resources).codePurpose aka "code purpose"
       }
 
   def mavenJarTarget(name: String,

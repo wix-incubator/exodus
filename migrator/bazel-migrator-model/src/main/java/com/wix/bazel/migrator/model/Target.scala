@@ -26,6 +26,7 @@ object Target {
 
   case class Resources(name: String,
                        belongingPackageRelativePath: String,
+                       codePurpose: CodePurpose,
                        dependencies: Set[Target] = Set.empty[Target]) extends AnalyzedFromMavenTarget
 
   object Resources {

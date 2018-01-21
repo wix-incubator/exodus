@@ -127,7 +127,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     allResources.foreach { resources =>
       val currentResourcesPackagePath = packageBuildDescriptorPath(resources.belongingPackageRelativePath)
       Files.createDirectories(currentResourcesPackagePath.getParent)
-      Files.write(currentResourcesPackagePath, ResourcesPackageContent.getBytes)
+      Files.write(currentResourcesPackagePath, resourcesPackageFor(resources).getBytes)
     }
   }
 
@@ -190,8 +190,14 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
 
   private def writeResources(resources: Target.Resources): String = {
     val serializedTargets = resources.dependencies.map(writeSourceDependency)
-    LoadResourcesMacro + s"resources(runtime_deps = [${writeDependencies(serializedTargets)}])\n"
+    LoadResourcesMacro +
+      s"resources(runtime_deps = [${writeDependencies(serializedTargets)}], ${serializedPotentialTestOnlyOverride(resources)})\n"
   }
+
+  private def serializedPotentialTestOnlyOverride(resources: Resources) =
+    if (testResources(resources) || ForceTestOnly(unAliasedLabelOf(resources))) "testonly = 1" else ""
+
+  private def testResources(resources: Resources) = resources.codePurpose == CodePurpose.Test()
 
   //toString since case objects aren't well supported in jackson scala
   private def testHeader(testType: TestType, tagsTestType: TestType, testSize: String): String = testType.toString match {
@@ -422,7 +428,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     s"//$packageRelativePath:$targetName"
 
   //should probably move to Target.Jvm or even to Target
-  private def unAliasedLabelOf(target: Jvm) =
+  private def unAliasedLabelOf(target: Target) =
     targetLabel(target.belongingPackageRelativePath, targetNameOrDefault(target))
 
   private def targetNameOrDefault(target: Target) = {
@@ -473,8 +479,9 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     """package(default_visibility = ["//visibility:public"])
       |""".stripMargin
   private val LoadResourcesMacro = """load("@core_server_build_tools//:macros.bzl","resources")""" + "\n"
-  private val ResourcesPackageContent =
-    DefaultPublicVisibility + LoadResourcesMacro + "resources()\n"
+  private def resourcesPackageFor(target: Target.Resources) =
+    DefaultPublicVisibility + LoadResourcesMacro +
+      s"resources(${serializedPotentialTestOnlyOverride(target)})\n"
   private val ModulePackageContent =
     DefaultPublicVisibility +
       """filegroup(
