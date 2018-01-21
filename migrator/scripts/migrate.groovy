@@ -49,6 +49,9 @@ pipeline {
         }
         stage('fix-strict-deps'){
             steps{
+                dir("core-server-build-tools") {
+                    git 'git@github.com:wix-private/core-server-build-tools.git'
+                }
                 dir("${env.REPO_NAME}") {
                     script {
                         build_and_fix()
@@ -58,9 +61,6 @@ pipeline {
         }
         stage('push-to-git') {
             steps {
-                dir("core-server-build-tools") {
-                    git 'git@github.com:wix-private/core-server-build-tools.git'
-                }
                 dir("${env.REPO_NAME}"){
                    sh """|git checkout -b ${env.BRANCH_NAME}
                          |git add WORKSPACE "./*BUILD" .bazelrc
