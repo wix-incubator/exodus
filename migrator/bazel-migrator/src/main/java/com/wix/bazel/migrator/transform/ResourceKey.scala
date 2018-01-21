@@ -30,7 +30,6 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
       ""
     else
       codeDirPath.module.relativePathFromMonoRepoRoot + "/"
-
   def toTarget(keyToCodes: CodesMap, targetDependencies: Set[TargetDependency]): Target = {
     //TODO would really like to extract this somewhere. feels like a different level of abstraction but not sure where and more importantly how to name it
     val (name, sources) = if (sharedSubPackages.isEmpty)
@@ -59,10 +58,14 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
 
   private def lowestSourcePackage(sourcePackage: String): String = sourcePackage.split('/').last
 
-  private def canonicalSubPackages = if (sharedSubPackages.isEmpty) Set(resourcePackage) else sharedSubPackages.map(resourcePackage + _)
+  private def canonicalSubPackages =
+    if (sharedSubPackages.isEmpty) Set(resourcePackage) else sharedSubPackages.map(resourcePackage + _)
 }
 
 private[transform] object ResourceKey {
+
+  private def padNonEmptyWithSlash(subPackage: String) =
+    if (subPackage.isEmpty || subPackage.startsWith("/")) subPackage else "/" + subPackage
 
   def fromCodePath(sourceCodePath: CodePath): ResourceKey = {
     ResourceKey(SourceCodeDirPath(sourceCodePath.module, sourceCodePath.relativeSourceDirPathFromModuleRoot), extractSourcePackageFrom(sourceCodePath.relativeSourceDirPathFromModuleRoot, sourceCodePath.filePath))
@@ -76,7 +79,7 @@ private[transform] object ResourceKey {
     val canonicalSubPackages = source.canonicalSubPackages ++ target.canonicalSubPackages
     val sharedPackage = commonPrefix(canonicalSubPackages)
     val relativeSubPackages = canonicalSubPackages.map(_.stripPrefix(sharedPackage))
-    ResourceKey(source.codeDirPath, sharedPackage, relativeSubPackages)
+    ResourceKey(source.codeDirPath, sharedPackage, relativeSubPackages.map(padNonEmptyWithSlash))
   }
 
   private def extractSourcePackageFrom(relativeSourceDirPathFromModuleRoot: String, filePath: Path): String =

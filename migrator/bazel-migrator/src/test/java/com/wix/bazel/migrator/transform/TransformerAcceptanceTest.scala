@@ -85,6 +85,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
           target = a(jvmTarget(name = aggregatorOf("lib", "lib2"), sources = contain(exactly("/lib", "/lib2")), dependencies = beEmpty)))
       ))
     }
+
     "transform files with a cyclic dependency between a source package and its sub to one target in a bazel package in the common ancestor" in new Context {
       def repo = {
         //TODO [Tests] should i extract something like aCyclicRepo(file1, file2)? Currently No
@@ -480,6 +481,22 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       ))
     }
 
+    "ensure sources of sub-packages of a cycle in the root of the source dir are padded correcly (non-empty with slash, empty without)" in new Context {
+      def repo = {
+        val someFilePath = "lib/Code.java"
+        val otherFilePath = "Code2.java"
+        Repo()
+          .withCode(code(filePath = someFilePath, dependencies = List(dependency(filePath = otherFilePath))))
+          .withCode(code(filePath = otherFilePath, dependencies = List(dependency(filePath = someFilePath))))
+      }
+
+      val packages = transformer.transform(repo.modules)
+
+      packages must contain(exactly(
+        aPackage(
+          target = a(jvmTarget(name = aggregatorOf(".", "lib"), sources = contain(exactly("", "/lib")), dependencies = beEmpty)))
+      ))
+    }
 
     "classify resources targets' purpose according to their relative source folders" in new Context {
       def repo = {
