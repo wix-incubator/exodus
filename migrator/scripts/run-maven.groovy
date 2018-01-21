@@ -46,7 +46,7 @@ pipeline {
     post {
         always {
             script {
-                if (findFiles("**/target/**/TEST-*.xml").any()) {
+                if (findFiles(glob: '**/target/**/TEST-*.xml').any()) {
                     archiveArtifacts "**/target/**/TEST-*.xml"
                 }
             }
