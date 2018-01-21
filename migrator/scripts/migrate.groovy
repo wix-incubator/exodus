@@ -8,6 +8,9 @@ pipeline {
         CODOTA_TOKEN = credentials("codota-token")
         REPO_NAME = find_repo_name()
         BRANCH_NAME = "bazel-mig-${env.BUILD_ID}"
+        BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
+        JAVA_HOME = tool name: 'jdk8u152'
+        PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
     stages {
         stage('checkout') {
@@ -31,19 +34,36 @@ pipeline {
                 }
             }
         }
-        stage('buildifier') {
+        stage('post-migrate') {
             steps {
                 dir("${env.REPO_NAME}") {
                     sh "buildozer 'add tags manual' //third_party/...:%scala_import"
                     sh 'buildifier $(find . -iname BUILD -type f)'
+                    script{
+                        if (fileExists('bazel_migration/post-migration.sh')){
+                            sh "bazel_migration/post-migration.sh"
+                        }
+                    }
+                }
+            }
+        }
+        stage('fix-strict-deps'){
+            steps{
+                dir("${env.REPO_NAME}") {
+                    script {
+                        build_and_fix()
+                    }
                 }
             }
         }
         stage('push-to-git') {
             steps {
+                dir("core-server-build-tools") {
+                    git 'git@github.com:wix-private/core-server-build-tools.git'
+                }
                 dir("${env.REPO_NAME}"){
                    sh """|git checkout -b ${env.BRANCH_NAME}
-                         |git add .
+                         |git add WORKSPACE "./*BUILD" .bazelrc
                          |git commit -m "bazel migrator created by ${env.BUILD_URL}"
                          |git push origin ${env.BRANCH_NAME}
                          |""".stripMargin()
@@ -69,7 +89,6 @@ pipeline {
             }
         }
         success{
-            build job: "03-fix-strict-deps", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: true
             script{
                 if ("${env.TRIGGER_BUILD}" != "false"){
                     build job: "02-run-bazel", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
@@ -85,4 +104,33 @@ def find_repo_name() {
     if (name.endsWith(".git"))
         name = name[0..-5]
     return name
+}
+
+def build_and_fix() {
+    status = sh(
+            script: '''|#!/bin/bash
+                       |# tee would output the stdout to file but will swallow the exit code
+                       |bazel build -k --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
+                       |# retrieve the exit code
+                       |exit ${PIPESTATUS[0]}
+                       |'''.stripMargin(),
+            returnStatus: true)
+    build_log = readFile "bazel-build.log"
+    if (build_log.contains("buildozer")) {
+        if (build_log.contains("Unknown label of file")){
+            slackSend "Found 'Unknown label...' warning in ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|link>)"
+        }
+        echo "found strict deps issues"
+        sh "python ../core-server-build-tools/scripts/fix_transitive.py"
+        sh "buildozer -f bazel-buildozer-commands.txt"
+        build_and_fix()
+    } else if (status == 0) {
+        echo "No buildozer warnings were found"
+        bazelrc = readFile(".bazelrc")
+        if (bazelrc.contains("strict_java_deps=warn")) {
+            writeFile file: ".bazelrc", text: bazelrc.replace("strict_java_deps=warn", "strict_java_deps=error")
+        }
+    } else {
+        echo "[WARN] No strict deps warnings found but build failed"
+    }
 }
