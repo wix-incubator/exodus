@@ -11,7 +11,7 @@ pipeline {
         stage('migrate') {
             steps {
                 script {
-                    def migrate_run = build job: "01-migrate", wait: true, propagate: true
+                    def migrate_run = build job: "01-migrate", wait: true, propagate: true, parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false)]
                     migration_branch = "bazel-mig-${migrate_run.number}"
                 }
             }

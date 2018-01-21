@@ -69,8 +69,12 @@ pipeline {
             }
         }
         success{
-            build job: "02-run-bazel", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
-            build job: "03-fix-strict-deps", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
+            build job: "03-fix-strict-deps", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: true
+            script{
+                if ("${env.TRIGGER_BUILD}" != "false"){
+                    build job: "02-run-bazel", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
+                }
+            }
         }
     }
 }

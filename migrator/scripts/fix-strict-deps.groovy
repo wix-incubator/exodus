@@ -57,7 +57,6 @@ pipeline {
                           |git push origin ${env.BRANCH_NAME}
                           |""".stripMargin()
                 }
-                build job: "02-run-bazel", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
             }
         }
     }
