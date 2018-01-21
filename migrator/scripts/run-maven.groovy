@@ -45,7 +45,11 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts "**/target/**/TEST-*.xml"
+            script {
+                if (findFiles("**/target/**/TEST-*.xml").any()) {
+                    archiveArtifacts "**/target/**/TEST-*.xml"
+                }
+            }
         }
     }
 }
