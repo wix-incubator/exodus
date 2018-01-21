@@ -27,13 +27,22 @@ object Target {
   case class Resources(name: String,
                        belongingPackageRelativePath: String,
                        codePurpose: CodePurpose,
-                       dependencies: Set[Target] = Set.empty[Target]) extends AnalyzedFromMavenTarget
+                       dependencies: Set[Target]) extends AnalyzedFromMavenTarget
 
   object Resources {
     private val AllCharactersButSlash = "[^/]*"
     private val ApplicabilityPattern = s"src/$AllCharactersButSlash/resources".r
     def applicablePackage(packageRelativePath: String): Boolean =
       ApplicabilityPattern.findFirstIn(packageRelativePath).isDefined
+    def apply(name: String,
+              belongingPackageRelativePath: String,
+              dependencies: Set[Target] = Set.empty[Target]): Resources =
+      Resources(
+        name,
+        belongingPackageRelativePath,
+        CodePurpose(belongingPackageRelativePath, Seq(TestType.None)),
+        dependencies
+      )
   }
 
   case class Proto(name: String,

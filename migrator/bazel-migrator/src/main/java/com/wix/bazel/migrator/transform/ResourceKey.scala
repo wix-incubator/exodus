@@ -42,8 +42,7 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
     //TODO need to have "something" that generates a Target given a resource key.
     //This should probably take into account the sourceDir (resources/proto) the codes (or maybe just the extensions)
     if (Target.Resources.applicablePackage(packageRelativePath)) {
-      val codePurpose = CodePurpose(packageRelativePath, Seq(TestType.None))
-      Target.Resources("resources", packageRelativePath, codePurpose, targetDependencies.map(_.target))
+      Target.Resources("resources", packageRelativePath, targetDependencies.map(_.target))
     } else if (codeDirPath.relativeSourceDirPathFromModuleRoot.endsWith("proto")) {
         Target.Proto(name = "proto", packageRelativePath, dependencies = targetDependencies.map(_.target))
     } else {

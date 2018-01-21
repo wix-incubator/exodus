@@ -485,9 +485,6 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       def repo = {
         Repo()
           .withCode(code(relativeSourceDirPathFromModuleRoot = "/src/test/resources", filePath = "foo.xml"))
-          .withCode(code(relativeSourceDirPathFromModuleRoot = "/src/it/resources", filePath = "foo.xml"))
-          .withCode(code(relativeSourceDirPathFromModuleRoot = "/src/e2e/resources", filePath = "foo.xml"))
-          .withCode(code(relativeSourceDirPathFromModuleRoot = "/src/main/resources", filePath = "foo.xml"))
       }
 
       val packages = transformer.transform(repo.modules)
@@ -495,16 +492,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       packages must contain(exactly(
         aPackage(target = a(resourcesTarget(name = "resources",
           belongsToPackage = endingWith("src/test/resources"),
-          codePurpose = be_===(CodePurpose.Test(TestType.None))))),
-        aPackage(target = a(resourcesTarget(name = "resources",
-          belongsToPackage = endingWith("src/it/resources"),
-          codePurpose = be_===(CodePurpose.Test(TestType.None))))),
-        aPackage(target = a(resourcesTarget(name = "resources",
-          belongsToPackage = endingWith("src/e2e/resources"),
-          codePurpose = be_===(CodePurpose.Test(TestType.None))))),
-        aPackage(target = a(resourcesTarget(name = "resources",
-          belongsToPackage = endingWith("src/main/resources"),
-          codePurpose = be_===(CodePurpose.Prod()))))
+          codePurpose = be_===(CodePurpose.Test(TestType.None)))))
       ))
     }
 
