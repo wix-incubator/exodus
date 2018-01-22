@@ -96,7 +96,7 @@ class WorkspaceWriter(repoRoot: File) {
          |git_repository(
          |             name = "wix_framework",
          |             remote = "git@github.com:wix-platform/wix-framework.git",
-         |             commit = "39e78bb7cd233b643f0ecfa8c3df2d226ae73374"
+         |             commit = "e4c70248968b1d9d21abd976384a92930a8b082e"
          |)
          |""".stripMargin
 
