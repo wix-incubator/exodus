@@ -30,9 +30,11 @@ pipeline {
         }
         stage('compare') {
             steps {
-                if (!has_artifacts('bazel') || !has_artifacts('maven')) {
-                    currentBuild.result = 'UNSTABLE'
-                    return
+                script {
+                    if (!has_artifacts('bazel') || !has_artifacts('maven')) {
+                        currentBuild.result = 'UNSTABLE'
+                        return
+                    }
                 }
                 sh """|export PYTHONIOENCODING=UTF-8
                       |cd scripts
