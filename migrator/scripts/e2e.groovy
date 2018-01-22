@@ -38,7 +38,7 @@ pipeline {
             steps {
                 script {
                     if (bazel_success && maven_success) {
-                        build job: "04-compare", wait: true
+                        build job: "03-compare", wait: true
                     } else {
                         error("bazel run or maven run failed")
                     }

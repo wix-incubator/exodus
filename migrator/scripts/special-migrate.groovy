@@ -66,7 +66,7 @@ pipeline {
         }
         stage('compare-results'){
             steps{
-                build job: "04-compare"
+                build job: "03-compare"
             }
         }
     }
