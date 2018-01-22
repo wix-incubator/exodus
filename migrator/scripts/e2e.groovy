@@ -21,13 +21,13 @@ pipeline {
                 parallel(
                         "bazel": {
                             script {
-                                def b = build job: "02-run-bazel", wait: true, propagate: true, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
+                                def b = build job: "02-run-bazel", wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
                                 bazel_success = (b.result == "SUCCESS") || (b.result == "UNSTABLE")
                             }
                         },
                         "maven": {
                             script {
-                                def m = build job: "02-run-maven", wait: true, propagate: true, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
+                                def m = build job: "02-run-maven", wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
                                 maven_success = (m.result == "SUCCESS") || (m.result == "UNSTABLE")
                             }
                         }
