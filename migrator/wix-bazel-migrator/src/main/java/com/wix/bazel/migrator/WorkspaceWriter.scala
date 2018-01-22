@@ -19,6 +19,16 @@ class WorkspaceWriter(repoRoot: File) {
          |             strip_prefix= "rules_scala-%s" % rules_scala_version
          |)
          |
+         |# Required configuration for remote build execution
+         |bazel_toolchains_version="f3b09700fae5d7b6e659d7cefe0dcc6e8498504c"
+         |bazel_toolchains_sha256="ed829b5eea8af1f405f4cc3d6ecfc3b1365bb7843171036030a31b5127002311"
+         |http_archive(
+         |             name = "bazel_toolchains",
+         |             urls = ["https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/%s.tar.gz"%bazel_toolchains_version, "https://github.com/bazelbuild/bazel-toolchains/archive/%s.tar.gz"%bazel_toolchains_version],
+         |             strip_prefix = "bazel-toolchains-%s"%bazel_toolchains_version,
+         |             sha256 = bazel_toolchains_sha256,
+         |)
+         |
          |maven_server(
          |    name = "default",
          |    url = "http://repo.dev.wixpress.com/artifactory/libs-snapshots",
