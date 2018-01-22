@@ -63,7 +63,8 @@ pipeline {
             steps {
                 dir("${env.REPO_NAME}"){
                    sh """|git checkout -b ${env.BRANCH_NAME}
-                         |git add WORKSPACE "./*BUILD" .bazelrc
+                         |git add .
+                         |git reset -- bazel-build.log
                          |git commit -m "bazel migrator created by ${env.BUILD_URL}"
                          |git push origin ${env.BRANCH_NAME}
                          |""".stripMargin()
