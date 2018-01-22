@@ -8,6 +8,7 @@ pipeline {
         CODOTA_TOKEN = credentials("codota-token")
         REPO_NAME = find_repo_name()
         BRANCH_NAME = "bazel-mig-${env.BUILD_ID}"
+        bazel_log_file = "bazel-build.log"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
