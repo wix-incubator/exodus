@@ -1,53 +1,64 @@
 pipeline {
     agent any
-    options {
-        timestamps()
-    }
     stages {
         stage('maven artifacts') {
             steps {
-                copyArtifacts('02-run-maven') {
-                    includePatterns('*')
-                    targetDirectory('maven-output')
-                    buildSelector {
-                        latestSuccessful(true)
+                script {
+                    try {
+                        copyArtifacts projectName: '02-run-maven', target: 'maven-output', optional: true
+                    } catch (err) {
+                        echo "[WARN] unable to copy maven artifacts, perhaps none exist?"
                     }
-                    optional()
                 }
             }
         }
         stage('bazel artifacts') {
             steps {
-                copyArtifacts('02-run-bazel') {
-                    includePatterns('*')
-                    targetDirectory('bazel-output')
-                    buildSelector {
-                        latestSuccessful(true)
+                script {
+                    try {
+                        copyArtifacts projectName: '02-run-bazel', target: 'bazel-output', optional: true
+                    } catch (err) {
+                        echo "[WARN] unable to copy bazel artifacts, perhaps none exist?"
                     }
-                    optional()
                 }
             }
         }
         stage('compare') {
             steps {
                 script {
-                    if (!has_artifacts('bazel') || !has_artifacts('maven')) {
-                        currentBuild.result = 'UNSTABLE'
+                    if (!has_artifacts('bazel') && !has_artifacts('maven')) {
+                        echo "No tests were detected in both maven and bazel"
                         return
                     }
+
+                    if (!has_artifacts('bazel')) {
+                        currentBuild.result = 'UNSTABLE'
+                        echo "[WARN] could not find bazel artifacts!"
+                        return
+                    }
+                    if (!has_artifacts('maven')) {
+                        currentBuild.result = 'UNSTABLE'
+                        echo "[WARN] could not find maven artifacts!"
+                        return
+                    }
+
+                    dir('core-server-build-tools') {
+                        git "git@github.com:wix-private/core-server-build-tools.git"
+                        ansiColor('xterm') {
+                            sh """|export PYTHONIOENCODING=UTF-8
+                                  |cd scripts
+                                  |pip3 install --user -r requirements.txt
+                                  |python3 -u maven_bazel_diff.py ${WORKSPACE}/maven-output ${WORKSPACE}/bazel-output
+                                  |""".stripMargin()
+                        }
+                    }
                 }
-                sh """|export PYTHONIOENCODING=UTF-8
-                      |cd scripts
-                      |pip3 install --user -r requirements.txt
-                      |python3 -u maven_bazel_diff.py ${WORKSPACE}/maven-output ${WORKSPACE}/bazel-output
-                      |""".stripMargin()
             }
         }
     }
 }
 
 def has_artifacts(dir) {
-    if (!findFiles(glob: "${WORKSPACE}/${dir}-output/**/*.xml").any()) {
-        echo "[WARN] could not find ${dir} artifacts!"
-    }
+    return findFiles(glob: "${dir}-output/**/*.xml").any()
 }
+
