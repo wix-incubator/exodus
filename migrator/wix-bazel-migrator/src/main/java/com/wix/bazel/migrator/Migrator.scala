@@ -27,6 +27,7 @@ object Migrator extends MigratorApp {
   val protoBazelPackages = new ExternalProtoTransformer().transform(bazelPackages)
 
   writeBazelRc()
+  writeBazelRemoteRc()
   writeWorkspace()
   writeInternal()
   writeExternal()
@@ -49,6 +50,9 @@ object Migrator extends MigratorApp {
 
   private def writeBazelRc(): Unit =
     new BazelRcWriter(repoRoot).write()
+
+  private def writeBazelRemoteRc(): Unit =
+    new BazelRcRemoteWriter(repoRoot).write()
 
   private def writeWorkspace(): Unit =
     new WorkspaceWriter(repoRoot).write()
