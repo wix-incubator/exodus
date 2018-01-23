@@ -5,6 +5,7 @@ pipeline {
         timestamps()
     }
     environment {
+        GOOGLE_APPLICATION_CREDENTIALS = credentials("rbe_credentials")
         BAZEL_STARTUP_OPTS = '''|--bazelrc=.bazelrc.remote \\
                                 |'''.stripMargin()
         BAZEL_FLAGS = '''|-k \\
