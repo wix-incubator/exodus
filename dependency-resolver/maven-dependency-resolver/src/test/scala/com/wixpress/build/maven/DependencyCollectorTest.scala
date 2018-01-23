@@ -1,5 +1,6 @@
 package com.wixpress.build.maven
 
+import com.wixpress.build.maven.ArtifactDescriptor.anArtifact
 import com.wixpress.build.maven.MavenMakers.aDependency
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -8,10 +9,14 @@ import org.specs2.specification.Scope
 class DependencyCollectorTest extends SpecificationWithJUnit {
 
   trait ctx extends Scope {
-    def emptyResolver = new FakeMavenDependencyResolver(Set.empty, Set.empty)
+    def emptyResolver = new FakeMavenDependencyResolver(Set.empty)
 
     def resolverWithManagedDependencies(managedDependencies: Set[Dependency]) =
-      new FakeMavenDependencyResolver(managedDependencies, Set.empty)
+      new FakeMavenDependencyResolver(
+        Set(anArtifact(
+          coordinates = artifactWithManagedDependencies,
+          deps = List.empty,
+          managedDeps = managedDependencies.toList)))
 
     def artifactWithManagedDependencies = MavenMakers.someCoordinates("managed")
   }

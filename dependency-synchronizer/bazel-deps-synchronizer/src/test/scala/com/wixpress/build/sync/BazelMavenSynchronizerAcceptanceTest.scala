@@ -171,7 +171,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         )
         val synchronizer = new BazelMavenSynchronizer(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(dependencyManagementArtifact, Set(baseDependency))
+        synchronizer.sync(dependencyManagementCoordinates, Set(baseDependency))
 
         bazelMustHaveRuleFor(
           jar = baseDependency.coordinates,
@@ -191,7 +191,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         )
         val synchronizer = new BazelMavenSynchronizer(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(dependencyManagementArtifact,Set(baseDependency))
+        synchronizer.sync(dependencyManagementCoordinates,Set(baseDependency))
 
         bazelMustHaveRuleFor(
           jar = baseDependency.coordinates,
@@ -216,7 +216,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
         val synchronizer = new BazelMavenSynchronizer(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(dependencyManagementArtifact, Set(baseDependency))
+        synchronizer.sync(dependencyManagementCoordinates, Set(baseDependency))
 
         bazelDriver.versionOfMavenJar(baseDependency.coordinates) must beSome(baseDependency.version)
       }
@@ -231,7 +231,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         )
         val synchronizer = new BazelMavenSynchronizer(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(dependencyManagementArtifact, someCoordinatesOfMultipleVersions.map(_.asDependency))
+        synchronizer.sync(dependencyManagementCoordinates, someCoordinatesOfMultipleVersions.map(_.asDependency))
 
         bazelDriver.versionOfMavenJar(Coordinates("some-group", "some-artifact", "dont-care")) must beSome("3.5.8")
       }
@@ -312,7 +312,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
     val baseDependency = aDependency("base")
     val transitiveDependency = aDependency("transitive")
-    val dependencyManagementArtifact = Coordinates("some.group", "deps-management", "1.0", Some("pom"))
+    val dependencyManagementCoordinates = Coordinates("some.group", "deps-management", "1.0", Some("pom"))
 
     def givenBazelWorkspaceWithDependency(mavenJarInBazel: MavenJarInBazel*) = {
       givenBazelWorkspace(mavenJarInBazel.toSet)
@@ -323,12 +323,14 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
       fakeLocalWorkspace.setThirdPartyOverrides(overrides)
     }
 
-    def updatedDependencyResolverWith(managedDependencies: Set[Dependency] = Set.empty, artifacts: Set[ArtifactDescriptor]) =
-      new FakeMavenDependencyResolver(managedDependencies, artifacts)
+    def updatedDependencyResolverWith(managedDependencies: Set[Dependency] = Set.empty, artifacts: Set[ArtifactDescriptor]) = {
+      val dependencyManagementArtifact = ArtifactDescriptor.anArtifact(dependencyManagementCoordinates,List.empty,managedDependencies.toList)
+      new FakeMavenDependencyResolver(artifacts + dependencyManagementArtifact)
+    }
 
     def syncBasedOn(resolver: FakeMavenDependencyResolver, dependencies: Set[Dependency]) = {
       val synchronizer = new BazelMavenSynchronizer(resolver, fakeBazelRepository)
-      synchronizer.sync(dependencyManagementArtifact, dependencies)
+      synchronizer.sync(dependencyManagementCoordinates, dependencies)
     }
 
     def bazelMustHaveRuleFor(

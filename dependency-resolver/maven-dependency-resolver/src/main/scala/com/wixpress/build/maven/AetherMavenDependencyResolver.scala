@@ -14,13 +14,14 @@ import org.eclipse.aether.collection.{CollectRequest, CollectResult}
 import org.eclipse.aether.graph.{Dependency => AetherDependency, DependencyNode => AetherDependencyNode, Exclusion => AetherExclusion}
 import org.eclipse.aether.repository.LocalRepository
 import org.eclipse.aether.repository.RemoteRepository.{Builder => RemoteRepositoryBuilder}
-import org.eclipse.aether.resolution.{ArtifactDescriptorRequest, ArtifactDescriptorResult}
+import org.eclipse.aether.resolution.{ArtifactDescriptorException, ArtifactDescriptorRequest, ArtifactDescriptorResult}
 import org.eclipse.aether.util.graph.manager.DependencyManagerUtils
 import org.eclipse.aether.util.graph.transformer.ConflictResolver
 import org.eclipse.aether.util.graph.visitor.PreorderNodeListGenerator
 import org.eclipse.aether.util.repository.SimpleArtifactDescriptorPolicy
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 
 class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends MavenDependencyResolver {
@@ -57,7 +58,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
   }
 
   private def artifactDescriptorOf(request: ArtifactDescriptorRequest): ArtifactDescriptorResult =
-    withSession(repositorySystem.readArtifactDescriptor(_, request))
+    withSession(ignoreMissingDependencies = false, repositorySystem.readArtifactDescriptor(_, request))
 
   private def descriptorRequest(of: Artifact): ArtifactDescriptorRequest = {
     val artifactReq = new ArtifactDescriptorRequest
@@ -85,7 +86,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
   }
 
   override def dependencyClosureOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency]): Set[DependencyNode] = {
-    withSession(session => {
+    withSession(ignoreMissingDependencies = true , session => {
       prioritizeManagedDeps(session)
       val aetherResponse = repositorySystem.collectDependencies(session, collectRequestOf(baseDependencies, withManagedDependencies))
       dependencyNodesOf(aetherResponse)
@@ -112,26 +113,16 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
       .toSet
   }
 
-  private def validatedDependency(dependency: Dependency): Dependency = {
-    import dependency.coordinates._
-    if (
-      foundTokenIn(groupId) ||
-        foundTokenIn(artifactId) ||
-        foundTokenIn(version) ||
-        packaging.exists(foundTokenIn) ||
-        classifier.exists(foundTokenIn)
-    ) throw new PropertyNotDefinedException(dependency)
-    dependency
-  }
-
-  private def foundTokenIn(value: String): Boolean = value.contains("$")
-
-  private def withSession[T](f: DefaultRepositorySystemSession => T): T = {
+  private def withSession[T](ignoreMissingDependencies:Boolean, f: DefaultRepositorySystemSession => T): T = {
     val localRepo = new LocalRepository(tmpLocalRepoPath.pathAsString)
     val session = MavenRepositorySystemUtils.newSession
-    session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(false, false))
+    session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(ignoreMissingDependencies, false))
     session.setLocalRepositoryManager(repositorySystem.newLocalRepositoryManager(session, localRepo))
-    f(session)
+    val result = Try(f(session)) recover {
+      case e: ArtifactDescriptorException => throw new MissingPomException(e.getMessage)
+      case e => throw e
+    }
+    result.get
   }
 
   private def dependencyNodesOf(collectResult: CollectResult) = {

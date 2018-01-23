@@ -11,11 +11,11 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
   "Global Exclusion Filtering Dependency Resolver," >> {
     "return managed dependencies as implemented in the resolver given in its constructor" in {
       val managedDependencies = Set(randomDependency())
-      val resolver = new FakeMavenDependencyResolver(managedDependencies, Set.empty)
+      val managedDependencyCoordinates = randomCoordinates()
+      val resolver = new FakeMavenDependencyResolver(Set(ArtifactDescriptor.anArtifact(managedDependencyCoordinates,List.empty,managedDependencies.toList)))
       val filteringGlobalExclusionDependencyResolver = new FilteringGlobalExclusionDependencyResolver(resolver, Set.empty)
-      val dontCareArtifact = randomCoordinates()
 
-      filteringGlobalExclusionDependencyResolver.managedDependenciesOf(dontCareArtifact) must_== managedDependencies
+      filteringGlobalExclusionDependencyResolver.managedDependenciesOf(managedDependencyCoordinates) must_== managedDependencies
     }
 
     "given coordinates of artifact of interest" should {
@@ -38,7 +38,7 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
             packaging = Some("other-packaging"),
             classifier = Some("other-classifier")
           ))
-        val resolver = new FakeMavenDependencyResolver(managedDependencies = Set.empty,artifacts = Set(
+        val resolver = new FakeMavenDependencyResolver(artifacts = Set(
           ArtifactDescriptor.withSingleDependency(interestingArtifact.coordinates, transitiveDependency),
           ArtifactDescriptor.rootFor(transitiveDependency.coordinates),
           ArtifactDescriptor.rootFor(depFromExclude.coordinates)))
@@ -54,7 +54,6 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
         val transitiveDependency = randomDependency(artifactIdPrefix = "transitive-a")
         val anotherTransitiveDependency = randomDependency(artifactIdPrefix = "transitive-b")
         val resolver = new FakeMavenDependencyResolver(
-          managedDependencies = Set.empty,
           artifacts = Set(
             ArtifactDescriptor.withSingleDependency(interestingArtifact.coordinates, depFromExclude),
             ArtifactDescriptor.anArtifact(depFromExclude.coordinates, List(transitiveDependency, anotherTransitiveDependency)),
@@ -79,7 +78,6 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
         val transitiveDependency = randomDependency(artifactIdPrefix = "transitive")
 
         val resolver = new FakeMavenDependencyResolver(
-          managedDependencies = Set.empty,
           artifacts = Set(
             ArtifactDescriptor.withSingleDependency(interestingArtifact.coordinates, depFromExclude),
             ArtifactDescriptor.withSingleDependency(depFromExclude.coordinates, anotherDepFromExclude),
@@ -115,7 +113,6 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
         val dependencyOfExcludedDependency: Dependency
 
         def resolver = new FakeMavenDependencyResolver(
-          managedDependencies = Set.empty,
           artifacts = Set(
             ArtifactDescriptor.anArtifact(interestingArtifact.coordinates, List(directExcludedDependency, directIncludedDependency)),
             ArtifactDescriptor.withSingleDependency(directExcludedDependency.coordinates, dependencyOfExcludedDependency),
@@ -203,7 +200,6 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
       val directExcludedDependency = randomDependency(artifactIdPrefix = "excluded", withScope = directExcludedDependencyScope)
       val transitiveDependency = randomDependency(artifactIdPrefix = "transitive", withScope = transitiveDependencyScope)
       val resolver = new FakeMavenDependencyResolver(
-        managedDependencies = Set.empty,
         artifacts = Set(
           ArtifactDescriptor.withSingleDependency(interestingArtifact.coordinates, directExcludedDependency),
           ArtifactDescriptor.withSingleDependency(directExcludedDependency.coordinates, transitiveDependency),
@@ -228,7 +224,6 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
 
   private def fakeResolverWith(interestingArtifact: Dependency, itsDependency: Dependency) = {
     new FakeMavenDependencyResolver(
-      managedDependencies = Set.empty,
       artifacts = Set(
         ArtifactDescriptor.withSingleDependency(interestingArtifact.coordinates, itsDependency),
         ArtifactDescriptor.rootFor(itsDependency.coordinates)

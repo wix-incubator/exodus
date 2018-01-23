@@ -1,13 +1,12 @@
 package com.wixpress.build.maven
 
+import com.wixpress.build.maven.ArtifactDescriptor.anArtifact
+
 import scala.annotation.tailrec
 
-class FakeMavenDependencyResolver(
-                                   managedDependencies: Set[Dependency],
-                                   artifacts: Set[ArtifactDescriptor]
-                                 ) extends MavenDependencyResolver {
+class FakeMavenDependencyResolver(artifacts: Set[ArtifactDescriptor]) extends MavenDependencyResolver {
 
-  override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = managedDependencies
+  override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = accumulateManagedDeps(artifact).map(validatedDependency)
 
   override def dependencyClosureOf(baseArtifacts: Set[Dependency], withManagedDependencies: Set[Dependency]): Set[DependencyNode] =
     dependencyNodesFor(baseArtifacts, withManagedDependencies)
@@ -25,7 +24,7 @@ class FakeMavenDependencyResolver(
   }
 
   private def dependencyNodeFor(withManagedDeps: Set[Dependency])(dependency: Dependency): DependencyNode = {
-    val artifact = artifactFor(dependency.coordinates)
+    val artifact = findArtifactBy(dependency.coordinates).getOrElse(anArtifact(dependency.coordinates))
     val maybeManaged = withManagedDeps
       .find(_.coordinates.equalsOnGroupIdAndArtifactId(dependency.coordinates))
     val accumulatedExclusion = dependency.exclusions ++ maybeManaged.map(_.exclusions).getOrElse(Set.empty)
@@ -45,11 +44,6 @@ class FakeMavenDependencyResolver(
     })
   }
 
-  private implicit class CoordinatesExtended(coordinates: Coordinates) {
-    def toDependency: Dependency =
-      managedDependencies.find(_.coordinates == coordinates).getOrElse(Dependency(coordinates, MavenScope.Compile))
-  }
-
   private def transformScopes(originalScope: MavenScope)(d: Dependency): Dependency = {
     val newScope = (originalScope, d.scope) match {
       case (_, MavenScope.Runtime) => MavenScope.Runtime
@@ -65,20 +59,26 @@ class FakeMavenDependencyResolver(
       .getOrElse(dependency.version))
 
   override def directDependenciesOf(coordinates: Coordinates): Set[Dependency] = {
-    accumulateDirectDeps(Set.empty, Some(coordinates))
+    accumulateDirectDeps(coordinates)
   }
+
+  private def accumulateDirectDeps(coordinates: Coordinates) = accumulateDeps(Set.empty,Some(coordinates),_.dependencies.toSet)
+
+  private def accumulateManagedDeps(coordinates: Coordinates) = accumulateDeps(Set.empty,Some(coordinates),_.managedDependencies.toSet)
 
   @tailrec
-  private def accumulateDirectDeps(acc: Set[Dependency], maybeCoordinates: Option[Coordinates]): Set[Dependency] = {
-    if (maybeCoordinates.isEmpty) acc else {
-      val coordinates = maybeCoordinates.get
-      val artifact = artifactFor(coordinates)
-
-      accumulateDirectDeps(artifact.dependencies.toSet, artifact.parentCoordinates)
+  private def accumulateDeps(acc: Set[Dependency],
+                                    maybeCoordinates: Option[Coordinates] ,
+                                    retrieveDeps: ArtifactDescriptor => Set[Dependency]): Set[Dependency] =
+    maybeCoordinates match {
+      case Some(coordinates) =>
+        val artifact = findArtifactBy(coordinates).getOrElse(throw new MissingPomException(s"Could not find artifact $coordinates"))
+        accumulateDeps(acc ++ retrieveDeps(artifact), artifact.parentCoordinates,retrieveDeps)
+      case None => acc
     }
-  }
 
-  private def artifactFor(coordinates: Coordinates) = {
+
+  private def findArtifactBy(coordinates: Coordinates) =
     artifacts.find(artifact => {
       val artifactCoordinates = artifact.coordinates
       artifactCoordinates.groupId == coordinates.groupId &&
@@ -86,6 +86,5 @@ class FakeMavenDependencyResolver(
       artifactCoordinates.version == coordinates.version &&
       artifactCoordinates.packaging == coordinates.packaging
     })
-      .getOrElse(throw new RuntimeException(s"Could not find artifact $coordinates"))
-  }
+
 }

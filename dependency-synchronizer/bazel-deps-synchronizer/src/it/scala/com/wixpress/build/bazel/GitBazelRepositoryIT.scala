@@ -106,10 +106,6 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
     fakeRemoteRepository.initWithWorkspaceFileContent("")
   }
 
-  abstract class ctx(workspaceContent: String) extends Scope {
-
-  }
-
   private def aRandomTempDirectory = {
     val dir = File.newTemporaryDirectory("local-clone")
     dir.toJava.deleteOnExit()

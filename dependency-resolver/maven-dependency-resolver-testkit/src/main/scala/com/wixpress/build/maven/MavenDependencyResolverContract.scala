@@ -27,6 +27,65 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
   "Maven Dependency Resolver" >> {
 
+    "managed dependencies finder " should {
+      abstract class dependencyManagementCtx extends ctx {
+        val managedDependenciesCoordinates = someCoordinates("managed")
+
+        def managedDependencyArtifact: ArtifactDescriptor
+
+        def artifactWithManagedDeps(dependency:Dependency*) =
+          anArtifact(managedDependenciesCoordinates,List.empty,dependency.toList)
+
+        override def remoteArtifacts = Set(managedDependencyArtifact)
+      }
+
+      "no dependency if pom does not have managedDependencies" in new dependencyManagementCtx {
+
+        override def managedDependencyArtifact = artifactWithManagedDeps()
+
+        mavenDependencyResolver.managedDependenciesOf(managedDependenciesCoordinates) must beEmpty
+      }
+
+      "a simple dependency if pom has a managed dependency" in new dependencyManagementCtx {
+        lazy val dependency = randomDependency()
+
+        override def managedDependencyArtifact = artifactWithManagedDeps(dependency)
+
+        mavenDependencyResolver.managedDependenciesOf(managedDependenciesCoordinates) must contain(dependency)
+      }
+
+      "all dependencies if pom has multiple managed dependencies" in new dependencyManagementCtx {
+        lazy val someDependency = randomDependency()
+        lazy val someOtherDependency = randomDependency()
+        override def managedDependencyArtifact = artifactWithManagedDeps(someDependency, someOtherDependency)
+
+        private val retrievedManagedDependencies = mavenDependencyResolver.managedDependenciesOf(managedDependenciesCoordinates)
+
+        retrievedManagedDependencies must containTheSameElementsAs(Seq(someDependency, someOtherDependency))
+      }
+
+      "a dependency with exclusion if pom has a managed dependency with exclusion" in new dependencyManagementCtx {
+        lazy val dependency = randomDependency(withExclusions = Set(Exclusion(someGroupId, someArtifactId())))
+        override def managedDependencyArtifact = artifactWithManagedDeps(dependency)
+
+        val dependencies = mavenDependencyResolver.managedDependenciesOf(managedDependenciesCoordinates)
+        dependencies mustEqual Set(dependency)
+      }
+
+      "throw MissingPomException when coordinates cannot be found in remote repository" in new ctx {
+        val artifactNotInFakeMavenRepository = randomCoordinates()
+        mavenDependencyResolver.managedDependenciesOf(artifactNotInFakeMavenRepository) must
+          throwA[MissingPomException]
+      }
+
+      "throw PropertyNotDefined when property cannot be evaluated" in new dependencyManagementCtx {
+        val dep1 = randomDependency(withVersion = "${some.undefined.property}")
+
+        def managedDependencyArtifact = anArtifact(managedDependenciesCoordinates).withManagedDependency(dep1)
+
+        mavenDependencyResolver.managedDependenciesOf(managedDependenciesCoordinates) must throwA[PropertyNotDefinedException]
+      }
+    }
     "direct dependencies finder" >> {
       "given a root dependency should " +
         "return empty set of dependencies" in new ctx {
@@ -73,6 +132,12 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
         mavenDependencyResolver.directDependenciesOf(interestingArtifact) must contain(dependency)
       }
+
+      "throw MissingPomException when coordinates cannot be found in remote repository" in new ctx {
+        val artifactNotInFakeMavenRepository = randomCoordinates()
+        mavenDependencyResolver.directDependenciesOf(artifactNotInFakeMavenRepository) must
+          throwA[MissingPomException]
+      }
     }
 
 
@@ -80,7 +145,6 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
       "given empty list of dependencies" should {
         "return no dependency node" in new ctx {
           mavenDependencyResolver.dependencyClosureOf(Set.empty, emptyManagedDependencies) should beEmpty
-
         }
       }
 
@@ -259,6 +323,16 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
           )
         }
       }
+
+      "given dependency that is not in remote repository must return root dependencyNode" in new ctx {
+        val notExistsDependency = randomDependency()
+
+        override def remoteArtifacts: Set[ArtifactDescriptor] = Set.empty
+
+        mavenDependencyResolver.dependencyClosureOf(Set(notExistsDependency), emptyManagedDependencies) must contain(
+          DependencyNode(notExistsDependency, Set.empty))
+      }
+
     }
 
   }
