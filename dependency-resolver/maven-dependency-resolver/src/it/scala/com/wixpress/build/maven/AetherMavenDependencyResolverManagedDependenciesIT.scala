@@ -65,7 +65,7 @@ class AetherMavenDependencyResolverManagedDependenciesIT extends SpecificationWi
       val artifactNotInFakeMavenRepository = randomDependency().coordinates
       aetherMavenDependencyResolver.managedDependenciesOf(artifactNotInFakeMavenRepository) must
         throwA[ArtifactDescriptorException]
-    }.pendingUntilFixed("want to check with artifact that does not have pom")
+    }
 
     "throw PropertyNotDefined when property cannot be evaluated" in {
       val dep1 = randomDependency(withVersion = "${some.undefined.property}")

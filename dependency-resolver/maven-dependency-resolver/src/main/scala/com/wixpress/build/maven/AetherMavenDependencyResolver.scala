@@ -129,7 +129,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
   private def withSession[T](f: DefaultRepositorySystemSession => T): T = {
     val localRepo = new LocalRepository(tmpLocalRepoPath.pathAsString)
     val session = MavenRepositorySystemUtils.newSession
-    session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(true, true))
+    session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(false, false))
     session.setLocalRepositoryManager(repositorySystem.newLocalRepositoryManager(session, localRepo))
     f(session)
   }
