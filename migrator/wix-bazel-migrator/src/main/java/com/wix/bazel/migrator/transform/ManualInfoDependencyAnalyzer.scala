@@ -2,8 +2,8 @@ package com.wix.bazel.migrator.transform
 
 import java.nio.file.Paths
 
-import com.wix.bazel.migrator.SourceModules
 import com.wix.bazel.migrator.model.SourceModule
+import com.wix.build.maven.analysis.SourceModules
 
 class ManualInfoDependencyAnalyzer(sourceModules: SourceModules) extends DependencyAnalyzer {
   private val WixFrameworkModule = moduleForRelativePath("wix-framework")

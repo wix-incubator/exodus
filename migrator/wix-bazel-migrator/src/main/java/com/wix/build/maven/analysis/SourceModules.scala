@@ -1,9 +1,9 @@
-package com.wix.bazel.migrator
+package com.wix.build.maven.analysis
 
 import java.io.File
 
+import com.wix.bazel.migrator.WixMavenBuildSystem
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.build.maven.analysis.MavenBuildSystem
 
 case class SourceModules(codeModules: Set[SourceModule]) {
   def findByRelativePath(relativePath: String): Option[SourceModule] =
@@ -11,6 +11,13 @@ case class SourceModules(codeModules: Set[SourceModule]) {
 }
 
 object SourceModules {
-  def apply(repoRoot: File) = new SourceModules(new MavenBuildSystem(repoRoot.toPath, List(WixMavenBuildSystem.RemoteRepo)).modules())
+  def apply(repoRoot: File) = new SourceModules(
+    new MavenBuildSystem(repoRoot.toPath,
+      List(WixMavenBuildSystem.RemoteRepo),
+      SourceModulesOverridesReader.from(repoRoot.toPath))
+      .modules()
+  )
   def of(repoRoot: File) = apply(repoRoot)
 }
+
+

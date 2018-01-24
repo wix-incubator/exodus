@@ -291,6 +291,34 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       ))
     }
 
+    "a filtered SourceModules collection according to modulesToMute relative paths" in new ctx {
+      lazy val repo = Repo(MavenModule(gavPrefix = "parent").withModules(
+        modules = Map("child1" -> MavenModule(gavPrefix = "child1"), "child2_to_mute" -> MavenModule(gavPrefix = "child2"))))
+
+      override val buildSystem = new MavenBuildSystem(repo.root, List(fakeMavenRepository.url),
+        sourceModulesOverrides = SourceModulesOverrides("child2_to_mute"))
+      val sourceModules = buildSystem.modules()
+
+      sourceModules must contain(exactly(
+        sourceModule(relativePathFromMonoRepoRoot = "child1", externalModule = moduleGavStartsWith("child1")),
+      ))
+    }
+
+    "a filtered SourceModules collection of an entire sub-tree relative path" in new ctx {
+      lazy val repo = Repo.withoutAggregatorAtRoot(
+        "sibling1_to_mute" -> MavenModule(gavPrefix = "sibling1-parent").withModules(
+          modules = Map("child1" -> MavenModule(gavPrefix = "sibling1-child1"), "child2" -> MavenModule(gavPrefix = "sibling1-child2"))),
+        "sibling2" -> MavenModule(gavPrefix = "sibling2")
+      )
+
+      override val buildSystem = new MavenBuildSystem(repo.root, List(fakeMavenRepository.url),
+        sourceModulesOverrides = SourceModulesOverrides("sibling1_to_mute"))
+      val sourceModules = buildSystem.modules()
+
+      sourceModules must contain(exactly(
+        sourceModule(relativePathFromMonoRepoRoot = "sibling2", externalModule = moduleGavStartsWith("sibling2"))
+      ))
+    }
   }
 
   def sourceModule(relativePathFromMonoRepoRoot: String,

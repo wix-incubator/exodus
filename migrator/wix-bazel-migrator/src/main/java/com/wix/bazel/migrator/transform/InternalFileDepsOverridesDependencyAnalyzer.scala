@@ -2,8 +2,8 @@ package com.wix.bazel.migrator.transform
 
 import java.nio.file.{Path, Paths}
 
-import com.wix.bazel.migrator.SourceModules
 import com.wix.bazel.migrator.model.SourceModule
+import com.wix.build.maven.analysis.SourceModules
 
 class InternalFileDepsOverridesDependencyAnalyzer(sourceModules: SourceModules, repoRoot: Path) extends DependencyAnalyzer {
   private val internalFileDepsOverrides = InternalFileDepsOverridesReader.from(repoRoot)

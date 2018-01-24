@@ -12,12 +12,15 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader
 import scala.collection.JavaConverters._
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 
-class MavenBuildSystem(repoRoot: Path, remoteMavenRepositoryUrls: List[String]) {
+class MavenBuildSystem(repoRoot: Path,
+                       remoteMavenRepositoryUrls: List[String],
+                       sourceModulesOverrides: SourceModulesOverrides = SourceModulesOverrides.empty) {
 
   private val aetherResolver = new AetherMavenDependencyResolver(remoteMavenRepositoryUrls)
 
   def modules(): Set[SourceModule] = {
     readRootModules()
+      .filterNot(sourceModulesOverrides.mutedModule)
       .withDirectDependencies()
       .withResourcesDependencies()
   }

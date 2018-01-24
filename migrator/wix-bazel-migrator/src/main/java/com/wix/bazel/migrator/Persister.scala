@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Target, TestType}
+import com.wix.build.maven.analysis.SourceModules
 
 import scala.collection.JavaConverters._
 

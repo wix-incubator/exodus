@@ -3,6 +3,7 @@ package com.wix.bazel.migrator
 import java.time.temporal.ChronoUnit
 
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
+import com.wix.build.maven.analysis.SourceModules
 import com.wixpress.build.maven.{AetherMavenDependencyResolver, Coordinates}
 
 trait MigratorApp extends App {
