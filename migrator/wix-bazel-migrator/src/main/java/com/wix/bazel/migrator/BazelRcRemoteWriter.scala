@@ -37,10 +37,10 @@ class BazelRcRemoteWriter(repoRoot: File) {
        |# These flags are duplicated rather than imported from (for example)
        |# %workspace%/configs/debian8_clang/0.2.0/toolchain.bazelrc to make this
        |# bazelrc a standalone file that can be copied more easily.
-       |build:remote --host_javabase=@bazel_toolchains//configs/debian8_clang/0.2.0:jdk8
-       |build:remote --javabase=@bazel_toolchains//configs/debian8_clang/0.2.0:jdk8
+       |build:remote --host_javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
+       |build:remote --javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
        |build:remote --crosstool_top=@bazel_toolchains//configs/debian8_clang/0.2.0/bazel_0.9.0:toolchain
-       |build:remote --experimental_remote_platform_override='properties:{ name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-fl@sha256:e79e367aab94c6f18a0b39950fe4f160fda07ee01e3c32604c5f8472afa7c1f0" }'
+       |build:remote --experimental_remote_platform_override='properties:{ name:"container-image" value:"docker://gcr.io/gcb-with-custom-workers/rbe-toolchain-container@sha256:db0cce080d4ab4c6cb59b148c42ea2368f9955724685bc509e76159a0589a017" }'
        |
        |# Set various strategies so that all actions execute remotely. Mixing remote
        |# and local execution will lead to errors unless the toolchain and remote
