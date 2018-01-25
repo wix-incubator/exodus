@@ -27,6 +27,7 @@ pipeline {
         }
         stage('Test') {
             steps {
+                sh "bazel info"
                 echo "Running all tests excluding tests with tag 'docker'"
                 script {
                     unstable_by_exit_code("UNIT", """|#!/bin/bash
@@ -41,7 +42,6 @@ pipeline {
         }
         stage('build') {
             steps {
-                sh "bazel info"
                 sh "bazel ${env.BAZEL_STARTUP_OPTS} build ${env.BAZEL_FLAGS} //..."
             }
         }
