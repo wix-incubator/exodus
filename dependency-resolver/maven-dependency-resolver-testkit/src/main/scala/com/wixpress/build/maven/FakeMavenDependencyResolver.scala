@@ -72,7 +72,7 @@ class FakeMavenDependencyResolver(artifacts: Set[ArtifactDescriptor]) extends Ma
                                     retrieveDeps: ArtifactDescriptor => Set[Dependency]): Set[Dependency] =
     maybeCoordinates match {
       case Some(coordinates) =>
-        val artifact = findArtifactBy(coordinates).getOrElse(throw new MissingPomException(s"Could not find artifact $coordinates"))
+        val artifact = findArtifactBy(coordinates).getOrElse(throw new MissingPomException(s"Could not find artifact $coordinates" ,new NoSuchElementException()))
         accumulateDeps(acc ++ retrieveDeps(artifact), artifact.parentCoordinates,retrieveDeps)
       case None => acc
     }

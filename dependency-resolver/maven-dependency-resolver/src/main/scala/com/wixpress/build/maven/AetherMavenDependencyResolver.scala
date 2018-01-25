@@ -119,7 +119,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
     session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(ignoreMissingDependencies, false))
     session.setLocalRepositoryManager(repositorySystem.newLocalRepositoryManager(session, localRepo))
     val result = Try(f(session)) recover {
-      case e: ArtifactDescriptorException => throw new MissingPomException(e.getMessage)
+      case e: ArtifactDescriptorException => throw new MissingPomException(e.getMessage,e)
       case e => throw e
     }
     result.get
