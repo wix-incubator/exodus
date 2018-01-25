@@ -54,7 +54,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   }
 
   private val sourceFilesOverrides = readMutedFiles()
-  ConnectorSettings.setHost(ConnectorSettings.Host.EXPERIMENTAL)
+  ConnectorSettings.setHost(ConnectorSettings.Host.GATEWAY)
   private val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
   assert(codotaClient != null)
   codotaClient.setDefaultCodePack("wix_enc")

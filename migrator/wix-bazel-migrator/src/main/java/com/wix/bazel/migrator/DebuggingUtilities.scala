@@ -50,7 +50,7 @@ trait DebuggingMigratorApp extends MigratorApp {
 
 trait CodotaClientDebuggingMigratorApp extends DebuggingMigratorApp{
   protected def codotaClient = {
-    ConnectorSettings.setHost(ConnectorSettings.Host.EXPERIMENTAL)
+    ConnectorSettings.setHost(ConnectorSettings.Host.GATEWAY)
     val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
     codotaClient.setDefaultCodePack("wix_enc")
     codotaClient.setToken(codotaToken)
