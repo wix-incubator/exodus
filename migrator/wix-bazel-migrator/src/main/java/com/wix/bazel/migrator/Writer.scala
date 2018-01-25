@@ -139,7 +139,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
   }
 
   private def partOfRepoArtifacts(module: MavenJar): Boolean =
-    repoArtifactsCoordinates.exists(sameCoordinatesWithoutVersion(module.originatingExternalCoordinates))
+    repoArtifactsCoordinates.exists(sameCoordinatesWithoutVersion(module.originatingExternalDependency.coordinates))
 
   private def sameCoordinatesWithoutVersion(module: Coordinates)(repoArtifact: Coordinates) =
     repoArtifact.groupId == module.groupId && repoArtifact.artifactId == module.artifactId
@@ -402,7 +402,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     dependency match {
       case mavenDep: MavenJar =>
         writeDependency(mavenDep.belongingPackageRelativePath,
-          neverLinkPotentialSuffix(scope, workspaceNameTargetName(targetNameOrDefault(mavenDep), mavenDep.originatingExternalCoordinates)._2))
+          neverLinkPotentialSuffix(scope, workspaceNameTargetName(targetNameOrDefault(mavenDep), mavenDep.originatingExternalDependency.coordinates)._2))
       case proto: Proto =>
         writeDependency(proto.belongingPackageRelativePath,
           proto.name + "_scala")

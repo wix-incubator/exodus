@@ -9,4 +9,6 @@ case class Dependency(coordinates: Coordinates, scope: MavenScope, exclusions: S
   def withVersion(version: String): Dependency = this.copy(coordinates = this.coordinates.copy(version = version))
 
   def withScope(scope:MavenScope) : Dependency = this.copy(scope = scope)
+
+  def equalsOnCoordinatesIgnoringVersion(dependency: Dependency): Boolean = dependency.coordinates.equalsIgnoringVersion(coordinates)
 }

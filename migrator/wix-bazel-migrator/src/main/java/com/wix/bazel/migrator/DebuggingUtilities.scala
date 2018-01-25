@@ -120,3 +120,10 @@ object FlushOutCodeAnalysisIssuesPerModule extends DebuggingMigratorApp {
   }
 
 }
+
+object CheckThirdPartyConflicts extends DebuggingMigratorApp{
+  val conflicts = checkConflictsInThirdPartyDependencies(aetherResolver)
+  if (conflicts.fail.nonEmpty || conflicts.warn.nonEmpty){
+    throw new RuntimeException("Conflicts is not empty")
+  }
+}

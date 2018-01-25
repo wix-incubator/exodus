@@ -22,13 +22,13 @@ class ExternalProtoTransformer {
     }
 
   private def isProtoArchive(mavenJar: Target.MavenJar) =
-    mavenJar.originatingExternalCoordinates.classifier.contains("proto") &&
-      mavenJar.originatingExternalCoordinates.packaging.contains("zip")
+    mavenJar.originatingExternalDependency.coordinates.classifier.contains("proto") &&
+      mavenJar.originatingExternalDependency.coordinates.packaging.contains("zip")
 
   private def asExternalProtoDependency(target: Target.MavenJar): Target.External =
     Target.External(
       name = "proto",
       belongingPackageRelativePath = "",
-      externalWorkspace = target.originatingExternalCoordinates.workspaceRuleName
+      externalWorkspace = target.originatingExternalDependency.coordinates.workspaceRuleName
     )
 }

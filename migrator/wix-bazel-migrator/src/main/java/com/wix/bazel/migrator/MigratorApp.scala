@@ -3,8 +3,8 @@ package com.wix.bazel.migrator
 import java.time.temporal.ChronoUnit
 
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
-import com.wix.build.maven.analysis.SourceModules
-import com.wixpress.build.maven.{AetherMavenDependencyResolver, Coordinates}
+import com.wix.build.maven.analysis.{SourceModules, ThirdPartyConflict, ThirdPartyConflicts, ThirdPartyValidator}
+import com.wixpress.build.maven.{AetherMavenDependencyResolver, Coordinates, MavenDependencyResolver}
 
 trait MigratorApp extends App {
   lazy val configuration = RunConfiguration.from(args)
@@ -36,4 +36,25 @@ trait MigratorApp extends App {
     sourceModules
   }
 
+  protected def checkConflictsInThirdPartyDependencies(resolver: MavenDependencyResolver):ThirdPartyConflicts = {
+    val managedDependencies = aetherResolver.managedDependenciesOf(thirdPartyDependencySource).map(_.coordinates)
+    val thirdPartyConflicts = new ThirdPartyValidator(codeModules, managedDependencies).checkForConflicts()
+    print(thirdPartyConflicts)
+    thirdPartyConflicts
+  }
+
+  private def print(thirdPartyConflicts: ThirdPartyConflicts): Unit = {
+    printIfNotEmpty(thirdPartyConflicts.fail, "FAIL")
+    printIfNotEmpty(thirdPartyConflicts.warn, "WARN")
+  }
+
+
+
+  private def printIfNotEmpty(conflicts: Set[ThirdPartyConflict],level:String): Unit = {
+    if (conflicts.nonEmpty) {
+      println(s"[$level] ********  Found conflicts with third party dependencies ********")
+      conflicts.map(_.toString).toList.sorted.foreach(println)
+      println(s"[$level] ***********************************************************")
+    }
+  }
 }

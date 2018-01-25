@@ -21,8 +21,8 @@ class MavenBuildSystem(repoRoot: Path,
   def modules(): Set[SourceModule] = {
     readRootModules()
       .filterNot(sourceModulesOverrides.mutedModule)
-      .withDirectDependencies()
-      .withResourcesDependencies()
+    .withDirectDependencies()
+    .withResourcesDependencies()
   }
 
   private implicit class SourceModulesExtended(modules:Set[SourceModule]){
@@ -152,9 +152,7 @@ class MavenBuildSystem(repoRoot: Path,
   }
 
   private def toMavenJar(dependency: Dependency): (Scope, MavenJar) = {
-    val coordinates = dependency.coordinates
-    val module = Coordinates(coordinates.groupId, coordinates.artifactId, coordinates.version, coordinates.packaging, coordinates.classifier) //classifier isn't tested
-    (ScopeTranslation.fromMaven(dependency.scope.name), TargetForCoordinates(module).toTarget)
+    (ScopeTranslation.fromMaven(dependency.scope.name), TargetForCoordinates(dependency).toTarget)
   }
 
   private def collectTargets(modulePath: Path)(folderNames: Set[String]): Set[AnalyzedFromMavenTarget] =
@@ -184,11 +182,11 @@ object MavenBuildSystem {
   private val PotentialResources = Map(Scope.PROD_RUNTIME -> Set("main"), Scope.TEST_RUNTIME -> Set("test", "it", "e2e"))
 }
 
-private case class TargetForCoordinates(module: Coordinates) {
+private case class TargetForCoordinates(dependency: Dependency) {
   def toTarget: Target.MavenJar = Target.MavenJar(
-    module.libraryRuleName,
-    MavenToBazel.groupIdToPackage(module.groupId),
-    module)
+    dependency.coordinates.libraryRuleName,
+    MavenToBazel.groupIdToPackage(dependency.coordinates.groupId),
+    dependency)
 }
 
 private object MavenToBazel {

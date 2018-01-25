@@ -2,28 +2,44 @@ package com.wix.build.maven.analysis
 
 import com.wix.bazel.migrator.model.Target.MavenJar
 import com.wix.bazel.migrator.model.SourceModule
-import com.wixpress.build.maven.Coordinates
+import com.wixpress.build.maven.{Coordinates, Dependency}
 
 class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies: Set[Coordinates]) {
 
   private val simplifiedModuleToDependenciesMap = sourceModules.map(moduleToDependencies).toMap
 
-  private val thirdPartyDependencies =
-    (allDependencies -- sourceModulesAsDependencies)
+  private val thirdPartDependencies = allDependencies
+    .filterNot(d=> sourceModulesAsDependencies.exists(_.equalsIgnoringVersion(d.coordinates)))
+    .filterNot(d =>isIntraOrganizationDependency(d.coordinates))
+
+  private val thirdPartyCoordinates =
+    (allCoordinates -- sourceModulesAsDependencies)
       .filterNot(isIntraOrganizationDependency)
 
   private def sourceModulesAsDependencies = simplifiedModuleToDependenciesMap.keySet
 
   private def allDependencies = simplifiedModuleToDependenciesMap.values.flatten.toSet
+  private def allCoordinates = allDependencies.map(_.coordinates)
 
   def checkForConflicts(): ThirdPartyConflicts =
     ThirdPartyConflicts(
       fail = Set.empty,
-      warn = conflictsOfMultipleVersions ++ conflictsWithManagedDependencies
+      warn = conflictsOfMultipleVersions ++ conflictsWithManagedDependencies ++ conflictsOfExclusionCollision
     )
 
+  private def conflictsOfExclusionCollision: Set[DifferentExclusionCollision] = {
+    thirdPartDependencies
+      .groupBy(d => groupIdAndArtifactId(d.coordinates))
+      .filter(hasDifferentExclusions)
+      .map(differentExclusionCollision)
+      .toSet
+  }
+
+  private def hasDifferentExclusions(identifierTodependency: ((String, String), Set[Dependency])): Boolean = {
+    identifierTodependency._2.map(_.exclusions).size > 1
+  }
   private def conflictsOfMultipleVersions: Set[ThirdPartyConflict] =
-    thirdPartyDependencies
+    thirdPartyCoordinates
       .groupBy(groupIdAndArtifactId)
       .filter(hasMultipleVersions)
       .map(multipleVersionDependencyConflict)
@@ -35,12 +51,12 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
   private def groupIdAndArtifactId(module: Coordinates) = (module.groupId, module.artifactId)
 
   private def conflictsWithManagedDependencies: Set[ThirdPartyConflict] = {
-    val conflictedDependencies = thirdPartyDependencies -- managedDependencies
+    val conflictedDependencies = thirdPartyCoordinates -- managedDependencies
     conflictedDependencies.map(overrideOrUnManagedConflict)
   }
 
   private def overrideOrUnManagedConflict(conflictedDependency: Coordinates) = {
-    val dependencyWithSomeConsumers = dependencyWithLimitedConsumers(conflictedDependency)
+    val dependencyWithSomeConsumers = coordinateWithLimitedConsumers(conflictedDependency)
     managedDependencies.find(basedOnGroupIdAndArtifactIdOf(conflictedDependency)) match {
       case Some(managedDependency) => CollisionWithManagedDependencyConflict(dependencyWithSomeConsumers, managedDependency.version)
       case None => UnManagedDependencyConflict(dependencyWithSomeConsumers)
@@ -53,7 +69,7 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
 
   private def anyScopeDependenciesOf(sourceModule: SourceModule) =
     sourceModule.dependencies.scopedDependencies.values.flatten
-    .collect { case mavenJar: MavenJar => mavenJar.originatingExternalCoordinates }.toSet
+    .collect { case mavenJar: MavenJar => mavenJar.originatingExternalDependency }.toSet
 
   private def moduleToDependencies(sourceModule: SourceModule) =
     sourceModule.externalModule -> anyScopeDependenciesOf(sourceModule)
@@ -62,10 +78,23 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
 
   private def multipleVersionDependencyConflict(identifierToModules: ((String, String), Set[Coordinates])): MultipleVersionDependencyConflict =
     identifierToModules match {
-      case ((groupId, artifactId), modules) => MultipleVersionDependencyConflict(groupId, artifactId, modules.map(dependencyWithLimitedConsumers))
+      case ((groupId, artifactId), modules) => MultipleVersionDependencyConflict(groupId, artifactId, modules.map(coordinateWithLimitedConsumers))
     }
 
-  private def dependencyWithLimitedConsumers(dependency: Coordinates) = {
+  private def differentExclusionCollision(identifierToModules: ((String, String), Set[Dependency])): DifferentExclusionCollision =
+    identifierToModules match {
+      case ((groupId, artifactId), modules) => DifferentExclusionCollision(groupId, artifactId, modules.map(dependencyWithLimitedConsumers))
+    }
+
+
+  private def coordinateWithLimitedConsumers(coordinate: Coordinates) = {
+    val MaxConsumersToSample = 5
+    val limitedConsumers = simplifiedModuleToDependenciesMap.filter(_._2.map(_.coordinates).contains(coordinate))
+      .keySet.take(MaxConsumersToSample)
+    CoordinatesWithConsumers(coordinate, limitedConsumers)
+  }
+
+  private def dependencyWithLimitedConsumers(dependency: Dependency) = {
     val MaxConsumersToSample = 5
     val limitedConsumers = simplifiedModuleToDependenciesMap.filter(_._2.contains(dependency))
       .keySet.take(MaxConsumersToSample)

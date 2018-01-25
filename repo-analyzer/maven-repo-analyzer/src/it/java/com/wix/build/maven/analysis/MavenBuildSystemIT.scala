@@ -5,12 +5,13 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 
 import com.google.common.jimfs.{Configuration, Jimfs}
+import com.wix.bazel.migrator.model.Target.MavenJar
 import com.wix.bazel.migrator.model._
 import com.wix.build.maven.analysis.MavenModule._
 import com.wix.build.maven.analysis.SynchronizerConversion.MavenModule2ArtifactDescriptor
-import com.wixpress.build.maven.{ArtifactDescriptor, Coordinates, FakeMavenRepository, MavenScope, Dependency => SyncronizerDependency}
+import com.wixpress.build.maven.{ArtifactDescriptor, Coordinates, Exclusion, FakeMavenRepository, MavenScope, Dependency}
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer
-import org.apache.maven.model.{Dependency, Model, Parent}
+import org.apache.maven.model.{Dependency => MavenDependency, Model, Parent}
 import org.specs2.execute.{AsResult, Failure, Result}
 import org.specs2.matcher.{AlwaysMatcher, Matcher}
 import org.specs2.mutable.{Around, SpecificationWithJUnit}
@@ -32,7 +33,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
         registerInMavenRepository(module.modules.values)
       }
 
-      def asExternal(module:MavenModule): Coordinates =
+      def asExternal(module: MavenModule): Coordinates =
         Coordinates(module.groupId.get, module.artifactId, module.version.get)
 
 
@@ -159,12 +160,21 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
 
     "direct external dependencies" in new ctx {
       def someCoordinates = Coordinates("com.google.guava", "guava", "19")
+
+      def someDependency = Dependency(someCoordinates, MavenScope.Compile)
+
       def someCoordinatesWithClassifier = Coordinates("com.example", "foo", "15", classifier = Some("classifier"))
+
+      def someDependencyWithClassifier = Dependency(someCoordinatesWithClassifier, MavenScope.Compile)
+
       def someTestCoordinates = Coordinates("com.google.foo", "bar", "17")
 
+      def someDependencyWithTestCoordinates = Dependency(someTestCoordinates, MavenScope.Test)
+
       lazy val repo = Repo(SomeCodeModule
-        .withJars(Scope.PROD_COMPILE -> Set(someCoordinates, someCoordinatesWithClassifier))
-        .withJars(Scope.TEST_COMPILE -> Set(someTestCoordinates)))
+        .withJars(Scope.PROD_COMPILE -> Set(someDependency, someDependencyWithClassifier))
+        .withJars(Scope.TEST_COMPILE -> Set(someDependencyWithTestCoordinates)))
+
 
       val sourceModules = buildSystem.modules()
 
@@ -173,25 +183,27 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
           Map(Scope.PROD_COMPILE ->
             Set(Target.MavenJar(name = "guava",
               belongingPackageRelativePath = "third_party/com/google/guava",
-              originatingExternalCoordinates = someCoordinates),
+              originatingExternalDependency = someDependency),
               Target.MavenJar(name = "foo_classifier",
                 belongingPackageRelativePath = "third_party/com/example",
-                originatingExternalCoordinates = someCoordinatesWithClassifier)),
+                originatingExternalDependency = someDependencyWithClassifier)),
             Scope.TEST_COMPILE -> Set(Target.MavenJar(name = "bar",
               belongingPackageRelativePath = "third_party/com/google/foo",
-              originatingExternalCoordinates = someTestCoordinates))))
+              originatingExternalDependency = someDependencyWithTestCoordinates))))
         )))
     }
 
     "internal dependencies as map from scope to relative path" in new ctx {
       def someInternalModule = MavenModule(gavPrefix = "internal")
+
       def someTestInternalModule = MavenModule(gavPrefix = "internal_test")
 
       def dependingModule = MavenModule(gavPrefix = "depending")
-        .withJars(Scope.PROD_COMPILE -> Set(asExternal(someInternalModule)))
-        .withJars(Scope.TEST_COMPILE -> Set(asExternal(someTestInternalModule)))
+        .withJars(Scope.PROD_COMPILE -> Set(Dependency(asExternal(someInternalModule), MavenScope.Compile)))
+        .withJars(Scope.TEST_COMPILE -> Set(Dependency(asExternal(someTestInternalModule), MavenScope.Test)))
 
       def internalLeafRelativePath = "leaf"
+
       def internalTestLeafRelativePath = "test-leaf"
 
       lazy val repo = Repo(SomeAggregatorModule.withModules(Map(
@@ -212,10 +224,15 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
     }
 
     "direct external dependencies with pom packaging" in new ctx {
+
+      import com.wixpress.build.maven.Dependency
+
       def someCoordinates = Coordinates("some.package", "foo", "dontcare", packaging = Some("pom"))
 
+      def someDependency = Dependency(someCoordinates, MavenScope.Compile)
+
       lazy val repo = Repo(SomeCodeModule
-        .withJars(Scope.PROD_COMPILE -> Set(someCoordinates)))
+        .withJars(Scope.PROD_COMPILE -> Set(someDependency)))
 
       val sourceModules = buildSystem.modules()
 
@@ -224,19 +241,24 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
           Map(Scope.PROD_COMPILE ->
             Set(Target.MavenJar(name = "foo",
               belongingPackageRelativePath = "third_party/some/package",
-              originatingExternalCoordinates = someCoordinates)))))
-        ))
+              originatingExternalDependency = someDependency)))))
+      ))
     }
 
     "if the dependency on internal modules was on prod/test code" in new ctx {
       def someCompileScopeTestClassesModule = MavenModule(gavPrefix = "internal_compile_scope_depend_on_tests")
+
       def someTestScopeTestClassesModule = MavenModule(gavPrefix = "internal_test_scope_depend_on_tests")
 
       def dependingModule = MavenModule(gavPrefix = "depending")
-        .withJars(Scope.PROD_COMPILE -> Set(asExternal(someCompileScopeTestClassesModule).copy(classifier = Some("tests")), asExternal(someTestScopeTestClassesModule)))
-        .withJars(Scope.TEST_COMPILE -> Set(asExternal(someTestScopeTestClassesModule).copy(classifier = Some("tests"))))
+        .withJars(Scope.PROD_COMPILE -> Set(
+          Dependency(asExternal(someCompileScopeTestClassesModule).copy(classifier = Some("tests")), MavenScope.Compile),
+          Dependency(asExternal(someTestScopeTestClassesModule), MavenScope.Compile)))
+        .withJars(Scope.TEST_COMPILE -> Set(
+          Dependency(asExternal(someTestScopeTestClassesModule).copy(classifier = Some("tests")), MavenScope.Test)))
 
       def internalCompileScopeLeafRelativePath = "leaf"
+
       def internalBothScopesLeafRelativePath = "test-compile-leaf"
 
       lazy val repo = Repo(SomeAggregatorModule.withModules(Map(
@@ -251,12 +273,12 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
         be_==(ModuleDependencies(internalDependencies =
           Map(
             Scope.PROD_COMPILE -> Set(DependencyOnSourceModule(internalCompileScopeLeafRelativePath,
-                                                                isDependingOnTests = true),
-                                      DependencyOnSourceModule(internalBothScopesLeafRelativePath,
-                                        isDependingOnTests = false)
+              isDependingOnTests = true),
+              DependencyOnSourceModule(internalBothScopesLeafRelativePath,
+                isDependingOnTests = false)
             ),
             Scope.TEST_COMPILE -> Set(DependencyOnSourceModule(internalBothScopesLeafRelativePath,
-                                                                isDependingOnTests = true
+              isDependingOnTests = true
             ))
           )
         ))))
@@ -282,14 +304,38 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       lazy val repo = Repo.withoutAggregatorAtRoot(
         "sibling1" -> MavenModule(gavPrefix = "sibling1")
       )
+
       Files.createDirectory(repo.root.resolve("sibling-without-pom-which-should-be-filtered"))
 
       val sourceModules = buildSystem.modules()
-
       sourceModules must contain(exactly(
         sourceModule(relativePathFromMonoRepoRoot = "sibling1", externalModule = moduleGavStartsWith("sibling1"))
       ))
     }
+
+    "SourceModules with exclusion in dependencies" in new ctx {
+      def someDependency = Dependency(someCoordinates, MavenScope.Compile, Set(Exclusion("excluded.group", "excluded-artifact")))
+
+      lazy val repo = Repo(SomeCodeModule
+        .withJars(Scope.PROD_COMPILE -> Set(someDependency)))
+
+      val sourceModules = buildSystem.modules()
+
+      sourceModules must contain(exactly(sourceModule(
+        dependencies = containDependencyWith(Scope.PROD_COMPILE,
+          MavenJar(name = "guava",
+            belongingPackageRelativePath = "third_party/com/google/guava",
+            originatingExternalDependency = someDependency)
+        ))))
+    }
+
+
+    def someCoordinates = Coordinates("com.google.guava", "guava", "19")
+
+    def containDependencyWith(scope: Scope, expectedJar: AnalyzedFromMavenTarget): Matcher[ModuleDependencies] =
+      contain(expectedJar) ^^ {
+        (_: ModuleDependencies).scopedDependencies(scope)
+      }
 
     "a filtered SourceModules collection according to modulesToMute relative paths" in new ctx {
       lazy val repo = Repo(MavenModule(gavPrefix = "parent").withModules(
@@ -300,7 +346,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(
-        sourceModule(relativePathFromMonoRepoRoot = "child1", externalModule = moduleGavStartsWith("child1")),
+        sourceModule(relativePathFromMonoRepoRoot = "child1", externalModule = moduleGavStartsWith("child1"))
       ))
     }
 
@@ -351,12 +397,15 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       startWith(prefix) ^^ {
         (_: Coordinates).version aka "version"
       }
-
+  
 }
+
 object Repo {
   def apply(rootModule: MavenModule): Repo = new Repo(rootAggregatorModule = Some(rootModule))
+
   def withoutAggregatorAtRoot(siblingModules: (String, MavenModule)*): Repo = new Repo(siblingModules = siblingModules.toList)
 }
+
 case class Repo(rootAggregatorModule: Option[MavenModule] = None, siblingModules: List[(String, MavenModule)] = Nil) {
   private lazy val fileSystem = Jimfs.newFileSystem(Configuration.unix())
   private lazy val repoRoot = fileSystem.getPath("repoRoot")
@@ -366,9 +415,10 @@ case class Repo(rootAggregatorModule: Option[MavenModule] = None, siblingModules
   def write(): Unit = rootAggregatorModule match {
     case Some(rootModule) => writeModule(repoRoot, rootModule)
     case None => siblingModules.foreach { case (relativePath, module) =>
-        writeModule(repoRoot.resolve(relativePath), module)
+      writeModule(repoRoot.resolve(relativePath), module)
     }
   }
+
   def rootModules: List[MavenModule] = rootAggregatorModule match {
     case Some(rootModule) => List(rootModule)
     case None => siblingModules.map(_._2)
@@ -435,12 +485,12 @@ case class Repo(rootAggregatorModule: Option[MavenModule] = None, siblingModules
     module.parent.map(moduleToParent).foreach(model.setParent)
     module.dependencies.foreach { dependenciesOfScope =>
       dependenciesOfScope._2.foreach { m =>
-        val dep = new Dependency
-        dep.setArtifactId(m.artifactId)
-        dep.setGroupId(m.groupId)
-        dep.setVersion(m.version)
-        m.classifier.foreach(dep.setClassifier)
-        m.packaging.filterNot(_ == "jar").foreach(dep.setType)
+        val dep = new MavenDependency
+        dep.setArtifactId(m.coordinates.artifactId)
+        dep.setGroupId(m.coordinates.groupId)
+        dep.setVersion(m.coordinates.version)
+        m.coordinates.classifier.foreach(dep.setClassifier)
+        m.coordinates.packaging.filterNot(_ == "jar").foreach(dep.setType)
         dep.setScope(ScopeTranslation.toMaven(dependenciesOfScope._1))
         model.addDependency(dep)
       }
@@ -468,8 +518,8 @@ case class MavenModule(groupId: Option[String] = None,
                        modules: Map[String, MavenModule] = Map.empty,
                        parent: Option[MavenModule] = None,
                        resourceFolders: Set[String] = Set.empty,
-                       dependencies: Set[(Scope, Set[Coordinates])] = Set.empty) {
-  def withJars(dependenciesOfScope: (Scope, Set[Coordinates])): MavenModule =
+                       dependencies: Set[(Scope, Set[Dependency])] = Set.empty) {
+  def withJars(dependenciesOfScope: (Scope, Set[Dependency])): MavenModule =
     copy(dependencies = dependencies + dependenciesOfScope)
 
   //due to current limitation with how we work with Aether/FakeMavenRepository
@@ -508,23 +558,23 @@ object SynchronizerConversion {
 
   implicit class MavenModule2ArtifactDescriptor(module: MavenModule) {
 
-    def toDependency(scopedCoordinatess: (Scope, Set[Coordinates])): Set[SyncronizerDependency] = {
+    def toDependency(scopedCoordinatess: (Scope, Set[Coordinates])): Set[Dependency] = {
       scopedCoordinatess._2.map(toDependency(scopedCoordinatess._1))
     }
 
-    def toDependency(scope: Scope)(externalModule: Coordinates): SyncronizerDependency = {
+    def toDependency(scope: Scope)(externalModule: Coordinates): Dependency = {
       val coordinates = Coordinates(
         groupId = externalModule.groupId,
         artifactId = externalModule.artifactId,
         version = externalModule.version,
         classifier = externalModule.classifier,
         packaging = externalModule.packaging)
-      SyncronizerDependency(coordinates, MavenScope.of(ScopeTranslation.toMaven(scope)))
+      Dependency(coordinates, MavenScope.of(ScopeTranslation.toMaven(scope)))
     }
 
     def asArtifactDescriptor: ArtifactDescriptor = {
       val coordinates = Coordinates(groupId = module.resolvedGroupId, artifactId = module.artifactId, version = module.resolvedVersion)
-      ArtifactDescriptor.anArtifact(coordinates, deps = module.dependencies.flatMap(toDependency).toList)
+      ArtifactDescriptor.anArtifact(coordinates, deps = module.dependencies.flatMap(x => x._2).toList)
     }
   }
 

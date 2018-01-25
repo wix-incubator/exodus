@@ -1,17 +1,20 @@
 package com.wix.bazel.migrator.transform
 
-import com.wix.bazel.migrator.model.makers.ModuleMaker._
 import com.wix.bazel.migrator.model.Matchers._
 import com.wix.bazel.migrator.model._
-import org.specs2.mutable.SpecificationWithJUnit
+import com.wix.bazel.migrator.model.makers.ModuleMaker._
 import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.maven.MavenMakers.asCompileDependency
+import com.wixpress.build.maven.{Dependency, MavenScope}
+import org.specs2.mutable.SpecificationWithJUnit
 
 class ExternalProtoTransformerTest extends SpecificationWithJUnit {
 
   "ExternalProtoTransformer" should {
 
+
     "add external modules with proto classifier and zip packaging as dependencies to proto targets" in {
-      val externalProtoArtifact = anExternalModule("external_proto_lib").copy(classifier = Some("proto"), packaging = Some("zip"))
+      val externalProtoArtifact = Dependency(anExternalModule("external_proto_lib").copy(classifier = Some("proto"), packaging = Some("zip")), MavenScope.Compile)
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
         Set(Target.Proto("internal-proto-lib", "module-path", Set.empty)),
         aModuleWith(Target.MavenJar("external_proto_lib", "//third_party/some/group/id", externalProtoArtifact))
@@ -26,7 +29,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
               externalTarget(
                 name = "proto",
                 belongsToPackage = equalTo(""),
-                externalWorkspace = equalTo(externalProtoArtifact.workspaceRuleName))
+                externalWorkspace = equalTo(externalProtoArtifact.coordinates.workspaceRuleName))
             ))
           ))
         )
@@ -37,7 +40,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
         Set(Target.Jvm("internal-jvm-lib", Set.empty, "module-path", Set.empty, CodePurpose.Prod(), null)),
         aModuleWith(Target.MavenJar("external_proto_lib", "//third_party/some/group/id",
-          anExternalModule("external_proto_lib").copy(classifier = Some("proto"), packaging = Some("zip"))))
+           Dependency(anExternalModule("external_proto_lib").copy(classifier = Some("proto"), packaging = Some("zip")), MavenScope.Compile)))
       )
       )
       val transformer = new ExternalProtoTransformer()
@@ -54,13 +57,13 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
         Set(Target.Proto("internal-proto-lib", "module-path", Set.empty)),
         aModuleWith(
           Target.MavenJar("external_non_proto_zip", "//third_party/some/group/id",
-            anExternalModule("external_non_proto_zip").copy(classifier = Some("non-proto"), packaging = Some("zip"))),
+            asCompileDependency(anExternalModule("external_non_proto_zip").copy(classifier = Some("non-proto"), packaging = Some("zip")))),
           Target.MavenJar("external_proto_jar", "//third_party/some/group/id",
-            anExternalModule("external_proto_jar").copy(classifier = Some("proto"), packaging = Some("jar"))),
+            asCompileDependency(anExternalModule("external_proto_jar").copy(classifier = Some("proto"), packaging = Some("jar")))),
           Target.MavenJar("external_proto_zip", "//third_party/some/group/id",
-            anExternalModule("external_proto_zip").copy(classifier = Some("proto"), packaging = Some("zip")))
+            asCompileDependency(anExternalModule("external_proto_zip").copy(classifier = Some("proto"), packaging = Some("zip")))))
         ))
-      )
+
       val transformer = new ExternalProtoTransformer()
 
       transformer.transform(packages) must contain(exactly(
@@ -89,8 +92,8 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
     }
 
     "add multiple external proto modules to proto targets" in {
-      val someProtoArtifact = anExternalModule("external_proto1").copy(classifier = Some("proto"), packaging = Some("zip"))
-      val otherProtoArtifact = anExternalModule("external_proto2").copy(classifier = Some("proto"), packaging = Some("zip"))
+      val someProtoArtifact = Dependency(anExternalModule("external_proto1").copy(classifier = Some("proto"), packaging = Some("zip")), MavenScope.Compile)
+      val otherProtoArtifact = Dependency(anExternalModule("external_proto2").copy(classifier = Some("proto"), packaging = Some("zip")), MavenScope.Compile)
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
         Set(Target.Proto("internal-proto-lib", "module-path", Set.empty)),
         aModuleWith(
@@ -106,8 +109,8 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
         aPackage(relativePath = startingWith("module-path"),
           target = a(protoTarget("internal-proto-lib",
             dependencies = contain(exactly(
-              externalTarget(name = "proto", externalWorkspace = equalTo(someProtoArtifact.workspaceRuleName)),
-              externalTarget(name = "proto", externalWorkspace = equalTo(otherProtoArtifact.workspaceRuleName))
+              externalTarget(name = "proto", externalWorkspace = equalTo(someProtoArtifact.coordinates.workspaceRuleName)),
+              externalTarget(name = "proto", externalWorkspace = equalTo(otherProtoArtifact.coordinates.workspaceRuleName))
             ))
           ))
         )))
@@ -118,7 +121,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
         Set(Target.Proto("internal-proto-lib", "module-path", Set(Target.Proto("internal-proto-dep", "internal-path", Set.empty)))),
         aModuleWith(
           Target.MavenJar("external_proto", "//third_party/some/group/id",
-            anExternalModule("external_proto").copy(classifier = Some("proto"), packaging = Some("zip")))
+            asCompileDependency(anExternalModule("external_proto").copy(classifier = Some("proto"), packaging = Some("zip"))))
         ))
       )
       val transformer = new ExternalProtoTransformer()

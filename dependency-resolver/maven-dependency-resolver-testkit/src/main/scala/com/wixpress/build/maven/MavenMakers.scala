@@ -36,7 +36,11 @@ object MavenMakers {
 
   def someCoordinates(artifactId:String) = Coordinates("some.group",artifactId,"some-version")
 
-  def aDependency(artifactId:String,scope:MavenScope = MavenScope.Compile) = Dependency(someCoordinates(artifactId),scope)
+  def aDependency(artifactId:String,scope:MavenScope = MavenScope.Compile, exclusions: Set[Exclusion] = Set.empty) =
+    Dependency(someCoordinates(artifactId),scope, exclusions)
+
+  def asCompileDependency(artifact: Coordinates, exclusions: Set[Exclusion] = Set.empty): Dependency =
+    Dependency(artifact, MavenScope.Compile, exclusions)
 
   def aRootDependencyNode(dependency: Dependency) = DependencyNode(dependency,Set.empty)
 }

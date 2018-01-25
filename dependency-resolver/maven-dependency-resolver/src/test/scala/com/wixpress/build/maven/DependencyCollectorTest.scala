@@ -45,6 +45,23 @@ class DependencyCollectorTest extends SpecificationWithJUnit {
           .withManagedDependenciesOf(artifactWithManagedDependencies)
           .dependencySet() must contain(allOf(newDependencies))
       }
+
+      "merge all exclusions for each dependency" in new ctx {
+        val otherDependency = aDependency("guava", exclusions = Set(MavenMakers.anExclusion("a")))
+        val newDependencies = Set(
+          aDependency("b", exclusions = Set(MavenMakers.anExclusion("a"))),
+          aDependency("b", exclusions = Set(MavenMakers.anExclusion("c"))),
+          aDependency("b", exclusions = Set(MavenMakers.anExclusion("d"))),
+          otherDependency)
+        val collector = new DependencyCollector(emptyResolver, newDependencies)
+
+        collector.mergeExclusionsOfSameCoordinates().dependencySet() mustEqual Set(
+          aDependency("b", exclusions = Set(
+            MavenMakers.anExclusion("a"),
+            MavenMakers.anExclusion("c"),
+            MavenMakers.anExclusion("d"))),
+          otherDependency)
+      }
     }
 
     "after already collect dependency A," should {
