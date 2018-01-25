@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Target, TestType}
 import com.wix.build.maven.analysis.SourceModules
+import com.wixpress.build.maven.MavenScope
 
 import scala.collection.JavaConverters._
 
@@ -23,6 +24,7 @@ object Persister {
     .addMixIn(classOf[Target], classOf[TypeAddingMixin])
     .addMixIn(classOf[CodePurpose], classOf[TypeAddingMixin])
     .addMixIn(classOf[TestType], classOf[TypeAddingMixin])
+    .addMixIn(classOf[MavenScope], classOf[TypeAddingMixin])
 
   def persistTransformationResults(bazelPackages: Set[Package]): Unit = {
     println("Persisting transformation")

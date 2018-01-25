@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model._
+import com.wixpress.build.maven.MavenScope
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -23,6 +24,7 @@ class CachingEagerEvaluatingCodotaDependencyAnalyzer(sourceModules: Set[SourceMo
     .addMixIn(classOf[Target], classOf[TypeAddingMixin])
     .addMixIn(classOf[CodePurpose], classOf[TypeAddingMixin])
     .addMixIn(classOf[TestType], classOf[TypeAddingMixin])
+    .addMixIn(classOf[MavenScope], classOf[TypeAddingMixin])
 
   private val collectionType = objectMapper.getTypeFactory.constructCollectionType(classOf[util.Collection[Code]], classOf[Code])
   private val clean = sys.props.getOrElse("clean.codota.analysis.cache", "") == "true"
