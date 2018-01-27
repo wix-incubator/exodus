@@ -34,14 +34,9 @@ class WorkspaceWriter(repoRoot: File) {
          |    url = "http://repo.dev.wixpress.com/artifactory/libs-snapshots",
          |)
          |
-         |maven_jar(
-         |    name = "jimfs",
-         |    artifact = "com.google.jimfs:jimfs:1.1",
-         |)
-         |
          |
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
-         |core_server_build_tools_version="1806e329c8cc405badcc88bc1107e7ec75f716c4" # update this as needed
+         |core_server_build_tools_version="db4ea70f486ff164b65ad2516017b229e2a742b3" # update this as needed
          |
          |git_repository(
          |             name = "core_server_build_tools",
