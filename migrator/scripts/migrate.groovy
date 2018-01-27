@@ -40,6 +40,8 @@ pipeline {
                 dir("${env.REPO_NAME}") {
                     sh "buildozer 'add tags manual' //third_party/...:%scala_import"
                     sh 'buildifier $(find . -iname BUILD -type f)'
+                    sh 'touch .gitignore'
+                    sh 'grep -q -F "bazel-*" .gitignore || echo "bazel-*" >> .gitignore'
                     script{
                         if (fileExists('bazel_migration/post-migration.sh')){
                             sh "bazel_migration/post-migration.sh"
