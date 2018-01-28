@@ -46,8 +46,8 @@
         </dependency>
         <dependency>
             <groupId>com.codota</groupId>
-            <artifactId>manual-sdk</artifactId>
-            <version>3.1</version>
+            <artifactId>codota-sdk-java</artifactId>
+            <version>1.0.7</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
