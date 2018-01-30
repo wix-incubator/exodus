@@ -262,8 +262,10 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
 
     val internalDeps = accumulateDependenciesByScopeAndModuleDependenciesByScope(target, serializedDependenciesByScope, serializedModuleDependenciesByScope)
 
-    val externalDeps = thirdPartyDepsAsSerializedTargetsOfRepoArtifacts.getOrElseUpdate(target.originatingSourceModule.externalModule,
-      thirdPartyDepsAsTargetsOfRepoArtifacts(target.originatingSourceModule.externalModule)
+    val originatingMavenModule = target.originatingSourceModule.externalModule
+    val externalDeps = thirdPartyDepsAsSerializedTargetsOfRepoArtifacts.getOrElseUpdate(originatingMavenModule,
+      thirdPartyDepsAsTargetsOfRepoArtifacts(originatingMavenModule)
+        .map({ case (scope, targets) => scope -> onlyNonProtoTargetsOf(originatingMavenModule, targets) })
         .map({ case (scope, targets) => scope -> targets.map(writeDependency(scope)) })
     )
     val optionalTestCompileTargets = target.codePurpose match {
@@ -412,7 +414,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
 
   private def writeSourceDependency(dependency: Target) =
     dependency match {
-      case external : Target.External => writeExternalWorkspaceDependency(external)
+      case external: Target.External => writeExternalWorkspaceDependency(external)
       case _ => writeDependency(dependency.belongingPackageRelativePath, targetNameOrDefault(dependency))
     }
 
@@ -479,9 +481,11 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     """package(default_visibility = ["//visibility:public"])
       |""".stripMargin
   private val LoadResourcesMacro = """load("@core_server_build_tools//:macros.bzl","resources")""" + "\n"
+
   private def resourcesPackageFor(target: Target.Resources) =
     DefaultPublicVisibility + LoadResourcesMacro +
       s"resources(${serializedPotentialTestOnlyOverride(target)})\n"
+
   private val ModulePackageContent =
     DefaultPublicVisibility +
       """filegroup(
@@ -520,4 +524,20 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       case "" => testSize
       case nonEmptyTestSize => s"""size = "$nonEmptyTestSize","""
     }
+
+  private def onlyNonProtoTargetsOf(module:Coordinates, targets: Set[MavenJar]): Set[MavenJar] = {
+    val (protoTargets, nonProtoTargets) = targets.partition(isProtoArchive)
+    protoTargets.foreach(protoTarget => println(
+      s"""[WARN] ******************************
+         |      Ignoring proto dependency ${protoTarget.originatingExternalDependency.coordinates} for module $module
+         |      If you actually need this dependency refer to the docs:
+         |      https://github.com/wix-private/bazel-tooling/blob/jvm-proto-dep/migrator/docs/troubleshooting-migration-failures.md#proto-dependencies
+         |      ******************************
+         |""".stripMargin))
+    nonProtoTargets
+  }
+
+  private def isProtoArchive(mavenJar: Target.MavenJar) =
+    mavenJar.originatingExternalDependency.coordinates.classifier.contains("proto") &&
+      mavenJar.originatingExternalDependency.coordinates.packaging.contains("zip")
 }
