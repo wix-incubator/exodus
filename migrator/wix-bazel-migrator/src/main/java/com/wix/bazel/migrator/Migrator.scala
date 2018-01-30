@@ -67,8 +67,6 @@ object Migrator extends MigratorApp {
       //proto dependencies
       Dependency(Coordinates.deserialize("com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT"),MavenScope.Compile) +
       Dependency(Coordinates.deserialize("com.wixpress.grpc:generator:1.0.0-SNAPSHOT"),MavenScope.Compile) +
-      //to be removed when https://github.com/wix-platform/third-party-dependencies/pull/322 is merged
-      Dependency(Coordinates.deserialize("com.github.jnr:jnr-posix:3.0.42"),MavenScope.Compile) +
       //core-server-build-tools dependency
       Dependency(Coordinates.deserialize("com.google.jimfs:jimfs:1.1"),MavenScope.Compile)
   }
