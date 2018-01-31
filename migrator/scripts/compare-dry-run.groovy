@@ -33,9 +33,10 @@ folders.each{
             unstable_new = unstable_new + 1
         unstable = unstable + 1
     } else if (lastRun.result == Result.FAILURE) {
-        if (last_bazel_run != null && (last_bazel_run.result == Result.SUCCESS && last_bazel_run.result == Result.UNSTABLE))
+        if (last_bazel_run != null && (last_bazel_run.result == Result.SUCCESS || last_bazel_run.result == Result.UNSTABLE)) {
             fail_new = fail_new + 1
             failed.add(lastRun.url)
+        }
         fail = fail + 1
     }
 }
