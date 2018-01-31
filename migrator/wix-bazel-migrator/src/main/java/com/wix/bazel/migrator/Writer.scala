@@ -8,11 +8,11 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target._
 import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, CodePurpose, Package, Scope, SourceModule, Target, TestType}
+import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.maven.Coordinates
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
-import com.wixpress.build.maven.Coordinates
-import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 object PrintJvmTargetsSources {
   def main(args: Array[String]) {
@@ -255,41 +255,19 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
   }
 
   private def writeJvm(target: Jvm) = {
-    val serializedDependenciesByScope = target.dependencies.flatMap(writeDependency(target))
-
-    val serializedModuleDependenciesByScope =
-      target.originatingSourceModule.dependencies.scopedDependencies.map(c => c._1 -> c._2.map(writeSourceDependency)).toSet
-
-    val internalDeps = accumulateDependenciesByScopeAndModuleDependenciesByScope(target, serializedDependenciesByScope, serializedModuleDependenciesByScope)
-
     val originatingMavenModule = target.originatingSourceModule.externalModule
-    val externalDeps = thirdPartyDepsAsSerializedTargetsOfRepoArtifacts.getOrElseUpdate(originatingMavenModule,
-      thirdPartyDepsAsTargetsOfRepoArtifacts(originatingMavenModule)
-        .map({ case (scope, targets) => scope -> onlyNonProtoTargetsOf(originatingMavenModule, targets) })
-        .map({ case (scope, targets) => scope -> targets.map(writeDependency(scope)) })
-    )
-    val optionalTestCompileTargets = target.codePurpose match {
-      case CodePurpose.Test(_) =>
-        internalDeps.getOrElse(Scope.TEST_COMPILE, Set()) ++
-          externalDeps.getOrElse(Scope.TEST_COMPILE, Set())
-      case _ => Set()
-    }
-    val compileTimeTargets =
-      internalDeps.getOrElse(Scope.PROD_COMPILE, Set()) ++
-        externalDeps.getOrElse(Scope.PROD_COMPILE, Set()) ++
-        internalDeps.getOrElse(Scope.PROVIDED, Set()) ++
-        externalDeps.getOrElse(Scope.PROVIDED, Set()) ++
-        optionalTestCompileTargets
+    val internalDeps = target.dependencies.flatMap(writeDependency(target))
+    val externalDeps = collectExternalDeps(originatingMavenModule)
+    val resources = collectFullResourcesClosure(target)
+    val allDeps = combineDeps(internalDeps, externalDeps,resources)
 
-    val optionalTestRuntimeTargets = target.codePurpose match {
-      case CodePurpose.Test(_) =>
-        internalDeps.getOrElse(Scope.TEST_RUNTIME, Set())
-      case _ => Set()
-    }
-    val runtimeTargets =
-      internalDeps.getOrElse(Scope.PROD_RUNTIME, Set()) ++
-        externalDeps.getOrElse(Scope.PROD_RUNTIME, Set()) ++
-        optionalTestRuntimeTargets
+    val compileTimeTargets =
+      allDeps.getOrElse(Scope.PROD_COMPILE, Set()) ++
+        allDeps.getOrElse(Scope.PROVIDED, Set()) ++
+        optionalTestCompileTarget(target, allDeps)
+
+    val runtimeTargets = allDeps.getOrElse(Scope.PROD_RUNTIME, Set()) ++ optionalTestRuntimeTargets(target, allDeps)
+
     val (header, footer) = target.codePurpose match {
       case _: CodePurpose.Prod =>
         (prodHeader(ForceTestOnly(unAliasedLabelOf(target))), "")
@@ -312,6 +290,30 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     """.stripMargin + footer + "\n)\n"
   }
 
+  private def optionalTestRuntimeTargets(target: Jvm, allDeps: Map[Scope, Set[String]]) = {
+    target.codePurpose match {
+      case CodePurpose.Test(_) =>
+        allDeps.getOrElse(Scope.TEST_RUNTIME, Set())
+      case _ => Set()
+    }
+  }
+
+  private def optionalTestCompileTarget(target: Jvm, allDeps: Map[Scope, Set[String]]) = {
+    target.codePurpose match {
+      case CodePurpose.Test(_) =>
+        allDeps.getOrElse(Scope.TEST_COMPILE, Set())
+      case _ => Set()
+    }
+  }
+
+  private def collectExternalDeps(originatingMavenModule: Coordinates) = {
+    thirdPartyDepsAsSerializedTargetsOfRepoArtifacts.getOrElseUpdate(originatingMavenModule,
+      thirdPartyDepsAsTargetsOfRepoArtifacts(originatingMavenModule)
+        .map({ case (scope, targets) => scope -> onlyNonProtoTargetsOf(originatingMavenModule, targets) })
+        .map({ case (scope, targets) => scope -> targets.map(writeDependency(scope)) })
+    ).toSet
+  }
+
   private def prodHeader(testOnly: Boolean) = {
     if (testOnly)
       """scala_library(
@@ -321,23 +323,35 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       "scala_library(\n"
   }
 
-  private def accumulateDependenciesByScopeAndModuleDependenciesByScope(target: Jvm, serializedDependenciesByScope: Set[(Scope, Set[String])], serializedModuleDependenciesByScope: Set[(Scope, Set[String])]) = {
-    (serializedDependenciesByScope ++
-      serializedModuleDependenciesByScope +
-      (Scope.PROD_RUNTIME -> serializedRuntimeTransitiveModuleDependencies(target, Set(Scope.PROD_COMPILE, Scope.PROD_RUNTIME))) +
-      (Scope.TEST_RUNTIME -> serializedRuntimeTransitiveModuleDependencies(target, Set(Scope.TEST_COMPILE, Scope.TEST_RUNTIME))))
+  private def combineDeps(scopeToDeps: Set[(Scope, Set[String])]*) = {
+    scopeToDeps.flatten
       .foldLeft(Map[Scope, Set[String]]()) { case (acc, (scope, currentTargetsForScope)) =>
         val accumulatedTargetsForScope = acc.getOrElse(scope, Set())
         acc + (scope -> (accumulatedTargetsForScope ++ currentTargetsForScope))
       }
   }
 
-  private def serializedRuntimeTransitiveModuleDependencies(target: Jvm, inputScopes: Set[Scope]) = {
-    val targetTransitiveSourceModules = transitiveClosureSourceModules(target, inputScopes)
-    val targetTransitiveModuleDependencies: Set[AnalyzedFromMavenTarget] = targetTransitiveSourceModules
-      .flatMap(_.dependencies.scopedDependencies.get(Scope.PROD_RUNTIME)).flatten
-    targetTransitiveModuleDependencies.map(writeSourceDependency)
+  private def collectFullResourcesClosure(target: Jvm): Set[(Scope, Set[String])] = {
+    val currentTargetResources = collectCurrentTargetResources(target)
+    val transitiveProdRuntimeResources = Scope.PROD_RUNTIME -> serializedRuntimeTransitiveModuleDependencies(target, Set(Scope.PROD_COMPILE, Scope.PROD_RUNTIME))
+    val transitiveTestRuntimeResources = Scope.TEST_RUNTIME -> serializedRuntimeTransitiveModuleDependencies(target, Set(Scope.TEST_COMPILE, Scope.TEST_RUNTIME))
+    currentTargetResources + transitiveProdRuntimeResources + transitiveTestRuntimeResources
   }
+
+  private def collectCurrentTargetResources(target: Jvm) = {
+    target.originatingSourceModule.dependencies.scopedDependencies
+      .map({ case (scope, deps) => scope -> serializedResourcesIn(deps)})
+      .toSet
+  }
+
+  private def serializedRuntimeTransitiveModuleDependencies(target: Jvm, inputScopes: Set[Scope]) =
+    serializedResourcesIn(
+      transitiveClosureSourceModules(target, inputScopes)
+        .flatMap(_.dependencies.scopedDependencies.get(Scope.PROD_RUNTIME))
+        .flatten
+    )
+
+  private def serializedResourcesIn(dependencies:Set[AnalyzedFromMavenTarget]) = dependencies.collect{case r: Resources => r}.map(writeSourceDependency)
 
   private def transitiveClosureSourceModules(target: Jvm, includeScopes: Set[Scope]) = {
     val internalDependenciesWithinGivenScope = target.originatingSourceModule.dependencies.internalDependencies
