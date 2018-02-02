@@ -18,10 +18,10 @@ class FakeLocalBazelWorkspace(sourceFiles: mutable.Map[String, String] = mutable
     sourceFiles.put(WorkspaceFilePath, workspaceContent)
 
   override def buildFileContent(packageName: String): Option[String] =
-    sourceFiles.get(packageName + "/BUILD")
+    sourceFiles.get(packageName + "/BUILD.bazel")
 
   override def overwriteBuildFile(packageName: String, content: String): Unit =
-    sourceFiles.put(packageName + "/BUILD", content)
+    sourceFiles.put(packageName + "/BUILD.bazel", content)
 
   override def thirdPartyOverrides(): ThirdPartyOverrides = overrides
 

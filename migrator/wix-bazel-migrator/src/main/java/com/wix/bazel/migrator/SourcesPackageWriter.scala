@@ -39,7 +39,7 @@ class SourcesPackageWriter(repoRoot: Path) {
             """.
           stripMargin.getBytes
       val sourceDirBuildPath =
-        sourceDirPathAndRelativePackagePath.sourceDirPath.resolve("BUILD")
+        sourceDirPathAndRelativePackagePath.sourceDirPath.resolve("BUILD.bazel")
       SourcesTargetAndSourceDirPath(sourceDirBuildPath, sourcesTarget)
     }
 

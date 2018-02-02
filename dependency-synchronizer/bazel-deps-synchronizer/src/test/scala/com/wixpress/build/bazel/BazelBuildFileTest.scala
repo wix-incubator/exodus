@@ -5,7 +5,7 @@ import org.specs2.mutable.SpecificationWithJUnit
 
 class BazelBuildFileTest extends SpecificationWithJUnit {
 
-  "BUILD file parser," >> {
+  "BUILD.bazel file parser," >> {
 
     "in case given blank build content," should {
       "not find rule with any name exists in given build file content" in {
@@ -172,7 +172,7 @@ class BazelBuildFileTest extends SpecificationWithJUnit {
     }
   }
 
-  "BUILD file builder" should {
+  "BUILD.bazel file builder" should {
     "create empty file in case no file was given" in {
       BazelBuildFile().content mustEqual ""
     }

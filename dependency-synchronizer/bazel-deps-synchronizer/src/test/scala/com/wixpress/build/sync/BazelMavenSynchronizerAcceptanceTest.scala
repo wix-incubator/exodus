@@ -40,7 +40,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         bazelMustHaveRuleFor(jar = newDependency.coordinates, runtimeDependencies = Set.empty)
       }
 
-      "make sure new BUILD files in third_parties has appropriate header" in new blankBazelWorkspaceAndNewManagedRootDependency {
+      "make sure new BUILD.bazel files in third_parties has appropriate header" in new blankBazelWorkspaceAndNewManagedRootDependency {
         syncBasedOn(updatedResolver, Set(newDependency))
 
         val buildFileContent = fakeLocalWorkspace.buildFileContent(LibraryRule.packageNameBy(newDependency.coordinates))

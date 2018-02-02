@@ -95,7 +95,7 @@ object LibraryRule {
 
   def buildFilePathBy(coordinates: Coordinates): Option[String] = {
     coordinates.packaging match {
-      case Some("jar") | Some("pom") => Some(packageNameBy (coordinates) + "/BUILD")
+      case Some("jar") | Some("pom") => Some(packageNameBy (coordinates) + "/BUILD.bazel")
       case _ => None
     }
   }

@@ -148,7 +148,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     packageBuildDescriptorPath(bazelPackage.relativePathFromMonoRepoRoot)
 
   private def packageBuildDescriptorPath(packageRelativePathFromRoot: String) =
-    new File(new File(repoRoot, packageRelativePathFromRoot), "BUILD").toPath
+    new File(new File(repoRoot, packageRelativePathFromRoot), "BUILD.bazel").toPath
 
   private def writePackage(bazelPackage: Package): String =
     writePackage(bazelPackage.targets.map(writeTarget))

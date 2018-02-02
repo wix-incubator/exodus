@@ -29,6 +29,7 @@ pipeline {
                 dir("${env.REPO_NAME}") {
                     sh 'rm -rf third_party'
                     sh 'find . -path "*/*BUILD" -exec rm -f {} \\;'
+                    sh 'find . -path "*/*BUILD.bazel" -exec rm -f {} \\;'
                 }
                 dir("wix-bazel-migrator") {
                     sh "java -Xmx12G -Dcodota.token=${env.CODOTA_TOKEN} -Dclean.codota.analysis.cache=true -Dskip.classpath=false -Dskip.transformation=false -Dfail.on.severe.conflicts=true -Drepo.root=../${repo_name} -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
@@ -39,7 +40,7 @@ pipeline {
             steps {
                 dir("${env.REPO_NAME}") {
                     sh "buildozer 'add tags manual' //third_party/...:%scala_import"
-                    sh 'buildifier $(find . -iname BUILD -type f)'
+                    sh 'buildifier $(find . -iname BUILD.bazel -type f)'
                     sh 'touch .gitignore'
                     sh 'grep -q -F "/bazel-*" .gitignore || echo "\n/bazel-*" >> .gitignore'
                     script{

@@ -27,10 +27,10 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).workspaceContent() mustEqual workspaceContent
     }
 
-    "Get BUILD file content given package that exist on path" in new blankWorkspaceCtx {
+    "Get BUILD.bazel file content given package that exist on path" in new blankWorkspaceCtx {
       blankWorkspaceRootPath.createChild("WORKSPACE")
       val packageName = "some/package"
-      val buildFile = blankWorkspaceRootPath / packageName / "BUILD"
+      val buildFile = blankWorkspaceRootPath / packageName / "BUILD.bazel"
       buildFile.createIfNotExists(createParents = true)
       val buildFileContent = "some build content"
       buildFile.overwrite(buildFileContent)
@@ -38,7 +38,7 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).buildFileContent(packageName) must beSome(buildFileContent)
     }
 
-    "return None if BUILD file does not exists" in new blankWorkspaceCtx {
+    "return None if BUILD.bazel file does not exists" in new blankWorkspaceCtx {
       blankWorkspaceRootPath.createChild("WORKSPACE")
       val packageName = "some/non-existing/package"
 
@@ -71,13 +71,13 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
       workspaceFile.contentAsString mustEqual newContent
     }
 
-    "write BUILD file content, even if the package did not exist" in new blankWorkspaceCtx {
+    "write BUILD.bazel file content, even if the package did not exist" in new blankWorkspaceCtx {
       val workspaceFile = blankWorkspaceRootPath.createChild("WORKSPACE")
       val newPackage = "some/new/package"
       val buildFileContent = "some build file content"
 
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).overwriteBuildFile(newPackage, buildFileContent)
-      val buildFile = blankWorkspaceRootPath / newPackage / "BUILD"
+      val buildFile = blankWorkspaceRootPath / newPackage / "BUILD.bazel"
 
       buildFile.exists aka "build file exists" must beTrue
       buildFile.contentAsString mustEqual buildFileContent

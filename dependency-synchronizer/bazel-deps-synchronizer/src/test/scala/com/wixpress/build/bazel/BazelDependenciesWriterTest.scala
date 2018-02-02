@@ -49,14 +49,14 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         localWorkspace.workspaceContent() must containMavenJarRuleFor(baseDependency.coordinates)
       }
 
-      "write scala_import rule to appropriate BUILD file" in new newRootDependencyNodeCtx {
+      "write scala_import rule to appropriate BUILD.bazel file" in new newRootDependencyNodeCtx {
         val node: DependencyNode = aRootDependencyNode(baseDependency)
         writer.writeDependencies(node)
 
         localWorkspace.buildFileContent(matchingPackage) must containARuleForRootDependency(baseDependency.coordinates)
       }
 
-      "write default header to new BUILD files" in new newRootDependencyNodeCtx {
+      "write default header to new BUILD.bazel files" in new newRootDependencyNodeCtx {
         writer.writeDependencies(aRootDependencyNode(baseDependency))
 
         localWorkspace.buildFileContent(matchingPackage) must beSome(contain(BazelBuildFile.DefaultHeader))
@@ -315,7 +315,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         }
       }
 
-      "write multiple targets to the same BUILD file, in case same groupId" in new multipleDependenciesCtx {
+      "write multiple targets to the same BUILD.bazel file, in case same groupId" in new multipleDependenciesCtx {
         val otherArtifactWithSameGroupId = someArtifact.copy(artifactId = "other-artifact")
 
         writeArtifactsAsRootDependencies(someArtifact, otherArtifactWithSameGroupId)

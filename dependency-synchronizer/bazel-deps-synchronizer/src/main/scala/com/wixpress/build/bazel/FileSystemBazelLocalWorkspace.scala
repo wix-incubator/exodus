@@ -15,7 +15,7 @@ class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
   validate()
 
   override def overwriteBuildFile(packageName: String, content: String): Unit = {
-    val buildFilePath = root / packageName / "BUILD"
+    val buildFilePath = root / packageName / "BUILD.bazel"
     buildFilePath.createIfNotExists(createParents = true)
     buildFilePath.overwrite(content)
   }
@@ -25,7 +25,7 @@ class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
 
   override def workspaceContent(): String = contentIfExistsOf(root / WorkspaceFilePath).getOrElse("")
 
-  override def buildFileContent(packageName: String): Option[String] = contentIfExistsOf(root / packageName / "BUILD")
+  override def buildFileContent(packageName: String): Option[String] = contentIfExistsOf(root / packageName / "BUILD.bazel")
 
   override def thirdPartyOverrides(): ThirdPartyOverrides = {
     contentIfExistsOf(root / ThirdPartyOverridesPath)
