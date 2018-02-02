@@ -262,11 +262,13 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     val allDeps = combineDeps(internalDeps, externalDeps,resources)
 
     val compileTimeTargets =
-      allDeps.getOrElse(Scope.PROD_COMPILE, Set()) ++
-        allDeps.getOrElse(Scope.PROVIDED, Set()) ++
-        optionalTestCompileTarget(target, allDeps)
+      allDeps(Scope.PROD_COMPILE) ++
+        allDeps(Scope.PROVIDED) ++
+        optionalTestCompileTargets(target, allDeps)
 
-    val runtimeTargets = allDeps.getOrElse(Scope.PROD_RUNTIME, Set()) ++ optionalTestRuntimeTargets(target, allDeps)
+    val runtimeTargets =
+      allDeps(Scope.PROD_RUNTIME) ++
+        optionalTestRuntimeTargets(target, allDeps)
 
     val (header, footer) = target.codePurpose match {
       case _: CodePurpose.Prod =>
@@ -290,21 +292,19 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     """.stripMargin + footer + "\n)\n"
   }
 
-  private def optionalTestRuntimeTargets(target: Jvm, allDeps: Map[Scope, Set[String]]) = {
-    target.codePurpose match {
-      case CodePurpose.Test(_) =>
-        allDeps.getOrElse(Scope.TEST_RUNTIME, Set())
-      case _ => Set()
-    }
-  }
+  private def optionalTestRuntimeTargets(target: Jvm, allDeps: Map[Scope, Set[String]]) =
+    optionalTestTargetsFor(Scope.TEST_RUNTIME, target, allDeps)
 
-  private def optionalTestCompileTarget(target: Jvm, allDeps: Map[Scope, Set[String]]) = {
+  private def optionalTestCompileTargets(target: Jvm, allDeps: Map[Scope, Set[String]]) =
+    optionalTestTargetsFor(Scope.TEST_COMPILE, target, allDeps)
+
+  private def optionalTestTargetsFor(scope: Scope,
+                                     target: Jvm,
+                                     allDeps: Map[Scope, Set[String]]): Set[String] =
     target.codePurpose match {
-      case CodePurpose.Test(_) =>
-        allDeps.getOrElse(Scope.TEST_COMPILE, Set())
+      case CodePurpose.Test(_) => allDeps(scope)
       case _ => Set()
     }
-  }
 
   private def collectExternalDeps(originatingMavenModule: Coordinates) = {
     thirdPartyDepsAsSerializedTargetsOfRepoArtifacts.getOrElseUpdate(originatingMavenModule,
@@ -325,7 +325,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
 
   private def combineDeps(scopeToDeps: Set[(Scope, Set[String])]*) = {
     scopeToDeps.flatten
-      .foldLeft(Map[Scope, Set[String]]()) { case (acc, (scope, currentTargetsForScope)) =>
+      .foldLeft(Map[Scope, Set[String]]().withDefaultValue(Set.empty)) { case (acc, (scope, currentTargetsForScope)) =>
         val accumulatedTargetsForScope = acc.getOrElse(scope, Set())
         acc + (scope -> (accumulatedTargetsForScope ++ currentTargetsForScope))
       }
