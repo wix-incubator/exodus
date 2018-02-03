@@ -197,7 +197,9 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
   private def serializedPotentialTestOnlyOverride(resources: Resources) =
     if (testResources(resources) || ForceTestOnly(unAliasedLabelOf(resources))) "testonly = 1" else ""
 
-  private def testResources(resources: Resources) = resources.codePurpose == CodePurpose.TestSupport
+  private def testResources(resources: Resources) = resources.codePurpose == CodePurpose.TestSupport ||
+    //this is needed since jackson scala serialization sucks
+    resources.codePurpose.toString.contains("Test")
 
   //toString since case objects aren't well supported in jackson scala
   private def testHeader(testType: TestType, tagsTestType: TestType, testSize: String): String = testType.toString match {
