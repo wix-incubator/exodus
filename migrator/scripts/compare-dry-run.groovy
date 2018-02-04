@@ -29,7 +29,7 @@ folders.each{
             success_new = success_new + 1
         success = success + 1
     } else if (lastRun.result == Result.UNSTABLE) {
-        if (bazel_run_job.lastCompletedBuild.result == Result.SUCCESS)
+        if (last_bazel_run != null && last_bazel_run.result == Result.SUCCESS)
             unstable_new = unstable_new + 1
         unstable = unstable + 1
     } else if (lastRun.result == Result.FAILURE) {
