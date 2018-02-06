@@ -1,7 +1,9 @@
 package com.wix.bazel.migrator
 
+import java.nio.file.Files
 import java.time.temporal.ChronoUnit
 
+import better.files.File
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.build.maven.analysis.{SourceModules, ThirdPartyConflict, ThirdPartyConflicts, ThirdPartyValidator}
 import com.wixpress.build.maven.{AetherMavenDependencyResolver, Coordinates, MavenDependencyResolver}
@@ -11,7 +13,14 @@ trait MigratorApp extends App {
 
   val aetherResolver = new AetherMavenDependencyResolver(List(
     "http://repo.dev.wixpress.com:80/artifactory/libs-releases",
-    "http://repo.dev.wixpress.com:80/artifactory/libs-snapshots"))
+    "http://repo.dev.wixpress.com:80/artifactory/libs-snapshots"),
+    resolverRepo)
+
+  private def resolverRepo: File = {
+    val f = File("resolver-repo")
+    Files.createDirectories(f.path)
+    f
+  }
 
   // Conveniences --
   def repoRoot = configuration.repoRoot

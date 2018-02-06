@@ -86,12 +86,13 @@ pipeline {
                         echo "[INFO] creating tar.gz files for migration artifacts..."
                         sh """|tar czf classpathModules.cache.tar.gz classpathModules.cache
                               |tar czf cache.tar.gz cache
-                              |tar czf dag.bazel.tar.gz dag.bazel""".stripMargin()
+                              |tar czf dag.bazel.tar.gz dag.bazel
+                              |tar czf local-repo.tar.gz local-repo""".stripMargin()
                     }
                 } catch (err) {
                     echo "[WARN] could not create all tar.gz files ${err}"
                 } finally {
-                    archiveArtifacts "wix-bazel-migrator/classpathModules.cache.tar.gz,wix-bazel-migrator/dag.bazel.tar.gz,wix-bazel-migrator/cache.tar.gz"
+                    archiveArtifacts "wix-bazel-migrator/classpathModules.cache.tar.gz,wix-bazel-migrator/dag.bazel.tar.gz,wix-bazel-migrator/cache.tar.gz,wix-bazel-migrator/local-repo.tar.gz"
                 }
             }
         }

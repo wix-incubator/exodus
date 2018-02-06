@@ -23,16 +23,11 @@ import org.eclipse.aether.util.repository.SimpleArtifactDescriptorPolicy
 import scala.collection.JavaConverters._
 import scala.util.Try
 
-
-class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends MavenDependencyResolver {
+class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
+                                    localRepoPath: File = AetherMavenDependencyResolver.tempLocalRepoPath()
+                                   ) extends MavenDependencyResolver {
 
   private val repositorySystem = ManualRepositorySystemFactory.newRepositorySystem
-
-  private val tmpLocalRepoPath = {
-    val tempDir = File.newTemporaryDirectory("local-repo")
-    tempDir.toJava.deleteOnExit()
-    tempDir
-  }
 
   private val forcedManagedDependencies = Set.empty[Dependency]
 
@@ -114,7 +109,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
   }
 
   private def withSession[T](ignoreMissingDependencies:Boolean, f: DefaultRepositorySystemSession => T): T = {
-    val localRepo = new LocalRepository(tmpLocalRepoPath.pathAsString)
+    val localRepo = new LocalRepository(localRepoPath.pathAsString)
     val session = MavenRepositorySystemUtils.newSession
     session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(ignoreMissingDependencies, false))
     session.setLocalRepositoryManager(repositorySystem.newLocalRepositoryManager(session, localRepo))
@@ -170,6 +165,14 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String]) extends Mav
     }
   }
 
+}
+
+object AetherMavenDependencyResolver {
+  private def tempLocalRepoPath(): File = {
+    val tempDir = File.newTemporaryDirectory("local-repo")
+    tempDir.toJava.deleteOnExit()
+    tempDir
+  }
 }
 
 object TestAetherResolver extends App {
