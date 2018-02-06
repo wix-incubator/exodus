@@ -82,7 +82,6 @@ object Migrator extends MigratorApp {
     val mavenSynchronizer = new BazelMavenSynchronizer(filteringResolver,bazelRepo)
 
     val externalDependencies = new DependencyCollector(aetherResolver)
-      .withManagedDependenciesOf(thirdPartyDependencySource)
       .addOrOverrideDependencies(constantDependencies)
       .addOrOverrideDependencies(collectExternalDependenciesUsedByRepoModules(codeModules))
       .mergeExclusionsOfSameCoordinates()
