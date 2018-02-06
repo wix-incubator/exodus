@@ -51,18 +51,6 @@ pipeline {
                 }
             }
         }
-        stage('fix-strict-deps'){
-            steps{
-                dir("core-server-build-tools") {
-                    git 'git@github.com:wix-private/core-server-build-tools.git'
-                }
-                dir("${env.REPO_NAME}") {
-                    script {
-                        build_and_fix()
-                    }
-                }
-            }
-        }
         stage('push-to-git') {
             steps {
                 dir("${env.REPO_NAME}"){
@@ -99,8 +87,7 @@ pipeline {
         success{
             script{
                 if ("${env.TRIGGER_BUILD}" != "false"){
-                    build job: "02-run-bazel", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
-                    build job: "05-run-bazel-rbe", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
+                    build job: "03-fix-strict-deps", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
                 }
             }
         }
@@ -115,31 +102,3 @@ def find_repo_name() {
     return name
 }
 
-def build_and_fix() {
-    status = sh(
-            script: '''|#!/bin/bash
-                       |# tee would output the stdout to file but will swallow the exit code
-                       |bazel build -k --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
-                       |# retrieve the exit code
-                       |exit ${PIPESTATUS[0]}
-                       |'''.stripMargin(),
-            returnStatus: true)
-    build_log = readFile "bazel-build.log"
-    if (build_log.contains("buildozer")) {
-        if (build_log.contains("Unknown label of file")){
-            slackSend "Found 'Unknown label...' warning in ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|link>)"
-        }
-        echo "found strict deps issues"
-        sh "python ../core-server-build-tools/scripts/fix_transitive.py"
-        sh "buildozer -f bazel-buildozer-commands.txt"
-        build_and_fix()
-    } else if (status == 0) {
-        echo "No buildozer warnings were found"
-        bazelrc = readFile(".bazelrc")
-        if (bazelrc.contains("strict_java_deps=warn")) {
-            writeFile file: ".bazelrc", text: bazelrc.replace("strict_java_deps=warn", "strict_java_deps=error")
-        }
-    } else {
-        echo "[WARN] No strict deps warnings found but build failed"
-    }
-}

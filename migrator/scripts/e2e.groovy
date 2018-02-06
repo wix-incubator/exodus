@@ -21,6 +21,7 @@ pipeline {
                 parallel(
                         "bazel": {
                             script {
+                                build job: "03-fix-strict-deps", wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false),booleanParam(name: 'TRIGGER_BUILD', value: false)]
                                 def b = build job: "02-run-bazel", wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
                                 bazel_success = (b.result == "SUCCESS") || (b.result == "UNSTABLE")
                             }

@@ -59,6 +59,16 @@ pipeline {
                 }
             }
         }
+        post{
+            always{
+                script {
+                    if ("${env.TRIGGER_BUILD}" != "false") {
+                        build job: "02-run-bazel", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
+                        build job: "05-run-bazel-rbe", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
+                    }
+                }
+            }
+        }
     }
 }
 
