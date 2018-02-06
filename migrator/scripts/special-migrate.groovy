@@ -80,7 +80,7 @@ pipeline {
                         sh """|tar czf classpathModules.cache.tar.gz classpathModules.cache
                               |tar czf cache.tar.gz cache
                               |tar czf dag.bazel.tar.gz dag.bazel
-                              |tar czf local-repo.tar.gz local-repo""".stripMargin()
+                              |tar czf local-repo.tar.gz resolver-repo""".stripMargin()
                     }
                 } catch (err) {
                     echo "[WARN] could not create all tar.gz files ${err}"
