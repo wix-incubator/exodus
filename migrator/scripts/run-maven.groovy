@@ -4,6 +4,7 @@ pipeline {
     agent any
     options {
         timestamps()
+        timeout(time: 180, unit: 'MINUTES')
     }
     tools {
         maven 'M3'
