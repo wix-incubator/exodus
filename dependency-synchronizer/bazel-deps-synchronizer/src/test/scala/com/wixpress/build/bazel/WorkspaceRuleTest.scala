@@ -16,10 +16,10 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         version = "5.0"
       )
       val expectedMavenJarRuleText =
-        s"""maven_jar(
-           |    name = "${someCoordinates.workspaceRuleName}",
-           |    artifact = "${someCoordinates.serialized}"
-           |)""".stripMargin
+        s"""  native.maven_jar(
+           |      name = "${someCoordinates.workspaceRuleName}",
+           |      artifact = "${someCoordinates.serialized}"
+           |  )""".stripMargin
 
       WorkspaceRule.of(someCoordinates).serialized mustEqual expectedMavenJarRuleText
     }
@@ -33,10 +33,10 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         classifier = Some("proto")
       )
       val expectedWorkspaceRuleText =
-        s"""maven_proto(
-           |    name = "${someArchiveCoordinates.workspaceRuleName}",
-           |    artifact = "${someArchiveCoordinates.serialized}"
-           |)""".stripMargin
+        s"""  maven_proto(
+           |      name = "${someArchiveCoordinates.workspaceRuleName}",
+           |      artifact = "${someArchiveCoordinates.serialized}"
+           |  )""".stripMargin
 
       WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText
     }
@@ -49,10 +49,10 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         packaging = Some("zip")
       )
       val expectedWorkspaceRuleText =
-        s"""maven_archive(
-           |    name = "${someArchiveCoordinates.workspaceRuleName}",
-           |    artifact = "${someArchiveCoordinates.serialized}"
-           |)""".stripMargin
+        s"""  maven_archive(
+           |      name = "${someArchiveCoordinates.workspaceRuleName}",
+           |      artifact = "${someArchiveCoordinates.serialized}"
+           |  )""".stripMargin
 
       WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText
     }
@@ -65,10 +65,10 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         packaging = Some("tar.gz")
       )
       val expectedWorkspaceRuleText =
-        s"""maven_archive(
-           |    name = "${someArchiveCoordinates.workspaceRuleName}",
-           |    artifact = "${someArchiveCoordinates.serialized}"
-           |)""".stripMargin
+        s"""  maven_archive(
+           |      name = "${someArchiveCoordinates.workspaceRuleName}",
+           |      artifact = "${someArchiveCoordinates.serialized}"
+           |  )""".stripMargin
 
       WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText
     }

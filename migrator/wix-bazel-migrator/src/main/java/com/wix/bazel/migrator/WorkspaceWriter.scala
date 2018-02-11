@@ -86,7 +86,10 @@ class WorkspaceWriter(repoRoot: File) {
          |    strip_prefix = "protobuf-74bf45f379b35e1d103940f35d7a04545b0235d4",
          |)
          |
-         |load("@core_server_build_tools//:macros.bzl", "maven_archive", "maven_proto")
+         |load("//:third_party.bzl", "third_party_dependencies")
+         |
+         |third_party_dependencies()
+         |
       """.stripMargin
 
     writeToDisk(workspaceFileContents)

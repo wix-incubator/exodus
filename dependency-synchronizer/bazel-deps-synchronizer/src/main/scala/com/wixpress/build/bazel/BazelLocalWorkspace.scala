@@ -2,13 +2,13 @@ package com.wixpress.build.bazel
 
 trait BazelLocalWorkspace {
 
-  protected val WorkspaceFilePath = "WORKSPACE"
+  protected val thirdPartyReposFilePath = ThirdPartyReposFile.thirdPartyReposFilePath
 
   def overwriteBuildFile(packageName: String, content: String): Unit
 
-  def overwriteWorkspace(workspaceContent: String): Unit
+  def overwriteThirdPartyReposFile(thirdPartyReposContent: String): Unit
 
-  def workspaceContent(): String
+  def thirdPartyReposFileContent(): String
 
   def buildFileContent(packageName: String): Option[String]
 

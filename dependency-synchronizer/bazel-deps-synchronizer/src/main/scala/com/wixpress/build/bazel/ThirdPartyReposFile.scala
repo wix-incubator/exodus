@@ -6,13 +6,15 @@ import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 
-object BazelWorkspaceFile {
+object ThirdPartyReposFile {
+
+  val thirdPartyReposFilePath = "third_party.bzl"
 
   case class Builder(content: String = "") {
     def withMavenJar(coordinates: Coordinates): Builder =
-      Builder(newWorkspaceWithMavenJar(coordinates))
+      Builder(newThirdPartyReposWithMavenJar(coordinates))
 
-    private def newWorkspaceWithMavenJar(coordinates: Coordinates) = {
+    private def newThirdPartyReposWithMavenJar(coordinates: Coordinates) = {
       regexOfWorkspaceRuleWithNameMatching(coordinates.workspaceRuleName)
         .findFirstMatchIn(content) match {
         case Some(matched) => updateMavenJar(content, coordinates, matched)
@@ -20,13 +22,13 @@ object BazelWorkspaceFile {
       }
     }
 
-    private def updateMavenJar(workspace: String, coordinates: Coordinates, matched: Regex.Match): String = {
+    private def updateMavenJar(thirdPartyRepos: String, coordinates: Coordinates, matched: Regex.Match): String = {
       val newMavenJarRule = WorkspaceRule.of(coordinates).serialized
-      workspace.take(matched.start) + newMavenJarRule + workspace.drop(matched.end)
+      thirdPartyRepos.take(matched.start - "  ".length) + newMavenJarRule + thirdPartyRepos.drop(matched.end)
     }
 
-    private def appendMavenJar(workspace: String, coordinates: Coordinates): String =
-      s"""$workspace
+    private def appendMavenJar(thirdPartyRepos: String, coordinates: Coordinates): String =
+      s"""$thirdPartyRepos
          |
          |${WorkspaceRule.of(coordinates).serialized}
          |""".stripMargin
@@ -59,8 +61,8 @@ object BazelWorkspaceFile {
 
   private def extractFullMatchText(aMatch: Match): String = aMatch.group(0)
 
-  private def splitToStringsWithMavenJarsInside(workspace: String) =
-    for (m <- GeneralWorkspaceRuleRegex.findAllMatchIn(workspace)) yield m.group(0)
+  private def splitToStringsWithMavenJarsInside(thirdPartyRepos: String) =
+    for (m <- GeneralWorkspaceRuleRegex.findAllMatchIn(thirdPartyRepos)) yield m.group(0)
 
   private def findMavenJarByName(name: String, within: String) =
     regexOfWorkspaceRuleWithNameMatching(name).findFirstMatchIn(within)

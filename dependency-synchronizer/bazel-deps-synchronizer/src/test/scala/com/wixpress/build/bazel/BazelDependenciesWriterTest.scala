@@ -8,6 +8,7 @@ import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.LibraryRule.packageNameBy
+import com.wixpress.build.bazel.ThirdPartyReposFile.thirdPartyReposFilePath
 
 import scala.util.matching.Regex
 
@@ -16,7 +17,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
   "BazelDependenciesWriter " >> {
 
-    trait emptyBazelWorkspaceCtx extends Scope {
+    trait emptyThirdPartyReposCtx extends Scope {
       val localWorkspace = new FakeLocalBazelWorkspace()
       val reader = new BazelDependenciesReader(localWorkspace)
 
@@ -34,19 +35,28 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
            |)""".stripMargin
       }
 
-      localWorkspace.overwriteWorkspace("")
+      localWorkspace.overwriteThirdPartyReposFile("")
+    }
+
+    "given no dependencies" should {
+
+      "write maven_jar rule to third party repos file" in new emptyThirdPartyReposCtx {
+        writer.writeDependencies()
+
+        localWorkspace.thirdPartyReposFileContent() must contain("pass")
+      }
     }
 
     "given one new root dependency" should {
-      trait newRootDependencyNodeCtx extends emptyBazelWorkspaceCtx {
+      trait newRootDependencyNodeCtx extends emptyThirdPartyReposCtx {
         val baseDependency = aDependency("some-dep")
         val matchingPackage = packageNameBy(baseDependency.coordinates)
       }
 
-      "write maven_jar rule to WORKSPACE" in new newRootDependencyNodeCtx {
+      "write maven_jar rule to third party repos file" in new newRootDependencyNodeCtx {
         writer.writeDependencies(aRootDependencyNode(baseDependency))
 
-        localWorkspace.workspaceContent() must containMavenJarRuleFor(baseDependency.coordinates)
+        localWorkspace.thirdPartyReposFileContent() must containMavenJarRuleFor(baseDependency.coordinates)
       }
 
       "write scala_import rule to appropriate BUILD.bazel file" in new newRootDependencyNodeCtx {
@@ -65,29 +75,29 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     }
 
     "given one new proto dependency" should {
-      trait protoDependencyNodeCtx extends emptyBazelWorkspaceCtx {
+      trait protoDependencyNodeCtx extends emptyThirdPartyReposCtx {
         val protoCoordinates = Coordinates("some.group","some-artifact","version",Some("zip"),Some("proto"))
         val protoDependency = Dependency(protoCoordinates,MavenScope.Compile)
         val matchingPackage = packageNameBy(protoCoordinates)
       }
 
-      "write maven_proto rule to WORKSPACE" in new protoDependencyNodeCtx {
+      "write maven_proto rule to third party repos file" in new protoDependencyNodeCtx {
         writer.writeDependencies(aRootDependencyNode(protoDependency))
 
-        localWorkspace.workspaceContent() must containMavenProtoRuleFor(protoCoordinates)
+        localWorkspace.thirdPartyReposFileContent() must containMavenProtoRuleFor(protoCoordinates)
       }
 
-      "change only WORKSPACE file" in new protoDependencyNodeCtx {
+      "change only third party repos file" in new protoDependencyNodeCtx {
         val node: DependencyNode = aRootDependencyNode(protoDependency)
         val changedFiles = writer.writeDependencies(node)
 
-        changedFiles must contain(exactly("WORKSPACE"))
+        changedFiles must contain(exactly(thirdPartyReposFilePath))
       }
 
     }
 
     "given one new dependency with transitive dependencies" should {
-      abstract class dependencyWithTransitiveDependencyofScope(scope: MavenScope) extends emptyBazelWorkspaceCtx {
+      abstract class dependencyWithTransitiveDependencyofScope(scope: MavenScope) extends emptyThirdPartyReposCtx {
         val baseDependency = aDependency("base")
         val transitiveDependency = aDependency("transitive", scope)
         val dependencyNode = DependencyNode(baseDependency, Set(transitiveDependency))
@@ -130,7 +140,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         )
       }
 
-      "write a target that is originated from pom artifact" in new emptyBazelWorkspaceCtx {
+      "write a target that is originated from pom artifact" in new emptyThirdPartyReposCtx {
         val baseCoordinates = Coordinates("some.group", "some-artifact", "some-version", Some("pom"))
         val baseDependency = Dependency(baseCoordinates, MavenScope.Compile)
         val transitiveDependency = aDependency("transitive")
@@ -150,7 +160,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
           ))
       }
 
-      "write target with multiple dependencies" in new emptyBazelWorkspaceCtx {
+      "write target with multiple dependencies" in new emptyThirdPartyReposCtx {
         val baseDependency = aDependency("base")
         val transitiveDependencies = {
           1 to 5
@@ -179,7 +189,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         )
       }
 
-      "write target with exclusion" in new emptyBazelWorkspaceCtx {
+      "write target with exclusion" in new emptyThirdPartyReposCtx {
         val exclusion = Exclusion("some.excluded.group", "some-excluded-artifact")
         val baseDependency = aDependency("base").copy(exclusions = Set(exclusion))
         val dependencyNode = aRootDependencyNode(baseDependency)
@@ -237,7 +247,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     }
 
     "given one dependency that already exists in the workspace " should {
-      trait updateDependencyNodeCtx extends emptyBazelWorkspaceCtx {
+      trait updateDependencyNodeCtx extends emptyThirdPartyReposCtx {
         val originalBaseDependency = aDependency("some-dep")
         val originalDependencyNode = aRootDependencyNode(originalBaseDependency)
         writer.writeDependencies(originalDependencyNode)
@@ -249,7 +259,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         writer.writeDependencies(aRootDependencyNode(newDependency))
 
-        val workspaceContent = localWorkspace.workspaceContent()
+        val workspaceContent = localWorkspace.thirdPartyReposFileContent()
 
         workspaceContent must containMavenJarRuleFor(newDependency.coordinates)
         workspaceContent must containsExactlyOneRuleOfName(originalBaseDependency.coordinates.workspaceRuleName)
@@ -305,7 +315,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     }
 
     "given multiple dependencies" should {
-      trait multipleDependenciesCtx extends emptyBazelWorkspaceCtx {
+      trait multipleDependenciesCtx extends emptyThirdPartyReposCtx {
         val someArtifact = Coordinates("some.group", "artifact-one", "some-version")
         val otherArtifact = Coordinates("other.group", "artifact-two", "some-version")
 
@@ -328,7 +338,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       "write multiple maven_jar to WORKSPACE file" in new multipleDependenciesCtx {
         writeArtifactsAsRootDependencies(someArtifact, otherArtifact)
 
-        val workspace = localWorkspace.workspaceContent()
+        val workspace = localWorkspace.thirdPartyReposFileContent()
         workspace must containMavenJarRuleFor(someArtifact)
         workspace must containMavenJarRuleFor(otherArtifact)
       }
@@ -337,7 +347,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val writtenFiles = writeArtifactsAsRootDependencies(someArtifact, otherArtifact)
 
         writtenFiles must containTheSameElementsAs(Seq(
-          "WORKSPACE",
+          thirdPartyReposFilePath,
           LibraryRule.buildFilePathBy(someArtifact).get,
           LibraryRule.buildFilePathBy(otherArtifact).get)
         )
@@ -363,18 +373,18 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
   private def containMavenJarRuleFor(coordinates: Coordinates) = {
     contain(
-      s"""maven_jar(
-         |    name = "${coordinates.workspaceRuleName}",
-         |    artifact = "${coordinates.serialized}"
-         |)""".stripMargin)
+      s"""  native.maven_jar(
+         |      name = "${coordinates.workspaceRuleName}",
+         |      artifact = "${coordinates.serialized}"
+         |  )""".stripMargin)
   }
 
   private def containMavenProtoRuleFor(coordinates: Coordinates) = {
     contain(
-      s"""maven_proto(
-         |    name = "${coordinates.workspaceRuleName}",
-         |    artifact = "${coordinates.serialized}"
-         |)""".stripMargin)
+      s"""  maven_proto(
+         |      name = "${coordinates.workspaceRuleName}",
+         |      artifact = "${coordinates.serialized}"
+         |  )""".stripMargin)
   }
 
   implicit class StringExtended(string: String) {

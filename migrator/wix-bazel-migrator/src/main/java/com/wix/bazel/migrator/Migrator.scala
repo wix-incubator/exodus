@@ -72,6 +72,8 @@ object Migrator extends MigratorApp {
   }
 
   private def writeExternal(): Unit = {
+    new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()
+
     val bazelRepo = new NoPersistenceBazelRepository(repoRoot.toScala)
     val internalCoordinates = codeModules.map(_.externalModule)
     val filteringResolver = new FilteringGlobalExclusionDependencyResolver(

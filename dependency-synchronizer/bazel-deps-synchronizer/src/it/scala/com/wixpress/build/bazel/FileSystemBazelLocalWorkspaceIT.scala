@@ -4,6 +4,7 @@ import java.io.FileNotFoundException
 
 import better.files._
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.runtimeOverrides
+import com.wixpress.build.bazel.ThirdPartyReposFile.thirdPartyReposFilePath
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -16,19 +17,18 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
       new FileSystemBazelLocalWorkspace(nonExistingPath) must throwA[FileNotFoundException]
     }
 
-    "return empty workspace content if WORKSPACE does not exists" in new blankWorkspaceCtx {
-      new FileSystemBazelLocalWorkspace(blankWorkspaceRootPath).workspaceContent() mustEqual ""
+    "return empty third party repos content if third party repos file does not exists" in new blankWorkspaceCtx {
+      new FileSystemBazelLocalWorkspace(blankWorkspaceRootPath).thirdPartyReposFileContent() mustEqual ""
     }
 
-    "Get workspace file content" in new blankWorkspaceCtx {
-      val workspaceContent = "some content"
-      blankWorkspaceRootPath.createChild("WORKSPACE").overwrite(workspaceContent)
+    "Get third party repos file content" in new blankWorkspaceCtx {
+      val thirdPartyReposContent = "some content"
+      blankWorkspaceRootPath.createChild("third_party.bzl").overwrite(thirdPartyReposContent)
 
-      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).workspaceContent() mustEqual workspaceContent
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).thirdPartyReposFileContent() mustEqual thirdPartyReposContent
     }
 
     "Get BUILD.bazel file content given package that exist on path" in new blankWorkspaceCtx {
-      blankWorkspaceRootPath.createChild("WORKSPACE")
       val packageName = "some/package"
       val buildFile = blankWorkspaceRootPath / packageName / "BUILD.bazel"
       buildFile.createIfNotExists(createParents = true)
@@ -39,7 +39,6 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
     }
 
     "return None if BUILD.bazel file does not exists" in new blankWorkspaceCtx {
-      blankWorkspaceRootPath.createChild("WORKSPACE")
       val packageName = "some/non-existing/package"
 
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).buildFileContent(packageName) must beNone
@@ -62,17 +61,16 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).thirdPartyOverrides() mustEqual originalOverrides
     }
 
-    "write WORKSPACE file content" in new blankWorkspaceCtx {
-      val workspaceFile = blankWorkspaceRootPath.createChild("WORKSPACE")
+    "write third party repos file content" in new blankWorkspaceCtx {
+      val thirdPartyReposFile = blankWorkspaceRootPath.createChild(thirdPartyReposFilePath)
       val newContent = "newContent"
 
-      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).overwriteWorkspace(newContent)
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).overwriteThirdPartyReposFile(newContent)
 
-      workspaceFile.contentAsString mustEqual newContent
+      thirdPartyReposFile.contentAsString mustEqual newContent
     }
 
     "write BUILD.bazel file content, even if the package did not exist" in new blankWorkspaceCtx {
-      val workspaceFile = blankWorkspaceRootPath.createChild("WORKSPACE")
       val newPackage = "some/new/package"
       val buildFileContent = "some build file content"
 

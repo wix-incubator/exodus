@@ -11,11 +11,11 @@ class FakeLocalBazelWorkspace(sourceFiles: mutable.Map[String, String] = mutable
     this.overrides = overrides
   }
 
-  override def workspaceContent(): String =
-    sourceFiles.getOrElse(WorkspaceFilePath, "")
+  override def thirdPartyReposFileContent(): String =
+    sourceFiles.getOrElse(thirdPartyReposFilePath, "")
 
-  override def overwriteWorkspace(workspaceContent: String): Unit =
-    sourceFiles.put(WorkspaceFilePath, workspaceContent)
+  override def overwriteThirdPartyReposFile(skylarkFileContent: String): Unit =
+    sourceFiles.put(thirdPartyReposFilePath, skylarkFileContent)
 
   override def buildFileContent(packageName: String): Option[String] =
     sourceFiles.get(packageName + "/BUILD.bazel")

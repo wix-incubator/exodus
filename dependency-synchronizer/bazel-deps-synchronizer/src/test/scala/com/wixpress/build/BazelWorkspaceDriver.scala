@@ -8,8 +8,8 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
 
   def writeDependenciesAccordingTo(dependencies: Set[MavenJarInBazel]): Unit = {
     val allMavenJars = dependencies.map(_.artifact) ++ dependencies.flatMap(_.runtimeDependencies)
-    val newWorkspace = allMavenJars.foldLeft(bazelRepo.workspaceContent())(addMavenJarToWorkspace)
-    bazelRepo.overwriteWorkspace(newWorkspace)
+    val newThirdPartyRepos = allMavenJars.foldLeft(bazelRepo.thirdPartyReposFileContent())(addMavenJarToThirdPartyReposFile)
+    bazelRepo.overwriteThirdPartyReposFile(newThirdPartyRepos)
     dependencies.foreach(updateBuildFile)
   }
 
@@ -24,15 +24,15 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
   }
 
   def addMavenJar(jar: Coordinates): Unit = {
-    val currentWorkspace = bazelRepo.workspaceContent()
-    val newWorkspace = addMavenJarToWorkspace(currentWorkspace, jar)
-    bazelRepo.overwriteWorkspace(newWorkspace)
+    val currentThirdPartyRepos = bazelRepo.thirdPartyReposFileContent()
+    val newThirdPartyRepos = addMavenJarToThirdPartyReposFile(currentThirdPartyRepos, jar)
+    bazelRepo.overwriteThirdPartyReposFile(newThirdPartyRepos)
   }
 
   private def findRealCoordinatesOf(coordinates: Coordinates): Option[Coordinates] = {
-    val workspaceFile = bazelRepo.workspaceContent()
+    val thirdPartyReposFile = bazelRepo.thirdPartyReposFileContent()
     val workspaceRuleName = coordinates.workspaceRuleName
-    BazelWorkspaceFile.Parser(workspaceFile).findCoordinatesByName(workspaceRuleName)
+    ThirdPartyReposFile.Parser(thirdPartyReposFile).findCoordinatesByName(workspaceRuleName)
   }
 
   def findLibraryRuleBy(coordinates: Coordinates): Option[LibraryRule] = {
@@ -57,8 +57,8 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
     bazelRepo.overwriteBuildFile(rulePackage, newContent)
   }
 
-  private def addMavenJarToWorkspace(currentWorkspace: String, mavenJar: Coordinates) = {
-    s"""$currentWorkspace
+  private def addMavenJarToThirdPartyReposFile(currentSkylarkFile: String, mavenJar: Coordinates) = {
+    s"""$currentSkylarkFile
        |
        |${WorkspaceRule.of(mavenJar).serialized}
        |

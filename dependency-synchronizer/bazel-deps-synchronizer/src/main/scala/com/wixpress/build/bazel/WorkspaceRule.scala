@@ -8,10 +8,10 @@ case class WorkspaceRule(ruleType: String = "maven_jar",
                          artifact:  Coordinates) {
 
   def serialized: String =
-    s"""$ruleType(
-       |    name = "$name",
-       |    artifact = "${artifact.serialized}"
-       |)""".stripMargin
+    s"""  $ruleType(
+       |      name = "$name",
+       |      artifact = "${artifact.serialized}"
+       |  )""".stripMargin
 
 }
 
@@ -19,7 +19,7 @@ object WorkspaceRule {
   private def ruleTypeBy(artifact:Coordinates): String ={
     artifact.packaging match {
       //TODO: "pom" packaging should be disregarded
-      case Some("jar") | Some("pom") => "maven_jar"
+      case Some("jar") | Some("pom") => "native.maven_jar"
       case Some("zip") if artifact.classifier.contains("proto") => "maven_proto"
       case Some("zip") | Some("tar.gz") => "maven_archive"
       case _ => throw new RuntimeException(s"undefined worksapce rule for artifact ${artifact.serialized}")

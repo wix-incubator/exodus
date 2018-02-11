@@ -8,23 +8,23 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
 
   "BazelDependenciesReader should return" >> {
 
-    trait emptyBazelWorkspaceCtx extends Scope {
+    trait emptyThirdPartyReposCtx extends Scope {
       val localWorkspace: BazelLocalWorkspace = new FakeLocalBazelWorkspace()
       val reader = new BazelDependenciesReader(localWorkspace)
 
       def defaultDependency(groupId: String, artifactId: String, version: String, exclusion: Set[Exclusion] = Set.empty) =
         Dependency(Coordinates(groupId, artifactId, version), MavenScope.Compile, exclusion)
 
-      localWorkspace.overwriteWorkspace("")
+      localWorkspace.overwriteThirdPartyReposFile("")
     }
 
-    "empty set of dependencies in case given empty bazel workspace" in new emptyBazelWorkspaceCtx {
+    "empty set of dependencies in case given empty third party repos" in new emptyThirdPartyReposCtx {
 
       reader.allDependenciesAsMavenDependencies() must beEmpty
     }
 
-    "a dependency for bazel workspace with 1 dependency without exclusion" in new emptyBazelWorkspaceCtx {
-      localWorkspace.overwriteWorkspace(
+    "a dependency for third party repos with 1 dependency without exclusion" in new emptyThirdPartyReposCtx {
+      localWorkspace.overwriteThirdPartyReposFile(
         """
           |maven_jar(
           |    name = "some_group_some_dep",
@@ -35,14 +35,12 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
       reader.allDependenciesAsMavenDependencies() must contain(defaultDependency("some.group", "some-dep", "some-version"))
     }
 
-    "a dependency for bazel workspace with 1 proto dependency" in new emptyBazelWorkspaceCtx {
-      localWorkspace.overwriteWorkspace(
+    "a dependency for third party repos with 1 proto dependency" in new emptyThirdPartyReposCtx {
+      localWorkspace.overwriteThirdPartyReposFile(
         """
-          |new_http_archive(
+          |maven_proto(
           |    name = "some_group_some_dep",
-          |    # artifact = "some.group:some-dep:zip:proto:some-version",
-          |    url = "https://repo.dontcare.com",
-          |    build_file_content = DONT_CARE
+          |    artifact = "some.group:some-dep:zip:proto:some-version",
           |)
           |""".stripMargin)
 
@@ -53,8 +51,8 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
         ))
     }
 
-    "a dependency for bazel workspace with 1 dependency that has an exclusion" in new emptyBazelWorkspaceCtx {
-      localWorkspace.overwriteWorkspace(
+    "a dependency for third party repos with 1 dependency that has an exclusion" in new emptyThirdPartyReposCtx {
+      localWorkspace.overwriteThirdPartyReposFile(
         """
           |maven_jar(
           |    name = "some_group_some_dep",
@@ -76,8 +74,8 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
       reader.allDependenciesAsMavenDependencies() must contain(defaultDependency("some.group", "some-dep", "some-version", Set(Exclusion("some.group", "some-exclude"))))
     }
 
-    "all dependencies for repository with multiple dependencies" in new emptyBazelWorkspaceCtx {
-      localWorkspace.overwriteWorkspace(
+    "all dependencies for repository with multiple dependencies" in new emptyThirdPartyReposCtx {
+      localWorkspace.overwriteThirdPartyReposFile(
         """
           |maven_jar(
           |    name = "some_group_some_dep1",

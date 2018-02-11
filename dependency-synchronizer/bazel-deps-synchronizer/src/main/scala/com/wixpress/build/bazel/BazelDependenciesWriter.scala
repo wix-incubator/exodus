@@ -14,10 +14,13 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
   }
 
   private def writeWorkspaceRules(dependencyNodes: Set[DependencyNode]): Unit = {
-    val existingWorkspaceFile = localWorkspace.workspaceContent()
-    val workspaceBuilder = dependencyNodes.map(_.baseDependency.coordinates)
-      .foldLeft(BazelWorkspaceFile.Builder(existingWorkspaceFile))(_.withMavenJar(_))
-    localWorkspace.overwriteWorkspace(workspaceBuilder.content)
+    val existingThirdPartyReposFile = localWorkspace.thirdPartyReposFileContent()
+    val thirdPartyReposBuilder = dependencyNodes.map(_.baseDependency.coordinates)
+      .foldLeft(ThirdPartyReposFile.Builder(existingThirdPartyReposFile))(_.withMavenJar(_))
+
+    val content = thirdPartyReposBuilder.content
+    val nonEmptyContent = Option(content).filter(_.trim.nonEmpty).fold("  pass")(c => c)
+    localWorkspace.overwriteThirdPartyReposFile(nonEmptyContent)
   }
 
   private def writeLibraryRules(dependencyNodes: Set[DependencyNode]): Unit =
@@ -62,6 +65,6 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
   }
 
   private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) =
-    dependencyNodes.map(_.baseDependency.coordinates).flatMap(LibraryRule.buildFilePathBy) + "WORKSPACE"
+    dependencyNodes.map(_.baseDependency.coordinates).flatMap(LibraryRule.buildFilePathBy) + ThirdPartyReposFile.thirdPartyReposFilePath
 
 }

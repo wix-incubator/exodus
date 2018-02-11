@@ -1,6 +1,7 @@
 package com.wixpress.build.sync
 
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{overrideCoordinatesFrom, runtimeOverrides}
+import com.wixpress.build.bazel.ThirdPartyReposFile._
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.MavenMakers.aDependency
 import com.wixpress.build.maven._
@@ -53,7 +54,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         syncBasedOn(updatedResolver, Set(newDependency))
 
         val expectedChange = Change(
-          filePaths = Set("WORKSPACE", LibraryRule.buildFilePathBy(newDependency.coordinates).get),
+          filePaths = Set(thirdPartyReposFilePath, LibraryRule.buildFilePathBy(newDependency.coordinates).get),
           message =
             s"""$PersistMessageHeader
                | - ${newDependency.coordinates.serialized}

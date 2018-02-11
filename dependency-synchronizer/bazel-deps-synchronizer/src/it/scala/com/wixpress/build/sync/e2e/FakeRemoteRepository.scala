@@ -3,7 +3,7 @@ package com.wixpress.build.sync.e2e
 import better.files.File
 import com.gitblit.utils.JGitUtils
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.bazel.BazelWorkspaceFile
+import com.wixpress.build.bazel.ThirdPartyReposFile._
 import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.sync.BazelMavenSynchronizer
 import org.eclipse.jgit.api.Git
@@ -23,8 +23,8 @@ class FakeRemoteRepository {
     .map(_.asCaseClass)
     .toList
 
-  def initWithWorkspaceFileContent(content: String): FakeRemoteRepository = {
-    writeWorkspaceFile(content)
+  def initWithThirdPartyReposFileContent(content: String): FakeRemoteRepository = {
+    writeThirdPartyReposFile(content)
     this
   }
 
@@ -39,12 +39,12 @@ class FakeRemoteRepository {
 
   def remoteURI: String = remoteRepo.pathAsString
 
-  private def writeWorkspaceFile(content: String) = {
-    val workspaceFile = localClone.path.createChild("WORKSPACE")
+  private def writeThirdPartyReposFile(content: String) = {
+    val thirdPartyReposFile = localClone.path.createChild(thirdPartyReposFilePath)
     val git = localClone.git
-    workspaceFile.overwrite(content)
+    thirdPartyReposFile.overwrite(content)
     git.add()
-      .addFilepattern(workspaceFile.name)
+      .addFilepattern(thirdPartyReposFile.name)
       .call()
 
 
@@ -87,8 +87,8 @@ class FakeRemoteRepository {
 
   def hasWorkspaceRuleFor(coordinates: Coordinates): Try[String] = {
     val mavenJarRuleName = coordinates.workspaceRuleName
-    updatedContentOfFileIn(BazelMavenSynchronizer.BranchName, "WORKSPACE").map((workspaceContent) => {
-      val maybeRule: Option[Coordinates] = BazelWorkspaceFile.Parser(workspaceContent).findCoordinatesByName(mavenJarRuleName)
+    updatedContentOfFileIn(BazelMavenSynchronizer.BranchName, thirdPartyReposFilePath).map((thirdPartyReposContent) => {
+      val maybeRule: Option[Coordinates] = Parser(thirdPartyReposContent).findCoordinatesByName(mavenJarRuleName)
       maybeRule match {
         case Some(c) if c == coordinates => "success"
         case _ => throw new RuntimeException(s"Could not find workspace rule for $coordinates in bazel remote repository")
@@ -146,6 +146,6 @@ object GitRepository {
 }
 
 object FakeRemoteRepository {
-  def newBlankRepository: FakeRemoteRepository = (new FakeRemoteRepository).initWithWorkspaceFileContent("")
+  def newBlankRepository: FakeRemoteRepository = (new FakeRemoteRepository).initWithThirdPartyReposFileContent("")
 }
 

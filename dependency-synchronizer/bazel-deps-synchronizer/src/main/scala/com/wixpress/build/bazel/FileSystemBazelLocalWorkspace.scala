@@ -20,10 +20,10 @@ class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
     buildFilePath.overwrite(content)
   }
 
-  override def overwriteWorkspace(workspaceContent: String): Unit =
-    (root / WorkspaceFilePath).overwrite(workspaceContent)
+  override def overwriteThirdPartyReposFile(thirdPartyReposContent: String): Unit =
+    (root / thirdPartyReposFilePath).overwrite(thirdPartyReposContent)
 
-  override def workspaceContent(): String = contentIfExistsOf(root / WorkspaceFilePath).getOrElse("")
+  override def thirdPartyReposFileContent(): String = contentIfExistsOf(root / thirdPartyReposFilePath).getOrElse("")
 
   override def buildFileContent(packageName: String): Option[String] = contentIfExistsOf(root / packageName / "BUILD.bazel")
 

@@ -6,8 +6,8 @@ import com.wix.build.maven.translation.MavenToBazelTranslations._
 class BazelDependenciesReader(localWorkspace: BazelLocalWorkspace) {
 
   def allDependenciesAsMavenDependencies(): Set[Dependency] = {
-    val workspaceParser = BazelWorkspaceFile.Parser(localWorkspace.workspaceContent())
-    val rules = workspaceParser.allMavenCoordinates
+    val thirdPartyReposParser = ThirdPartyReposFile.Parser(localWorkspace.thirdPartyReposFileContent())
+    val rules = thirdPartyReposParser.allMavenCoordinates
     rules
       .map(toDependency)
   }
