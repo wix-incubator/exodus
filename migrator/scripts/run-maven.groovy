@@ -50,6 +50,9 @@ pipeline {
                 if (findFiles(glob: '**/target/**/TEST-*.xml').any()) {
                     archiveArtifacts "**/target/**/TEST-*.xml"
                 }
+                if (findFiles(glob: 'bazel_migration/*.*').any()) {
+                    archiveArtifacts "bazel_migration/*.*"
+                }
             }
         }
     }
