@@ -91,7 +91,7 @@ class MavenBuildSystem(repoRoot: Path,
     if (containsPom(repoRoot)) {
       readModule(repoRoot)
     } else {
-      directChildrenOfRoot.filter(containsPom).map(readModule).flatten.toSet
+      directChildrenOfRoot.filter(containsPom).flatMap(readModule).toSet
     }
   }
 
@@ -117,8 +117,9 @@ class MavenBuildSystem(repoRoot: Path,
     val pomPath = pathToPomFrom(modulePath)
     val reader = Files.newBufferedReader(pomPath)
     try {
-      val model = new MavenXpp3Reader().read(reader)
-      model
+      new MavenXpp3Reader().read(reader)
+    } catch{
+      case t:Throwable => throw new UnreadablePomException(s"Cannot read pom at path ${modulePath.toString}", t)
     } finally {
       reader.close()
     }
