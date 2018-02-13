@@ -23,10 +23,6 @@ import scala.collection.{GenIterable, GenTraversableOnce}
 import scala.language.higherKinds
 import scala.util.Failure
 
-case class SourceFilesOverrides(mutedFiles: Set[String] = Set.empty) {
-  def mutedFile(filePath: String): Boolean = mutedFiles.contains(filePath)
-}
-
 class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codotaToken: String) extends DependencyAnalyzer {
   private val log = LoggerFactory.getLogger(getClass)
   //noinspection TypeAnnotation
@@ -39,19 +35,6 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
     }
   }
 
-  private def readMutedFiles() = {
-    val mutedFilesOverrides = repoRoot.toPath.resolve("bazel_migration").resolve("source_files.overrides")
-
-    if (Files.isReadable(mutedFilesOverrides)) {
-      val objectMapper = new ObjectMapper()
-        .registerModule(DefaultScalaModule)
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      objectMapper.readValue(Files.newInputStream(mutedFilesOverrides), classOf[SourceFilesOverrides])
-    } else {
-      SourceFilesOverrides()
-    }
-
-  }
 
   private val sourceFilesOverrides = readMutedFiles()
   ConnectorSettings.setHost(ConnectorSettings.Host.GATEWAY)
@@ -81,15 +64,17 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
 
     val testCode = tryToGetTestCode(testArtifactName)
 
-    ModuleAnalysisResults(AnalysisResults.ofProd(prodCode) , AnalysisResults.ofTests(testCode))
+    ModuleAnalysisResults(AnalysisResults.ofProd(prodCode), AnalysisResults.ofTests(testCode))
   }
 
   case class ModuleAnalysisResults(prodResults: AnalysisResults, testResults: AnalysisResults)
+
   case class AnalysisResults(filesToDependencyInfo: Map[String, DependencyInfo], isTestCode: Boolean)
 
   object AnalysisResults {
     def ofProd(results: Map[String, DependencyInfo]): AnalysisResults =
       AnalysisResults(results, isTestCode = false)
+
     def ofTests(results: Map[String, DependencyInfo]): AnalysisResults =
       AnalysisResults(results, isTestCode = true)
   }
@@ -100,7 +85,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
       codotaClient.getArtifactDependencies(testArtifactName).asScala.toMap
     } match {
       case x: util.Success[Map[String, DependencyInfo]] => x.value
-      case Failure(y:CodotaHttpException) if notFoundException(y) => Map.empty[String, DependencyInfo]
+      case Failure(y: CodotaHttpException) if notFoundException(y) => Map.empty[String, DependencyInfo]
       case z: util.Failure[_] => throw z.exception
     }
     testCode
@@ -130,25 +115,25 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
                                     internalDeps: GenIterable[java.util.Collection[OptionalInternalDependency]],
                                     isTestCode: Boolean): Either[AnalyzeFailure, List[Dependency]] =
     EitherSequence.sequence {
-    val internalDependencies: List[Either[AnalyzeFailure, Dependency]] = internalDeps.map(_.asScala)
-      .map(retainOnlySupportedFilesIn)
-      .filter(_.nonEmpty)
-      .map(dependencyGroupToDependency(currentModule, isTestCode))
-      .collect {
-        case Right(Some(d)) => Right(d)
-        case Left(af) => Left(af)
-      }.toList
-    internalDependencies
-  }
+      val internalDependencies: List[Either[AnalyzeFailure, Dependency]] = internalDeps.map(_.asScala)
+        .map(retainOnlySupportedFilesIn)
+        .filter(_.nonEmpty)
+        .map(dependencyGroupToDependency(currentModule, isTestCode))
+        .collect {
+          case Right(Some(d)) => Right(d)
+          case Left(af) => Left(af)
+        }.toList
+      internalDependencies
+    }
 
-  private def dependencyGroupToDependency(currentModule:SourceModule,isTestCode:Boolean)(dependencyGroup:Iterable[OptionalInternalDependency]): Either[AnalyzeFailure, Option[Dependency]] =
-      EitherSequence.sequence(toCoordinatesSet(dependencyGroup))
-        .right.flatMap(coordinatesSetToDependency(currentModule, isTestCode))
-        .augment(FailureMetadata.InternalDep(dependencyGroup))
+  private def dependencyGroupToDependency(currentModule: SourceModule, isTestCode: Boolean)(dependencyGroup: Iterable[OptionalInternalDependency]): Either[AnalyzeFailure, Option[Dependency]] =
+    EitherSequence.sequence(toCoordinatesSet(dependencyGroup))
+      .right.flatMap(coordinatesSetToDependency(currentModule, isTestCode))
+      .augment(FailureMetadata.InternalDep(dependencyGroup))
 
   private def toCoordinatesSet(dependencyGroup: Iterable[OptionalInternalDependency]): Iterable[Either[AnalyzeFailure, (Coordinates, String)]] =
-    dependencyGroup.map{ dep =>
-      externalModuleFromCodotaArtifactName(dep.getArtifactName).right.map(module => (module, dep.getFilepath))
+    dependencyGroup.map { dep =>
+      mavenCoordiantesFromCodotaArtifactName(dep.getArtifactName).right.map(module => (module, dep.getFilepath))
     }
 
   private def coordinatesSetToDependency(currentModule: SourceModule, isTestCode: Boolean)(externalModulesAndFilePaths: Iterable[(Coordinates, String)]): Either[AnalyzeFailure, Option[Dependency]] = {
@@ -172,7 +157,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   private def retainOnlySupportedFilesIn(internalDeps: Iterable[OptionalInternalDependency]) =
     internalDeps.filter(depInfo => supportedFile(depInfo.getFilepath))
 
-  private def externalModuleFromCodotaArtifactName(artifactName: String): Either[AnalyzeFailure, Coordinates] = {
+  private def mavenCoordiantesFromCodotaArtifactName(artifactName: String): Either[AnalyzeFailure, Coordinates] = {
     eitherRetry() {
       codotaClient.readArtifact(artifactName).getProject
     }.augment(FailureMetadata.MissingArtifactInCodota(artifactName)).right.map { project: ProjectInfo =>
@@ -187,13 +172,16 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   private def representsTestJar(artifactName: String): Boolean = artifactName.endsWith("[tests]") //codota convention
 
   private def findSourceModule(currentModule: SourceModule, codotaSuggestionModules: Set[Coordinates], repoModules: Set[SourceModule], isTestCode: Boolean): Either[AnalyzeFailure, Option[SourceModule]] = {
-      //if the current module is one of the ones in the list we'll choose it over the others since it's likely that
-      //if we have two sources with the same name in the same package in two different modules
-      // the code has a dependency on the source in the same module and not a neighboring module
+    //if the current module is one of the ones in the list we'll choose it over the others since it's likely that
+    //if we have two sources with the same name in the same package in two different modules
+    // the code has a dependency on the source in the same module and not a neighboring module
     if (currentModuleIsSuggested(currentModule, codotaSuggestionModules, isTestCode)) {
       Right(Some(currentModule))
     } else {
+      //today classpathOf is actually only full transitive classpath of internal (according to direct internal)
+      //we need classpathOf to be full transitive claspspath
       classpathOf(currentModule, repoModules, isTestCode)
+        //in intra-repo dep mode (phase1) add .filter(repoModules)
         .filter(suggestedIn(codotaSuggestionModules))
         .toList match {
         case Nil => Right(None)
@@ -221,7 +209,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
     }.flatten.toSet
   }
 
-  private def decorateAsTestsDependencyIf(isDependingOnTests: Boolean) (module: SourceModule) =
+  private def decorateAsTestsDependencyIf(isDependingOnTests: Boolean)(module: SourceModule) =
     if (isDependingOnTests)
       module.copy(externalModule = module.externalModule.copy(classifier = Some("tests")))
     else
@@ -262,9 +250,36 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   }
 
   private def sourceDirFor(module: SourceModule, filePath: String): Option[String] =
-    Seq("src/main/java", "src/main/scala", "src/main/proto", "src/test/java", "src/test/scala", "src/test/proto", "src/it/java", "src/it/scala", "src/e2e/java", "src/e2e/scala").find { srcDir: String =>
+    Seq(
+      "src/main/java",
+      "src/main/scala",
+      "src/main/proto",
+      "src/test/java",
+      "src/test/scala",
+      "src/test/proto",
+      "src/it/java",
+      "src/it/scala",
+      "src/e2e/java",
+      "src/e2e/scala").find { srcDir =>
       val path = Paths.get(repoRoot.getAbsolutePath, module.relativePathFromMonoRepoRoot, srcDir, filePath)
       Files.exists(path)
     }
 
+  private def readMutedFiles() = {
+    val mutedFilesOverrides = repoRoot.toPath.resolve("bazel_migration").resolve("source_files.overrides")
+
+    if (Files.isReadable(mutedFilesOverrides)) {
+      val objectMapper = new ObjectMapper()
+        .registerModule(DefaultScalaModule)
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      objectMapper.readValue(Files.newInputStream(mutedFilesOverrides), classOf[SourceFilesOverrides])
+    } else {
+      SourceFilesOverrides()
+    }
+  }
+
+}
+
+case class SourceFilesOverrides(mutedFiles: Set[String] = Set.empty) {
+  def mutedFile(filePath: String): Boolean = mutedFiles.contains(filePath)
 }
