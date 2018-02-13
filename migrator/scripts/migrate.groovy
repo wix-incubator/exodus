@@ -89,6 +89,7 @@ pipeline {
                 if ("${env.TRIGGER_BUILD}" != "false"){
                     build job: "03-fix-strict-deps", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
                 }
+                build job: "06-update-codota-labels", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
             }
         }
     }
