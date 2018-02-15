@@ -140,6 +140,101 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
       }
     }
 
+    "all dependencies finder" should {
+      "return direct dependency" in new ctx {
+        def interestingArtifact = someCoordinates("base")
+
+        def directDependency = Dependency(someCoordinates("direct"), MavenScope.Compile)
+
+        override def remoteArtifacts = Set(anArtifact(interestingArtifact).withDependency(directDependency))
+
+        mavenDependencyResolver.allDependenciesOf(interestingArtifact) must contain(directDependency)
+      }
+      // https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Dependency_Scope
+      testScopeResolutionForTransitiveDependency(
+        directDependencyScope = MavenScope.Compile,
+        originalScope = MavenScope.Compile,
+        expectedResolvedScope = MavenScope.Compile)
+
+      testScopeResolutionForTransitiveDependency(
+        directDependencyScope = MavenScope.Provided,
+        originalScope = MavenScope.Compile,
+        expectedResolvedScope = MavenScope.Provided)
+
+      testScopeResolutionForTransitiveDependency(
+        directDependencyScope = MavenScope.Runtime,
+        originalScope = MavenScope.Compile,
+        expectedResolvedScope = MavenScope.Runtime)
+
+      testScopeResolutionForTransitiveDependency(
+        directDependencyScope = MavenScope.Test,
+        originalScope = MavenScope.Compile,
+        expectedResolvedScope = MavenScope.Test)
+
+      testScopeResolutionForTransitiveDependency(
+        directDependencyScope = MavenScope.Compile,
+        originalScope = MavenScope.Runtime,
+        expectedResolvedScope = MavenScope.Runtime
+      )
+
+      testScopeResolutionForTransitiveDependency(
+        directDependencyScope = MavenScope.Provided,
+        originalScope = MavenScope.Runtime,
+        expectedResolvedScope = MavenScope.Provided
+      )
+
+      testScopeResolutionForTransitiveDependency(
+        directDependencyScope = MavenScope.Runtime,
+        originalScope = MavenScope.Runtime,
+        expectedResolvedScope = MavenScope.Runtime
+      )
+
+      testScopeResolutionForTransitiveDependency(
+        directDependencyScope = MavenScope.Test,
+        originalScope = MavenScope.Runtime,
+        expectedResolvedScope = MavenScope.Test
+      )
+
+      testTransitiveDependencyIsNotInAllDependencyInCaseOf(
+        directDependencyScope = MavenScope.Compile,
+        originalScope = MavenScope.Provided
+      )
+
+      testTransitiveDependencyIsNotInAllDependencyInCaseOf(
+        directDependencyScope = MavenScope.Provided,
+        originalScope = MavenScope.Provided
+      )
+
+      testTransitiveDependencyIsNotInAllDependencyInCaseOf(
+        directDependencyScope = MavenScope.Runtime,
+        originalScope = MavenScope.Provided
+      )
+
+      testTransitiveDependencyIsNotInAllDependencyInCaseOf(
+        directDependencyScope = MavenScope.Test,
+        originalScope = MavenScope.Provided
+      )
+
+      testTransitiveDependencyIsNotInAllDependencyInCaseOf(
+        directDependencyScope = MavenScope.Compile,
+        originalScope = MavenScope.Test
+      )
+
+      testTransitiveDependencyIsNotInAllDependencyInCaseOf(
+        directDependencyScope = MavenScope.Provided,
+        originalScope = MavenScope.Test
+      )
+
+      testTransitiveDependencyIsNotInAllDependencyInCaseOf(
+        directDependencyScope = MavenScope.Runtime,
+        originalScope = MavenScope.Test
+      )
+
+      testTransitiveDependencyIsNotInAllDependencyInCaseOf(
+        directDependencyScope = MavenScope.Test,
+        originalScope = MavenScope.Test
+      )
+    }
 
     "closure finder" >> {
       "given empty list of dependencies" should {
@@ -337,15 +432,58 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
   }
 
+  private def testScopeResolutionForTransitiveDependency(
+                                                           directDependencyScope: MavenScope,
+                                                           originalScope: MavenScope,
+                                                           expectedResolvedScope: MavenScope) = {
+    s"return transitive dependency of scope ${originalScope.name} to " +
+      s"direct dependency of scope ${directDependencyScope.name}, " +
+      s"resolved as scope ${expectedResolvedScope.name}" in new ctx {
+      def interestingArtifact = someCoordinates("base")
+
+      def directDependency = Dependency(someCoordinates("direct"), directDependencyScope)
+
+      def transitiveDependency = Dependency(someCoordinates("transitive"), originalScope)
+
+      override def remoteArtifacts = Set(
+        anArtifact(interestingArtifact).withDependency(directDependency),
+        anArtifact(directDependency.coordinates).withDependency(transitiveDependency),
+        anArtifact(transitiveDependency.coordinates)
+      )
+
+      mavenDependencyResolver.allDependenciesOf(interestingArtifact) must contain(transitiveDependency.withScope(expectedResolvedScope))
+    }
+  }
+
   private def testDirectDependencyOfScope(scope: MavenScope) = {
     s"return the direct dependency with ${scope.name} scope" in new ctx {
       def interestingArtifact = someCoordinates("base")
 
-      def directDependency = Dependency(someCoordinates("transitive"), scope)
+      def directDependency = Dependency(someCoordinates("direct"), scope)
 
       override def remoteArtifacts = Set(anArtifact(interestingArtifact).withDependency(directDependency))
 
       mavenDependencyResolver.directDependenciesOf(interestingArtifact) must contain(directDependency)
+    }
+  }
+
+  private def testTransitiveDependencyIsNotInAllDependencyInCaseOf(
+                                                          directDependencyScope: MavenScope,
+                                                          originalScope: MavenScope) = {
+    s"not return transitive dependency of scope ${originalScope.name} coming from direct dependency of scope ${directDependencyScope.name}" in new ctx {
+      def interestingArtifact = someCoordinates("base")
+
+      def directDependency = Dependency(someCoordinates("direct"), directDependencyScope)
+
+      def transitiveDependency = Dependency(someCoordinates("transitive"), originalScope)
+
+      override def remoteArtifacts = Set(
+        anArtifact(interestingArtifact).withDependency(directDependency),
+        anArtifact(directDependency.coordinates).withDependency(transitiveDependency),
+        anArtifact(transitiveDependency.coordinates)
+      )
+
+      mavenDependencyResolver.allDependenciesOf(interestingArtifact) must contain(exactly(directDependency))
     }
   }
 }

@@ -46,6 +46,8 @@ class FakeMavenDependencyResolver(artifacts: Set[ArtifactDescriptor]) extends Ma
 
   private def transformScopes(originalScope: MavenScope)(d: Dependency): Dependency = {
     val newScope = (originalScope, d.scope) match {
+      case (MavenScope.Provided, _) => MavenScope.Provided
+      case (MavenScope.Test, MavenScope.Runtime) => MavenScope.Test
       case (_, MavenScope.Runtime) => MavenScope.Runtime
       case (a, _) => a
     }

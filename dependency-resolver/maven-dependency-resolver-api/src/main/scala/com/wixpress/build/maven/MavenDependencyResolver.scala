@@ -8,6 +8,11 @@ trait MavenDependencyResolver {
 
   def directDependenciesOf(artifact: Coordinates): Set[Dependency]
 
+  def allDependenciesOf(artifact: Coordinates): Set[Dependency] = {
+    val directDependencies = directDependenciesOf(artifact)
+    dependencyClosureOf(directDependencies,managedDependenciesOf(artifact)).map(_.baseDependency)
+  }
+
   protected def validatedDependency(dependency: Dependency): Dependency = {
     import dependency.coordinates._
     if (
