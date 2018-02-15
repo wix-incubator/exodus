@@ -53,6 +53,17 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
       fakeRemoteRepository.updatedContentOfFileIn(branchName, fileName) must beSuccessfulTry(content)
     }
 
+    "throw exception when persising to base branch (master)" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
+      val someLocalPath = File.newTemporaryDirectory("clone")
+      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath)
+
+      val fileName = "some-file.txt"
+      someLocalPath.createChild(fileName).overwrite("some content")
+
+      val baseBranch = "master"
+      gitBazelRepository.persist("master", Set(fileName), "some message") must throwA[RuntimeException]
+    }
+
     "overwrite any file in target branch with the persist content" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
       val someLocalPath = File.newTemporaryDirectory("clone")
       val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath)

@@ -32,6 +32,8 @@ class GitBazelRepository(
   }
 
   override def persist(branchName: String, changedFilePaths: Set[String], message: String): Unit = {
+    if (branchName == DefaultBranch)
+      throw new RuntimeException(s"Cannot push to branch $DefaultBranch")
     withLocalGit(git => {
       checkoutNewBranch(git, branchName)
       addFilesAndCommit(git, changedFilePaths, message)
@@ -62,17 +64,15 @@ class GitBazelRepository(
       .setName(DefaultBranch)
       .call()
 
-    if (branchName != DefaultBranch) {
-      git.branchDelete()
-        .setForce(true)
-        .setBranchNames(branchName)
-        .call()
+    git.branchDelete()
+      .setForce(true)
+      .setBranchNames(branchName)
+      .call()
 
-      git.checkout()
-        .setCreateBranch(true)
-        .setName(branchName)
-        .call()
-    }
+    git.checkout()
+      .setCreateBranch(true)
+      .setName(branchName)
+      .call()
   }
 
   private def addFilesAndCommit(git: Git, changedFilePaths: Set[String], message: String) = {
