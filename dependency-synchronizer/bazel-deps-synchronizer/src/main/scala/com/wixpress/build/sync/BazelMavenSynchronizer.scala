@@ -67,6 +67,6 @@ class HighestVersionConflictResolution {
 }
 
 object BazelMavenSynchronizer {
-  val BranchName = "bazel-managed-deps-sync"
-  val PersistMessageHeader = "Automatic managed dependency sync"
+  val BranchName = "master"
+  val PersistMessageHeader = "Automatic update of global 'third_party.bzl'"
 }
