@@ -52,6 +52,7 @@ class BazelRcRemoteWriter(repoRoot: File) {
        |build:remote --define=EXECUTOR=remote
        |build:remote --strategy=Scalac=remote
        |test:remote --strategy=Scalac=remote
+       |test:remote --test_tmpdir=/tmp
        |
        |# Enable the remote cache so action results can be shared across machines,
        |# developers, and workspaces.

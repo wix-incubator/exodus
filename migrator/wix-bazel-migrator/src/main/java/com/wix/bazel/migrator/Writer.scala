@@ -522,7 +522,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.tags.map(tags => targetOverride.label -> Writer.testTypeFromOverride(tags))).toMap
 
   private val AdditionalJvmFlags: Map[String, String] =
-    overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalJvmFlags.map(flags => targetOverride.label -> concat(flags))).toMap.withDefaultValue("")
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalJvmFlags.map(flags => targetOverride.label -> concat(flags.filterNot(_.startsWith("-Djava.io.tmpdir="))))).toMap.withDefaultValue("")
 
   private val AdditionalDataDeps: Map[String, String] =
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalDataDeps.map(dataDeps => targetOverride.label -> concat(dataDeps))).toMap.withDefaultValue("")

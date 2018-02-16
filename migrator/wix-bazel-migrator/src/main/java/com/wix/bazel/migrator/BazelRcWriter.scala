@@ -15,6 +15,7 @@ class BazelRcWriter(repoRoot: File) {
          |test --test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false
          |build --experimental_ui
          |test --experimental_ui
+         |test --test_tmpdir=/tmp
       """.stripMargin
     writeToDisk(contents)
   }
