@@ -15,7 +15,7 @@ pipeline {
                          |--test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
-        BAZEL_HOME = tool name: 'bazel-0.10.0', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
+        BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
