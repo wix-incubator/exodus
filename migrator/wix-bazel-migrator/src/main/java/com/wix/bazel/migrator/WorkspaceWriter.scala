@@ -48,7 +48,7 @@ class WorkspaceWriter(repoRoot: File) {
          |scala_repositories()
          |load("@wix_framework//test-infrastructures-modules/mysql-testkit/downloader:mysql_installer.bzl", "mysql_default_version", "mysql")
          |mysql_default_version()
-         |mysql("5.7", "latest")
+         |mysql("5.6", "latest")
          |maven_jar(
          |    name = "com_wix_wix_embedded_mysql_download_and_extract_jar_with_dependencies",
          |    artifact = "com.wix:wix-embedded-mysql-download-and-extract:jar:jar-with-dependencies:2.2.9",
