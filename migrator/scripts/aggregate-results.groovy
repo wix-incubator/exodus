@@ -8,6 +8,7 @@ node {
     def migrate_job_name = "/01-migrate"
     def bazel_run_job_name = "/02-run-bazel"
     def compare_job_name = "/03-compare"
+    def remote_job_name = "/05-run-bazel-rbe"
 
 
     def compare_success = 0
@@ -28,6 +29,11 @@ node {
     def compare_missing = 0
     def compare_overridden = 0
 
+    def remote_run_success = 0
+    def remote_run_fail = 0
+    def remote_run_unstable = 0
+    def remote_run_never_run = 0
+
 
     def recent = { run ->
         if (run == null)
@@ -41,6 +47,8 @@ node {
         def compare_run = Jenkins.instance.getItemByFullName(it + compare_job_name).lastCompletedBuild
         def bazel_run_run = Jenkins.instance.getItemByFullName(it + bazel_run_job_name).lastCompletedBuild
         def migrate_run = Jenkins.instance.getItemByFullName(it + migrate_job_name).lastCompletedBuild
+        def bazel_remote_run = Jenkins.instance.getItemByFullName(it + remote_job_name).lastCompletedBuild
+
 
         if (recent(compare_run)) {
             if (compare_run.result == Result.SUCCESS)
@@ -51,7 +59,7 @@ node {
             def log = compare_run.log
             def match = log =~ /same: (\d+), different: (\d+), missing: (\d+), overridden: (\d+)/
             try {
-                if (match.groupCount() > 0) {
+                if (match.size() > 0) {
                     compare_same       += match[0][1].toInteger()
                     compare_different  += match[0][2].toInteger()
                     compare_missing    += match[0][3].toInteger()
@@ -81,6 +89,16 @@ node {
                 migrate_failure = migrate_failure + 1
         } else
             migrate_never_run = migrate_never_run + 1
+
+        if (recent(bazel_remote_run)) {
+            if (bazel_remote_run.result == Result.SUCCESS)
+                remote_run_success = remote_run_success + 1
+            else if (bazel_remote_run.result == Result.UNSTABLE)
+                remote_run_unstable = remote_run_unstable + 1
+            else
+                remote_run_fail = remote_run_fail + 1
+        } else
+            remote_run_never_run = remote_run_never_run + 1
     }
     def res =  """```
     |Total ${folders.size}
@@ -107,6 +125,11 @@ node {
     | - total missing = ${compare_missing}
     | - total overridden = ${compare_overridden}
     |--
+    |REMOTE
+    | - success = ${remote_run_success}
+    | - unstable = ${remote_run_unstable}
+    | - failure = ${remote_run_fail}
+    | - not-run = ${remote_run_never_run}
     |```""".stripMargin()
 
     echo res
