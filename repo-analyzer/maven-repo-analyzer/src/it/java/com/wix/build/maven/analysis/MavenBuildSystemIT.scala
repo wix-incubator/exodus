@@ -4,14 +4,14 @@ import java.io.IOException
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 
-import com.google.common.jimfs.{Configuration, Jimfs}
+import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import com.wix.bazel.migrator.model.Target.MavenJar
 import com.wix.bazel.migrator.model._
 import com.wix.build.maven.analysis.MavenModule._
 import com.wix.build.maven.analysis.SynchronizerConversion.MavenModule2ArtifactDescriptor
-import com.wixpress.build.maven.{ArtifactDescriptor, Coordinates, Exclusion, FakeMavenRepository, MavenScope, Dependency}
+import com.wixpress.build.maven.{ArtifactDescriptor, Coordinates, Dependency, Exclusion, FakeMavenRepository, MavenScope}
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer
-import org.apache.maven.model.{Dependency => MavenDependency, Model, Parent}
+import org.apache.maven.model.{Model, Parent, Dependency => MavenDependency}
 import org.specs2.execute.{AsResult, Failure, Result}
 import org.specs2.matcher.{AlwaysMatcher, Matcher}
 import org.specs2.mutable.{Around, SpecificationWithJUnit}
@@ -407,7 +407,7 @@ object Repo {
 }
 
 case class Repo(rootAggregatorModule: Option[MavenModule] = None, siblingModules: List[(String, MavenModule)] = Nil) {
-  private lazy val fileSystem = Jimfs.newFileSystem(Configuration.unix())
+  private lazy val fileSystem = MemoryFileSystemBuilder.newLinux().build()
   private lazy val repoRoot = fileSystem.getPath("repoRoot")
 
   def root: Path = repoRoot

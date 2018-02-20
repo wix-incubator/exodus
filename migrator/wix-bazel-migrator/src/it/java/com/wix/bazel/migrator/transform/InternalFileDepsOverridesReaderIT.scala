@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path}
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.google.common.jimfs.{Configuration, Jimfs}
+import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -86,7 +86,7 @@ class InternalFileDepsOverridesReaderIT extends SpecificationWithJUnit {
   abstract class Context extends Scope {
 
     val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
-    private lazy val fileSystem = Jimfs.newFileSystem(Configuration.unix())
+    private lazy val fileSystem = MemoryFileSystemBuilder.newLinux().build()
     val repoRoot = fileSystem.getPath("repoRoot")
     private val overridesPath = setupOverridesPath(repoRoot)
 
