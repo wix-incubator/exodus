@@ -40,6 +40,11 @@ pipeline {
                 sh 'buildifier $(find . -iname BUILD.bazel -type f)'
             }
         }
+        stage('clean') {
+            steps {
+                sh "bazel clean --expunge"
+            }
+        }
         stage('build') {
             steps {
                 sh "bazel build --strategy=Scalac=worker //..."
