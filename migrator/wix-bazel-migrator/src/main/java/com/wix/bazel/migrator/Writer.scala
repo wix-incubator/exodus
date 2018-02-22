@@ -289,7 +289,6 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
          |    srcs = [${writeDependencies(writeSources(target))}],
          |    deps = [${writeDependencies(compileTimeTargets)}],
          |    runtime_deps = [${writeDependencies(runtimeTargets)}],
-         |    scalacopts = ["-unchecked", "-deprecation", "-feature", "-Xmax-classfile-name", "240", "-Xlint:missing-interpolator", "-Ywarn-unused-import", "-Ywarn-unused"],
          |    javacopts = ["-g", "-deprecation", "-XepDisableAllChecks"],
     """.stripMargin + footer + "\n)\n"
   }

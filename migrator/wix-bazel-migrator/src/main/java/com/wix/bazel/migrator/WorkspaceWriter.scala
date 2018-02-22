@@ -36,7 +36,7 @@ class WorkspaceWriter(repoRoot: File) {
          |
          |
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
-         |core_server_build_tools_version="db4ea70f486ff164b65ad2516017b229e2a742b3" # update this as needed
+         |core_server_build_tools_version="d7dcfe3b40224f29cb340d866d374187da58076f" # update this as needed
          |
          |git_repository(
          |             name = "core_server_build_tools",
@@ -65,8 +65,7 @@ class WorkspaceWriter(repoRoot: File) {
          |load("@io_bazel_rules_scala//scala_proto:scala_proto.bzl", "scala_proto_repositories")
          |scala_proto_repositories()
          |
-         |load("@io_bazel_rules_scala//scala:toolchains.bzl", "scala_register_toolchains")
-         |scala_register_toolchains()
+         |register_toolchains("@core_server_build_tools//toolchains:wix_defaults_global_toolchain")
          |
          |wix_grpc_version="a3ae355cf3173e3944160aaebd0f3f75726eaf74" # update this as needed
          |
