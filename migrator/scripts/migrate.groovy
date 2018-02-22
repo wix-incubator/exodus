@@ -45,7 +45,7 @@ pipeline {
                     sh 'grep -q -F "/bazel-*" .gitignore || echo "\n/bazel-*" >> .gitignore'
                     script{
                         if (fileExists('bazel_migration/post-migration.sh')){
-                            sh "bazel_migration/post-migration.sh"
+                            sh "sh bazel_migration/post-migration.sh"
                         }
                     }
                 }
