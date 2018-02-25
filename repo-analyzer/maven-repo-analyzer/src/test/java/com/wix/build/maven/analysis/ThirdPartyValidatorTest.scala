@@ -1,8 +1,8 @@
 package com.wix.build.maven.analysis
 
+import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.makers.ModuleMaker._
-import com.wix.bazel.migrator.model.{ModuleDependencies, SourceModule, Scope => MigratorScope}
-import com.wix.build.maven.analysis.ThirdPartyValidatorTest._
+import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven.{Coordinates, Dependency, Exclusion, MavenScope}
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.SpecificationWithJUnit
@@ -14,20 +14,30 @@ class ThirdPartyValidatorTest extends SpecificationWithJUnit {
   "Third party validator should return" >> {
 
     trait ctx extends Scope {
-      val someDependency = dependency("some.group", "some-dep", "some-version")
+      val emptyManagedDependencies = Set.empty[Coordinates]
+
+      val baseDependencyCoordinates: Coordinates = someCoordinates("some-dependency")
+
+      val someCompileDependency = Dependency(baseDependencyCoordinates, MavenScope.Compile)
+
+      def lotsOfModulesThatDependOn(quantity: Int, dependency: Dependency): Set[SourceModule] =
+        (1 to quantity).map(num => aModule(s"module$num").withDirectDependency(dependency)).toSet
+
+      def coordinateWithConsumers(dependency: Coordinates, consumers: SourceModule*) =
+        CoordinatesWithConsumers(dependency, consumers.map(_.coordinates).toSet)
     }
 
-    "no conflicts if given empty set of source modules" in {
+    "no conflicts if given empty set of source modules" in new ctx {
       val conflicts = new ThirdPartyValidator(Set.empty, emptyManagedDependencies).checkForConflicts()
 
       conflicts must haveNoConflicts
     }
 
     "no conflicts if there are no multiple versions in dependencies" in new ctx {
-      val someOtherDependency = dependency("some.group", "some-other-dep", "1.0")
+      val someOtherDependency = Dependency(someCoordinates("other-dep"), MavenScope.Compile)
       private val sourceModules = Set(
-        aModule(artifactId = "module-a", dependencies = Set(someDependency)),
-        aModule(artifactId = "module-b", dependencies = Set(someOtherDependency)))
+        aModule(artifactId = "module-a").withDirectDependency(someCompileDependency),
+        aModule(artifactId = "module-b").withDirectDependency(someOtherDependency))
 
       val conflicts = new ThirdPartyValidator(sourceModules, emptyManagedDependencies).checkForConflicts()
 
@@ -35,32 +45,30 @@ class ThirdPartyValidatorTest extends SpecificationWithJUnit {
     }
 
     "warning conflict if it found more than 1 version of same dependency" in new ctx {
-      val someDependencyWithDifferentVersion = someDependency.copy(version = "another-version")
-      val moduleADeps = ModuleDependencies()
-        .withScopedDependencies(MigratorScope.PROD_COMPILE, Set(dontCareDependency)) //ensures we iterate over all scopes
-        .withScopedDependencies(MigratorScope.TEST_COMPILE, Set(someDependency))
-      val moduleBDeps = Set(someDependencyWithDifferentVersion)
-      val moduleA = aModule("module-a", moduleADeps)
-      val moduleB = aModule("module-b", moduleBDeps)
+      val someDependencyWithDifferentVersion = someCompileDependency.withVersion("other-version")
+
+      val moduleA = aModule("module-a").withDirectDependency(someCompileDependency)
+      val moduleB = aModule("module-b").withDirectDependency(someDependencyWithDifferentVersion)
 
       val conflicts = new ThirdPartyValidator(sourceModules = Set(moduleA, moduleB),
-                                              emptyManagedDependencies).checkForConflicts()
+        emptyManagedDependencies).checkForConflicts()
 
       conflicts must haveAWarningConflict(MultipleVersionDependencyConflict(
-        someDependency.groupId,
-        someDependency.artifactId,
+        someCompileDependency.coordinates.groupId,
+        someCompileDependency.coordinates.artifactId,
         Set(
-          CoordinatesWithConsumers(someDependency, Set(moduleA.externalModule)),
-          CoordinatesWithConsumers(someDependencyWithDifferentVersion, Set(moduleB.externalModule)))
+          CoordinatesWithConsumers(baseDependencyCoordinates, Set(moduleA.coordinates)),
+          CoordinatesWithConsumers(someDependencyWithDifferentVersion.coordinates, Set(moduleB.coordinates)))
       ))
     }
 
     "no more than 5 consumers per dependency in conflict" in new ctx {
-      val someDependencyWithDifferentVersion = someDependency.copy(version = "another-version")
+      val someDependencyWithDifferentVersion = someCompileDependency.withVersion("other-version")
       private val moduleWithExceptionalDependency =
-        aModule("exceptional-module", Set(someDependencyWithDifferentVersion))
-      val sourceModules = lotsOfModulesThatDependOn(quantity = 100, dependency = someDependency) +
-                          moduleWithExceptionalDependency
+        aModule("exceptional-module").withDirectDependency(someDependencyWithDifferentVersion)
+
+      val sourceModules = lotsOfModulesThatDependOn(quantity = 100, dependency = someCompileDependency) +
+        moduleWithExceptionalDependency
 
       val conflicts = new ThirdPartyValidator(sourceModules, emptyManagedDependencies).checkForConflicts()
 
@@ -68,9 +76,9 @@ class ThirdPartyValidatorTest extends SpecificationWithJUnit {
     }
 
     "only conflicts in third party dependencies (exclude the source module)" in new ctx {
-      private val moduleA = aModule(artifactId = "module-a", dependencies = Set.empty[Coordinates])
-      private val moduleB = aModule(artifactId = "module-b", dependencies = Set(moduleA.externalModule))
-      private val moduleC = aModule(artifactId = "module-c", dependencies = Set(moduleA.externalModule.copy(version = "some-other-version")))
+      private val moduleA = aModule(artifactId = "module-a")
+      private val moduleB = aModule(artifactId = "module-b").withCompileScopedDependency(moduleA.coordinates)
+      private val moduleC = aModule(artifactId = "module-c").withCompileScopedDependency(moduleA.coordinates.copy(version = "some-other-version"))
       private val sourceModules = Set(moduleA, moduleB, moduleC)
 
       val conflicts = new ThirdPartyValidator(sourceModules, emptyManagedDependencies).checkForConflicts()
@@ -79,72 +87,64 @@ class ThirdPartyValidatorTest extends SpecificationWithJUnit {
     }
 
     "no warnings conflicts when all dependencies in project are in managed dependencies" in new ctx {
-      val moduleA = aModule(artifactId = "module-a", dependencies = Set(someDependency))
+      val moduleA = aModule(artifactId = "module-a").withDirectDependency(someCompileDependency)
 
       val conflicts = new ThirdPartyValidator(
         sourceModules = Set(moduleA),
-        managedDependencies = Set(someDependency)
+        managedDependencies = Set(someCompileDependency.coordinates)
       ).checkForConflicts()
 
       conflicts must haveNoWarningConflicts
     }
 
     "un-managed dependency conflict when dependency of single module project is not in managed dependency" in new ctx {
-      val someModule = aModule(artifactId = "module-a", dependencies = Set(someDependency))
+      val someModule = aModule(artifactId = "module-a").withDirectDependency(someCompileDependency)
 
       val conflicts = new ThirdPartyValidator(sourceModules = Set(someModule),
-                                              emptyManagedDependencies).checkForConflicts()
+        emptyManagedDependencies).checkForConflicts()
 
-      conflicts must haveAWarningConflict(UnManagedDependencyConflict(coordinateWithConsumers(someDependency, someModule)))
+      conflicts must haveAWarningConflict(UnManagedDependencyConflict(coordinateWithConsumers(someCompileDependency.coordinates, someModule)))
     }
 
     "un-managed dependency conflict when dependency of multi-module project is not in managed dependency" in new ctx {
-      val moduleA = aModule(artifactId = "module-a", dependencies = Set.empty[Coordinates])
-      val moduleB: SourceModule = aModule(artifactId = "module-b", dependencies = Set(someDependency))
+      val moduleA = aModule(artifactId = "module-a")
+      val moduleB: SourceModule = aModule(artifactId = "module-b").withDirectDependency(someCompileDependency)
       val sourceModules = Set(moduleA, moduleB)
 
       val conflicts = new ThirdPartyValidator(sourceModules, emptyManagedDependencies).checkForConflicts()
 
-      conflicts must haveAWarningConflict(UnManagedDependencyConflict(coordinateWithConsumers(someDependency, moduleB)))
+      conflicts must haveAWarningConflict(UnManagedDependencyConflict(coordinateWithConsumers(someCompileDependency.coordinates, moduleB)))
     }
 
     "collision with managed dependency conflict when dependency of project has different version than managed version" in new ctx {
-      val moduleWithSomeDependency = aModule(artifactId = "module-a", dependencies = Set(someDependency))
-      val someDependencyWithDifferentVersion = someDependency.copy(version = "some-other-version")
+      val moduleWithSomeDependency = aModule(artifactId = "module-a").withDirectDependency(someCompileDependency)
+      val someDependencyWithDifferentVersion = someCompileDependency.withVersion("some-other-version")
 
       val conflicts = new ThirdPartyValidator(
         sourceModules = Set(moduleWithSomeDependency),
-        managedDependencies = Set(someDependencyWithDifferentVersion)
+        managedDependencies = Set(someDependencyWithDifferentVersion.coordinates)
       ).checkForConflicts()
 
       conflicts must haveAWarningConflict(CollisionWithManagedDependencyConflict(
-        coordinateWithConsumers(someDependency, moduleWithSomeDependency),
+        coordinateWithConsumers(someCompileDependency.coordinates, moduleWithSomeDependency),
         someDependencyWithDifferentVersion.version))
     }
 
     "different exclusion collision when dependency of project has different exclusion managed" in new ctx {
-      val someDependencyWithDifferentVersion = someDependency.copy(version = "another-version")
 
-      val moduleADependency = Dependency(someDependency, MavenScope.Compile)
-      val moduleBDependency = moduleADependency.copy(exclusions = Set(Exclusion("some-Group", "some-Artifact")))
+      val sameDependencyWithExclusion = someCompileDependency.withExclusions(Set(Exclusion("some-Group", "some-Artifact")))
 
-      val moduleADeps = ModuleDependencies()
-        .withDependencies(Set(moduleADependency))
-
-      val moduleBDeps = ModuleDependencies()
-        .withDependencies(Set(moduleBDependency))
-
-      val moduleA = aModule("module-a", moduleADeps)
-      val moduleB = aModule("module-b", moduleBDeps)
+      val moduleA = aModule("module-a").withDirectDependency(someCompileDependency)
+      val moduleB = aModule("module-b").withDirectDependency(sameDependencyWithExclusion)
 
       val conflicts = new ThirdPartyValidator(sourceModules = Set(moduleA, moduleB),
         emptyManagedDependencies).checkForConflicts()
 
       conflicts must haveAWarningConflict(DifferentExclusionCollision(
-        someDependency.groupId,
-        someDependency.artifactId,
-        Set(DependencyWithConsumers(moduleADependency, Set(moduleA.externalModule)),
-          DependencyWithConsumers(moduleBDependency, Set(moduleB.externalModule)))
+        someCompileDependency.coordinates.groupId,
+        someCompileDependency.coordinates.artifactId,
+        Set(DependencyWithConsumers(someCompileDependency, Set(moduleA.coordinates)),
+          DependencyWithConsumers(sameDependencyWithExclusion, Set(moduleB.coordinates)))
       ))
     }
 
@@ -169,21 +169,5 @@ class ThirdPartyValidatorTest extends SpecificationWithJUnit {
       case conflict: CollisionWithManagedDependencyConflict => conflict.dependencyAndConsumers.consumers.size
     }
   }
-}
-
-object ThirdPartyValidatorTest {
-
-  private val emptyManagedDependencies = Set.empty[Coordinates]
-
-  private val dontCareDependency = dependency("dont.care", "dont-care", "dont-care")
-
-  private def dependency(groupId: String, artifactId: String, version: String) = anExternalModule(groupId, artifactId, version)
-
-  private def lotsOfModulesThatDependOn(quantity: Int, dependency: Coordinates): Set[SourceModule] =
-    (1 to quantity).map(num => aModule(s"module$num", Set(dependency))).toSet
-
-  private def coordinateWithConsumers(dependency: Coordinates, consumers: SourceModule*) =
-    CoordinatesWithConsumers(dependency, consumers.map(_.externalModule).toSet)
-
 }
 

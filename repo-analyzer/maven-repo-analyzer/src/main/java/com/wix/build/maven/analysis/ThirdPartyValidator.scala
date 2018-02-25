@@ -1,6 +1,5 @@
 package com.wix.build.maven.analysis
 
-import com.wix.bazel.migrator.model.Target.MavenJar
 import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.maven.{Coordinates, Dependency}
 
@@ -9,8 +8,8 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
   private val simplifiedModuleToDependenciesMap = sourceModules.map(moduleToDependencies).toMap
 
   private val thirdPartDependencies = allDependencies
-    .filterNot(d=> sourceModulesAsDependencies.exists(_.equalsIgnoringVersion(d.coordinates)))
-    .filterNot(d =>isIntraOrganizationDependency(d.coordinates))
+    .filterNot(d => sourceModulesAsDependencies.exists(_.equalsIgnoringVersion(d.coordinates)))
+    .filterNot(d => isIntraOrganizationDependency(d.coordinates))
 
   private val thirdPartyCoordinates =
     (allCoordinates -- sourceModulesAsDependencies)
@@ -19,6 +18,7 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
   private def sourceModulesAsDependencies = simplifiedModuleToDependenciesMap.keySet
 
   private def allDependencies = simplifiedModuleToDependenciesMap.values.flatten.toSet
+
   private def allCoordinates = allDependencies.map(_.coordinates)
 
   def checkForConflicts(): ThirdPartyConflicts =
@@ -38,6 +38,7 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
   private def hasDifferentExclusions(identifierTodependency: ((String, String), Set[Dependency])): Boolean = {
     identifierTodependency._2.map(_.exclusions).size > 1
   }
+
   private def conflictsOfMultipleVersions: Set[ThirdPartyConflict] =
     thirdPartyCoordinates
       .groupBy(groupIdAndArtifactId)
@@ -67,12 +68,8 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
     dependency.groupId == otherDependency.groupId && dependency.artifactId == otherDependency.artifactId
   }
 
-  private def anyScopeDependenciesOf(sourceModule: SourceModule) =
-    sourceModule.dependencies.scopedDependencies.values.flatten
-    .collect { case mavenJar: MavenJar => mavenJar.originatingExternalDependency }.toSet
-
   private def moduleToDependencies(sourceModule: SourceModule) =
-    sourceModule.externalModule -> anyScopeDependenciesOf(sourceModule)
+    sourceModule.coordinates -> sourceModule.dependencies.directDependencies
 
   private def isIntraOrganizationDependency(dependency: Coordinates) = dependency.version.endsWith("SNAPSHOT")
 

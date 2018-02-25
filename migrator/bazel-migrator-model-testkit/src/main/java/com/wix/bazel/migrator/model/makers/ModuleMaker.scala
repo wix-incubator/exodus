@@ -1,20 +1,19 @@
 package com.wix.bazel.migrator.model.makers
 
-import com.wix.bazel.migrator.model.Target.MavenJar
 import com.wix.bazel.migrator.model._
 import com.wixpress.build.maven.{Coordinates, Dependency, MavenScope}
 
 object ModuleMaker {
 
-  def aModule(relativePathFromMonoRepoRoot: String = "/some/path",
-              externalCoordinates: Coordinates = Coordinates("don't", "care", "1.0.0")): SourceModule =
-    SourceModule(relativePathFromMonoRepoRoot, externalCoordinates)
+  def aModule(relativePathFromMonoRepoRoot: String = "some/path",
+              coordinates: Coordinates = Coordinates("don't", "care", "1.0.0")): SourceModule =
+    SourceModule(relativePathFromMonoRepoRoot, coordinates)
 
-  def aModule(externalModule: Coordinates, dependencies: ModuleDependencies): SourceModule =
-    SourceModule("dont-care-path", externalModule, dependencies)
+  def aModule(coordinates: Coordinates, dependencies: ModuleDependencies): SourceModule =
+    SourceModule(coordinates.artifactId, coordinates, resourcesPaths = Set.empty, dependencies = dependencies)
 
-  def aModule(artifactId: String, dependencies: Set[Coordinates]): SourceModule =
-    aModule(artifactId, ModuleDependencies().withScopedDependencies(Scope.PROD_COMPILE, dependencies))
+  def aModule(artifactId: String): SourceModule =
+    aModule(artifactId, ModuleDependencies())
 
   def aModule(artifactId: String, moduleDependencies: ModuleDependencies): SourceModule =
     aModule(anExternalModule(artifactId), moduleDependencies)
@@ -23,21 +22,26 @@ object ModuleMaker {
 
   def anExternalModule(artifactId: String): Coordinates = Coordinates("some.group", artifactId, "some-version")
 
-  private def aMavenJar(externalModule: Dependency) = MavenJar("dont.care", "dont-care", externalModule)
+  implicit class ModuleExtended(module: SourceModule) {
+    def withDirectDependency(dependency: Dependency*): SourceModule = withDirectDependency(dependency.toIterable)
+
+    def withDirectDependency(dependencies: Iterable[Dependency]): SourceModule = module.copy(dependencies = module.dependencies.withDependencies(dependencies))
+
+    def withCompileScopedDependency(coordinates: Coordinates*): SourceModule = module.copy(
+      dependencies = module.dependencies
+        .withDependencies(coordinates.toSet.map((c: Coordinates) => Dependency(c, MavenScope.Compile))
+        ))
+
+    def withResourcesFolder(relativePath: String*): SourceModule = module.copy(resourcesPaths = module.resourcesPaths ++ relativePath)
+  }
 
   implicit class ModuleDependenciesExtended(moduleDependencies: ModuleDependencies) {
-    def withScopedDependencies(scope: Scope, coordinates: Set[Coordinates]): ModuleDependencies = {
-      val dependenciesAsMavenJar: Set[AnalyzedFromMavenTarget] = coordinates.map(coordinate => aMavenJar(Dependency(coordinate, MavenScope.of(scope.name()))))
-      moduleDependencies.copy(scopedDependencies = moduleDependencies.scopedDependencies + ((scope, dependenciesAsMavenJar)))
-    }
 
-    def withDependencies(dependencies: Set[Dependency]): ModuleDependencies = {
-      val dependenciesAsMavenJar: Map[Scope,Set[AnalyzedFromMavenTarget]] =
-        dependencies
-          .groupBy(d=>ScopeTranslation.fromMaven(d.scope.name))
-          .mapValues(_.map(aMavenJar))
+    def withDependencies(dependencies: Dependency*): ModuleDependencies = withDependencies(dependencies.toIterable)
 
-      moduleDependencies.copy(scopedDependencies = moduleDependencies.scopedDependencies ++ dependenciesAsMavenJar)
-    }
+    def withDependencies(dependencies: Iterable[Dependency]): ModuleDependencies =
+      moduleDependencies.copy(directDependencies = moduleDependencies.directDependencies ++ dependencies)
+
   }
+
 }

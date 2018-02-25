@@ -16,7 +16,7 @@ import scala.util.{Failure, Success, Try}
 
 
 object FindMisAnalyzedInternalDependencies extends DebuggingMigratorApp {
-  val codotaArtifacts = codeModules.map(artifact => artifact.externalModule.groupId + "." + artifact.externalModule.artifactId)
+  val codotaArtifacts = codeModules.map(artifact => artifact.coordinates.groupId + "." + artifact.coordinates.artifactId)
   val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
   codotaClient.setDefaultCodePack("wix_enc")
   codotaClient.setToken(codotaToken)
@@ -33,12 +33,12 @@ object FindMisAnalyzedInternalDependencies extends DebuggingMigratorApp {
 }
 
 
-
 trait DebuggingMigratorApp extends MigratorApp {
   private val om = new ObjectMapper()
     .registerModule(DefaultScalaModule)
     .addMixIn(classOf[AnalyzeFailure], classOf[AnalyzeFailureMixin])
   val writer = om.writerWithDefaultPrettyPrinter()
+
   protected def requestedModule(): SourceModule = {
     val relativePath = sys.props.getOrElse("module.relativePath",
       throw new IllegalArgumentException("module.relativePath system property is required to run for specific module"))
@@ -48,7 +48,7 @@ trait DebuggingMigratorApp extends MigratorApp {
   }
 }
 
-trait CodotaClientDebuggingMigratorApp extends DebuggingMigratorApp{
+trait CodotaClientDebuggingMigratorApp extends DebuggingMigratorApp {
   protected def codotaClient = {
     ConnectorSettings.setHost(ConnectorSettings.Host.GATEWAY)
     val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
@@ -56,12 +56,14 @@ trait CodotaClientDebuggingMigratorApp extends DebuggingMigratorApp{
     codotaClient.setToken(codotaToken)
     codotaClient
   }
+
   protected def tests = sys.props.get("module.use.tests").exists(_.toBoolean)
+
   protected def artifactName = artifactNameFor(requestedModule(), tests)
 
   private def artifactNameFor(module: SourceModule, tests: Boolean): String = {
-    module.externalModule.groupId + "." +
-      module.externalModule.artifactId +
+    module.coordinates.groupId + "." +
+      module.coordinates.artifactId +
       (if (tests) "[tests]" else "")
   }
 }
@@ -100,8 +102,8 @@ object FlushOutCodeAnalysisIssuesPerModule extends DebuggingMigratorApp {
     } match {
       case Success(_) => "PASSED"
       case Failure(AnalyzeException(Composite(nested))) => "FAIL:\n" + writer.writeValueAsString(nested)
-      case Failure(AnalyzeException(analyzeFailure)) =>  "FAIL:\n" + writer.writeValueAsString(analyzeFailure)
-      case Failure(e) =>  "FAIL[GeneralException]:\n" + stackTraceOf(e)
+      case Failure(AnalyzeException(analyzeFailure)) => "FAIL:\n" + writer.writeValueAsString(analyzeFailure)
+      case Failure(e) => "FAIL[GeneralException]:\n" + stackTraceOf(e)
     }
     sourceModule.relativePathFromMonoRepoRoot + " " + outcome + "\n***************************"
   }
@@ -121,9 +123,9 @@ object FlushOutCodeAnalysisIssuesPerModule extends DebuggingMigratorApp {
 
 }
 
-object CheckThirdPartyConflicts extends DebuggingMigratorApp{
+object CheckThirdPartyConflicts extends DebuggingMigratorApp {
   val conflicts = checkConflictsInThirdPartyDependencies(aetherResolver)
-  if (conflicts.fail.nonEmpty || conflicts.warn.nonEmpty){
+  if (conflicts.fail.nonEmpty || conflicts.warn.nonEmpty) {
     throw new RuntimeException("Conflicts is not empty")
   }
 }

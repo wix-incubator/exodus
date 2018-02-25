@@ -14,7 +14,8 @@ import com.wix.bazel.migrator.Retry._
 import com.wix.bazel.migrator.model._
 import com.wix.bazel.migrator.transform.AnalyzeFailure.MissingAnalysisInCodota
 import com.wix.bazel.migrator.transform.FailureMetadata.InternalDepMissingExtended
-import com.wixpress.build.maven.Coordinates
+import com.wixpress.build.maven
+import com.wixpress.build.maven.{Coordinates, MavenScope}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -133,14 +134,14 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
 
   private def toCoordinatesSet(dependencyGroup: Iterable[OptionalInternalDependency]): Iterable[Either[AnalyzeFailure, (Coordinates, String)]] =
     dependencyGroup.map { dep =>
-      mavenCoordiantesFromCodotaArtifactName(dep.getArtifactName).right.map(module => (module, dep.getFilepath))
+      mavenCoordinatesFromCodotaArtifactName(dep.getArtifactName).right.map(module => (module, dep.getFilepath))
     }
 
   private def coordinatesSetToDependency(currentModule: SourceModule, isTestCode: Boolean)(externalModulesAndFilePaths: Iterable[(Coordinates, String)]): Either[AnalyzeFailure, Option[Dependency]] = {
     val moduleToFilePath = externalModulesAndFilePaths.toMap
     findSourceModule(currentModule, moduleToFilePath.keySet, modules, isTestCode).right.flatMap {
       case Some(sourceModule) =>
-        val selectedFilePath = moduleToFilePath.getOrElse(sourceModule.externalModule, moduleToFilePath(sourceModule.externalModule.copy(classifier = Some("tests"))))
+        val selectedFilePath = moduleToFilePath.getOrElse(sourceModule.coordinates, moduleToFilePath(sourceModule.coordinates.copy(classifier = Some("tests"))))
         sourceDirEither(sourceModule, selectedFilePath).right.map { sourceDir =>
           Some(Dependency(CodePath(stripTestClassifierIfExists(sourceModule), sourceDir, Paths.get(selectedFilePath)), isCompileDependency = true))
         }
@@ -152,18 +153,18 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   // otherwise SourceModule of "Code" and SourceModule of "Dependency" might be different since
   // the "Code" one has no classifier
   private def stripTestClassifierIfExists(sourceModule: SourceModule) =
-    sourceModule.copy(externalModule = sourceModule.externalModule.copy(classifier = None))
+    sourceModule.copy(coordinates = sourceModule.coordinates.copy(classifier = None))
 
   private def retainOnlySupportedFilesIn(internalDeps: Iterable[OptionalInternalDependency]) =
     internalDeps.filter(depInfo => supportedFile(depInfo.getFilepath))
 
-  private def mavenCoordiantesFromCodotaArtifactName(artifactName: String): Either[AnalyzeFailure, Coordinates] = {
+  private def mavenCoordinatesFromCodotaArtifactName(artifactName: String): Either[AnalyzeFailure, Coordinates] = {
     eitherRetry() {
       codotaClient.readArtifact(artifactName).getProject
     }.augment(FailureMetadata.MissingArtifactInCodota(artifactName)).right.map { project: ProjectInfo =>
       //codota is unreliable with version numbers of the source modules due to them changing frequently so we try to first take them from filesystem
       val version = modules
-        .find(artifact => artifact.externalModule.artifactId == project.getArtifactId && artifact.externalModule.groupId == project.getGroupId).map(_.externalModule.version).getOrElse(project.getVersion)
+        .find(artifact => artifact.coordinates.artifactId == project.getArtifactId && artifact.coordinates.groupId == project.getGroupId).map(_.coordinates.version).getOrElse(project.getVersion)
       val classifier = if (representsTestJar(artifactName)) Some("tests") else None
       Coordinates(project.getGroupId, project.getArtifactId, version, classifier = classifier)
     }
@@ -178,11 +179,10 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
     if (currentModuleIsSuggested(currentModule, codotaSuggestionModules, isTestCode)) {
       Right(Some(currentModule))
     } else {
-      //today classpathOf is actually only full transitive classpath of internal (according to direct internal)
-      //we need classpathOf to be full transitive claspspath
-      classpathOf(currentModule, repoModules, isTestCode)
-        //in intra-repo dep mode (phase1) add .filter(repoModules)
+      classpathOf(currentModule, isTestCode)
         .filter(suggestedIn(codotaSuggestionModules))
+        // for phase2 flatMap should be replaced with orElse use label
+        .flatMap(asSourceModule)
         .toList match {
         case Nil => Right(None)
         case sourceModule :: Nil => Right(Some(sourceModule))
@@ -192,31 +192,31 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   }
 
   private def currentModuleIsSuggested(currentModule: SourceModule, codotaSuggestionModules: Set[Coordinates], isPartOfTestCode: Boolean) =
-    codotaSuggestionModules.contains(currentModule.externalModule) ||
-      (isPartOfTestCode && codotaSuggestionModules.contains(currentModule.externalModule.copy(classifier = Some("tests"))))
+    codotaSuggestionModules.contains(currentModule.coordinates) ||
+      (isPartOfTestCode && codotaSuggestionModules.contains(currentModule.coordinates.copy(classifier = Some("tests"))))
 
-  private def compileRelevant(scope: Scope, isPartOfTestCode: Boolean) =
-    (scope == Scope.PROD_COMPILE) || (scope == Scope.PROVIDED) || (scope == Scope.TEST_COMPILE && isPartOfTestCode)
+  private def compileRelevant(scope: MavenScope, isPartOfTestCode: Boolean) =
+    (scope == MavenScope.Compile) || (scope == MavenScope.Provided) || (scope == MavenScope.Test && isPartOfTestCode)
 
-  private def classpathOf(currentModule: SourceModule, repoModules: Set[SourceModule], isPartOfTestCode: Boolean): Set[SourceModule] = {
-    currentModule.dependencies.internalDependencies.collect { case (scope, dependenciesOnSourceModules) if compileRelevant(scope, isPartOfTestCode) =>
-      val directSourceModuleDependencies = dependenciesOnSourceModules.flatMap(dependencyOnSourceModule =>
-        repoModules
-          .find(_.relativePathFromMonoRepoRoot == dependencyOnSourceModule.relativePath)
-          .map(decorateAsTestsDependencyIf(dependencyOnSourceModule.isDependingOnTests)))
-      directSourceModuleDependencies ++
-        directSourceModuleDependencies.flatMap(classpathOf(_, repoModules, isPartOfTestCode = false))
-    }.flatten.toSet
+  private def classpathOf(currentModule: SourceModule,
+                          isPartOfTestCode: Boolean): Set[maven.Dependency] = {
+    currentModule.dependencies.allDependencies
+      .filter { d => compileRelevant(d.scope, isPartOfTestCode) }
+  }
+
+  private def asSourceModule(dependency: maven.Dependency) = {
+    val sourceModule = modules.find(_.coordinates.equalsOnGroupIdAndArtifactId(dependency.coordinates))
+    sourceModule.map(decorateAsTestsDependencyIf(dependency.coordinates.classifier.contains("tests")))
   }
 
   private def decorateAsTestsDependencyIf(isDependingOnTests: Boolean)(module: SourceModule) =
     if (isDependingOnTests)
-      module.copy(externalModule = module.externalModule.copy(classifier = Some("tests")))
+      module.copy(coordinates = module.coordinates.copy(classifier = Some("tests")))
     else
       module
 
-  private def suggestedIn(codotaSuggestionModules: Set[Coordinates])(sourceModule: SourceModule) =
-    codotaSuggestionModules.contains(sourceModule.externalModule)
+  private def suggestedIn(codotaSuggestionModules: Set[Coordinates])(dependency: maven.Dependency) =
+    codotaSuggestionModules.contains(dependency.coordinates)
 
   private def fail(failure: AnalyzeFailure) = throw new AnalyzeException(failure)
 
@@ -241,7 +241,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
 
   private def codotaArtifactNameFrom(module: SourceModule): String = {
     //TODO call codota to get name from groupId,artifactId
-    val externalModule = module.externalModule
+    val externalModule = module.coordinates
     externalModule.groupId + "." + externalModule.artifactId
   }
 

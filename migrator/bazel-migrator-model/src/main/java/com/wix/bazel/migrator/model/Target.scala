@@ -1,14 +1,14 @@
 package com.wix.bazel.migrator.model
 
-import com.wixpress.build.maven.Dependency
-
 sealed trait Target {
   def name: String
 
   //Is this actually absolute path?
   def belongingPackageRelativePath: String
 }
+
 sealed trait AnalyzedFromMavenTarget extends Target
+
 object Target {
 
   case class TargetDependency(target: Target, isCompileDependency: Boolean)
@@ -20,9 +20,14 @@ object Target {
                  codePurpose: CodePurpose,
                  originatingSourceModule: SourceModule) extends Target
 
-  case class MavenJar(name: String,
-                      belongingPackageRelativePath: String,
-                      originatingExternalDependency: Dependency) extends AnalyzedFromMavenTarget
+  case class ModuleDeps(
+                         name: String,
+                         belongingPackageRelativePath: String,
+                         deps: Set[String],
+                         runtimeDeps: Set[String],
+                         testOnly: Boolean
+                       ) extends Target
+
 
   case class Resources(name: String,
                        belongingPackageRelativePath: String,
@@ -32,8 +37,10 @@ object Target {
   object Resources {
     private val AllCharactersButSlash = "[^/]*"
     private val ApplicabilityPattern = s"src/$AllCharactersButSlash/resources".r
+
     def applicablePackage(packageRelativePath: String): Boolean =
       ApplicabilityPattern.findFirstIn(packageRelativePath).isDefined
+
     def apply(name: String,
               belongingPackageRelativePath: String,
               dependencies: Set[Target] = Set.empty[Target]): Resources =
@@ -49,8 +56,8 @@ object Target {
                    belongingPackageRelativePath: String,
                    dependencies: Set[Target]) extends Target
 
-  case class External(name:String,
+  case class External(name: String,
                       belongingPackageRelativePath: String,
-                      externalWorkspace:String) extends Target
+                      externalWorkspace: String) extends Target
 
 }

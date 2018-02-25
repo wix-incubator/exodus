@@ -12,14 +12,13 @@ private[transform] case class SourceCodeDirPath(module: SourceModule, relativeSo
 private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resourcePackage: String, sharedSubPackages: Set[String] = Set.empty) {
 
   def withoutExternalDeps: ResourceKey = {
-    val dependencies = codeDirPath.module.dependencies.copy(scopedDependencies = Map.empty)
-    val newCodeDir = codeDirPath.copy(module = codeDirPath.module.copy(dependencies = dependencies))
+    val newCodeDir = codeDirPath.copy(module = codeDirPath.module.copy(dependencies = ModuleDependencies()))
     this.copy(codeDirPath = newCodeDir)
   }
 
   //The below is ugly but Paths.get(...) took twice as much (10 minutes compares to 5) on the fw migration
   def packageRelativePath: String =
-      relativePathFromMonoRepoRootOf(codeDirPath) +
+    relativePathFromMonoRepoRootOf(codeDirPath) +
       codeDirPath.relativeSourceDirPathFromModuleRoot +
       resourcePackageSuffix
 
@@ -30,6 +29,7 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
       ""
     else
       codeDirPath.module.relativePathFromMonoRepoRoot + "/"
+
   def toTarget(keyToCodes: CodesMap, targetDependencies: Set[TargetDependency]): Target = {
     //TODO would really like to extract this somewhere. feels like a different level of abstraction but not sure where and more importantly how to name it
     val (name, sources) = if (sharedSubPackages.isEmpty)
@@ -43,7 +43,7 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
     if (Target.Resources.applicablePackage(packageRelativePath)) {
       Target.Resources("resources", packageRelativePath, targetDependencies.map(_.target))
     } else if (codeDirPath.relativeSourceDirPathFromModuleRoot.endsWith("proto")) {
-        Target.Proto(name = "proto", packageRelativePath, dependencies = targetDependencies.map(_.target))
+      Target.Proto(name = "proto", packageRelativePath, dependencies = targetDependencies.map(_.target))
     } else {
       val codes = keyToCodes.getOrElse(this, Set.empty).view
       val codePurpose = CodePurpose(packageRelativePath, codes.map(_.testType))
@@ -86,7 +86,7 @@ private[transform] object ResourceKey {
   //TODO we need to have PackageResourceKey (existing one) SourceDirResourceKey (proto) and maybe also FileResourceKey (for finer grain targets)
   //Need to think how the Transformer gets the chain of "Foos" that build a ResourceKey from a code according to rules
   //rules can be static ( always do package/file) be based on source dir (for proto always do some strategy) or module based
-  if (relativeSourceDirPathFromModuleRoot.endsWith("proto")) {
+    if (relativeSourceDirPathFromModuleRoot.endsWith("proto")) {
       ""
     } else {
       Option(filePath.getParent).map(_.toString).getOrElse("")

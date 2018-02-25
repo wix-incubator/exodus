@@ -1,18 +1,16 @@
 package com.wix.bazel.migrator
 
 import java.io.File
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, StandardOpenOption}
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target._
-import com.wix.bazel.migrator.model.{AnalyzedFromMavenTarget, CodePurpose, Package, Scope, SourceModule, Target, TestType}
+import com.wix.bazel.migrator.model.{CodePurpose, Package, Scope, SourceModule, Target, TestType}
 import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.bazel.LibraryRule
 import com.wixpress.build.maven.Coordinates
-
-import scala.annotation.tailrec
-import scala.collection.concurrent.TrieMap
 
 object PrintJvmTargetsSources {
   def main(args: Array[String]) {
@@ -62,27 +60,17 @@ object Writer extends MigratorApp {
   writer.write(bazelPackages)
 }
 
-class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModule]) {
-  private val repoArtifactsExternalToSource: Map[Coordinates, SourceModule] =
-    externalCoordinatesOfRepoArtifacts.map(sourceModule => (sourceModule.externalModule, sourceModule)).toMap
-
-  private val relativePathToSource: Map[String, SourceModule] =
-    externalCoordinatesOfRepoArtifacts.map(module => (module.relativePathFromMonoRepoRoot, module)).toMap
-
-  private val repoArtifactsCoordinates: Set[Coordinates] = externalCoordinatesOfRepoArtifacts.map(_.externalModule)
-  private val thirdPartyDepsAsTargetsOfRepoArtifacts: Map[Coordinates, Map[Scope, Set[MavenJar]]] = buildThirdPartyDependenciesTargetsOfRepoArtifacts
-  private val thirdPartyDepsAsSerializedTargetsOfRepoArtifacts: TrieMap[Coordinates, Map[Scope, Set[String]]] = TrieMap.empty
-
-  private def buildThirdPartyDependenciesTargetsOfRepoArtifacts: Map[Coordinates, Map[Scope, Set[MavenJar]]] =
-    repoArtifactsExternalToSource.mapValues(thirdPartyDependencies)
+class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
 
   private val sourcesPackageWriter = new SourcesPackageWriter(repoRoot.toPath)
 
   def write(bazelPackages: Set[Package]): Unit = {
-    //we're writing the module targets first since they might get overridden by identified dependencies from the analysis
+    //we're writing the resources targets first since they might get overridden by identified dependencies from the analysis
     //this can happen since we have partial analysis on resources folders
-    writeModuleTargets(repoArtifactsExternalToSource.values)
+    writeStaticResources()
     writeProjectPackages(bazelPackages)
+    // need to be last because it append target to existing BUILD.bazel files
+    writeCoordinates()
     sourcesPackageWriter.write(bazelPackages)
   }
 
@@ -103,18 +91,16 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       serializedTarget = writePackage(bazelPackage)
     )
 
+  private def writeStaticResources(): Unit = repoModules.foreach(writeStaticResourcesPackage)
 
-  private def writeModuleTargets(repoArtifacts: Iterable[SourceModule]): Unit = {
-    repoArtifacts.foreach(writeResourcesTargets)
-    repoArtifacts.foreach(writeModuleMetadataTarget)
-  }
+  private def writeCoordinates(): Unit = repoModules.foreach(writeModuleMetadataTarget)
 
   private def writeModuleMetadataTarget(sourceModule: SourceModule) = {
     val moduleBuildDescriptorPath = packageBuildDescriptorPath(sourceModule.relativePathFromMonoRepoRoot)
     val modulePackagePath = moduleBuildDescriptorPath.getParent
     Files.createDirectories(modulePackagePath)
-    Files.write(moduleBuildDescriptorPath, ModulePackageContent.getBytes)
-    val externalModule = sourceModule.externalModule
+    Files.write(moduleBuildDescriptorPath, ModuleCoordinatesTarget.getBytes, StandardOpenOption.APPEND)
+    val externalModule = sourceModule.coordinates
     Manifest(
       ImplementationArtifactId = externalModule.artifactId,
       ImplementationVersion = FixedVersionToEnableRepeatableMigrations,
@@ -122,27 +108,18 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     ).write(modulePackagePath)
   }
 
-  private def writeResourcesTargets(sourceModule: SourceModule): Unit = {
-    val allResources = sourceModule.dependencies.scopedDependencies.flatMap(_._2.collect { case resources: Resources => resources })
+  private def writeStaticResourcesPackage(sourceModule: SourceModule): Unit = {
+    val allResources = sourceModule.resourcesPaths.map(resourcesPath => {
+      val belongToPackageRelativePath = sourceModule.relativePathFromMonoRepoRoot + "/" + resourcesPath
+      val codePurpose = CodePurpose(belongToPackageRelativePath, Seq(TestType.None))
+      Target.Resources("resources", belongToPackageRelativePath, codePurpose, Set.empty)
+    })
     allResources.foreach { resources =>
       val currentResourcesPackagePath = packageBuildDescriptorPath(resources.belongingPackageRelativePath)
       Files.createDirectories(currentResourcesPackagePath.getParent)
       Files.write(currentResourcesPackagePath, resourcesPackageFor(resources).getBytes)
     }
   }
-
-  private def thirdPartyDependencies(sourceModule: SourceModule): Map[Scope, Set[MavenJar]] = {
-    val scopeToJars = sourceModule.dependencies.scopedDependencies.mapValues(_.collect { case mavenJar: MavenJar => mavenJar })
-
-    val modulesExcludingRepoArtifactsOfAllVersions = scopeToJars.mapValues(_.filterNot(partOfRepoArtifacts))
-    modulesExcludingRepoArtifactsOfAllVersions
-  }
-
-  private def partOfRepoArtifacts(module: MavenJar): Boolean =
-    repoArtifactsCoordinates.exists(sameCoordinatesWithoutVersion(module.originatingExternalDependency.coordinates))
-
-  private def sameCoordinatesWithoutVersion(module: Coordinates)(repoArtifact: Coordinates) =
-    repoArtifact.groupId == module.groupId && repoArtifact.artifactId == module.artifactId
 
   private def packageBuildDescriptorPath(bazelPackage: Package): Path =
     packageBuildDescriptorPath(bazelPackage.relativePathFromMonoRepoRoot)
@@ -176,15 +153,19 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
   }
 
 
+  def writeModuleDeps(moduleDeps: ModuleDeps): String = {
+    val libraryRule = new LibraryRule(name = moduleDeps.name, compileTimeDeps = moduleDeps.deps, runtimeDeps = moduleDeps.runtimeDeps, testOnly = moduleDeps.testOnly)
+    s"""
+       |${libraryRule.serialized}
+     """.stripMargin
+  }
+
   private def writeTarget(target: Target): String = {
     target match {
       case jvmLibrary: Target.Jvm => writeJvm(jvmLibrary)
       case resources: Target.Resources => writeResources(resources)
       case proto: Target.Proto => writeProto(proto)
-      case mavenJar: Target.MavenJar => throw new IllegalArgumentException(
-        "we shouldn't get here since currently maven targets" +
-          s" are dropped in favor of copying deps from maven dependency, target=$mavenJar")
-
+      case moduleDeps: Target.ModuleDeps => writeModuleDeps(moduleDeps)
     }
   }
 
@@ -257,16 +238,12 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
   }
 
   private def writeJvm(target: Jvm) = {
-    val originatingMavenModule = target.originatingSourceModule.externalModule
-    val internalDeps = target.dependencies.flatMap(writeDependency(target))
-    val externalDeps = collectExternalDeps(originatingMavenModule)
-    val resources = collectFullResourcesClosure(target)
-    val allDeps = combineDeps(internalDeps, externalDeps,resources)
+    val allDeps = combineDeps(target.dependencies.flatMap(writeDependency(target)))
 
     val compileTimeTargets =
       allDeps(Scope.PROD_COMPILE) ++
         allDeps(Scope.PROVIDED) ++
-        optionalTestCompileTargets(target, allDeps)
+        optionalTestCompileTargets(target, allDeps) + moduleDepsDependencyOf(target)
 
     val runtimeTargets =
       allDeps(Scope.PROD_RUNTIME) ++
@@ -293,6 +270,14 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     """.stripMargin + footer + "\n)\n"
   }
 
+  private def combineDeps(scopeToDeps: Set[(Scope, Set[String])]*) = {
+    scopeToDeps.flatten
+      .foldLeft(Map[Scope, Set[String]]().withDefaultValue(Set.empty)) { case (acc, (scope, currentTargetsForScope)) =>
+        val accumulatedTargetsForScope = acc.getOrElse(scope, Set())
+        acc + (scope -> (accumulatedTargetsForScope ++ currentTargetsForScope))
+      }
+  }
+
   private def optionalTestRuntimeTargets(target: Jvm, allDeps: Map[Scope, Set[String]]) =
     optionalTestTargetsFor(Scope.TEST_RUNTIME, target, allDeps)
 
@@ -307,12 +292,9 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       case _ => Set()
     }
 
-  private def collectExternalDeps(originatingMavenModule: Coordinates) = {
-    thirdPartyDepsAsSerializedTargetsOfRepoArtifacts.getOrElseUpdate(originatingMavenModule,
-      thirdPartyDepsAsTargetsOfRepoArtifacts(originatingMavenModule)
-        .map({ case (scope, targets) => scope -> onlyNonProtoTargetsOf(originatingMavenModule, targets) })
-        .map({ case (scope, targets) => scope -> targets.map(writeDependency(scope)) })
-    ).toSet
+  private def moduleDepsDependencyOf(target: Target.Jvm) = {
+    val moduleDepsTarget = if (target.belongingPackageRelativePath.contains("src/main")) "main_dependencies" else "tests_dependencies"
+    s""""//${target.originatingSourceModule.relativePathFromMonoRepoRoot}:$moduleDepsTarget""""
   }
 
   private def prodHeader(testOnly: Boolean) = {
@@ -324,69 +306,6 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       "scala_library(\n"
   }
 
-  private def combineDeps(scopeToDeps: Set[(Scope, Set[String])]*) = {
-    scopeToDeps.flatten
-      .foldLeft(Map[Scope, Set[String]]().withDefaultValue(Set.empty)) { case (acc, (scope, currentTargetsForScope)) =>
-        val accumulatedTargetsForScope = acc.getOrElse(scope, Set())
-        acc + (scope -> (accumulatedTargetsForScope ++ currentTargetsForScope))
-      }
-  }
-
-  private def collectFullResourcesClosure(target: Jvm): Set[(Scope, Set[String])] = {
-    val currentTargetResources = collectCurrentTargetResources(target)
-    val transitiveProdRuntimeResources = Scope.PROD_RUNTIME -> serializedRuntimeTransitiveModuleDependencies(target, Set(Scope.PROD_COMPILE, Scope.PROD_RUNTIME))
-    val transitiveTestRuntimeResources = Scope.TEST_RUNTIME -> serializedRuntimeTransitiveModuleDependencies(target, Set(Scope.TEST_COMPILE, Scope.TEST_RUNTIME))
-    currentTargetResources + transitiveProdRuntimeResources + transitiveTestRuntimeResources
-  }
-
-  private def collectCurrentTargetResources(target: Jvm) = {
-    target.originatingSourceModule.dependencies.scopedDependencies
-      .map({ case (scope, deps) => scope -> serializedResourcesIn(deps)})
-      .toSet
-  }
-
-  private def serializedRuntimeTransitiveModuleDependencies(target: Jvm, inputScopes: Set[Scope]) =
-    serializedResourcesIn(
-      transitiveClosureSourceModules(target, inputScopes)
-        .flatMap(_.dependencies.scopedDependencies.get(Scope.PROD_RUNTIME))
-        .flatten
-    )
-
-  private def serializedResourcesIn(dependencies:Set[AnalyzedFromMavenTarget]) = dependencies.collect{case r: Resources => r}.map(writeSourceDependency)
-
-  private def transitiveClosureSourceModules(target: Jvm, includeScopes: Set[Scope]) = {
-    val internalDependenciesWithinGivenScope = target.originatingSourceModule.dependencies.internalDependencies
-      //TODO actually use DependencyOnSourceModule.isDependingOnTests to decide which resource folders to use
-      .filterKeys(includeScopes.contains).values.toSet.flatten.map(_.relativePath)
-    extendedRuntimeClosure(internalDependenciesWithinGivenScope).map(relativePathToSource)
-  }
-
-
-  @tailrec
-  private def extendedRuntimeClosure(modulesRelativePaths: Set[String]): Set[String] = {
-    val sourceModules = sourceModulesByRelativePaths(modulesRelativePaths)
-    val transitive: Set[String] = sourceModules.flatMap(runtimeDepsOf)
-    val possibleClosure = transitive ++ modulesRelativePaths
-    val noNewModulesWereIntroduced = (transitive -- modulesRelativePaths).isEmpty
-
-    if (noNewModulesWereIntroduced)
-      possibleClosure
-    else
-      extendedRuntimeClosure(possibleClosure)
-  }
-
-  private def sourceModulesByRelativePaths(relativePaths: Set[String]) =
-    relativePathToSource.filterKeys(relativePaths.contains).values.toSet
-
-  private def runtimeDepsOf(sourceModule: SourceModule): Set[String] = {
-    val RunTimeScopes = Set(Scope.PROD_RUNTIME, Scope.PROD_COMPILE)
-    sourceModule.dependencies.internalDependencies
-      .filterKeys(RunTimeScopes.contains)
-      .values
-      .flatten
-      .map(_.relativePath) //TODO actually use DependencyOnSourceModule.isDependingOnTests to decide which resource folders to use
-      .toSet
-  }
 
   private def writeSources(target: Jvm): Set[String] = {
     target.sources.map { source =>
@@ -417,9 +336,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
 
   private def writeDependency(scope: Scope)(dependency: Target): String = {
     dependency match {
-      case mavenDep: MavenJar =>
-        writeDependency(mavenDep.belongingPackageRelativePath,
-          neverLinkPotentialSuffix(scope, workspaceNameTargetName(targetNameOrDefault(mavenDep), mavenDep.originatingExternalDependency.coordinates)._2))
+
       case proto: Proto =>
         writeDependency(proto.belongingPackageRelativePath,
           proto.name + "_scala")
@@ -474,10 +391,6 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       case proto: Proto =>
         val scopeOfCurrentDependency = scopeOf(originatingTarget, dependency.isCompileDependency)
         Set(scopeOfCurrentDependency -> Set(writeDependency(proto.belongingPackageRelativePath, proto.name + "_scala")))
-      case mavenTarget: MavenJar =>
-        throw new IllegalArgumentException(
-          "we shouldn't get here since currently maven targets" +
-            s" are dropped in favor of copying deps from maven dependency, target=$mavenTarget, originatingTarget=$originatingTarget")
     }
     serializedDependency
   }
@@ -490,6 +403,7 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       |    "scala_test",
       |    "scala_macro_library",
       |    "scala_specs2_junit_test")
+      |load("@io_bazel_rules_scala//scala:scala_import.bzl", "scala_import")
       |""".stripMargin
 
   private val DefaultPublicVisibility =
@@ -501,13 +415,14 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
     DefaultPublicVisibility + LoadResourcesMacro +
       s"resources(${serializedPotentialTestOnlyOverride(target)})\n"
 
-  private val ModulePackageContent =
-    DefaultPublicVisibility +
-      """filegroup(
-        |    name = "coordinates",
-        |    srcs = ["MANIFEST.MF"],
-        |)
-        |""".stripMargin
+  private val ModuleCoordinatesTarget =
+    """
+      |
+      |filegroup(
+      |    name = "coordinates",
+      |    srcs = ["MANIFEST.MF"],
+      |)
+      |""".stripMargin
   private val overrides = Writer.readOverrides(repoRoot.toPath)
   private val FixedVersionToEnableRepeatableMigrations = "fixed.version-SNAPSHOT"
 
@@ -540,19 +455,4 @@ class Writer(repoRoot: File, externalCoordinatesOfRepoArtifacts: Set[SourceModul
       case nonEmptyTestSize => s"""size = "$nonEmptyTestSize","""
     }
 
-  private def onlyNonProtoTargetsOf(module:Coordinates, targets: Set[MavenJar]): Set[MavenJar] = {
-    val (protoTargets, nonProtoTargets) = targets.partition(isProtoArchive)
-    protoTargets.foreach(protoTarget => println(
-      s"""[WARN] ******************************
-         |      Ignoring proto dependency ${protoTarget.originatingExternalDependency.coordinates} for module $module
-         |      If you actually need this dependency refer to the docs:
-         |      https://github.com/wix-private/bazel-tooling/blob/jvm-proto-dep/migrator/docs/troubleshooting-migration-failures.md#proto-dependencies
-         |      ******************************
-         |""".stripMargin))
-    nonProtoTargets
-  }
-
-  private def isProtoArchive(mavenJar: Target.MavenJar) =
-    mavenJar.originatingExternalDependency.coordinates.classifier.contains("proto") &&
-      mavenJar.originatingExternalDependency.coordinates.packaging.contains("zip")
 }

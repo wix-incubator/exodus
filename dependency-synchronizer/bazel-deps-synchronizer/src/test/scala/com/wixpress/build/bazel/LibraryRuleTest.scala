@@ -89,6 +89,25 @@ class LibraryRuleTest extends SpecificationWithJUnit {
           |],""".stripMargin)
     }
 
+    "serialize rule with testonly" in {
+      val rule = LibraryRule(
+        name = "name",
+        testOnly = true
+      )
+
+      rule.serialized must containIgnoringSpaces(
+        """testonly = 1,""".stripMargin)
+    }
+
+    "not serialize testonly for rules that do not need it" in {
+      val rule = LibraryRule(
+        name = "name"
+      )
+
+      rule.serialized must not(containIgnoringSpaces(
+        """testonly = 1,""".stripMargin))
+    }
+
     "return scala_import rule in case given regular jar coordinates" in new ctx{
       val artifact = someCoordinates("some-artifact")
       val runtimeDependencies = Set(someCoordinates("runtime-dep"))

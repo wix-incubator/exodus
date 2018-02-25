@@ -1,6 +1,6 @@
 package com.wix.bazel.migrator.model
 
-import com.wix.bazel.migrator.model.Target.TargetDependency
+import com.wix.bazel.migrator.model.Target.{ModuleDeps, TargetDependency}
 import org.specs2.matcher.Matchers._
 import org.specs2.matcher.{AlwaysMatcher, MatchFailure, Matcher, MustExpectable}
 
@@ -23,9 +23,9 @@ object Matchers {
       }
 
   def externalTarget(name: String,
-                          belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
-                          externalWorkspace: Matcher[String] = AlwaysMatcher[String]()
-                 ): Matcher[Target] =
+                     belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
+                     externalWorkspace: Matcher[String] = AlwaysMatcher[String]()
+                    ): Matcher[Target] =
     a[Target, Target.External](aTarget(name, belongsToPackage) and externalWorkspace ^^ {
       (_: Target.External).externalWorkspace
     })
@@ -56,6 +56,25 @@ object Matchers {
     } and belongsToPackage ^^ {
       (_: Target).belongingPackageRelativePath aka "belonging package relative path"
     }
+
+  def moduleDepsTarget(name: String,
+                       belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
+                       deps: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
+                       runtimeDeps: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
+                       testOnly: Matcher[Boolean] = AlwaysMatcher[Boolean]()
+                      ): Matcher[Target.ModuleDeps] = {
+    be_===(name) ^^ {
+      (_: ModuleDeps).name aka "target name"
+    } and belongsToPackage ^^ {
+      (_: ModuleDeps).belongingPackageRelativePath aka "belonging package relative path"
+    } and deps ^^ {
+      (_: ModuleDeps).deps aka "compilation deps"
+    } and runtimeDeps ^^ {
+      (_: ModuleDeps).runtimeDeps aka "runtime deps"
+    } and testOnly ^^ {
+      (_: ModuleDeps).testOnly aka "testOnly"
+    }
+  }
 
   def jvmTarget(name: String,
                 sources: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),

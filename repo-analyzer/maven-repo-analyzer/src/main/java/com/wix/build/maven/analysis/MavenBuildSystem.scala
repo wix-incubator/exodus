@@ -2,90 +2,38 @@ package com.wix.build.maven.analysis
 
 import java.nio.file.{Files, Path}
 
-import com.wix.bazel.migrator.model.Target.MavenJar
 import com.wix.bazel.migrator.model._
-import com.wix.build.maven.analysis.MavenBuildSystem.PotentialResources
+import com.wix.build.maven.analysis.MavenBuildSystem.SourcesDirectories
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.maven._
 import org.apache.maven.model.Model
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
 
 import scala.collection.JavaConverters._
-import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class MavenBuildSystem(repoRoot: Path,
                        remoteMavenRepositoryUrls: List[String],
                        sourceModulesOverrides: SourceModulesOverrides = SourceModulesOverrides.empty) {
 
-  private val aetherResolver = new AetherMavenDependencyResolver(remoteMavenRepositoryUrls)
+  private val dependencyResolver: MavenDependencyResolver = new AetherMavenDependencyResolver(remoteMavenRepositoryUrls)
 
   def modules(): Set[SourceModule] = {
     readRootModules()
       .filterNot(sourceModulesOverrides.mutedModule)
-    .withDirectDependencies()
-    .withResourcesDependencies()
+      .map(withDirectDependencies)
+      .map(withAllModuleDependencies)
   }
 
-  private implicit class SourceModulesExtended(modules:Set[SourceModule]){
-    def withDirectDependencies():Set[SourceModule] = enrichWithDirectDependencies(modules)
+  private def withAllModuleDependencies(module: SourceModule): SourceModule =
+    module.copy(
+      dependencies = module.dependencies.copy(
+        allDependencies = dependencyResolver.allDependenciesOf(module.coordinates)))
 
-    def withResourcesDependencies(): Set[SourceModule] = enrichWithResourcesDependencies(modules)
-  }
+  private def withDirectDependencies(module: SourceModule): SourceModule =
+    module.copy(
+      dependencies = module.dependencies.copy(
+        directDependencies = dependencyResolver.directDependenciesOf(module.coordinates)))
 
-  private def withResourcesDependencies(modules: Set[SourceModule], modulesCoordinates: Set[Coordinates])(module: SourceModule) = {
-    val directInternalDependencies = aetherResolver.directDependenciesOf(coordinatesOf(module))
-      .groupBy(d => ScopeTranslation.fromMaven(d.scope.name))
-      .mapValues(toSourceModulesRelativePaths(modules))
-      .filter(_._2.nonEmpty)
-
-    module.withInternalDependencies(directInternalDependencies)
-  }
-
-  private def toSourceModulesRelativePaths(modules: Set[SourceModule])(dependencies: Set[Dependency]) = {
-    dependencies.flatMap(d => {
-      val coordinates = d.coordinates
-      modules.find(m => coordinatesOf(m).equalsOnGroupIdAndArtifactId(coordinates)).zip(Some(coordinates))
-    }).map { case (module, coordinates) =>
-      DependencyOnSourceModule(module.relativePathFromMonoRepoRoot, isDependentOnTests(coordinates))
-    }
-  }
-
-  def enrichWithResourcesDependencies(modules: Set[SourceModule]): Set[SourceModule] = {
-    val coordinates = modules.map(coordinatesOf)
-    modules.map(withResourcesDependencies(modules, coordinates))
-  }
-
-  private def isDependentOnTests(coordinates: Coordinates) = coordinates.classifier.contains("tests")
-
-  private def enrichWithDirectDependencies(modulesWithoutDependencies: Set[SourceModule]) = {
-    val internalCoordinates = modulesWithoutDependencies.map(coordinatesOf)
-    val dependencyResolver = new FilteringGlobalExclusionDependencyResolver(
-      resolver = aetherResolver,
-      globalExcludes = internalCoordinates
-    )
-    modulesWithoutDependencies.map(withDependencies(dependencyResolver))
-  }
-
-  private def withDependencies(resolver:MavenDependencyResolver)(module:SourceModule) = {
-    module.copy(dependencies = {
-      ModuleDependencies(
-        combineMavenTargets(
-          resolvedDependencies(resolver,coordinatesOf(module)),
-          module.dependencies.scopedDependencies
-        )
-      )
-    })
-  }
-
-  private def coordinatesOf(sourceModule: SourceModule) = {
-    import sourceModule.externalModule._
-    Coordinates(groupId, artifactId, version)
-  }
-
-  private def resolvedDependencies(resolver:MavenDependencyResolver, coordinates:Coordinates) =  {
-    val dependencies: Set[Dependency] = resolver.directDependenciesOf(coordinates)
-    val mavenJarTargets = dependencies.map(toMavenJar)
-    mavenJarTargets
-  }
 
   private def readRootModules(): Set[SourceModule] = {
     if (containsPom(repoRoot)) {
@@ -118,8 +66,8 @@ class MavenBuildSystem(repoRoot: Path,
     val reader = Files.newBufferedReader(pomPath)
     try {
       new MavenXpp3Reader().read(reader)
-    } catch{
-      case t:Throwable => throw new UnreadablePomException(s"Cannot read pom at path ${modulePath.toString}", t)
+    } catch {
+      case t: Throwable => throw new UnreadablePomException(s"Cannot read pom at path ${modulePath.toString}", t)
     } finally {
       reader.close()
     }
@@ -131,41 +79,22 @@ class MavenBuildSystem(repoRoot: Path,
   }
 
   private def sourceModuleFrom(modulePath: Path, model: Model) =
-    SourceModule(relativePathFromRoot(modulePath),
-      pomToCoordinates(model), moduleDependenciesIn(modulePath))
+    SourceModule(
+      relativePathFromRoot(modulePath),
+      coordinatesOf(model),
+      resourcePathsIn(modulePath))
 
-  private def moduleDependenciesIn(modulePath: Path) = {
-    val scopedResourcesTargets = existingResources(modulePath)
-    ModuleDependencies(scopedResourcesTargets)
-  }
 
-  private def combineMavenTargets(scopedExternalDependenciesTargets: Set[(Scope, MavenJar)], scopedResourcesTargets: Map[Scope, Set[AnalyzedFromMavenTarget]]) = {
-    val scopedTargets = scopedExternalDependenciesTargets.foldLeft(scopedResourcesTargets) {
-      case (accumulatingScopedTargets, (scope, target)) =>
-        val targets = accumulatingScopedTargets.getOrElse(scope, Set[AnalyzedFromMavenTarget]()) + target
-        accumulatingScopedTargets + (scope -> targets)
-    }
-    scopedTargets
-  }
+  private def resourcePathsIn(modulePath: Path) =
+    SourcesDirectories
+      .map(toResourcesRelativePath)
+      .filter(resourcePath => Files.exists(modulePath.resolve(resourcePath)))
 
-  private def existingResources(modulePath: Path) = {
-    PotentialResources.mapValues(collectTargets(modulePath)).filter(_._2.nonEmpty)
-  }
 
-  private def toMavenJar(dependency: Dependency): (Scope, MavenJar) = {
-    (ScopeTranslation.fromMaven(dependency.scope.name), TargetForCoordinates(dependency).toTarget)
-  }
+  private def toResourcesRelativePath(folderName: String): String =
+    folderName + "/resources"
 
-  private def collectTargets(modulePath: Path)(folderNames: Set[String]): Set[AnalyzedFromMavenTarget] =
-    folderNames.map(toPathUnder(modulePath)).filter(Files.exists(_)).map(relativePathFromRoot).map(toTarget)
-
-  private def toPathUnder(modulePath: Path)(folderName: String): Path =
-    modulePath.resolve("src").resolve(folderName).resolve("resources")
-
-  private def toTarget(relative: String): Target.Resources =
-    Target.Resources("resources", relative)
-
-  private def pomToCoordinates(model: Model) =
+  private def coordinatesOf(model: Model) =
     Coordinates(getGroupIdOrParentGroupId(model), model.getArtifactId, getVersionOrParentVersion(model))
 
   private def relativePathFromRoot(modulePath: Path) =
@@ -180,15 +109,9 @@ class MavenBuildSystem(repoRoot: Path,
 }
 
 object MavenBuildSystem {
-  private val PotentialResources = Map(Scope.PROD_RUNTIME -> Set("main"), Scope.TEST_RUNTIME -> Set("test", "it", "e2e"))
+  private val SourcesDirectories = Set("src/main", "src/test", "src/it", "src/e2e")
 }
 
-private case class TargetForCoordinates(dependency: Dependency) {
-  def toTarget: Target.MavenJar = Target.MavenJar(
-    dependency.coordinates.libraryRuleName,
-    MavenToBazel.groupIdToPackage(dependency.coordinates.groupId),
-    dependency)
-}
 
 private object MavenToBazel {
 

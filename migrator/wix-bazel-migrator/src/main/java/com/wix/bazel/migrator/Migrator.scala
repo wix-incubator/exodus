@@ -1,8 +1,7 @@
 package com.wix.bazel.migrator
 
 import better.files.FileOps
-import com.wix.bazel.migrator.model.Target.MavenJar
-import com.wix.bazel.migrator.model.{Package, Scope, SourceModule}
+import com.wix.bazel.migrator.model.{Package, SourceModule}
 import com.wix.bazel.migrator.transform._
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NoPersistenceBazelRepository
@@ -21,9 +20,16 @@ object Migrator extends MigratorApp {
   println(s"starting migration with configuration [$configuration]")
 
   val thirdPartyConflicts = checkConflictsInThirdPartyDependencies(aetherResolver)
-  val bazelPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
   if (configuration.failOnSevereConflicts) failIfFoundSevereConflictsIn(thirdPartyConflicts)
-  val protoBazelPackages = new ExternalProtoTransformer().transform(bazelPackages)
+
+
+  def bazelPackages = {
+    val rawPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
+    val withProtoPackages = new ExternalProtoTransformer().transform(rawPackages)
+    val withModuleDepsPackages = new ModuleDepsTransformer(codeModules).transform(withProtoPackages)
+    withModuleDepsPackages
+  }
+
 
   writeBazelRc()
   writeBazelRemoteRc()
@@ -56,7 +62,7 @@ object Migrator extends MigratorApp {
   private def writeWorkspace(): Unit =
     new WorkspaceWriter(repoRoot).write()
 
-  private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(protoBazelPackages)
+  private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(bazelPackages)
 
   // hack to add hoopoe-specs2 (and possibly other needed dependencies)
   private def constantDependencies: Set[Dependency] = {
@@ -65,23 +71,23 @@ object Migrator extends MigratorApp {
       .filter(_.coordinates.artifactId == "hoopoe-specs2")
       .filter(_.coordinates.packaging.contains("pom")) +
       //proto dependencies
-      Dependency(Coordinates.deserialize("com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT"),MavenScope.Compile) +
-      Dependency(Coordinates.deserialize("com.wixpress.grpc:generator:1.0.0-SNAPSHOT"),MavenScope.Compile) +
+      Dependency(Coordinates.deserialize("com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT"), MavenScope.Compile) +
+      Dependency(Coordinates.deserialize("com.wixpress.grpc:generator:1.0.0-SNAPSHOT"), MavenScope.Compile) +
       //core-server-build-tools dependency
-      Dependency(Coordinates.deserialize("com.google.jimfs:jimfs:1.1"),MavenScope.Compile)
+      Dependency(Coordinates.deserialize("com.google.jimfs:jimfs:1.1"), MavenScope.Compile)
   }
 
   private def writeExternal(): Unit = {
     new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()
 
     val bazelRepo = new NoPersistenceBazelRepository(repoRoot.toScala)
-    val internalCoordinates = codeModules.map(_.externalModule)
+    val internalCoordinates = codeModules.map(_.coordinates)
     val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
       resolver = aetherResolver,
       globalExcludes = internalCoordinates
     )
 
-    val mavenSynchronizer = new BazelMavenSynchronizer(filteringResolver,bazelRepo)
+    val mavenSynchronizer = new BazelMavenSynchronizer(filteringResolver, bazelRepo)
 
     val externalDependencies = new DependencyCollector(aetherResolver)
       .addOrOverrideDependencies(constantDependencies)
@@ -93,11 +99,9 @@ object Migrator extends MigratorApp {
   }
 
   private def collectExternalDependenciesUsedByRepoModules(repoModules: Set[SourceModule]): Set[Dependency] = {
-    //the mess here is mainly due to conversion from Map[Scope->Targets] to Set[Dependency] and the domain gap between migrator and resolver, (hopefully) will be resolved soon
-    val scopedExternalDependencies: Set[Map[Scope, Set[Dependency]]] =
-      repoModules.map(_.dependencies.scopedDependencies).map(_.mapValues(_.collect { case mavenJar: MavenJar => mavenJar.originatingExternalDependency }))
-    val dependencies: Set[Dependency] = scopedExternalDependencies.flatMap(_.values).flatten
-    dependencies
+    val allDirectDependencies = repoModules.flatMap(_.dependencies.directDependencies)
+    val repoCoordinates = repoModules.map(_.coordinates)
+    allDirectDependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
   }
 
   private def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {

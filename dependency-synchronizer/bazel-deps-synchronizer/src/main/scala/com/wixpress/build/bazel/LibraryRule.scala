@@ -10,7 +10,8 @@ case class LibraryRule(
                         exports: Set[String] = Set.empty,
                         runtimeDeps: Set[String] = Set.empty,
                         compileTimeDeps: Set[String] = Set.empty,
-                        exclusions: Set[Exclusion] = Set.empty
+                        exclusions: Set[Exclusion] = Set.empty,
+                        testOnly: Boolean = false
                          ) {
 
   private def serializedExclusions = if (exclusions.isEmpty) "" else
@@ -18,18 +19,23 @@ case class LibraryRule(
 
   def withRuntimeDeps(runtimeDeps: Set[String]): LibraryRule = this.copy(runtimeDeps = runtimeDeps)
 
-  private def serializedAttributes =
-    toListEntry("jars",jars) +
-      toListEntry("srcs",sources) +
-      toListEntry("exports",exports) +
-      toListEntry("deps",compileTimeDeps) +
-      toListEntry("runtime_deps",runtimeDeps)
-
   def serialized: String = {
     s"""$RuleType(
-       |    name = "$name",$serializedAttributes$serializedExclusions
+       |    name = "$name",$serializedTestOnly$serializedAttributes$serializedExclusions
        |)""".stripMargin
   }
+
+  private def serializedTestOnly =
+    if (testOnly) """
+      |    testonly = 1,""".stripMargin else ""
+
+  private def serializedAttributes =
+  toListEntry("jars",jars) +
+  toListEntry("srcs",sources) +
+  toListEntry("exports",exports) +
+  toListEntry("deps",compileTimeDeps) +
+  toListEntry("runtime_deps",runtimeDeps)
+
 
   private def toListEntry(keyName: String, elements: Iterable[String]): String = {
     if (elements.isEmpty) "" else {
