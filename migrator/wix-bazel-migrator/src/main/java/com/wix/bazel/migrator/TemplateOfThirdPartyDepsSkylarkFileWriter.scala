@@ -14,7 +14,7 @@ class TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot: File) {
       """.stripMargin
 
     writeToDisk(thirdPartyDepsSkylarkFileContents)
-    Files.createFile(new File(repoRoot, "BUILD").toPath)
+    Files.createFile(new File(repoRoot, "BUILD.bazel").toPath)
   }
 
   private def writeToDisk(thirdPartyDepsSkylarkFileContents: String): Unit =
