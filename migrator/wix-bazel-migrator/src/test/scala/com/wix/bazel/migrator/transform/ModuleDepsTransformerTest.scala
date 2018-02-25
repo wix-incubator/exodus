@@ -19,10 +19,15 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
   trait ctx extends Scope {
     val compileThirdPartyDependency = MavenMakers.aDependency("ext-compile-dep", MavenScope.Compile)
     val compileInternalDependency = MavenMakers.aDependency("some-internal-lib", MavenScope.Compile)
+
     val runtimeThirdPartyDependency = MavenMakers.aDependency("ext-runtime-dep", MavenScope.Runtime)
     val runtimeInternalDependency = MavenMakers.aDependency("some-runtime-module", MavenScope.Runtime)
     val testThirdPartyDependency = MavenMakers.aDependency("ext-test-dep", MavenScope.Test)
     val testInternalDependency = MavenMakers.aDependency("some-test-kit", MavenScope.Test)
+
+    // TODO: provided deps should be coded as direct deps of jvm targets on never_link third_party
+    val providedInternalDependency = MavenMakers.aDependency("some-provided-module", MavenScope.Provided)
+    val providedThirdPartyDependency = MavenMakers.aDependency("ext-provided-dep", MavenScope.Provided)
 
     def dummyTarget(forModule: SourceModule) = Target.Jvm(
       name = "dont-care",
@@ -38,15 +43,18 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
         compileInternalDependency,
         runtimeThirdPartyDependency,
         runtimeInternalDependency,
+        providedThirdPartyDependency,
+        providedInternalDependency,
         testThirdPartyDependency,
         testInternalDependency)
 
       .withResourcesFolder("src/main/resources", "src/test/resources", "src/it/resources", "src/e2e/resources")
     val dependentModule: SourceModule = leafModuleFrom(compileInternalDependency)
     val dependencyRuntimeModule: SourceModule = leafModuleFrom(runtimeInternalDependency)
+    val dependencyProvidedModule: SourceModule = leafModuleFrom(providedInternalDependency)
     val dependentTestModule: SourceModule = leafModuleFrom(testInternalDependency)
 
-    val modules = Set(interestingModule, dependentModule, dependencyRuntimeModule, dependentTestModule)
+    val modules = Set(interestingModule, dependentModule, dependencyRuntimeModule, dependencyProvidedModule, dependentTestModule)
 
     implicit class DependencyExtended(dependency: maven.Dependency) {
       private val coordinates = dependency.coordinates
@@ -73,6 +81,8 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
               name = "main_dependencies",
               deps = contain(exactly(
                 compileThirdPartyDependency.asThirdPartyDependency,
+                providedThirdPartyDependency.asThirdPartyDependency,
+                dependencyProvidedModule.asModuleDeps,
                 dependentModule.asModuleDeps)),
               runtimeDeps = contain(exactly(
                 runtimeThirdPartyDependency.asThirdPartyDependency,

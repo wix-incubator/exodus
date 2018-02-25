@@ -19,7 +19,7 @@ class ModuleDepsTransformer(repoModules: Set[SourceModule]) {
     val productionDepsTarget = ModuleDeps(
       name = ProductionDepsTargetName,
       belongingPackageRelativePath = module.relativePathFromMonoRepoRoot,
-      deps = extractDependenciesOfScope(module, MavenScope.Compile)
+      deps = extractDependenciesOfScope(module, MavenScope.Compile, MavenScope.Provided)
         .flatMap(dependencyTransformer.toBazelDependency),
       runtimeDeps =
         extractDependenciesOfScope(module, MavenScope.Runtime)
@@ -42,8 +42,8 @@ class ModuleDepsTransformer(repoModules: Set[SourceModule]) {
     )
   }
 
-  private def extractDependenciesOfScope(module: SourceModule, scope: MavenScope) =
-    module.dependencies.directDependencies.filter(_.scope == scope)
+  private def extractDependenciesOfScope(module: SourceModule, scopes: MavenScope*) =
+    module.dependencies.directDependencies.filter(dep => scopes.contains(dep.scope))
 
   private def extractProdResourcesDependencies(module: SourceModule) =
     module.resourcesPaths.filter(prodResources).map(asResourceLabel(module))
