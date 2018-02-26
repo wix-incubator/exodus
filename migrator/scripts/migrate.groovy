@@ -1,6 +1,7 @@
 pipeline {
     agent any
     options {
+        timeout(time: 80, unit: 'MINUTES')
         timestamps()
         throttle(categories: ['migrate'])
     }
