@@ -1,5 +1,6 @@
 package com.wixpress.build.bazel
 
+import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
 import com.wixpress.build.maven.{Coordinates, DependencyNode}
 
 class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
@@ -14,8 +15,9 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
   }
 
   private def writeWorkspaceRules(dependencyNodes: Set[DependencyNode]): Unit = {
+    val actual = dependencyNodes.toList.sortBy(_.baseDependency.coordinates.workspaceRuleName)
     val existingThirdPartyReposFile = localWorkspace.thirdPartyReposFileContent()
-    val thirdPartyReposBuilder = dependencyNodes.map(_.baseDependency.coordinates)
+    val thirdPartyReposBuilder = actual.map(_.baseDependency.coordinates)
       .foldLeft(ThirdPartyReposFile.Builder(existingThirdPartyReposFile))(_.withMavenJar(_))
 
     val content = thirdPartyReposBuilder.content
