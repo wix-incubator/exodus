@@ -32,6 +32,7 @@ object Migrator extends MigratorApp {
 
 
   writeBazelRc()
+  writePrelude()
   writeBazelRemoteRc()
   writeWorkspace()
   writeInternal()
@@ -61,6 +62,9 @@ object Migrator extends MigratorApp {
 
   private def writeWorkspace(): Unit =
     new WorkspaceWriter(repoRoot).write()
+
+  private def writePrelude(): Unit =
+    new PreludeWriter(repoRoot.toPath).write()
 
   private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(bazelPackages)
 

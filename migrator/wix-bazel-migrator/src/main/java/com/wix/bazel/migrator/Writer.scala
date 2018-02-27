@@ -131,7 +131,7 @@ class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
     writePackage(bazelPackage.targets.map(writeTarget))
 
   private def writePackage(serializedTargets: Set[String]) =
-    DefaultPublicVisibility + LoadScalaHack + serializedTargets.toSeq.sorted.mkString("\n\n")
+    DefaultPublicVisibility + serializedTargets.toSeq.sorted.mkString("\n\n")
 
   private def writeProto(proto: Target.Proto): String = {
     s"""
@@ -394,17 +394,6 @@ class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
     }
     serializedDependency
   }
-
-  //HACK: should come from prelude_bazel but doesn't work for some reason
-  private val LoadScalaHack =
-    """load("@io_bazel_rules_scala//scala:scala.bzl",
-      |    "scala_binary",
-      |    "scala_library",
-      |    "scala_test",
-      |    "scala_macro_library",
-      |    "scala_specs2_junit_test")
-      |load("@io_bazel_rules_scala//scala:scala_import.bzl", "scala_import")
-      |""".stripMargin
 
   private val DefaultPublicVisibility =
     """package(default_visibility = ["//visibility:public"])
