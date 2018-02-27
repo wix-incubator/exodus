@@ -7,33 +7,49 @@ pipeline {
     options {
         timestamps()
     }
+    environment {
+        LATEST_COMMIT_HASH_COMMAND = "git ls-remote -q ${env.repo_url} | head -1 | cut -f 1"
+    }
     stages {
-        stage('migrate') {
+        stage('setup') {
             steps {
                 script {
-                    def migrate_run = build job: "01-migrate", wait: true, propagate: true, parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false)]
-                    migration_branch = "bazel-mig-${migrate_run.number}"
+                    env.GIT_COMMIT_HASH = sh(script: "${env.LATEST_COMMIT_HASH_COMMAND}", returnStdout: true)
                 }
             }
         }
-        stage('build-and-test') {
+        stage('run-migration-e2e') {
             steps {
                 parallel(
-                        "bazel": {
+                        "migrate": {
                             script {
-                                build job: "03-fix-strict-deps", wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false),booleanParam(name: 'TRIGGER_BUILD', value: false)]
-                                build job: "05-run-bazel-rbe", wait: false, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
-                                def b = build job: "02-run-bazel", wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
-                                bazel_success = (b.result == "SUCCESS") || (b.result == "UNSTABLE")
+                                println "Commit hash: ${env.GIT_COMMIT_HASH}"
+                                def migrate_run = build job: "01-migrate", wait: true, propagate: true, parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false), string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")]
+                                migration_branch = "bazel-mig-${migrate_run.number}"
+                                BUILD_PARAMETERS = [
+                                        string(name: 'BRANCH_NAME', value: migration_branch),
+                                        booleanParam(name: 'CLEAN', value: false),
+                                        string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")
+                                ]
                             }
                         },
                         "maven": {
                             script {
-                                def m = build job: "02-run-maven", wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
+                                def m = build job: "02-run-maven", wait: true, propagate: false, parameters: [string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")]
                                 maven_success = (m.result == "SUCCESS") || (m.result == "UNSTABLE")
                             }
                         }
                 )
+            }
+        }
+        stage('build-and-test') {
+            steps {
+                script {
+                    build job: "03-fix-strict-deps", wait: true, propagate: false, parameters: env.BUILD_PARAMETERS
+                    build job: "05-run-bazel-rbe", wait: false, propagate: false, parameters: env.BUILD_PARAMETERS
+                    def b = build job: "02-run-bazel", wait: true, propagate: false, parameters: env.BUILD_PARAMETERS
+                    bazel_success = (b.result == "SUCCESS") || (b.result == "UNSTABLE")
+                }
             }
         }
         stage('compare') {

@@ -1,5 +1,3 @@
-import groovy.io.FileType
-
 pipeline {
     agent any
     options {
@@ -13,12 +11,15 @@ pipeline {
         MAVEN_INSTALL = "mvn clean install -B -Dwix.environment=CI -DtestFailureIgnore=true"
         JAVA_HOME = tool name: 'jdk8u152'
         REPO_NAME = find_repo_name()
+        COMMIT_HASH = "${env.COMMIT_HASH}"
     }
     stages {
         stage('checkout') {
             steps {
                  dir("${env.REPO_NAME}") {
-                    git url: "${env.repo_url}", branch: "${env.BRANCH_NAME}"
+                     echo "got commit hash: ${env.COMMIT_HASH}"
+                     checkout([$class: 'GitSCM', branches: [[name: env.COMMIT_HASH ]],
+                               userRemoteConfigs: [[url: "${env.repo_url}"]]])
                 }
             }
         }

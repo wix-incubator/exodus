@@ -13,15 +13,18 @@ pipeline {
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
+        COMMIT_HASH = "${env.COMMIT_HASH}"
     }
     stages {
         stage('checkout') {
             steps {
+                echo "got commit hash: ${env.COMMIT_HASH}"
                 dir("wix-bazel-migrator") {
                     copyArtifacts flatten: true, projectName: '../Migrator-build', selector: lastSuccessful()
                 }
                 dir("${env.REPO_NAME}") {
-                    git "${env.repo_url}"
+                    checkout([$class: 'GitSCM', branches: [[name: env.COMMIT_HASH ]],
+                              userRemoteConfigs: [[url: "${env.repo_url}"]]])
                 }
             }
         }
