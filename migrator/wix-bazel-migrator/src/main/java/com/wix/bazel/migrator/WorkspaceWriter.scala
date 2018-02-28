@@ -20,8 +20,8 @@ class WorkspaceWriter(repoRoot: File) {
          |)
          |
          |# Required configuration for remote build execution
-         |bazel_toolchains_version="f3b09700fae5d7b6e659d7cefe0dcc6e8498504c"
-         |bazel_toolchains_sha256="ed829b5eea8af1f405f4cc3d6ecfc3b1365bb7843171036030a31b5127002311"
+         |bazel_toolchains_version="44200e0c026d86c53470d107b3697a3e46469c43"
+         |bazel_toolchains_sha256="699b55a6916c687f4b7dc092dbbf5f64672cde0dc965f79717735ec4e5416556"
          |http_archive(
          |             name = "bazel_toolchains",
          |             urls = ["https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/%s.tar.gz"%bazel_toolchains_version, "https://github.com/bazelbuild/bazel-toolchains/archive/%s.tar.gz"%bazel_toolchains_version],
