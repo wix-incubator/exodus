@@ -14,7 +14,13 @@ class TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot: File) {
       """.stripMargin
 
     writeToDisk(thirdPartyDepsSkylarkFileContents)
-    Files.createFile(new File(repoRoot, "BUILD.bazel").toPath)
+    createBuildFileIfMissing()
+  }
+
+  private def createBuildFileIfMissing(): Unit = {
+    val buildFilePath = new File(repoRoot, "BUILD.bazel").toPath
+    if (!Files.exists(buildFilePath))
+      Files.createFile(buildFilePath)
   }
 
   private def writeToDisk(thirdPartyDepsSkylarkFileContents: String): Unit =
