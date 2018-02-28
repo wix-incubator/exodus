@@ -11,6 +11,8 @@ pipeline {
         BAZEL_FLAGS = '''|-k \\
                          |--test_output=errors \\
                          |--config=remote \\
+                         |--config=results \\
+                         |--project_id=gcb-with-custom-workers \\
                          |--remote_instance_name=projects/gcb-with-custom-workers \\
                          |--test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()

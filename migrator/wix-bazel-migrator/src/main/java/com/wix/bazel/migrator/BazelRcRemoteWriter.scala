@@ -76,6 +76,14 @@ class BazelRcRemoteWriter(repoRoot: File) {
        |# default. You can use --auth_credentials=some_file.json to use a service
        |# account credential instead.
        |build:remote --auth_enabled=true
+       |
+       |# Set flags for uploading to BES in order to view results in the Bazel Build
+       |# Results UI.
+       |build:results --bes_backend="buildeventservice.googleapis.com"
+       |build:results --bes_timeout=10s
+       |
+       |# If the upload to BES fails, the build will fail.
+       |build:results --bes_best_effort=false
       """.stripMargin
     writeToDisk(contents)
   }
