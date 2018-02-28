@@ -34,7 +34,7 @@ pipeline {
                 sh "buildozer 'add tags manual' //third_party/...:%scala_import"
                 script{
                     if (fileExists('bazel_migration/post-migration.sh')){
-                        sh "bazel_migration/post-migration.sh"
+                        sh "sh bazel_migration/post-migration.sh"
                     }
                 }
                 sh 'buildifier $(find . -iname BUILD.bazel -type f)'
