@@ -1,6 +1,6 @@
 package com.wix.bazel.migrator.transform
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonTypeInfo}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.SourceModule
@@ -9,6 +9,7 @@ class ExceptionFormattingDependencyAnalyzer(dependencyAnalyzer: DependencyAnalyz
   private val om = new ObjectMapper().registerModule(DefaultScalaModule)
     .addMixIn(classOf[AnalyzeFailure], classOf[AnalyzeFailureMixin])
     .addMixIn(classOf[Throwable], classOf[ThrowableMixin])
+    .addMixIn(classOf[SourceModule], classOf[IgnoringMavenDependenciesMixin])
 
   override def allCodeForModule(module: SourceModule): List[Code] =
     try {
@@ -28,3 +29,6 @@ trait AnalyzeFailureMixin
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "__class")
 private abstract class ThrowableMixin
+
+@JsonIgnoreProperties(Array("dependencies"))
+trait IgnoringMavenDependenciesMixin
