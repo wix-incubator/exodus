@@ -22,16 +22,18 @@ pipeline {
                     steps {
                         script {
                             println "Commit hash: ${env.GIT_COMMIT_HASH}"
-                            def migrate_run = build job: "01-migrate", wait: true, propagate: true, parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false), string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")]
-                            def migration_branch = "bazel-mig-${migrate_run.number}"
-                            def parameters = [
-                                    string(name: 'BRANCH_NAME', value: migration_branch),
-                                    booleanParam(name: 'CLEAN', value: false),
-                                    string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")
-                            ]
-                            build job: "03-fix-strict-deps", wait: true, propagate: false, parameters: parameters
-                            build job: "05-run-bazel-rbe", wait: false, propagate: false, parameters: parameters
-                            build job: "02-run-bazel", wait: true, propagate: false, parameters: parameters
+                            def migrate_run = build job: "01-migrate", wait: true, propagate: false, parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false), string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")]
+                            if (migrate_run.result == "SUCCESS") {
+                                def migration_branch = "bazel-mig-${migrate_run.number}"
+                                def parameters = [
+                                        string(name: 'BRANCH_NAME', value: migration_branch),
+                                        booleanParam(name: 'CLEAN', value: false),
+                                        string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")
+                                ]
+                                build job: "03-fix-strict-deps", wait: true, propagate: false, parameters: parameters
+                                build job: "05-run-bazel-rbe", wait: false, propagate: false, parameters: parameters
+                                build job: "02-run-bazel", wait: true, propagate: false, parameters: parameters
+                            }
                         }
                     }
                 }
