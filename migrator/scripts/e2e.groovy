@@ -27,6 +27,7 @@ pipeline {
                                 def migration_branch = "bazel-mig-${migrate_run.number}"
                                 def parameters = [
                                         string(name: 'BRANCH_NAME', value: migration_branch),
+                                        booleanParam(name: 'TRIGGER_BUILD', value: false),
                                         booleanParam(name: 'CLEAN', value: false),
                                         string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")
                                 ]
