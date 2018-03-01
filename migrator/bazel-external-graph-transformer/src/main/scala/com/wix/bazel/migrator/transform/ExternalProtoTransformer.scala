@@ -1,10 +1,13 @@
 package com.wix.bazel.migrator.transform
 
-import com.wix.bazel.migrator.model.{Package, Target}
+import com.wix.bazel.migrator.model.{Package, SourceModule, Target}
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.maven.{Coordinates, Dependency, MavenScope}
 
-class ExternalProtoTransformer {
+class ExternalProtoTransformer(repoModules: Set[SourceModule]) {
+
+  private val repoArtifacts = repoModules.map(_.coordinates)
+
   def transform(packages: Set[Package]): Set[Package] = packages.map { bazelPackage =>
     bazelPackage.copy(targets = bazelPackage.targets.map {
       case proto: Target.Proto =>
@@ -19,8 +22,14 @@ class ExternalProtoTransformer {
 
   private def collectExternalProdCompileProtos(bazelPackage: Package): Set[Coordinates] = {
     bazelPackage.originatingSourceModule.dependencies
-      .directDependencies.collect{case d if compileProtoDependency(d)=>d.coordinates}
+      .directDependencies
+      .filter(compileProtoDependency)
+      .filter(externalDependency)
+      .map(_.coordinates)
   }
+
+  private def externalDependency(dependency: Dependency) =
+    !repoArtifacts.exists(_.equalsOnGroupIdAndArtifactId(dependency.coordinates))
 
 
   private def compileProtoDependency(dependency: Dependency) =

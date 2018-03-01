@@ -34,7 +34,9 @@ object MavenMakers {
                       ): Dependency =
     Dependency(randomCoordinates(withVersion, artifactIdPrefix, index), withScope, withExclusions)
 
-  def someCoordinates(artifactId:String) = Coordinates("some.group",artifactId,"some-version")
+  def someCoordinates(artifactId: String): Coordinates = Coordinates("some.group", artifactId, "some-version")
+
+  def someProtoCoordinates(artifactId: String): Coordinates = Coordinates("some.group", artifactId, "some-version", packaging = Some("zip"), classifier = Some("proto"))
 
   def aDependency(artifactId:String,scope:MavenScope = MavenScope.Compile, exclusions: Set[Exclusion] = Set.empty) =
     Dependency(someCoordinates(artifactId),scope, exclusions)

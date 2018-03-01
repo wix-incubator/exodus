@@ -25,7 +25,7 @@ object Migrator extends MigratorApp {
 
   def bazelPackages = {
     val rawPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
-    val withProtoPackages = new ExternalProtoTransformer().transform(rawPackages)
+    val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(rawPackages)
     val withModuleDepsPackages = new ModuleDepsTransformer(codeModules).transform(withProtoPackages)
     withModuleDepsPackages
   }
