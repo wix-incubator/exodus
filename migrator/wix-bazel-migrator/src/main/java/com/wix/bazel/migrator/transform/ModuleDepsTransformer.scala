@@ -51,7 +51,14 @@ class ModuleDepsTransformer(repoModules: Set[SourceModule]) {
   private def extractTestResourcesDependencies(module: SourceModule) =
     module.resourcesPaths.filterNot(prodResources).map(asResourceLabel(module))
 
-  private def asResourceLabel(module: SourceModule)(path: String) = s"//${module.relativePathFromMonoRepoRoot}/$path:resources"
+  private def asResourceLabel(module: SourceModule)(path: String) = {
+    val slashProtectedModuleRelativePath =
+      if (module.relativePathFromMonoRepoRoot.isEmpty)
+        ""
+      else
+      module.relativePathFromMonoRepoRoot + "/"
+    s"//$slashProtectedModuleRelativePath$path:resources"
+  }
 
   private def prodResources(path: String) = path == "src/main/resources"
 

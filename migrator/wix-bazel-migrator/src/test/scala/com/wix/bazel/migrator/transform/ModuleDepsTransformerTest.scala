@@ -158,6 +158,20 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
           ))
       }
     }
+
+    "if given package in the root of the repo should serialize resources paths without extra slash" in {
+      val interestingModule = ModuleMaker.aModule("", MavenMakers.someCoordinates("dontcare"))
+        .withResourcesFolder("src/main/resources")
+      val transformer = new ModuleDepsTransformer(Set(interestingModule))
+
+      val packages = transformer.transform(Set(model.Package("", Set.empty, interestingModule)))
+
+      packages must contain(exactly(
+        aPackage(target = a(
+          moduleDepsTarget(name = "main_dependencies",
+            runtimeDeps = equalTo(Set("//src/main/resources:resources"))
+          )))))
+    }
   }
 }
 
