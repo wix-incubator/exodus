@@ -21,6 +21,7 @@ class CachingEagerEvaluatingCodotaDependencyAnalyzer(sourceModules: Set[SourceMo
   private val objectMapper = new ObjectMapper()
     .registerModule(DefaultScalaModule)
     .registerModule(new RelativePathSupportingModule)
+    .registerModule(new SourceModuleSupportingModule(sourceModules))
     .addMixIn(classOf[Target], classOf[TypeAddingMixin])
     .addMixIn(classOf[CodePurpose], classOf[TypeAddingMixin])
     .addMixIn(classOf[TestType], classOf[TypeAddingMixin])
@@ -79,7 +80,7 @@ class CachingEagerEvaluatingCodotaDependencyAnalyzer(sourceModules: Set[SourceMo
     (sourceModule, maybeCodeFromCache(cachePath).getOrElse(retrieveCodeAndCache(sourceModule, cachePath)))
   }
 
-  private def printProgress() = {
+  private def printProgress(): Unit = {
     if (tenthSize > 0) {
       val currentCount = counter.incrementAndGet()
       if (currentCount % tenthSize == 0) {
