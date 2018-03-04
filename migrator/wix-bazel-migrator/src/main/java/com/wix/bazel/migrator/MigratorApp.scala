@@ -6,7 +6,7 @@ import java.time.temporal.ChronoUnit
 import better.files.File
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.build.maven.analysis.{SourceModules, ThirdPartyConflict, ThirdPartyConflicts, ThirdPartyValidator}
-import com.wixpress.build.maven.{AetherMavenDependencyResolver, Coordinates, MavenDependencyResolver}
+import com.wixpress.build.maven._
 
 trait MigratorApp extends App {
   lazy val configuration = RunConfiguration.from(args)
@@ -65,5 +65,18 @@ trait MigratorApp extends App {
       conflicts.map(_.toString).toList.sorted.foreach(println)
       println(s"[$level] ***********************************************************")
     }
+  }
+
+  // hack to add hoopoe-specs2 (and possibly other needed dependencies)
+  protected def constantDependencies: Set[Dependency] = {
+    aetherResolver
+      .managedDependenciesOf(managedDependenciesArtifact)
+      .filter(_.coordinates.artifactId == "hoopoe-specs2")
+      .filter(_.coordinates.packaging.contains("pom")) +
+      //proto dependencies
+      Dependency(Coordinates.deserialize("com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT"), MavenScope.Compile) +
+      Dependency(Coordinates.deserialize("com.wixpress.grpc:generator:1.0.0-SNAPSHOT"), MavenScope.Compile) +
+      //core-server-build-tools dependency
+      Dependency(Coordinates.deserialize("com.google.jimfs:jimfs:1.1"), MavenScope.Compile)
   }
 }
