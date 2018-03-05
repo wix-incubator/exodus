@@ -5,7 +5,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        copyArtifacts projectName: '02-run-maven', target: 'maven-output', optional: true
+                        copyArtifacts projectName: '02-run-maven', target: 'maven-output', selector: lastCompleted()
                     } catch (err) {
                         echo "[WARN] unable to copy maven artifacts, perhaps none exist?"
                     }
@@ -16,7 +16,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        copyArtifacts projectName: '02-run-bazel', target: 'bazel-output', optional: true
+                        copyArtifacts projectName: '02-run-bazel', target: 'bazel-output', selector: lastCompleted()
                     } catch (err) {
                         echo "[WARN] unable to copy bazel artifacts, perhaps none exist?"
                     }
