@@ -43,6 +43,11 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            deleteDir()
+        }
+    }
 }
 
 @SuppressWarnings("GroovyAssignabilityCheck")
