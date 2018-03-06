@@ -36,7 +36,7 @@ class WorkspaceWriter(repoRoot: File) {
          |
          |
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
-         |core_server_build_tools_version="d7dcfe3b40224f29cb340d866d374187da58076f" # update this as needed
+         |core_server_build_tools_version="609232f8d35bd57a01ba5d3e75803a203d9b01cf" # update this as needed
          |
          |git_repository(
          |             name = "core_server_build_tools",
