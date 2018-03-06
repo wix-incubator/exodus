@@ -65,7 +65,7 @@ pipeline {
                          |git push origin ${env.BRANCH_NAME}
                          |""".stripMargin()
                     // WARNING: carefully test any change you make to the following line. mistakes here can be fatal!!
-                    sh "git branch -r | grep bazel-mig | sort -n -r -t \"-\" -k 3 | tail -n +6 | sed  -e 's/origin\\//git push origin :/g' | sh"
+                    sh script: "git branch -r | grep bazel-mig | sort -n -r -t \"-\" -k 3 | tail -n +6 | sed  -e 's/origin\\//git push origin :/g' | sh", returnStatus: true
                 }
             }
         }
