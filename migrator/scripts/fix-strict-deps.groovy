@@ -96,9 +96,15 @@ def build_and_fix() {
         }
         echo "found strict deps issues"
         sh "python ../core-server-build-tools/scripts/fix_transitive.py"
-        sh "buildozer -f bazel-buildozer-commands.txt"
-        env.PUSH_TO_GIT = "true"
-        build_and_fix()
+        buildozerStatusCode = sh script: "buildozer -f bazel-buildozer-commands.txt", returnStatus: true
+        if (buildozerStatusCode == 0) { // buildozer returns 3 when no action was needed
+            env.PUSH_TO_GIT = "true"
+            build_and_fix()
+        } else {
+            echo "[WARN] produced buildozer commands were not required!"
+            currentBuild.result = 'UNSTABLE'
+        }
+
     } else if (status == 0) {
         echo "No buildozer warnings were found"
         bazelrc = readFile(".bazelrc")
