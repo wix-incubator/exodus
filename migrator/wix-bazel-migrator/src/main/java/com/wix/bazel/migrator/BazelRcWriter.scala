@@ -9,6 +9,7 @@ class BazelRcWriter(repoRoot: File) {
     val contents =
       """|startup --host_jvm_args=-Dbazel.DigestFunction=SHA1
          |build --strategy=Scalac=worker
+         |build --strict_proto_deps=off
          |build --strict_java_deps=warn
          |test --strategy=Scalac=worker
          |test --test_output=errors
