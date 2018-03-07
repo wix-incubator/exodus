@@ -216,7 +216,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
       module
 
   private def suggestedIn(codotaSuggestionModules: Set[Coordinates])(dependency: maven.Dependency) =
-    codotaSuggestionModules.exists(_.equalsOnGroupIdAndArtifactId(dependency.coordinates))
+    codotaSuggestionModules.contains(dependency.coordinates)
 
   private def fail(failure: AnalyzeFailure) = throw new AnalyzeException(failure)
 
