@@ -230,7 +230,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
       module
 
   private def suggestedIn(codotaSuggestedDependencies: Set[Coordinates])(dependency: maven.Dependency) =
-    codotaSuggestedDependencies.contains(dependency.coordinates)
+    codotaSuggestedDependencies.contains(dependency.coordinates) || codotaSuggestedDependencies.contains(dependency.coordinates.asProto)
 
   private def fail(failure: AnalyzeFailure) = throw new AnalyzeException(failure)
 
