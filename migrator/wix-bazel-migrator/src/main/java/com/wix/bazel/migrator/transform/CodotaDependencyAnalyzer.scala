@@ -119,7 +119,7 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
       val internalDependencies: List[Either[AnalyzeFailure, Dependency]] = internalDeps.map(_.asScala)
         .map(retainOnlySupportedFilesIn)
         .filter(_.nonEmpty)
-        .map(dependencyGroupToDependency(currentModule, isTestCode))
+        .map(codotaDependencyGroupToDependency(currentModule, isTestCode))
         .collect {
           case Right(Some(d)) => Right(d)
           case Left(af) => Left(af)
@@ -127,21 +127,26 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
       internalDependencies
     }
 
-  private def dependencyGroupToDependency(currentModule: SourceModule, isTestCode: Boolean)(dependencyGroup: Iterable[OptionalInternalDependency]): Either[AnalyzeFailure, Option[Dependency]] =
+  private def codotaDependencyGroupToDependency(currentModule: SourceModule, isTestCode: Boolean)(dependencyGroup: Iterable[OptionalInternalDependency]): Either[AnalyzeFailure, Option[Dependency]] =
     EitherSequence.sequence(toCoordinatesSet(dependencyGroup))
       .right.flatMap(coordinatesSetToDependency(currentModule, isTestCode))
       .augment(FailureMetadata.InternalDep(dependencyGroup))
 
   private def toCoordinatesSet(dependencyGroup: Iterable[OptionalInternalDependency]): Iterable[Either[AnalyzeFailure, (Coordinates, String)]] =
     dependencyGroup.map { dep =>
-      mavenCoordinatesFromCodotaArtifactName(dep.getArtifactName).right.map(module => (module, dep.getFilepath))
+      mavenCoordinatesFromCodotaArtifactName(dep.getArtifactName, dep.getFilepath).right.map(module => (module, dep.getFilepath))
     }
 
   private def coordinatesSetToDependency(currentModule: SourceModule, isTestCode: Boolean)(externalModulesAndFilePaths: Iterable[(Coordinates, String)]): Either[AnalyzeFailure, Option[Dependency]] = {
     val moduleToFilePath = externalModulesAndFilePaths.toMap
     findSourceModule(currentModule, moduleToFilePath.keySet, modules, isTestCode).right.flatMap {
       case Some(sourceModule) =>
-        val selectedFilePath = moduleToFilePath.getOrElse(sourceModule.coordinates, moduleToFilePath(sourceModule.coordinates.copy(classifier = Some("tests"))))
+        val coordinates = sourceModule.coordinates
+        val selectedFilePath =
+          moduleToFilePath.get(coordinates)
+            .orElse(moduleToFilePath.get(coordinates.asTest))
+            .orElse(moduleToFilePath.get(coordinates.asProto))
+            .getOrElse(throw new NoSuchElementException(s"could not find filepath match for coordinates for ${coordinates.serialized}"))
         sourceDirEither(sourceModule, selectedFilePath).right.map { sourceDir =>
           Some(Dependency(CodePath(stripTestClassifierIfExists(sourceModule), sourceDir, Paths.get(selectedFilePath)), isCompileDependency = true))
         }
@@ -158,29 +163,35 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
   private def retainOnlySupportedFilesIn(internalDeps: Iterable[OptionalInternalDependency]) =
     internalDeps.filter(depInfo => supportedFile(depInfo.getFilepath))
 
-  private def mavenCoordinatesFromCodotaArtifactName(artifactName: String): Either[AnalyzeFailure, Coordinates] = {
+  private def mavenCoordinatesFromCodotaArtifactName(artifactName: String, filePath: String): Either[AnalyzeFailure, Coordinates] = {
     eitherRetry() {
       codotaClient.readArtifact(artifactName).getProject
     }.augment(FailureMetadata.MissingArtifactInCodota(artifactName)).right.map { project: ProjectInfo =>
       //codota is unreliable with version numbers of the source modules due to them changing frequently so we try to first take them from filesystem
       val version = modules
         .find(artifact => artifact.coordinates.artifactId == project.getArtifactId && artifact.coordinates.groupId == project.getGroupId).map(_.coordinates.version).getOrElse(project.getVersion)
-      val classifier = if (representsTestJar(artifactName)) Some("tests") else None
-      Coordinates(project.getGroupId, project.getArtifactId, version, classifier = classifier)
+      val mainCoordinates = Coordinates(project.getGroupId, project.getArtifactId, version)
+      if (representsTestJar(artifactName))
+        mainCoordinates.asTest
+      else if (filePath.endsWith(".proto"))
+        mainCoordinates.asProto
+      else
+        mainCoordinates
     }
   }
 
   private def representsTestJar(artifactName: String): Boolean = artifactName.endsWith("[tests]") //codota convention
 
-  private def findSourceModule(currentModule: SourceModule, codotaSuggestionModules: Set[Coordinates], repoModules: Set[SourceModule], isTestCode: Boolean): Either[AnalyzeFailure, Option[SourceModule]] = {
+  private def findSourceModule(currentModule: SourceModule, codotaSuggestedDependencies: Set[Coordinates], repoModules: Set[SourceModule], isTestCode: Boolean): Either[AnalyzeFailure, Option[SourceModule]] = {
     //if the current module is one of the ones in the list we'll choose it over the others since it's likely that
     //if we have two sources with the same name in the same package in two different modules
     // the code has a dependency on the source in the same module and not a neighboring module
-    if (currentModuleIsSuggested(currentModule, codotaSuggestionModules, isTestCode)) {
+    if (currentModuleIsSuggested(currentModule, codotaSuggestedDependencies, isTestCode)) {
       Right(Some(currentModule))
     } else {
-      classpathOf(currentModule, isTestCode)
-        .filter(suggestedIn(codotaSuggestionModules))
+      val allModuleDependencies = classpathOf(currentModule, isTestCode)
+      val codeDependencies = allModuleDependencies.filter(suggestedIn(codotaSuggestedDependencies))
+      codeDependencies
         // for phase2 flatMap should be replaced with orElse use label
         .flatMap(asSourceModule)
         .toList match {
@@ -191,9 +202,12 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
     }
   }
 
-  private def currentModuleIsSuggested(currentModule: SourceModule, codotaSuggestionModules: Set[Coordinates], isPartOfTestCode: Boolean) =
-    codotaSuggestionModules.contains(currentModule.coordinates) ||
-      (isPartOfTestCode && codotaSuggestionModules.contains(currentModule.coordinates.copy(classifier = Some("tests"))))
+  private def currentModuleIsSuggested(currentModule: SourceModule, codotaSuggestedDependencies: Set[Coordinates], isPartOfTestCode: Boolean) = {
+    val currentCoordinates = currentModule.coordinates
+    codotaSuggestedDependencies.contains(currentCoordinates) ||
+      codotaSuggestedDependencies.contains(currentCoordinates.asProto) ||
+      (isPartOfTestCode && codotaSuggestedDependencies.contains(currentCoordinates.asTest))
+  }
 
   private def compileRelevant(scope: MavenScope, isPartOfTestCode: Boolean) =
     (scope == MavenScope.Compile) || (scope == MavenScope.Provided) || (scope == MavenScope.Test && isPartOfTestCode)
@@ -215,8 +229,8 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
     else
       module
 
-  private def suggestedIn(codotaSuggestionModules: Set[Coordinates])(dependency: maven.Dependency) =
-    codotaSuggestionModules.contains(dependency.coordinates)
+  private def suggestedIn(codotaSuggestedDependencies: Set[Coordinates])(dependency: maven.Dependency) =
+    codotaSuggestedDependencies.contains(dependency.coordinates)
 
   private def fail(failure: AnalyzeFailure) = throw new AnalyzeException(failure)
 
@@ -276,6 +290,12 @@ class CodotaDependencyAnalyzer(repoRoot: File, modules: Set[SourceModule], codot
     } else {
       SourceFilesOverrides()
     }
+  }
+
+  private implicit class CoordinatesExtended(coordinates: Coordinates) {
+    def asTest: Coordinates = coordinates.copy(classifier = Some("tests"))
+
+    def asProto: Coordinates = coordinates.copy(classifier = Some("proto"), packaging = Some("zip"))
   }
 
 }
