@@ -137,7 +137,9 @@ class CollectAllDepsButFavorDirect(resolver:MavenDependencyResolver, constantDep
   override def collectDependencies(modules: Set[SourceModule]): Set[Dependency] = {
     val allDeps = collectExternalDependenciesUsedByRepoModules(modules)
     val managedDependencies = resolver.managedDependenciesOf(managedDepsArtifact)
-    resolver.dependencyClosureOf(allDeps,managedDependencies).map(_.baseDependency)
+    val finalDeps = resolver.dependencyClosureOf(allDeps,managedDependencies).map(_.baseDependency)
+    assert(allDeps == finalDeps)
+    finalDeps
   }
 
   private def collectExternalDependenciesUsedByRepoModules(repoModules: Set[SourceModule]): Set[Dependency] = {
