@@ -67,7 +67,7 @@ class WorkspaceWriter(repoRoot: File) {
          |
          |register_toolchains("@core_server_build_tools//toolchains:wix_defaults_global_toolchain")
          |
-         |wix_grpc_version="dd7ce24ce71228940e87ebe98e10f7e30de1141c" # update this as needed
+         |wix_grpc_version="4663ecf9b5e2246f72143a3af810d4681cb60d96" # update this as needed
          |
          |git_repository(
          |             name = "wix_grpc",
