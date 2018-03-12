@@ -5,11 +5,10 @@ class DependencyCollector(resolver: MavenDependencyResolver, dependencies: Set[D
   def withManagedDependenciesOf(artifact: Coordinates): DependencyCollector =
     addOrOverrideDependencies(resolver.managedDependenciesOf(artifact))
 
-  def addOrOverrideDependencies(newDependencies: Set[Dependency]): DependencyCollector =
+  def addOrOverrideDependencies(newDependencies: Set[Dependency]) =
     new DependencyCollector(resolver, dependencies.addOrOverride(newDependencies))
 
-  def mergeExclusionsOfSameCoordinates(): DependencyCollector =
-    new DependencyCollector(resolver,dependencies.map(withAllExclusionsOfSameDependency))
+  def mergeExclusionsOfSameCoordinates() = new DependencyCollector(resolver,dependencies.map(withAllExclusionsOfSameDependency))
 
   def dependencySet(): Set[Dependency] = dependencies
 
