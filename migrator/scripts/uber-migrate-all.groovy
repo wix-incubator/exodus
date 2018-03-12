@@ -14,9 +14,11 @@ node {
         def run_rbe = it + "/05-run-bazel-rbe"
         def delay = "${env.delay_between_trigger}" as Integer
         def sleep_time = count * delay
+        def build_number = ${env.BUILD_NUMBER}
         def seq = {
             echo "sleeping ${sleep_time}"
-            def migrate_run = build job: migrate, wait: true, propagate: false, parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false)], quietPeriod: sleep_time
+            def build_number_parameter = string(name: 'UBER_BUILD_ID', value: build_number)
+            def migrate_run = build job: migrate, wait: true, propagate: false, parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false), build_number_parameter], quietPeriod: sleep_time
             def migration_branch = "bazel-mig-${migrate_run.number}"
 
             if (migrate_run.result == "SUCCESS") {
@@ -24,19 +26,19 @@ node {
                 def maven_success = false
                 parallel(
                         "bazel": {
-                            build job: run_rbe, wait: false, propagate: false,  parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
-                            build job: fix_deps, wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false),booleanParam(name: 'TRIGGER_BUILD', value: false)]
-                            def b = build job: run_bazel, wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
+                            build job: run_rbe, wait: false, propagate: false,  parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false), build_number_parameter]
+                            build job: fix_deps, wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false),booleanParam(name: 'TRIGGER_BUILD', value: false), build_number_parameter]
+                            def b = build job: run_bazel, wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false), build_number_parameter]
                             bazel_success = (b.result == "SUCCESS")
 
                         },
                         "maven": {
-                            def m = build job: run_maven, wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
+                            def m = build job: run_maven, wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false), build_number_parameter]
                             maven_success = (m.result == "SUCCESS")
                         }
                 )
                 if (bazel_success && maven_success) {
-                    build job: compare, wait: false
+                    build job: compare, wait: false, parameters: [build_number_parameter]
                 }
             }
             return true
