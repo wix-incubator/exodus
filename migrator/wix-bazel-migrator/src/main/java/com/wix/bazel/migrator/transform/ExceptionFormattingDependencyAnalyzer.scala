@@ -20,7 +20,7 @@ class ExceptionFormattingDependencyAnalyzer(dependencyAnalyzer: DependencyAnalyz
         throw new RuntimeException(message +
           """|***Detailed error is in a prettified json which starts above***
           |***Inner most AnalyzeFailure has root cause, look for it***
-          |More info at https://github.com/wix-private/bazel-tooling/blob/master/migrator/docs/start-here.md
+          |More info at https://github.com/wix-private/bazel-tooling/blob/master/migrator/docs
           |""".stripMargin)
     }
 }
