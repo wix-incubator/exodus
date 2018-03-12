@@ -262,11 +262,6 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
           def dependency = aDependency("dep")
 
-          def artifactOfDependency = {
-            val root = transitiveRoot
-            anArtifact(dependency.coordinates).withDependency(root)
-          }
-
           override def remoteArtifacts: Set[ArtifactDescriptor] = Set(
             anArtifact(dependency.coordinates).withDependency(transitiveRoot),
             anArtifact(transitiveRoot.coordinates)

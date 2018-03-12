@@ -69,4 +69,10 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
   private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) =
     dependencyNodes.map(_.baseDependency.coordinates).flatMap(LibraryRule.buildFilePathBy) + ThirdPartyReposFile.thirdPartyReposFilePath
 
+  def writeDependencies(workspaceRuleNodes: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]) = {
+    writeWorkspaceRules(workspaceRuleNodes)
+
+    writeLibraryRules(libraryRulesNodes)
+    computeAffectedFilesBy(libraryRulesNodes)
+  }
 }

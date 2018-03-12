@@ -43,11 +43,6 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
   private def uniqueDependenciesFrom(possiblyConflictedDependencySet: Set[Dependency]) = {
     conflictResolution.resolve(possiblyConflictedDependencySet).forceCompileScope
   }
-
-  private implicit class DependenciesExtended(dependencies:Set[Dependency]) {
-    def forceCompileScope: Set[Dependency] = dependencies.map(_.copy(scope = MavenScope.Compile))
-  }
-
 }
 
 class HighestVersionConflictResolution {

@@ -12,3 +12,9 @@ case class Dependency(coordinates: Coordinates, scope: MavenScope, exclusions: S
 
   def equalsOnCoordinatesIgnoringVersion(dependency: Dependency): Boolean = dependency.coordinates.equalsIgnoringVersion(coordinates)
 }
+
+object Dependency {
+  implicit class DependenciesExtended(dependencies:Set[Dependency]) {
+    def forceCompileScope: Set[Dependency] = dependencies.map(_.copy(scope = MavenScope.Compile))
+  }
+}
