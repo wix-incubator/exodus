@@ -45,11 +45,14 @@ node {
     def all_deps_collisions = new CollisionCounts()
     def direct_collisions = new CollisionCounts()
 
+    def successful_conflict_run_jobs = 0
+
 
     folders.each {
         def dep_conflict_run = Jenkins.instance.getItemByFullName(it + dep_conflict_job_name).lastSuccessfulBuild
 
         if (dep_conflict_run != null) {
+            successful_conflict_run_jobs += 1
             def log = dep_conflict_run.log
 
             def match = log =~ /1-regular \| EXCLUSIONS count: (\d+)/
@@ -91,6 +94,7 @@ node {
 
     def res =  """```
     |Total folders ${folders.size}
+    |Total successful folders ${successful_conflict_run_jobs}
     |=======
     |EXCLUSIONS
     | - REGULAR         = ${regular_collisions.exclusionsCount}
