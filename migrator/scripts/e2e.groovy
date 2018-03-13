@@ -51,11 +51,7 @@ pipeline {
         stage('compare') {
             steps {
                 script {
-                    if (maven_success) {
-                        build job: "03-compare", wait: true
-                    } else {
-                        error("maven run failed - cannot compare")
-                    }
+                    build job: "03-compare", wait: true, parameters: [booleanParam(name: 'MAVEN_SUCCESS', value: maven_success)]
                 }
             }
         }

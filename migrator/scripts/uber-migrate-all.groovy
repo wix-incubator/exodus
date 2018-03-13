@@ -6,51 +6,55 @@ node {
     def folders = all_folders()
     def count = 0
     folders.each {
-        def migrate = it + "/01-migrate"
-        def fix_deps = it + "/03-fix-strict-deps"
-        def compare = it + "/03-compare"
-        def run_bazel = it + "/02-run-bazel"
-        def run_maven = it + "/02-run-maven"
-        def run_rbe = it + "/05-run-bazel-rbe"
-        def delay = "${env.delay_between_trigger}" as Integer
+        def name = it.job_name
+        def repo = it.repo
+        def migrate = name + "/01-migrate"
+        def fix_deps = name + "/03-fix-strict-deps"
+        def compare = name + "/03-compare"
+        def run_bazel = name + "/02-run-bazel"
+        def run_maven = name + "/02-run-maven"
+        def run_rbe = name + "/05-run-bazel-rbe"
+        def delay = "${env.delay_between_trigger}".toInteger()
         def sleep_time = count * delay
         def seq = {
             echo "sleeping ${sleep_time}"
-            def migrate_run = build job: migrate, wait: true, propagate: false, parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false)], quietPeriod: sleep_time
-            def migration_branch = "bazel-mig-${migrate_run.number}"
-
-            if (migrate_run.result == "SUCCESS") {
-                def bazel_success = false
-                def maven_success = false
-                parallel(
-                        "bazel": {
-                            build job: run_rbe, wait: false, propagate: false,  parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
-                            build job: fix_deps, wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false),booleanParam(name: 'TRIGGER_BUILD', value: false)]
-                            def b = build job: run_bazel, wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
-                            bazel_success = (b.result == "SUCCESS")
-
-                        },
-                        "maven": {
-                            def m = build job: run_maven, wait: true, propagate: false, parameters: [string(name: 'BRANCH_NAME', value: migration_branch), booleanParam(name: 'CLEAN', value: false)]
-                            maven_success = (m.result == "SUCCESS")
+            def git_commit_hash = sh(script: "git ls-remote -q ${repo} | head -1 | cut -f 1", returnStdout: true)
+            parallel(
+                    "bazel": {
+                        echo "Git commit hash: ${git_commit_hash}"
+                        def migrate_run = build job: migrate, wait: true, propagate: false,
+                                parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false), string(name: 'COMMIT_HASH', value: git_commit_hash)], quietPeriod: sleep_time
+                        if (migrate_run.result == "SUCCESS") {
+                            def migration_branch = "bazel-mig-${migrate_run.number}"
+                            def parameters = [
+                                    string(name: 'BRANCH_NAME', value: migration_branch),
+                                    booleanParam(name: 'CLEAN', value: false),
+                                    string(name: 'COMMIT_HASH', value: git_commit_hash)
+                            ]
+                            build job: fix_deps, wait: true, propagate: false, parameters: parameters + booleanParam(name: 'TRIGGER_BUILD', value: false)
+                            build job: run_rbe, wait: false, propagate: false, parameters: parameters
+                            build job: run_bazel, wait: true, propagate: false, parameters: parameters
                         }
-                )
-                if (bazel_success && maven_success) {
-                    build job: compare, wait: false
-                }
-            }
+                    },
+                    "maven": {
+                        build job: run_maven, wait: true, propagate: false,
+                                parameters: [string(name: 'COMMIT_HASH', value: git_commit_hash), booleanParam(name: 'CLEAN', value: false)], quietPeriod: sleep_time
+                    }
+            )
+            build job: compare, wait: false
             return true
         }
-        count = count + 1
-        migrate_repo[it] = seq
+        count += 1
+        migrate_repo[name] = seq
     }
     parallel migrate_repo
 }
-
 
 @NonCPS
 def all_folders() {
     Jenkins.instance.getItems(com.cloudbees.hudson.plugins.folder.Folder).findAll {
         it.description.startsWith("Migration")
-    }.collect { it.name }
+    }.collect {
+        [job_name: it.name, repo: it.description.substring("Migration to ".length())]
+    }
 }
