@@ -40,7 +40,7 @@ object DependencyCollectorReport extends MigratorApp {
   }
 
   private def conflictsWith(repoDepsArtifacts: Set[Dependency], method: String)(module: SourceModule): Set[DependencyConflict] = {
-    val moduleDirectDependencies = module.dependencies.allDependencies.filterNot(partOfRepo)
+    val moduleDirectDependencies = module.dependencies.directDependencies.filterNot(partOfRepo)
     moduleDirectDependencies.flatMap(moduleDependency => {
       repoDepsArtifacts.find(_.coordinates.equalsIgnoringVersion(moduleDependency.coordinates)) match {
         case Some(repoDependency) => findDependencyConflicts(module.coordinates, moduleDependency, repoDependency)
