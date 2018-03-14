@@ -31,7 +31,23 @@ pipeline {
                         currentBuild.result = 'UNSTABLE'
                         return
                     }
-                    
+
+                    dir('core-server-build-tools') {
+                        git "git@github.com:wix-private/core-server-build-tools.git"
+                        ansiColor('xterm') {
+                            sh """|cd scripts
+                                  |pip3 install --user -r requirements.txt
+                                  |python3 -u maven_bazel_diff.py maven-count ${WORKSPACE}/maven-output ${WORKSPACE}/bazel-output
+                                  |""".stripMargin()
+                        }
+                    }
+
+                    if (!has_artifacts('bazel')) {
+                        echo "[WARN] Unable to perform comparison - bazel artifacts were not found."
+                        currentBuild.result = 'UNSTABLE'
+                        return
+                    }
+
                     dir('core-server-build-tools') {
                         git "git@github.com:wix-private/core-server-build-tools.git"
                         ansiColor('xterm') {
