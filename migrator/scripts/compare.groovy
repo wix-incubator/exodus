@@ -28,20 +28,10 @@ pipeline {
                 script {
                     if (!has_artifacts('bazel') && !has_artifacts('maven')) {
                         echo "No tests were detected in both maven and bazel"
-                        return
-                    }
-
-                    if (!has_artifacts('bazel')) {
                         currentBuild.result = 'UNSTABLE'
-                        echo "[WARN] could not find bazel artifacts!"
                         return
                     }
-                    if (!has_artifacts('maven')) {
-                        currentBuild.result = 'UNSTABLE'
-                        echo "[WARN] could not find maven artifacts!"
-                        return
-                    }
-
+                    
                     dir('core-server-build-tools') {
                         git "git@github.com:wix-private/core-server-build-tools.git"
                         ansiColor('xterm') {
