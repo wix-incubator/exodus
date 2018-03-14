@@ -88,6 +88,7 @@ object Migrator extends MigratorApp {
       .collectExternalDependenciesUsedBy(codeModules)
     mavenSynchronizer.sync(managedDependenciesArtifact, externalDependencies)
 
+    new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)
   }
 
   private def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {
