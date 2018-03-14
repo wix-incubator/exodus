@@ -25,48 +25,40 @@ node {
 
     def compare_total_maven = 0
     def compare_total_bazel = 0
-    def compare_same = 0
-    def compare_different = 0
-    def compare_missing = 0
-    def compare_overridden = 0
 
     def remote_run_success = 0
     def remote_run_fail = 0
     def remote_run_unstable = 0
     def remote_run_never_run = 0
 
-    def maven_tests = 0
-    def bazel_tests = 0
     def migrated_tests = 0
     def compiled_tests = 0
-    def count = 1
+    def run_tests = 0
 
-    def recent = { run ->
-        if (run == null)
-            return false
-        def d = run.time
-        def yesterday = (new Date()).minus(1)
-        return d.after(yesterday)
-    }
+    def latest_uber_job = last_ubered_build().getLastBuild().number
+    echo "Latest Uber build#: $latest_uber_job"
 
     folders.each {
-        def compare_run = Jenkins.instance.getItemByFullName(it + compare_job_name).lastCompletedBuild
-        def bazel_run_run = Jenkins.instance.getItemByFullName(it + bazel_run_job_name).lastCompletedBuild
-        def migrate_run = Jenkins.instance.getItemByFullName(it + migrate_job_name).lastCompletedBuild
-        def bazel_remote_run = Jenkins.instance.getItemByFullName(it + remote_job_name).lastCompletedBuild
+        def maven_tests = 0
+        def bazel_tests = 0
+
+        def compare_run      = get_latest_run(it + compare_job_name, latest_uber_job)
+        def bazel_run_run    = get_latest_run(it + bazel_run_job_name, latest_uber_job)
+        def migrate_run      = get_latest_run(it + migrate_job_name, latest_uber_job)
+        def bazel_remote_run = get_latest_run(it + remote_job_name, latest_uber_job)
 
         def migrated = false
         def compiled = false
         def bazel_run = false
 
-        if (recent(compare_run)) {
+        if (compare_run != null) {
             if (compare_run.result == Result.SUCCESS)
                 compare_success += 1
             else
                 compare_fail += 1
 
             def log = compare_run.log
-            def match = log =~ /> maven cases: (\d+)/
+            def match = log =~ ">>>> Total Maven Test Cases: 8" =~ />>>> Total Maven Test Cases: (\d+)/
             if (match.size() > 0) {
                 maven_tests = match[0][1].toInteger()
             }
@@ -74,25 +66,14 @@ node {
             if (match.size() > 0) {
                 bazel_tests = match[0][1].toInteger()
             }
-
-            match = log =~ /same: (\d+), different: (\d+), missing: (\d+), overridden: (\d+)/
-            try {
-                if (match.size() > 0) {
-                    compare_same       += match[0][1].toInteger()
-                    compare_different  += match[0][2].toInteger()
-                    compare_missing    += match[0][3].toInteger()
-                    compare_overridden += match[0][4].toInteger()
-                }
-            } catch (Exception ex) {
-                println ex
-            }
         } else {
             compare_never_run += 1
         }
 
-        if (recent(bazel_run_run)) {
+        if (bazel_run_run != null) {
             if (bazel_run_run.result == Result.SUCCESS) {
                 bazel_run = true
+                compiled = true
                 run_success += 1
             } else if (bazel_run_run.result == Result.UNSTABLE) {
                 compiled = true
@@ -102,7 +83,7 @@ node {
         } else
             run_never_run += 1
 
-        if (recent(migrate_run)) {
+        if (migrate_run != null) {
             if (migrate_run.result == Result.SUCCESS) {
                 migrated = true
                 migrate_success += 1
@@ -111,7 +92,7 @@ node {
         } else
             migrate_never_run += 1
 
-        if (recent(bazel_remote_run)) {
+        if (bazel_remote_run != null) {
             if (bazel_remote_run.result == Result.SUCCESS)
                 remote_run_success += 1
             else if (bazel_remote_run.result == Result.UNSTABLE)
@@ -125,7 +106,7 @@ node {
         compare_total_bazel += bazel_run ? bazel_tests : 0
         migrated_tests += migrated ? maven_tests : 0
         compiled_tests += compiled ? maven_tests : 0
-        count++
+        run_tests += (migrated || compiled) ? maven_tests : 0
     }
     def res =  """```
     |Total ${folders.size}
@@ -146,11 +127,12 @@ node {
     | - failure = ${compare_fail}
     | - not-run = ${compare_never_run}
     | -----
-    | TOTALS (WIP, don't trust these numbers yet)
-    | - # Maven = ${compare_total_maven} (in ${count} projects)
-    | - # Migrated = ${migrated_tests}
-    | - # Compiled = ${compiled_tests}
-    | - # Bazel = ${compare_total_bazel}
+    | TOTALS
+    | - # Maven = ${compare_total_maven} [total # of maven tests that ran in maven]
+    | - # Migrated  = ${migrated_tests} [total # of tests that were migrated]
+    | - # Compiled  = ${compiled_tests} [total # of tests that compiled]
+    | - # Ran       = ${run_tests} [total # of tests that ran in maven]
+    | - # Bazel Run = ${compare_total_bazel} [total # of tests that ran in bazel]
     |--
     |REMOTE
     | - success = ${remote_run_success}
@@ -166,7 +148,21 @@ node {
 
 @NonCPS
 def all_folders() {
-    Jenkins.instance.getItems(com.cloudbees.hudson.plugins.folder.Folder).findAll {
-        it.description.startsWith("Migration")
-    }.collect { it.name }
+    Jenkins.instance.getItems(com.cloudbees.hudson.plugins.folder.Folder)
+            .findAll { it.description.startsWith("Migration") }
+            .collect { it.name }
+}
+
+@NonCPS
+def last_ubered_build() {
+    return Jenkins.instance.getItemByFullName("Uber-migrate-all")
+}
+
+@NonCPS
+def get_latest_run(job_id, upstream_id) {
+    Jenkins.instance.getItemByFullName(job_id).getBuilds().find {
+        def cause = it.getCause(hudson.model.Cause$UpstreamCause)
+        cause?.upstreamBuild == upstream_id &&
+        cause?.upstreamProject == "Uber-migrate-all"
+    }
 }
