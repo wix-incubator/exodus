@@ -28,7 +28,7 @@ class ExceptionFormattingDependencyAnalyzer(dependencyAnalyzer: DependencyAnalyz
 trait AnalyzeFailureMixin
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "__class")
-private abstract class ThrowableMixin
+abstract class ThrowableMixin
 
 @JsonIgnoreProperties(Array("dependencies"))
 trait IgnoringMavenDependenciesMixin

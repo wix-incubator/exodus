@@ -34,9 +34,14 @@ object FindMisAnalyzedInternalDependencies extends DebuggingMigratorApp {
 
 
 trait DebuggingMigratorApp extends MigratorApp {
-  private val om = new ObjectMapper()
+  def omWithFullBlownSourceModules: ObjectMapper = new ObjectMapper()
     .registerModule(DefaultScalaModule)
     .addMixIn(classOf[AnalyzeFailure], classOf[AnalyzeFailureMixin])
+    .addMixIn(classOf[Throwable], classOf[ThrowableMixin])
+
+  def om: ObjectMapper = omWithFullBlownSourceModules
+    .addMixIn(classOf[SourceModule], classOf[IgnoringMavenDependenciesMixin])
+
   val writer = om.writerWithDefaultPrettyPrinter()
 
   protected def requestedModule(): SourceModule = {
@@ -80,15 +85,14 @@ object PrintArtifactFilesAndTheirDependencies extends CodotaClientDebuggingMigra
 }
 
 object PrintAllSourceModules extends DebuggingMigratorApp {
-  writer.writeValue(System.out, sourceModules.codeModules)
+  omWithFullBlownSourceModules
+    .writerWithDefaultPrettyPrinter()
+    .writeValue(System.out, sourceModules.codeModules)
 }
 
 object PrintAllCodeForSpecificModule extends DebuggingMigratorApp {
   val dependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
   val code = dependencyAnalyzer.allCodeForModule(requestedModule())
-  val om = new ObjectMapper()
-    .registerModule(DefaultScalaModule)
-    .addMixIn(classOf[AnalyzeFailure], classOf[AnalyzeFailureMixin])
 
   writer.writeValue(System.out, code)
 }
