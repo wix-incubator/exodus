@@ -48,7 +48,8 @@ pipeline {
                             sh """|export PYTHONIOENCODING=UTF-8
                                   |cd scripts
                                   |pip3 install --user -r requirements.txt
-                                  |python3 -u maven_bazel_diff.py ${WORKSPACE}/maven-output ${WORKSPACE}/bazel-output
+                                  |echo >>>> Total Maven Test Cases: \$(python3 -u maven_bazel_diff.py maven-compare ${WORKSPACE}/maven-output)
+                                  |python3 -u maven_bazel_diff.py compare ${WORKSPACE}/maven-output ${WORKSPACE}/bazel-output
                                   |""".stripMargin()
                         }
                     }
