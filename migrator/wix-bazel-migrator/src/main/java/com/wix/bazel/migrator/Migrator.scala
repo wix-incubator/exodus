@@ -1,7 +1,7 @@
 package com.wix.bazel.migrator
 
 import better.files.FileOps
-import com.wix.bazel.migrator.model.{Package, SourceModule}
+import com.wix.bazel.migrator.model.Package
 import com.wix.bazel.migrator.transform._
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NoPersistenceBazelRepository
@@ -82,19 +82,12 @@ object Migrator extends MigratorApp {
 
     val mavenSynchronizer = new BazelMavenSynchronizer(filteringResolver, bazelRepo)
 
-    val externalDependencies = new DependencyCollector(aetherResolver)
+    val collector = new DependencyCollector()
       .addOrOverrideDependencies(constantDependencies)
-      .addOrOverrideDependencies(collectExternalDependenciesUsedByRepoModules(codeModules))
-      .mergeExclusionsOfSameCoordinates()
-      .dependencySet()
+    val externalDependencies = new SourceModulesDependencyCollector(collector)
+      .collectExternalDependenciesUsedBy(codeModules)
     mavenSynchronizer.sync(managedDependenciesArtifact, externalDependencies)
 
-  }
-
-  private def collectExternalDependenciesUsedByRepoModules(repoModules: Set[SourceModule]): Set[Dependency] = {
-    val allDirectDependencies = repoModules.flatMap(_.dependencies.directDependencies)
-    val repoCoordinates = repoModules.map(_.coordinates)
-    allDirectDependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
   }
 
   private def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {

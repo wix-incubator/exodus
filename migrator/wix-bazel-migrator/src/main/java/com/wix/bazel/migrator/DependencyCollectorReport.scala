@@ -105,7 +105,7 @@ class CollectClosureFromDirectDeps(resolver:MavenDependencyResolver, constantDep
     val allDirectDependencies = repoModules.flatMap(_.dependencies.directDependencies)
     val repoCoordinates = repoModules.map(_.coordinates)
     val repoDeps = allDirectDependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
-    new DependencyCollector(resolver)
+    new DependencyCollector()
       .addOrOverrideDependencies(constantDependencies)
       .addOrOverrideDependencies(repoDeps)
       .mergeExclusionsOfSameCoordinates()
@@ -124,7 +124,7 @@ class CollectAllDeps(resolver:MavenDependencyResolver, constantDependencies:Set[
     val allDependencies = repoModules.flatMap(_.dependencies.allDependencies)
     val repoCoordinates = repoModules.map(_.coordinates)
     val repoDeps = allDependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
-    new DependencyCollector(resolver)
+    new DependencyCollector()
       .addOrOverrideDependencies(constantDependencies)
       .addOrOverrideDependencies(new HighestVersionConflictResolution().resolve(repoDeps))
       .mergeExclusionsOfSameCoordinates()
@@ -141,14 +141,14 @@ class CollectAllDepsButFavorDirect(resolver:MavenDependencyResolver, constantDep
   }
 
   private def collectExternalDependenciesUsedByRepoModules(repoModules: Set[SourceModule]): Set[Dependency] = {
-    val repoDeps = new DependencyCollector(resolver)
+    val repoDeps = new DependencyCollector()
       .addOrOverrideDependencies(repoModules.flatMap(_.dependencies.allDependencies))
       .addOrOverrideDependencies(repoModules.flatMap(_.dependencies.directDependencies))
       .dependencySet()
 
     val repoCoordinates = repoModules.map(_.coordinates)
     val repoExternalDeps = repoDeps.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
-    new DependencyCollector(resolver)
+    new DependencyCollector()
       .addOrOverrideDependencies(constantDependencies)
       .addOrOverrideDependencies(new HighestVersionConflictResolution().resolve(repoExternalDeps))
       .mergeExclusionsOfSameCoordinates()

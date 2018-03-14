@@ -1,25 +1,26 @@
 package com.wixpress.build.maven
 
-class DependencyCollector(resolver: MavenDependencyResolver, dependencies: Set[Dependency] = Set.empty) {
+class DependencyCollector(dependencies: Set[Dependency] = Set.empty) {
 
-  def withManagedDependenciesOf(artifact: Coordinates): DependencyCollector =
-    addOrOverrideDependencies(resolver.managedDependenciesOf(artifact))
+  def addOrOverrideDependencies(newDependencies: Set[Dependency]): DependencyCollector =
+    new DependencyCollector(dependencies.addOrOverride(newDependencies))
 
-  def addOrOverrideDependencies(newDependencies: Set[Dependency]) =
-    new DependencyCollector(resolver, dependencies.addOrOverride(newDependencies))
+  def mergeExclusionsOfSameCoordinates(): DependencyCollector =
+    mergeExclusionsOfSameCoordinatesWith(dependencies)
 
-  def mergeExclusionsOfSameCoordinates() = new DependencyCollector(resolver,dependencies.map(withAllExclusionsOfSameDependency))
+  def mergeExclusionsOfSameCoordinatesWith(providedDependencies: Set[Dependency]): DependencyCollector =
+    new DependencyCollector(dependencies.map(withAllExclusionsOfSameDependency(providedDependencies)))
 
   def dependencySet(): Set[Dependency] = dependencies
 
-  private def withAllExclusionsOfSameDependency(dependency: Dependency): Dependency = {
+  private def withAllExclusionsOfSameDependency(dependencies: Set[Dependency])(dependency: Dependency): Dependency = {
     val accumulatedExclusions = dependencies.filter(dependency.equalsOnCoordinatesIgnoringVersion).flatMap(_.exclusions)
     dependency.copy(exclusions = accumulatedExclusions)
   }
 
   implicit class `add or override dependency set`(originalSet: Set[Dependency]) {
 
-    private def overrideVersionIfExistsIn(otherDependencies:Set[Dependency])(originalDependency:Dependency) ={
+    private def overrideVersionIfExistsIn(otherDependencies: Set[Dependency])(originalDependency: Dependency) = {
       val newVersion = otherDependencies
         .find(_.equalsOnCoordinatesIgnoringVersion(originalDependency))
         .map(_.version)
@@ -31,7 +32,5 @@ class DependencyCollector(resolver: MavenDependencyResolver, dependencies: Set[D
       originalSet.map(overrideVersionIfExistsIn(otherSet)) ++ otherSet
 
   }
-
 }
-
 
