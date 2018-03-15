@@ -8,11 +8,11 @@ case class WorkspaceRule(ruleType: String = "maven_jar",
                          artifact:  Coordinates) {
 
   def serialized: String =
-    s"""|if native.existing_rule("$name") == None:
-        |  $ruleType(
-        |      name = "$name",
-        |      artifact = "${artifact.serialized}"
-        |  )""".stripMargin
+    s"""|  if native.existing_rule("$name") == None:
+        |    $ruleType(
+        |        name = "$name",
+        |        artifact = "${artifact.serialized}"
+        |    )""".stripMargin
 
 }
 

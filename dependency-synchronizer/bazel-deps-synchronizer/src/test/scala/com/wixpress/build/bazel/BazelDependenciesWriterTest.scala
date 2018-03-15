@@ -374,21 +374,21 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
   private def containMavenJarRuleFor(coordinates: Coordinates) = {
     contain(
       s"""
-         |if native.existing_rule("${coordinates.workspaceRuleName}") == None:
-         |  native.maven_jar(
-         |      name = "${coordinates.workspaceRuleName}",
-         |      artifact = "${coordinates.serialized}"
-         |  )""".stripMargin)
+         |  if native.existing_rule("${coordinates.workspaceRuleName}") == None:
+         |    native.maven_jar(
+         |        name = "${coordinates.workspaceRuleName}",
+         |        artifact = "${coordinates.serialized}"
+         |    )""".stripMargin)
   }
 
   private def containMavenProtoRuleFor(coordinates: Coordinates) = {
     contain(
       s"""
-         |if native.existing_rule("${coordinates.workspaceRuleName}") == None:
-         |  maven_proto(
-         |      name = "${coordinates.workspaceRuleName}",
-         |      artifact = "${coordinates.serialized}"
-         |  )""".stripMargin)
+         |  if native.existing_rule("${coordinates.workspaceRuleName}") == None:
+         |    maven_proto(
+         |        name = "${coordinates.workspaceRuleName}",
+         |        artifact = "${coordinates.serialized}"
+         |    )""".stripMargin)
   }
 
   implicit class StringExtended(string: String) {

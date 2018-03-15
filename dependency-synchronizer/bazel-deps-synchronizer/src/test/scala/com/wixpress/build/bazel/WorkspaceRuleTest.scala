@@ -16,11 +16,11 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         version = "5.0"
       )
       val expectedMavenJarRuleText =
-        s"""if native.existing_rule("${someCoordinates.workspaceRuleName}") == None:
-           |  native.maven_jar(
-           |      name = "${someCoordinates.workspaceRuleName}",
-           |      artifact = "${someCoordinates.serialized}"
-           |  )""".stripMargin
+        s"""  if native.existing_rule("${someCoordinates.workspaceRuleName}") == None:
+           |    native.maven_jar(
+           |        name = "${someCoordinates.workspaceRuleName}",
+           |        artifact = "${someCoordinates.serialized}"
+           |    )""".stripMargin
 
       WorkspaceRule.of(someCoordinates).serialized mustEqual expectedMavenJarRuleText
     }
@@ -34,11 +34,11 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         classifier = Some("proto")
       )
       val expectedWorkspaceRuleText =
-        s"""if native.existing_rule("${someArchiveCoordinates.workspaceRuleName}") == None:
-           |  maven_proto(
-           |      name = "${someArchiveCoordinates.workspaceRuleName}",
-           |      artifact = "${someArchiveCoordinates.serialized}"
-           |  )""".stripMargin
+        s"""  if native.existing_rule("${someArchiveCoordinates.workspaceRuleName}") == None:
+           |    maven_proto(
+           |        name = "${someArchiveCoordinates.workspaceRuleName}",
+           |        artifact = "${someArchiveCoordinates.serialized}"
+           |    )""".stripMargin
 
       WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText
     }
@@ -51,11 +51,11 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         packaging = Some("zip")
       )
       val expectedWorkspaceRuleText =
-        s"""if native.existing_rule("${someArchiveCoordinates.workspaceRuleName}") == None:
-           |  maven_archive(
-           |      name = "${someArchiveCoordinates.workspaceRuleName}",
-           |      artifact = "${someArchiveCoordinates.serialized}"
-           |  )""".stripMargin
+        s"""  if native.existing_rule("${someArchiveCoordinates.workspaceRuleName}") == None:
+           |    maven_archive(
+           |        name = "${someArchiveCoordinates.workspaceRuleName}",
+           |        artifact = "${someArchiveCoordinates.serialized}"
+           |    )""".stripMargin
 
       WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText
     }
@@ -68,11 +68,11 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         packaging = Some("tar.gz")
       )
       val expectedWorkspaceRuleText =
-        s"""if native.existing_rule("${someArchiveCoordinates.workspaceRuleName}") == None:
-           |  maven_archive(
-           |      name = "${someArchiveCoordinates.workspaceRuleName}",
-           |      artifact = "${someArchiveCoordinates.serialized}"
-           |  )""".stripMargin
+        s"""  if native.existing_rule("${someArchiveCoordinates.workspaceRuleName}") == None:
+           |    maven_archive(
+           |        name = "${someArchiveCoordinates.workspaceRuleName}",
+           |        artifact = "${someArchiveCoordinates.serialized}"
+           |    )""".stripMargin
 
       WorkspaceRule.of(someArchiveCoordinates).serialized mustEqual expectedWorkspaceRuleText
     }

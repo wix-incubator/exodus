@@ -24,7 +24,7 @@ object ThirdPartyReposFile {
 
     private def updateMavenJar(thirdPartyRepos: String, coordinates: Coordinates, matched: Regex.Match): String = {
       val newMavenJarRule = WorkspaceRule.of(coordinates).serialized
-      thirdPartyRepos.take(matched.start) + newMavenJarRule + thirdPartyRepos.drop(matched.end)
+      thirdPartyRepos.take(matched.start - "  ".length) + newMavenJarRule + thirdPartyRepos.drop(matched.end)
     }
 
     private def appendMavenJar(thirdPartyRepos: String, coordinates: Coordinates): String =
