@@ -14,24 +14,24 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
       val mavenJarCoordinates = Coordinates.deserialize("some.group:some-artifact:some-version")
       val thirdPartyReposWithJarWorkspaceRule =
         s"""
-           |jar_workspace_rule(
-           |    name = "maven_jar_name",
-           |    artifact = "${mavenJarCoordinates.serialized}"
-           |)
-           |""".stripMargin
+           |if native.existing_rule("maven_jar_name") == None:
+           |  jar_workspace_rule(
+           |      name = "maven_jar_name",
+           |      artifact = "${mavenJarCoordinates.serialized}"
+           |  )""".stripMargin
 
       val protoCoordinates = Coordinates.deserialize("some.group:some-artifact:zip:proto:some-version")
       val thirdPartyReposWithArchiveWorkspaceRule =
         s"""
-           |zip_workspace_rule(
-           |    name = "proto_name",
-           |    artifact = "${protoCoordinates.serialized}"
-           |)
-           |""".stripMargin
+           |if native.existing_rule("proto_name") == None:
+           |  zip_workspace_rule(
+           |      name = "proto_name",
+           |      artifact = "${protoCoordinates.serialized}"
+           |  )""".stripMargin
 
       val combinedThirdPartyRepos = thirdPartyReposWithArchiveWorkspaceRule + thirdPartyReposWithJarWorkspaceRule
     }
-    
+
     "extract coordinates from jar rule" in new ctx{
       val coordinates = ThirdPartyReposFile.Parser(thirdPartyReposWithJarWorkspaceRule).allMavenCoordinates
 

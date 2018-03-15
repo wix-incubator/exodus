@@ -373,7 +373,9 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
   private def containMavenJarRuleFor(coordinates: Coordinates) = {
     contain(
-      s"""  native.maven_jar(
+      s"""
+         |if native.existing_rule("${coordinates.workspaceRuleName}") == None:
+         |  native.maven_jar(
          |      name = "${coordinates.workspaceRuleName}",
          |      artifact = "${coordinates.serialized}"
          |  )""".stripMargin)
@@ -381,7 +383,9 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
   private def containMavenProtoRuleFor(coordinates: Coordinates) = {
     contain(
-      s"""  maven_proto(
+      s"""
+         |if native.existing_rule("${coordinates.workspaceRuleName}") == None:
+         |  maven_proto(
          |      name = "${coordinates.workspaceRuleName}",
          |      artifact = "${coordinates.serialized}"
          |  )""".stripMargin)

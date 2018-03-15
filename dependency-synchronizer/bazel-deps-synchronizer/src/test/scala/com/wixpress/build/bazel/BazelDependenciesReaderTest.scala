@@ -16,6 +16,8 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
         Dependency(Coordinates(groupId, artifactId, version), MavenScope.Compile, exclusion)
 
       localWorkspace.overwriteThirdPartyReposFile("")
+
+      val ruleName = "some_group_some_dep"
     }
 
     "empty set of dependencies in case given empty third party repos" in new emptyThirdPartyReposCtx {
@@ -25,24 +27,24 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
 
     "a dependency for third party repos with 1 dependency without exclusion" in new emptyThirdPartyReposCtx {
       localWorkspace.overwriteThirdPartyReposFile(
-        """
-          |maven_jar(
-          |    name = "some_group_some_dep",
-          |    artifact = "some.group:some-dep:some-version",
-          |)
-          |""".stripMargin)
+        s"""
+          |if native.existing_rule("$ruleName") == None:
+          |  maven_jar(
+          |      name = "$ruleName",
+          |      artifact = "some.group:some-dep:some-version",
+          |  )""".stripMargin)
 
       reader.allDependenciesAsMavenDependencies() must contain(defaultDependency("some.group", "some-dep", "some-version"))
     }
 
     "a dependency for third party repos with 1 proto dependency" in new emptyThirdPartyReposCtx {
       localWorkspace.overwriteThirdPartyReposFile(
-        """
-          |maven_proto(
-          |    name = "some_group_some_dep",
-          |    artifact = "some.group:some-dep:zip:proto:some-version",
-          |)
-          |""".stripMargin)
+        s"""
+          |if native.existing_rule("$ruleName") == None:
+          |   maven_proto(
+          |       name = "$ruleName",
+          |       artifact = "some.group:some-dep:zip:proto:some-version",
+          |   )""".stripMargin)
 
       reader.allDependenciesAsMavenDependencies() must contain(
         Dependency(
@@ -53,17 +55,17 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
 
     "a dependency for third party repos with 1 dependency that has an exclusion" in new emptyThirdPartyReposCtx {
       localWorkspace.overwriteThirdPartyReposFile(
-        """
-          |maven_jar(
-          |    name = "some_group_some_dep",
-          |    artifact = "some.group:some-dep:some-version",
-          |)
-          |""".stripMargin)
+        s"""
+          |if native.existing_rule("$ruleName") == None:
+          |   maven_jar(
+          |       name = "$ruleName",
+          |       artifact = "some.group:some-dep:some-version",
+          |   )""".stripMargin)
       localWorkspace.overwriteBuildFile("third_party/some/group",
-        """
+        s"""
           |scala_import(
           |    name = "some_dep",
-          |    jar = "@some_group_some_dep//jar:file",
+          |    jar = "@$ruleName//jar:file",
           |    runtime_deps = [
           |
           |    ]
@@ -75,18 +77,22 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
     }
 
     "all dependencies for repository with multiple dependencies" in new emptyThirdPartyReposCtx {
+      val rule1 = """some_group_some_dep1"""
+      val rule2 = """some_group_some_dep2"""
+
       localWorkspace.overwriteThirdPartyReposFile(
-        """
-          |maven_jar(
-          |    name = "some_group_some_dep1",
-          |    artifact = "some.group:some-dep1:some-version",
-          |)
-          |
-          |maven_jar(
-          |    name = "some_group_some_dep2",
-          |    artifact = "some.group:some-dep2:some-version",
-          |)
-          |""".stripMargin)
+        s"""
+           |if native.existing_rule("$rule1") == None:
+           |   maven_jar(
+           |       name = "$rule1",
+           |       artifact = "some.group:some-dep1:some-version",
+           |   )
+           |
+           |if native.existing_rule("$rule2") == None:
+           |   maven_jar(
+           |       name = "$rule2",
+           |       artifact = "some.group:some-dep2:some-version",
+           |   )""".stripMargin)
 
       private val dependencies: Set[Dependency] = reader.allDependenciesAsMavenDependencies()
       dependencies must containTheSameElementsAs(

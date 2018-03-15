@@ -24,7 +24,7 @@ object ThirdPartyReposFile {
 
     private def updateMavenJar(thirdPartyRepos: String, coordinates: Coordinates, matched: Regex.Match): String = {
       val newMavenJarRule = WorkspaceRule.of(coordinates).serialized
-      thirdPartyRepos.take(matched.start - "  ".length) + newMavenJarRule + thirdPartyRepos.drop(matched.end)
+      thirdPartyRepos.take(matched.start) + newMavenJarRule + thirdPartyRepos.drop(matched.end)
     }
 
     private def appendMavenJar(thirdPartyRepos: String, coordinates: Coordinates): String =
@@ -70,5 +70,6 @@ object ThirdPartyReposFile {
   private val GeneralWorkspaceRuleRegex = regexOfWorkspaceRuleWithNameMatching(".+?")
 
   private def regexOfWorkspaceRuleWithNameMatching(pattern: String) =
-    ("(?s)([^\\s]+)" + """\(\s*?name\s*?=\s*?"""" + pattern +"""",[\s#]*?artifact.*?\)""").r
+    ("""(?s)if native\.existing_rule\("""" + pattern + """"\) == None:\s*?[^\s]+"""
+      + """\(\s*?name\s*?=\s*?"""" + pattern + """",[\s#]*?artifact.*?\)""").r
 }
