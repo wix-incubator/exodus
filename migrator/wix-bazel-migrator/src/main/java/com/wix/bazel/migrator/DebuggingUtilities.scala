@@ -99,7 +99,7 @@ object PrintAllCodeForSpecificModule extends DebuggingMigratorApp {
 
 object FlushOutCodeAnalysisIssuesPerModule extends DebuggingMigratorApp {
   val outputs = codeModules.par.map { sourceModule =>
-    println(s"starting $sourceModule")
+    println(s"starting ${sourceModule.coordinates.serialized} (${sourceModule.relativePathFromMonoRepoRoot})")
     val outcome = Try {
       codotaDependencyAnalyzer.allCodeForModule(sourceModule)
       sourceModule
