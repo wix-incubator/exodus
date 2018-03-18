@@ -50,9 +50,9 @@ node {
         def migrated = false
         def compiled = false
         def bazel_run = false
+        def compare = false
 
         if (compare_run != null) {
-
             def log = compare_run.log
             def match = log =~ />>>> Total Maven Test Cases: (\d+)/
             if (match.size() > 0) {
@@ -65,7 +65,7 @@ node {
 
             if (compare_run.result == Result.SUCCESS) {
                 compare_success += 1
-                compared_tests += maven_tests
+                compare = true
             }
             else
                 compare_fail += 1
@@ -109,6 +109,7 @@ node {
         migrated_tests += migrated ? maven_tests : 0
         compiled_tests += compiled ? maven_tests : 0
         passing_tests += bazel_run ? maven_tests : 0
+        compared_tests += compare ? maven_tests : 0
     }
     def res =  """```
     |Total ${folders.size}
