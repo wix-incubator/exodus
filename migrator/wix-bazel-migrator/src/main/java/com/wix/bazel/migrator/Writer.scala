@@ -1,7 +1,7 @@
 package com.wix.bazel.migrator
 
 import java.io.File
-import java.nio.file.{Files, Path, StandardOpenOption}
+import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -30,7 +30,8 @@ case class InternalTargetOverride(label: String,
                                   tags: Option[String] = None, //testtype
                                   additionalJvmFlags: Option[List[String]] = None,
                                   additionalDataDeps: Option[List[String]] = None,
-                                  newName: Option[String] = None
+                                  newName: Option[String] = None,
+                                  additionalProtoAttributes : Option[String] = None
                                  )
 
 object Writer extends MigratorApp {
@@ -148,6 +149,7 @@ class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
        |    name = "${proto.name}_scala",
        |    deps = [":${proto.name}"],
        |    visibility = ["//visibility:public"],
+       |    ${AdditionalProtoAttributes(unAliasedLabelOf(proto))}
        |)
      """.stripMargin
   }
@@ -435,6 +437,9 @@ class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
 
   private val ForceTargetAlias: Map[String, String] =
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.newName.map(newName => targetOverride.label -> newName)).toMap
+
+  private val AdditionalProtoAttributes: Map[String, String] =
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalProtoAttributes.map(additionalProtoAttributes => targetOverride.label -> additionalProtoAttributes)).toMap.withDefaultValue("")
 
   private def concat(flags: List[String]): String = flags.mkString(", \"", "\", \"", "\"")
 
