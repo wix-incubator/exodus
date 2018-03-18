@@ -17,13 +17,14 @@ node {
         def delay = "${env.delay_between_trigger}".toInteger()
         def sleep_time = count * delay
         def seq = {
-            echo "sleeping ${sleep_time}"
+            sh "sleep $sleep_time"
+            echo "STARTED E2E MIGRATION"
             def git_commit_hash = sh(script: "git ls-remote -q ${repo} | head -1 | cut -f 1", returnStdout: true)
             parallel(
-                    "bazel": {
-                        echo "Git commit hash: ${git_commit_hash}"
+                    "bazel-$name": {
+                        echo "[$name] Git commit hash: ${git_commit_hash}"
                         def migrate_run = build job: migrate, wait: true, propagate: false,
-                                parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false), string(name: 'COMMIT_HASH', value: git_commit_hash)], quietPeriod: sleep_time
+                                parameters: [booleanParam(name: 'TRIGGER_BUILD', value: false), string(name: 'COMMIT_HASH', value: git_commit_hash)]
                         if (migrate_run.result == "SUCCESS") {
                             def migration_branch = "bazel-mig-${migrate_run.number}"
                             def parameters = [
@@ -36,12 +37,13 @@ node {
                             build job: run_bazel, wait: true, propagate: false, parameters: parameters
                         }
                     },
-                    "maven": {
+                    "maven-$name": {
                         build job: run_maven, wait: true, propagate: false,
-                                parameters: [string(name: 'COMMIT_HASH', value: git_commit_hash), booleanParam(name: 'CLEAN', value: false)], quietPeriod: sleep_time
+                                parameters: [string(name: 'COMMIT_HASH', value: git_commit_hash), booleanParam(name: 'CLEAN', value: false)]
                     }
             )
             build job: compare, wait: false
+            echo "FINISHED"
             return true
         }
         count += 1
