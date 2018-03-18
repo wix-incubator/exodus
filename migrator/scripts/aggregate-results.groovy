@@ -23,8 +23,8 @@ node {
     def migrate_failure = 0
     def migrate_never_run = 0
 
-    def compare_total_maven = 0
-    def compare_total_bazel = 0
+    def total_maven = 0
+    def total_bazel = 0
 
     def remote_run_success = 0
     def remote_run_fail = 0
@@ -33,14 +33,14 @@ node {
 
     def migrated_tests = 0
     def compiled_tests = 0
-    def run_tests = 0
+    def passing_tests = 0
+    def compared_tests = 0
 
     def latest_uber_job = last_ubered_build().getLastBuild().number
     echo "Latest Uber build#: $latest_uber_job"
 
     folders.each {
         def maven_tests = 0
-        def bazel_tests = 0
 
         def compare_run      = get_latest_run(it + compare_job_name, latest_uber_job)
         def bazel_run_run    = get_latest_run(it + bazel_run_job_name, latest_uber_job)
@@ -52,20 +52,23 @@ node {
         def bazel_run = false
 
         if (compare_run != null) {
-            if (compare_run.result == Result.SUCCESS)
-                compare_success += 1
-            else
-                compare_fail += 1
 
             def log = compare_run.log
-            def match = log =~ ">>>> Total Maven Test Cases: 8" =~ />>>> Total Maven Test Cases: (\d+)/
+            def match = log =~ />>>> Total Maven Test Cases: (\d+)/
             if (match.size() > 0) {
                 maven_tests = match[0][1].toInteger()
             }
             match = log =~ /> bazel cases: (\d+)/
             if (match.size() > 0) {
-                bazel_tests = match[0][1].toInteger()
+                total_bazel += match[0][1].toInteger()
             }
+
+            if (compare_run.result == Result.SUCCESS) {
+                compare_success += 1
+                compared_tests += maven_tests
+            }
+            else
+                compare_fail += 1
         } else {
             compare_never_run += 1
         }
@@ -102,11 +105,10 @@ node {
         } else
             remote_run_never_run += 1
 
-        compare_total_maven += maven_tests
-        compare_total_bazel += bazel_run ? bazel_tests : 0
+        total_maven += maven_tests
         migrated_tests += migrated ? maven_tests : 0
         compiled_tests += compiled ? maven_tests : 0
-        run_tests += (migrated || compiled) ? maven_tests : 0
+        passing_tests += bazel_run ? maven_tests : 0
     }
     def res =  """```
     |Total ${folders.size}
@@ -127,12 +129,13 @@ node {
     | - failure = ${compare_fail}
     | - not-run = ${compare_never_run}
     | -----
-    | TOTALS
-    | - # Maven = ${compare_total_maven} [total # of maven tests that ran in maven]
-    | - # Migrated  = ${migrated_tests} [total # of tests that were migrated]
-    | - # Compiled  = ${compiled_tests} [total # of tests that compiled]
-    | - # Ran       = ${run_tests} [total # of tests that ran in maven]
-    | - # Bazel Run = ${compare_total_bazel} [total # of tests that ran in bazel]
+    | TEST TOTALS
+    | - # Maven = ${total_maven} [total # of maven tests that ran in a project]
+    | - # Migrated  = ${migrated_tests} [total # of "maven tests" that belong to a migrated project]
+    | - # Compiled  = ${compiled_tests} [total # of "maven tests" that belong to a project which is compiling in bazel]
+    | - # Passing   = ${passing_tests} [total # of "maven tests" that belong to a project whose tests are passing in bazel]
+    | - # Compared  = ${compared_tests} [total # of "maven tests" that belong to a project that passed comparison with maven]
+    | ---- Total bazel tests: ${total_bazel}
     |--
     |REMOTE
     | - success = ${remote_run_success}
