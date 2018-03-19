@@ -25,10 +25,6 @@ object ModuleMaker {
   implicit class ModuleExtended(module: SourceModule) {
     def withDirectDependency(dependency: Dependency*): SourceModule = withDirectDependency(dependency.toIterable)
 
-    def withAllDependencies(dependencies: Dependency*): SourceModule = {
-      module.copy(dependencies = module.dependencies.withAllDependencies(dependencies))
-    }
-
     def withDirectDependency(dependencies: Iterable[Dependency]): SourceModule = module.copy(dependencies = module.dependencies.withDependencies(dependencies))
 
     def withCompileScopedDependency(coordinates: Coordinates*): SourceModule = module.copy(
@@ -45,10 +41,6 @@ object ModuleMaker {
 
     def withDependencies(dependencies: Iterable[Dependency]): ModuleDependencies =
       moduleDependencies.copy(directDependencies = moduleDependencies.directDependencies ++ dependencies)
-
-    def withAllDependencies(dependencies: Iterable[Dependency]): ModuleDependencies = {
-      moduleDependencies.copy(allDependencies = moduleDependencies.allDependencies ++ dependencies)
-    }
 
   }
 
