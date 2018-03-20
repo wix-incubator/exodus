@@ -3,6 +3,7 @@ package com.wix.bazel.migrator
 import better.files.FileOps
 import com.wix.bazel.migrator.model.{Package, SourceModule}
 import com.wix.bazel.migrator.transform._
+import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NoPersistenceBazelRepository
 import com.wixpress.build.maven._

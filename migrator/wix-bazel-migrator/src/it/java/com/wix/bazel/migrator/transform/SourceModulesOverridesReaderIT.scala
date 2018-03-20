@@ -1,11 +1,6 @@
 package com.wix.bazel.migrator.transform
 
-import java.nio.file.{Files, Path}
-
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import com.wix.build.maven.analysis.{SourceModulesOverrides, SourceModulesOverridesReader}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -48,20 +43,8 @@ class SourceModulesOverridesReaderIT extends SpecificationWithJUnit {
 
   }
 
-  abstract class Context extends Scope {
-
-    val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
-    private lazy val fileSystem = MemoryFileSystemBuilder.newLinux().build()
-    val repoRoot = fileSystem.getPath("repoRoot")
-    private val overridesPath = setupOverridesPath(repoRoot)
-
-    def writeOverrides(content: String): Unit = Files.write(overridesPath, content.getBytes)
-
-    private def setupOverridesPath(repoRoot: Path) = {
-      val bazelMigrationPath = repoRoot.resolve("bazel_migration")
-      Files.createDirectories(bazelMigrationPath)
-      bazelMigrationPath.resolve("source_modules.overrides")
-    }
+  abstract class Context extends Scope with OverridesReaderITSupport {
+    override val overridesPath = setupOverridesPath(repoRoot, "source_modules.overrides")
 
     def mutedModules: Set[String] =
       { 1 to 10 }

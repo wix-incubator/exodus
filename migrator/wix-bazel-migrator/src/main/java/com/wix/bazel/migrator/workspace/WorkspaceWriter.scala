@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator
+package com.wix.bazel.migrator.workspace
 
 import java.io.File
 import java.nio.file.Files
@@ -89,9 +89,14 @@ class WorkspaceWriter(repoRoot: File) {
          |
          |third_party_dependencies()
          |
+         |${workspaceSuffixOverride()}
       """.stripMargin
 
     writeToDisk(workspaceFileContents)
+  }
+
+  private def workspaceSuffixOverride(): String = {
+    WorkspaceOverridesReader.from(repoRoot.toPath).suffix
   }
 
   private def importFwIfThisIsNotFw(workspaceName: String) =

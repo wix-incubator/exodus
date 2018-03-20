@@ -1,11 +1,6 @@
 package com.wix.bazel.migrator.transform
 
-import java.nio.file.{Files, Path}
-
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -83,24 +78,13 @@ class InternalFileDepsOverridesReaderIT extends SpecificationWithJUnit {
 
   }
 
-  abstract class Context extends Scope {
+  abstract class Context extends Scope with OverridesReaderITSupport {
 
-    val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
-    private lazy val fileSystem = MemoryFileSystemBuilder.newLinux().build()
-    val repoRoot = fileSystem.getPath("repoRoot")
-    private val overridesPath = setupOverridesPath(repoRoot)
-
-    def writeOverrides(content: String): Unit = Files.write(overridesPath, content.getBytes)
+    override val overridesPath = setupOverridesPath(repoRoot, "internal_file_deps.overrides")
 
     def someRuntimeOverrides = someModuleOverrides("runtime")
 
     def someCompileTimeOverrides = someModuleOverrides("compile")
-
-    private def setupOverridesPath(repoRoot: Path) = {
-      val bazelMigrationPath = repoRoot.resolve("bazel_migration")
-      Files.createDirectories(bazelMigrationPath)
-      bazelMigrationPath.resolve("internal_file_deps.overrides")
-    }
 
     private def someModuleOverrides(classifier: String): Option[Map[String, Map[String, List[String]]]] = Some(
       { 1 to 10 }
