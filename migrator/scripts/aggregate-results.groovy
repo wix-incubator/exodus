@@ -57,6 +57,7 @@ node {
             def match = log =~ />>>> Total Maven Test Cases: (\d+)/
             if (match.size() > 0) {
                 maven_tests = match[0][1].toInteger()
+                println("Discovered maven tests for ${it}: " + maven_tests)
             }
             match = log =~ /> bazel cases: (\d+)/
             if (match.size() > 0) {
@@ -108,11 +109,11 @@ node {
         total_maven += maven_tests
         migrated_tests += migrated ? maven_tests : 0
         compiled_tests += compiled ? maven_tests : 0
-        passing_tests += bazel_run ? maven_tests : 0
+        passing_tests  += bazel_run ? maven_tests : 0
         compared_tests += compare ? maven_tests : 0
     }
     def res =  """```
-    |Total ${folders.size}
+    |Total ${folders.size} for Uber ${last_ubered_build}
     |=======
     |MIGRATION
     | - success = ${migrate_success}
@@ -131,11 +132,11 @@ node {
     | - not-run = ${compare_never_run}
     | -----
     | TEST TOTALS
-    | - # Maven = ${total_maven} [total # of maven tests that ran in a project]
-    | - # Migrated  = ${migrated_tests} [total # of "maven tests" that belong to a migrated project]
-    | - # Compiled  = ${compiled_tests} [total # of "maven tests" that belong to a project which is compiling in bazel]
-    | - # Passing   = ${passing_tests} [total # of "maven tests" that belong to a project whose tests are passing in bazel]
-    | - # Compared  = ${compared_tests} [total # of "maven tests" that belong to a project that passed comparison with maven]
+    | - # Maven     = ${total_maven} [total # of maven tests that ran in a project]
+    | - # Migrated  = ${migrated_tests} [... that belong to a migrated project]
+    | - # Compiled  = ${compiled_tests} [... that belong to a project which is compiling in bazel]
+    | - # Passing   = ${passing_tests} [... that belong to a project whose tests are passing in bazel]
+    | - # Compared  = ${compared_tests} [... that belong to a project that passed comparison with maven]
     | ---- Total bazel tests: ${total_bazel}
     |--
     |REMOTE
