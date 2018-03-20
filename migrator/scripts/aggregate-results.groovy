@@ -64,7 +64,6 @@ node {
             def match = log =~ />>>> Total Maven Test Cases: (\d+)/
             if (match.size() > 0) {
                 maven_tests = match[0][1].toInteger()
-                println("Discovered maven tests for ${it}: " + maven_tests)
             }
             match = log =~ /> bazel cases: (\d+)/
             if (match.size() > 0) {
@@ -129,7 +128,7 @@ node {
         compared_tests += compare ? maven_tests : 0
     }
     def res =  """```
-    |Total ${folders.size} for Uber ${latest_uber_job}
+    |Total ${folders.size} projects for Uber run# ${latest_uber_job}
     |=======
     |MIGRATION
     | - success = ${migrate_success}
@@ -147,12 +146,12 @@ node {
     | - failure = ${compare_fail}
     | - not-run = ${compare_never_run}
     | -----
-    | TEST TOTALS
-    | - # Maven     = ${total_maven} [total # of maven tests that ran in a project]
-    | - # Migrated  = ${migrated_tests} [... that belong to a migrated project]
-    | - # Compiled  = ${compiled_tests} [... that belong to a project which is compiling in bazel]
-    | - # Passing   = ${passing_tests} [... that belong to a project whose tests are passing in bazel]
-    | - # Compared  = ${compared_tests} [... that belong to a project that passed comparison with maven]
+    | TEST TOTALS (# of maven tests)
+    | - # Maven     = ${total_maven} [that ran in a project]
+    | - # Migrated  = ${migrated_tests} [ran in a migrated project]
+    | - # Compiled  = ${compiled_tests} [project which is compiling in bazel]
+    | - # Passing   = ${passing_tests} [project whose tests are passing in bazel]
+    | - # Compared  = ${compared_tests} [project that passed comparison with maven]
     | ---- Total bazel tests: ${total_bazel}
     | ----   of them, failed: ${compare_failed}
     |--
