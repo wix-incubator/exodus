@@ -36,6 +36,13 @@ node {
     def passing_tests = 0
     def compared_tests = 0
 
+    def compare_same = 0
+    def compare_different = 0
+    def compare_missing = 0
+    def compare_overridden = 0
+    def compare_ignored = 0
+    def compare_failed = 0
+
     def latest_uber_job = last_ubered_build().getLastBuild().number
     echo "Latest Uber build#: $latest_uber_job"
 
@@ -62,6 +69,15 @@ node {
             match = log =~ /> bazel cases: (\d+)/
             if (match.size() > 0) {
                 total_bazel += match[0][1].toInteger()
+            }
+            match = log =~ /> same: (\d+), different: (\d+), missing: (\d+), overridden: (\d+), ignored: (\d+), failed: (\d+)/
+            if (match.size() > 0) {
+                compare_same       += match[0][1].toInteger()
+                compare_different  += match[0][2].toInteger()
+                compare_missing    += match[0][3].toInteger()
+                compare_overridden += match[0][4].toInteger()
+                compare_ignored    += match[0][5].toInteger()
+                compare_failed     += match[0][6].toInteger()
             }
 
             if (compare_run.result == Result.SUCCESS) {
@@ -113,7 +129,7 @@ node {
         compared_tests += compare ? maven_tests : 0
     }
     def res =  """```
-    |Total ${folders.size} for Uber ${last_ubered_build}
+    |Total ${folders.size} for Uber ${latest_uber_job}
     |=======
     |MIGRATION
     | - success = ${migrate_success}
@@ -138,6 +154,7 @@ node {
     | - # Passing   = ${passing_tests} [... that belong to a project whose tests are passing in bazel]
     | - # Compared  = ${compared_tests} [... that belong to a project that passed comparison with maven]
     | ---- Total bazel tests: ${total_bazel}
+    | ----   of them, failed: ${compare_failed}
     |--
     |REMOTE
     | - success = ${remote_run_success}
