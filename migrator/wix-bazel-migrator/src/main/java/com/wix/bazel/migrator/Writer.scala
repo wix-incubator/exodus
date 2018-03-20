@@ -386,15 +386,13 @@ class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
   }
 
   private def writeDependency(originatingTarget: Target.Jvm)(dependency: TargetDependency): Set[(Scope, Set[String])] = {
+    val scopeOfCurrentDependency = scopeOf(originatingTarget, dependency.isCompileDependency)
     val serializedDependency = dependency.target match {
-      case jvmDependency: Jvm =>
-        val scopeOfCurrentDependency = scopeOf(originatingTarget, dependency.isCompileDependency)
-        Set(scopeOfCurrentDependency -> Set(writeDependency(scopeOfCurrentDependency)(jvmDependency)))
-      case proto: Proto =>
-        val scopeOfCurrentDependency = scopeOf(originatingTarget, dependency.isCompileDependency)
-        Set(scopeOfCurrentDependency -> Set(writeDependency(proto.belongingPackageRelativePath, proto.name + "_scala")))
+      case jvmDependency: Jvm => writeDependency(scopeOfCurrentDependency)(jvmDependency)
+      case proto: Proto => writeDependency(proto.belongingPackageRelativePath, proto.name + "_scala")
+      case resources: Resources => writeDependency(resources.belongingPackageRelativePath, resources.name)
     }
-    serializedDependency
+    Set(scopeOfCurrentDependency -> Set(serializedDependency))
   }
 
   private val DefaultPublicVisibility =
