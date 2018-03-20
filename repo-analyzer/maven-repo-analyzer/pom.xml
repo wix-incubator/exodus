@@ -83,5 +83,10 @@
             <artifactId>specs2-junit_${scala.dependencies.version}</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-utils</artifactId>
+            <version>3.1.0</version>
+        </dependency>
     </dependencies>
 </project>
