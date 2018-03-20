@@ -1,0 +1,31 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_specs2_junit_test(
+    name = "maven",
+    size = "small",
+    srcs = [
+        "//models/maven-model/src/test/scala/com/wixpress/build/maven:sources",
+    ],
+    data = ["//models/maven-model:coordinates"],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    jvm_flags = ["-Dexisting.manifest=$(location //models/maven-model:coordinates)"],
+    prefixes = ["Test"],
+    suffixes = ["Test"],
+    tags = ["UT"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//models/maven-model:tests_dependencies",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//models/maven-model/src/test/scala/com/wixpress/build/maven:__pkg__"],
+)

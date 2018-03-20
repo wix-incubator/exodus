@@ -1,0 +1,33 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "maven",
+    srcs = [
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver:main_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven/resolver",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//third_party/com/github/pathikrit:better_files_2_12",
+        "//third_party/org/apache/maven:maven_model",
+        "//third_party/org/apache/maven:maven_resolver_provider",
+        "//third_party/org/apache/maven/resolver:maven_resolver_api",
+        "//third_party/org/apache/maven/resolver:maven_resolver_util",
+        "//third_party/org/codehaus/plexus:plexus_utils",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven:__pkg__"],
+)

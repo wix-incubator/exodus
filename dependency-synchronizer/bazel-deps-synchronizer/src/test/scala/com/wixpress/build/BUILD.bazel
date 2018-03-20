@@ -1,0 +1,30 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "build",
+    testonly = 1,
+    srcs = [
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-synchronizer/bazel-deps-synchronizer:tests_dependencies",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//third_party/junit",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build:__pkg__"],
+)

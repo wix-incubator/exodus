@@ -1,0 +1,38 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_specs2_junit_test(
+    name = "transform",
+    size = "small",
+    srcs = [
+        "//migrator/bazel-external-graph-transformer/src/test/scala/com/wix/bazel/migrator/transform:sources",
+    ],
+    data = ["//migrator/bazel-external-graph-transformer:coordinates"],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/bazel-external-graph-transformer:coordinates)"],
+    prefixes = ["Test"],
+    suffixes = ["Test"],
+    tags = ["UT"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//migrator/bazel-external-graph-transformer:tests_dependencies",
+        "//migrator/bazel-external-graph-transformer/src/main/scala/com/wix/bazel/migrator/transform",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/bazel-external-graph-transformer/src/test/scala/com/wix/bazel/migrator/transform:__pkg__"],
+)

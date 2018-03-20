@@ -1,0 +1,33 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "bazel",
+    srcs = [
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-synchronizer/bazel-deps-synchronizer:main_dependencies",
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//third_party/com/fasterxml/jackson/core:jackson_annotations",
+        "//third_party/com/fasterxml/jackson/core:jackson_core",
+        "//third_party/com/fasterxml/jackson/core:jackson_databind",
+        "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
+        "//third_party/com/github/pathikrit:better_files_2_12",
+        "//third_party/org/eclipse/jgit:org_eclipse_jgit",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel:__pkg__"],
+)

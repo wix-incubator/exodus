@@ -1,0 +1,24 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "maven",
+    srcs = [
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//models/maven-model:main_dependencies",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//models/maven-model/src/main/scala/com/wixpress/build/maven:__pkg__"],
+)

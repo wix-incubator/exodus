@@ -1,0 +1,5 @@
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/wix-bazel-migrator/src/main/java/com/wix:__pkg__"],
+)

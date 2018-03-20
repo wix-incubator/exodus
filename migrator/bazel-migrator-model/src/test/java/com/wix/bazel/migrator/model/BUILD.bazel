@@ -1,0 +1,31 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_specs2_junit_test(
+    name = "model",
+    size = "small",
+    srcs = [
+        "//migrator/bazel-migrator-model/src/test/java/com/wix/bazel/migrator/model:sources",
+    ],
+    data = ["//migrator/bazel-migrator-model:coordinates"],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/bazel-migrator-model:coordinates)"],
+    prefixes = ["Test"],
+    suffixes = ["Test"],
+    tags = ["UT"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/bazel-migrator-model:tests_dependencies",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/bazel-migrator-model/src/test/java/com/wix/bazel/migrator/model:__pkg__"],
+)

@@ -1,0 +1,39 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_import(
+    name = "main_dependencies",
+    runtime_deps = [
+        "//migrator/wix-bazel-migrator/src/main/resources",
+    ],
+    deps = [
+        "//dependency-synchronizer/bazel-deps-synchronizer:main_dependencies",
+        "//migrator/bazel-external-graph-transformer:main_dependencies",
+        "//migrator/bazel-migrator:main_dependencies",
+        "//repo-analyzer/maven-repo-analyzer:main_dependencies",
+        "//third_party/ch/qos/logback:logback_classic",
+        "//third_party/com/codota:codota_sdk_java",
+        "//third_party/com/fasterxml/jackson/core:jackson_annotations",
+        "//third_party/com/fasterxml/jackson/core:jackson_databind",
+        "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
+        "//third_party/com/github/scopt:scopt_2_12",
+        "//third_party/org/scala-lang:scala_library",
+        "//third_party/org/scalaj:scalaj_http_2_12",
+    ],
+)
+
+scala_import(
+    name = "tests_dependencies",
+    testonly = 1,
+    deps = [
+        "main_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
+        "//migrator/bazel-migrator-model-testkit:main_dependencies",
+        "//third_party/com/github/marschall:memoryfilesystem",
+        "//third_party/com/wixpress/hoopoe:hoopoe_specs2",
+    ],
+)
+
+filegroup(
+    name = "coordinates",
+    srcs = ["MANIFEST.MF"],
+)

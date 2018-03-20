@@ -1,0 +1,32 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "analysis",
+    srcs = [
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//repo-analyzer/maven-repo-analyzer:main_dependencies",
+        "//third_party/com/github/pathikrit:better_files_2_12",
+        "//third_party/org/apache/maven:maven_model",
+        "//third_party/org/codehaus/plexus:plexus_utils",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis:__pkg__"],
+)

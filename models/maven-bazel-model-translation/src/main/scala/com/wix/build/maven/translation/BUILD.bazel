@@ -1,0 +1,25 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "translation",
+    srcs = [
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//models/maven-bazel-model-translation:main_dependencies",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation:__pkg__"],
+)

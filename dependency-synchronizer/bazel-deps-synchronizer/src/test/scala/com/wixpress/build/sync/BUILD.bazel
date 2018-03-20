@@ -1,0 +1,37 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_specs2_junit_test(
+    name = "sync",
+    size = "small",
+    srcs = [
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/sync:sources",
+    ],
+    data = ["//dependency-synchronizer/bazel-deps-synchronizer:coordinates"],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    jvm_flags = ["-Dexisting.manifest=$(location //dependency-synchronizer/bazel-deps-synchronizer:coordinates)"],
+    prefixes = ["Test"],
+    suffixes = ["Test"],
+    tags = ["UT"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//dependency-synchronizer/bazel-deps-synchronizer:tests_dependencies",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/sync",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/bazel",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/sync:__pkg__"],
+)

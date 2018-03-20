@@ -1,0 +1,28 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "model",
+    srcs = [
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/bazel-migrator-model-testkit:main_dependencies",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//third_party/org/scalaz:scalaz_core_2_12",
+        "//third_party/org/specs2:specs2_common_2_12",
+        "//third_party/org/specs2:specs2_matcher_2_12",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model:__pkg__"],
+)

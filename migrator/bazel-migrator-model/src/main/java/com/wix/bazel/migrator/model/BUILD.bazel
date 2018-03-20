@@ -1,0 +1,26 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "model",
+    srcs = [
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//migrator/bazel-migrator-model:main_dependencies",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model:__pkg__"],
+)

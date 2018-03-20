@@ -1,0 +1,56 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_specs2_junit_test(
+    name = "bazel",
+    srcs = [
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/it/scala/com/wixpress/build/bazel:sources",
+    ],
+    data = ["//dependency-synchronizer/bazel-deps-synchronizer:coordinates"],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    jvm_flags = ["-Dexisting.manifest=$(location //dependency-synchronizer/bazel-deps-synchronizer:coordinates)"],
+    prefixes = [
+        "Test",
+        "IT",
+        "E2E",
+    ],
+    suffixes = [
+        "Test",
+        "IT",
+        "E2E",
+    ],
+    tags = [
+        "E2E",
+        "IT",
+        "UT",
+        "block-network",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
+        "//dependency-synchronizer/bazel-deps-synchronizer:tests_dependencies",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/it/scala/com/wixpress/build/sync/e2e",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/sync",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/bazel",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/sync",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//third_party/com/fasterxml/jackson/core:jackson_annotations",
+        "//third_party/com/fasterxml/jackson/core:jackson_core",
+        "//third_party/com/fasterxml/jackson/core:jackson_databind",
+        "//third_party/com/github/pathikrit:better_files_2_12",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//dependency-synchronizer/bazel-deps-synchronizer/src/it/scala/com/wixpress/build/bazel:__pkg__"],
+)

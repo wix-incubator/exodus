@@ -1,0 +1,41 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_specs2_junit_test(
+    name = "e2e",
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/e2e:sources",
+    ],
+    data = ["//migrator/wix-bazel-migrator:coordinates"],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/wix-bazel-migrator:coordinates)"],
+    prefixes = [
+        "IT",
+        "E2E",
+    ],
+    suffixes = [
+        "IT",
+        "E2E",
+    ],
+    tags = [
+        "E2E",
+        "IT",
+        "block-network",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/wix-bazel-migrator:tests_dependencies",
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/workspace",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator+bazel/migrator/transform+build/maven/analysis",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/e2e:__pkg__"],
+)

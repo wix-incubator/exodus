@@ -1,0 +1,41 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "maven",
+    srcs = [
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//third_party/commons-codec:commons_codec",
+        "//third_party/junit",
+        "//third_party/org/apache/maven:maven_model",
+        "//third_party/org/apache/maven:maven_model_builder",
+        "//third_party/org/apache/maven:maven_plugin_api",
+        "//third_party/org/codehaus/mojo:mrm_api",
+        "//third_party/org/codehaus/mojo:mrm_maven_plugin",
+        "//third_party/org/codehaus/mojo:mrm_servlet",
+        "//third_party/org/codehaus/plexus:plexus_component_annotations",
+        "//third_party/org/scalaz:scalaz_concurrent_2_12",
+        "//third_party/org/scalaz:scalaz_core_2_12",
+        "//third_party/org/specs2:specs2_common_2_12",
+        "//third_party/org/specs2:specs2_core_2_12",
+        "//third_party/org/specs2:specs2_junit_2_12",
+        "//third_party/org/specs2:specs2_matcher_2_12",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven:__pkg__"],
+)

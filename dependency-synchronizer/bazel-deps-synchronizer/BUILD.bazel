@@ -1,0 +1,36 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_import(
+    name = "main_dependencies",
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver:main_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-api:main_dependencies",
+        "//models/maven-bazel-model-translation:main_dependencies",
+        "//models/maven-model:main_dependencies",
+        "//third_party/com/fasterxml/jackson/core:jackson_core",
+        "//third_party/com/fasterxml/jackson/core:jackson_databind",
+        "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
+        "//third_party/com/github/pathikrit:better_files_2_12",
+        "//third_party/org/apache/maven:maven_artifact",
+        "//third_party/org/eclipse/jgit:org_eclipse_jgit",
+        "//third_party/org/scala-lang:scala_library",
+    ],
+)
+
+scala_import(
+    name = "tests_dependencies",
+    testonly = 1,
+    runtime_deps = [
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/resources",
+    ],
+    deps = [
+        "main_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
+        "//third_party/com/gitblit",
+    ],
+)
+
+filegroup(
+    name = "coordinates",
+    srcs = ["MANIFEST.MF"],
+)

@@ -1,0 +1,41 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_import(
+    name = "main_dependencies",
+    runtime_deps = [
+        "//third_party/org/codehaus/plexus:plexus_interpolation",
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api:main_dependencies",
+        "//third_party/com/github/pathikrit:better_files_2_12",
+        "//third_party/org/apache/maven:maven_model",
+        "//third_party/org/apache/maven:maven_resolver_provider",
+        "//third_party/org/apache/maven/resolver:maven_resolver_api",
+        "//third_party/org/apache/maven/resolver:maven_resolver_connector_basic",
+        "//third_party/org/apache/maven/resolver:maven_resolver_impl",
+        "//third_party/org/apache/maven/resolver:maven_resolver_spi",
+        "//third_party/org/apache/maven/resolver:maven_resolver_transport_file",
+        "//third_party/org/apache/maven/resolver:maven_resolver_transport_http",
+        "//third_party/org/apache/maven/resolver:maven_resolver_util",
+        "//third_party/org/eclipse/sisu:org_eclipse_sisu_plexus",
+        "//third_party/org/scala-lang:scala_library",
+        "//third_party/org/sonatype/sisu:sisu_guice_no_aop",
+    ],
+)
+
+scala_import(
+    name = "tests_dependencies",
+    testonly = 1,
+    runtime_deps = [
+        "//dependency-resolver/maven-dependency-resolver/src/test/resources",
+    ],
+    deps = [
+        "main_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
+    ],
+)
+
+filegroup(
+    name = "coordinates",
+    srcs = ["MANIFEST.MF"],
+)

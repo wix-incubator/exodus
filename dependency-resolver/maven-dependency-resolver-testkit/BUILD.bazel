@@ -1,0 +1,35 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_import(
+    name = "main_dependencies",
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api:main_dependencies",
+        "//third_party/commons-codec:commons_codec",
+        "//third_party/javax/servlet:javax_servlet_api",
+        "//third_party/org/apache/maven:maven_model",
+        "//third_party/org/apache/maven:maven_model_builder",
+        "//third_party/org/codehaus/mojo:mrm_api",
+        "//third_party/org/codehaus/mojo:mrm_maven_plugin",
+        "//third_party/org/codehaus/mojo:mrm_servlet",
+        "//third_party/org/scala-lang:scala_library",
+        "//third_party/org/scala-lang/modules:scala_xml_2_12",
+        "//third_party/org/specs2:specs2_common_2_12",
+        "//third_party/org/specs2:specs2_core_2_12",
+        "//third_party/org/specs2:specs2_junit_2_12",
+        "//third_party/org/specs2:specs2_matcher_2_12",
+        "//third_party/org/specs2:specs2_matcher_extra_2_12",
+    ],
+)
+
+scala_import(
+    name = "tests_dependencies",
+    testonly = 1,
+    deps = [
+        "main_dependencies",
+    ],
+)
+
+filegroup(
+    name = "coordinates",
+    srcs = ["MANIFEST.MF"],
+)
