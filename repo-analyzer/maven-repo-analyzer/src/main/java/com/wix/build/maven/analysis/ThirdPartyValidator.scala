@@ -1,25 +1,25 @@
 package com.wix.build.maven.analysis
 
 import com.wix.bazel.migrator.model.SourceModule
-import com.wixpress.build.maven.{Coordinates, Dependency}
+import com.wixpress.build.maven.{Coordinates, Dependency, Exclusion}
 
 class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies: Set[Coordinates]) {
 
-  private val simplifiedModuleToDependenciesMap = sourceModules.map(moduleToDependencies).toMap
+  private val simplifiedModuleToDirectDependenciesMap = sourceModules.map(moduleToDependencies).toMap
 
-  private val thirdPartDependencies = allDependencies
+  private val directThirdPartDependencies = allDirectDependencies
     .filterNot(d => sourceModulesAsDependencies.exists(_.equalsIgnoringVersion(d.coordinates)))
     .filterNot(d => isIntraOrganizationDependency(d.coordinates))
 
-  private val thirdPartyCoordinates =
-    (allCoordinates -- sourceModulesAsDependencies)
+  private val directThirdPartyCoordinates =
+    (allDirectCoordinates -- sourceModulesAsDependencies)
       .filterNot(isIntraOrganizationDependency)
 
-  private def sourceModulesAsDependencies = simplifiedModuleToDependenciesMap.keySet
+  private def sourceModulesAsDependencies = simplifiedModuleToDirectDependenciesMap.keySet
 
-  private def allDependencies = simplifiedModuleToDependenciesMap.values.flatten.toSet
+  private def allDirectDependencies = simplifiedModuleToDirectDependenciesMap.values.flatten.toSet
 
-  private def allCoordinates = allDependencies.map(_.coordinates)
+  private def allDirectCoordinates = allDirectDependencies.map(_.coordinates)
 
   def checkForConflicts(): ThirdPartyConflicts =
     ThirdPartyConflicts(
@@ -28,7 +28,7 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
     )
 
   private def conflictsOfExclusionCollision: Set[DifferentExclusionCollision] = {
-    thirdPartDependencies
+    directThirdPartDependencies
       .groupBy(d => groupIdAndArtifactId(d.coordinates))
       .filter(hasDifferentExclusions)
       .map(differentExclusionCollision)
@@ -36,11 +36,13 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
   }
 
   private def hasDifferentExclusions(identifierTodependency: ((String, String), Set[Dependency])): Boolean = {
-    identifierTodependency._2.map(_.exclusions).size > 1
+    val dependencyInstances: Set[Dependency] = identifierTodependency._2
+    val exclusionIdsOfDependencyInstances: Set[Set[Exclusion]] = dependencyInstances.map(_.exclusions)
+    exclusionIdsOfDependencyInstances.size > 1
   }
 
   private def conflictsOfMultipleVersions: Set[ThirdPartyConflict] =
-    thirdPartyCoordinates
+    directThirdPartyCoordinates
       .groupBy(groupIdAndArtifactId)
       .filter(hasMultipleVersions)
       .map(multipleVersionDependencyConflict)
@@ -52,7 +54,7 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
   private def groupIdAndArtifactId(module: Coordinates) = (module.groupId, module.artifactId)
 
   private def conflictsWithManagedDependencies: Set[ThirdPartyConflict] = {
-    val conflictedDependencies = thirdPartyCoordinates -- managedDependencies
+    val conflictedDependencies = directThirdPartyCoordinates -- managedDependencies
     conflictedDependencies.map(overrideOrUnManagedConflict)
   }
 
@@ -86,14 +88,14 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
 
   private def coordinateWithLimitedConsumers(coordinate: Coordinates) = {
     val MaxConsumersToSample = 5
-    val limitedConsumers = simplifiedModuleToDependenciesMap.filter(_._2.map(_.coordinates).contains(coordinate))
+    val limitedConsumers = simplifiedModuleToDirectDependenciesMap.filter(_._2.map(_.coordinates).contains(coordinate))
       .keySet.take(MaxConsumersToSample)
     CoordinatesWithConsumers(coordinate, limitedConsumers)
   }
 
   private def dependencyWithLimitedConsumers(dependency: Dependency) = {
     val MaxConsumersToSample = 5
-    val limitedConsumers = simplifiedModuleToDependenciesMap.filter(_._2.contains(dependency))
+    val limitedConsumers = simplifiedModuleToDirectDependenciesMap.filter(_._2.contains(dependency))
       .keySet.take(MaxConsumersToSample)
     DependencyWithConsumers(dependency, limitedConsumers)
   }
