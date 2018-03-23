@@ -7,7 +7,7 @@ class BazelRcWriter(repoRoot: File) {
 
   def write(): Unit = {
     val contents =
-      """|startup --host_jvm_args=-Dbazel.DigestFunction=SHA1
+      """|startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
          |build --strategy=Scalac=worker
          |build --strict_proto_deps=off
          |build --strict_java_deps=warn
