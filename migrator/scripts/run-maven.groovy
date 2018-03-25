@@ -8,7 +8,7 @@ pipeline {
         maven 'M3'
     }
     environment {
-        MAVEN_INSTALL = "mvn clean install -B -Dwix.environment=CI -DtestFailureIgnore=true"
+        MAVEN_INSTALL = "mvn clean install -Xmx8G -B -Dwix.environment=CI -DtestFailureIgnore=true"
         JAVA_HOME = tool name: 'jdk8u152'
         REPO_NAME = find_repo_name()
         COMMIT_HASH = "${env.COMMIT_HASH}"
