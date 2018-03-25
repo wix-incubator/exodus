@@ -1,9 +1,8 @@
 package com.wix.bazel.migrator.workspace
 
-import java.io.File
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
-class WorkspaceWriter(repoRoot: File) {
+class WorkspaceWriter(repoRoot: Path) {
 
   def write(): Unit = {
     val workspaceName = currentWorkspaceNameFrom(repoRoot)
@@ -36,12 +35,11 @@ class WorkspaceWriter(repoRoot: File) {
          |
          |
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
-         |core_server_build_tools_version="609232f8d35bd57a01ba5d3e75803a203d9b01cf" # update this as needed
          |
          |git_repository(
          |             name = "core_server_build_tools",
          |             remote = "git@github.com:wix-private/core-server-build-tools.git",
-         |             commit = core_server_build_tools_version
+         |             commit = core_server_build_tools_commit
          |)
          |${importFwIfThisIsNotFw(workspaceName)}
          |load("@core_server_build_tools//:repositories.bzl", "scala_repositories")
@@ -96,7 +94,7 @@ class WorkspaceWriter(repoRoot: File) {
   }
 
   private def workspaceSuffixOverride(): String = {
-    WorkspaceOverridesReader.from(repoRoot.toPath).suffix
+    WorkspaceOverridesReader.from(repoRoot).suffix
   }
 
   private def importFwIfThisIsNotFw(workspaceName: String) =
@@ -113,11 +111,13 @@ class WorkspaceWriter(repoRoot: File) {
          |""".stripMargin
 
   //TODO get as parameter
-  private def currentWorkspaceNameFrom(repoRoot: File) =
+  private def currentWorkspaceNameFrom(repoRoot: Path) =
     if (repoRoot.toString.contains("wix-framework")) "wix_framework" else "other"
 
-  private def writeToDisk(workspaceFileContents: String): Unit =
-    Files.write(new File(repoRoot, "WORKSPACE").toPath, workspaceFileContents.getBytes)
+  private def writeToDisk(workspaceFileContents: String): Unit = {
+    Files.write(repoRoot.resolve("WORKSPACE.template"), workspaceFileContents.getBytes)
+    Files.write(repoRoot.resolve("WORKSPACE"), "".getBytes)
+  }
 
 
 }

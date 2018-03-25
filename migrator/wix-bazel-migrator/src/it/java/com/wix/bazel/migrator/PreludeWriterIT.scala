@@ -1,17 +1,14 @@
 package com.wix.bazel.migrator
 
-import java.nio.file.{Files, Path}
 import java.util.UUID
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
-import org.specs2.matcher.Matcher
+import com.wix.bazel.migrator.matchers.InMemoryFilesMatchers
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
-import scala.collection.JavaConverters._
 
-
-class PreludeWriterIT extends SpecificationWithJUnit {
+class PreludeWriterIT extends SpecificationWithJUnit with InMemoryFilesMatchers {
   "PreludeWriter" should {
     "write empty BUILD file (since Bazel requires the dir to be a bazel package)" in new ctx {
       writer.write()
@@ -43,15 +40,6 @@ class PreludeWriterIT extends SpecificationWithJUnit {
     val writer = new PreludeWriter(repoRoot)
 
     def path(withName: String) = repoRoot.resolve(s"tools/build_rules/$withName")
-
-    def beRegularFile: Matcher[Path] = beTrue ^^ { (p: Path) => Files.isRegularFile(p) }
-    def beEmpty: Matcher[Path] = equalTo(0) ^^ { (p: Path) => Files.readAllBytes(p).length }
-    def contain(lines: Seq[String]): Matcher[Path] = equalTo(lines.mkString(System.lineSeparator)) ^^ { (p: Path) => pathContent(p) }
-
-    def beEmptyRegularFile: Matcher[Path] = beRegularFile and beEmpty
-    def beRegularFile(withContent: Seq[String]): Matcher[Path] = beRegularFile and contain(withContent)
-
-    def pathContent(p: Path) = Files.readAllLines(p).asScala.mkString(System.lineSeparator)
 
     def random = UUID.randomUUID().toString
   }

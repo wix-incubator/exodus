@@ -30,6 +30,7 @@ scala_specs2_junit_test(
     deps = [
         "//migrator/wix-bazel-migrator:tests_dependencies",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator+bazel/migrator/transform+build/maven/analysis",
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers",
         "//third_party/com/github/marschall:memoryfilesystem",
     ],
 )

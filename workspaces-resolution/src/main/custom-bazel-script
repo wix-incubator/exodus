@@ -1,0 +1,4 @@
+#!/bin/bash
+
+python tools/resolve_workspace_placeholders.py
+exec -a "bazel-after-workspace-resolve" "${BAZEL_REAL}" "$@"

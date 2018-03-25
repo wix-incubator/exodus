@@ -38,6 +38,7 @@ object Migrator extends MigratorApp {
   writeWorkspace()
   writeInternal()
   writeExternal()
+  writeBazelCustomRunnerScript()
 
   private def transform() = {
     val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
@@ -62,7 +63,7 @@ object Migrator extends MigratorApp {
     new BazelRcRemoteWriter(repoRoot).write()
 
   private def writeWorkspace(): Unit =
-    new WorkspaceWriter(repoRoot).write()
+    new WorkspaceWriter(repoRoot.toPath).write()
 
   private def writePrelude(): Unit =
     new PreludeWriter(repoRoot.toPath).write()
@@ -91,6 +92,10 @@ object Migrator extends MigratorApp {
     mavenSynchronizer.sync(managedDependenciesArtifact, externalDependencies)
 
     new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)
+  }
+
+  private def writeBazelCustomRunnerScript(): Unit = {
+    new BazelCustomRunnerWriter(repoRoot.toPath).write()
   }
 
   private def collectExternalDependenciesUsedByRepoModules(repoModules: Set[SourceModule]): Set[Dependency] = {

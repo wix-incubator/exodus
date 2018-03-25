@@ -1,0 +1,19 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "matchers",
+    testonly = 1,
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//third_party/com/github/marschall:memoryfilesystem",
+        "//migrator/wix-bazel-migrator:tests_dependencies",
+        "//third_party/com/wixpress/hoopoe:hoopoe_specs2",
+    ],
+)
