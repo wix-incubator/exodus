@@ -148,10 +148,10 @@ node {
     | -----
     | TEST TOTALS (# of maven tests)
     | - # Maven     = ${total_maven} [that ran in a project]
-    | - # Migrated  = ${migrated_tests/total_maven}% ${migrated_tests} [ran in a migrated project]
-    | - # Compiled  = ${compiled_tests/total_maven}% ${compiled_tests} [project which is compiling in bazel]
-    | - # Passing   = ${passing_tests/total_maven}% ${passing_tests} [project whose tests are passing in bazel]
-    | - # Compared  = ${compared_tests/total_maven}% ${compared_tests} [project that passed comparison with maven]
+    | - # Migrated  = ${(migrated_tests*100)/total_maven}% ${migrated_tests} [ran in a migrated project]
+    | - # Compiled  = ${(compiled_tests*100)/total_maven}% ${compiled_tests} [project which is compiling in bazel]
+    | - # Passing   = ${(passing_tests*100)/total_maven}% ${passing_tests} [project whose tests are passing in bazel]
+    | - # Compared  = ${(compared_tests*100)/total_maven}% ${compared_tests} [project that passed comparison with maven]
     | ---- Total bazel tests: ${total_bazel}
     | ----   of them, passing: ${total_bazel - compare_failed}
     | ----   of them, failed: ${compare_failed}
