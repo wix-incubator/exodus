@@ -29,7 +29,7 @@ class BazelRcRemoteWriter(repoRoot: File) {
        |# this higher can make builds faster by allowing more jobs to run in parallel.
        |# Setting it too high can result in jobs that timeout, however, while waiting
        |# for a remote machine to execute them.
-       |build:remote --jobs=50
+       |build:remote --jobs=100
        |
        |import %workspace%/.bazelrc
        |
