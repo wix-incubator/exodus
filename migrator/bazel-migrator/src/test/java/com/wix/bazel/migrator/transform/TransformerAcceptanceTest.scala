@@ -289,7 +289,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       val packages = transformer.transform(repo.modules)
 
-      packages must contain(exactly(aPackage(target = aTarget(name = "agg=lib+lib2"))))
+      packages must contain(exactly(aPackage(target = aTarget(name = s"agg=lib${aggregateSeparator}lib2"))))
     }
 
     "externalize originating source module for jvm targets to allow scope track-back" in new Context {
@@ -554,7 +554,9 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
         (_: Target.Resources).codePurpose aka "code purpose"
       }
 
-  def aggregatorOf(targets: String*): String = "agg=" + targets.mkString("+")
+  def aggregateSeparator = "_"
+
+  def aggregatorOf(targets: String*): String = "agg=" + targets.mkString(aggregateSeparator)
 
   def test(testType: TestType): Matcher[CodePurpose] = be_===(CodePurpose.Test(testType))
 }
