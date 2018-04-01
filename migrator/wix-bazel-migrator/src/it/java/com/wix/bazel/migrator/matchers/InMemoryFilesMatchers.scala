@@ -4,7 +4,6 @@ import java.nio.file.{Files, Path}
 
 import org.specs2.matcher.{Matcher, Matchers}
 
-import scala.collection.JavaConverters._
 import scala.io.Source.fromInputStream
 
 trait InMemoryFilesMatchers { self : Matchers =>
@@ -20,5 +19,5 @@ trait InMemoryFilesMatchers { self : Matchers =>
   private def contain(resourceName: String): Matcher[Path] =
     equalTo(fromInputStream(getClass.getResourceAsStream(s"/$resourceName")).mkString) ^^ { (p: Path) => pathContent(p) }
 
-  private def pathContent(p: Path) = Files.readAllLines(p).asScala.mkString(System.lineSeparator)
+  private def pathContent(p: Path) = new String(Files.readAllBytes(p))
 }
