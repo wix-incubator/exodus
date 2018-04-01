@@ -49,14 +49,14 @@ class WorkspaceWriter(repoRoot: Path) {
          |mysql("5.6", "latest")
          |maven_jar(
          |    name = "com_wix_wix_embedded_mysql_download_and_extract_jar_with_dependencies",
-         |    artifact = "com.wix:wix-embedded-mysql-download-and-extract:jar:jar-with-dependencies:2.2.9",
+         |    artifact = "com.wix:wix-embedded-mysql-download-and-extract:jar:jar-with-dependencies:3.1.0",
          |)
          |load("@wix_framework//test-infrastructures-modules/mongo-test-kit/downloader:mongo_installer.bzl", "mongo_default_version", "mongo")
          |mongo_default_version()
          |mongo("3.3.1")
          |maven_jar(
          |    name = "de_flapdoodle_embed_mongo_download_and_extract_jar_with_dependencies",
-         |    artifact = "de.flapdoodle.embed:de.flapdoodle.embed.mongo.download-and-extract:jar:jar-with-dependencies:1.50.0",
+         |    artifact = "de.flapdoodle.embed:de.flapdoodle.embed.mongo.download-and-extract:jar:jar-with-dependencies:2.0.0",
          |)
          |
          |
@@ -106,7 +106,7 @@ class WorkspaceWriter(repoRoot: Path) {
          |git_repository(
          |             name = "wix_framework",
          |             remote = "git@github.com:wix-platform/wix-framework.git",
-         |             commit = "e4c70248968b1d9d21abd976384a92930a8b082e"
+         |             commit = "654f262d07ac14ae145bcd35f702e0e32440b84d"
          |)
          |""".stripMargin
 
