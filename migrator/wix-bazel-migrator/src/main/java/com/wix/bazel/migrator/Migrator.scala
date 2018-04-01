@@ -43,10 +43,13 @@ object Migrator extends MigratorApp {
   private def transform() = {
     val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
     val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
-    val mutuallyExclusiveCompositeDependencyAnalyzer = if (repoRoot.toString.contains("wix-framework")) new CompositeDependencyAnalyzer(
-      cachingCodotaDependencyAnalyzer,
-      new ManualInfoDependencyAnalyzer(sourceModules),
-      new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath)) else new CompositeDependencyAnalyzer(
+    val mutuallyExclusiveCompositeDependencyAnalyzer = if (wixFrameworkMigration)
+      new CompositeDependencyAnalyzer(
+        cachingCodotaDependencyAnalyzer,
+        new ManualInfoDependencyAnalyzer(sourceModules),
+        new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath))
+    else
+      new CompositeDependencyAnalyzer(
       cachingCodotaDependencyAnalyzer,
       new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath))
 
@@ -55,6 +58,9 @@ object Migrator extends MigratorApp {
     Persister.persistTransformationResults(bazelPackages)
     bazelPackages
   }
+
+  private def wixFrameworkMigration = sys.env.get("repo_url").exists(_.contains("wix-framework"))
+
 
   private def writeBazelRc(): Unit =
     new BazelRcWriter(repoRoot).write()

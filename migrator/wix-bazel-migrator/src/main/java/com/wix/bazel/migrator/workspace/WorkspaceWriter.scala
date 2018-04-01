@@ -112,7 +112,7 @@ class WorkspaceWriter(repoRoot: Path) {
 
   //TODO get as parameter
   private def currentWorkspaceNameFrom(repoRoot: Path) =
-    if (repoRoot.toString.contains("wix-framework")) "wix_framework" else "other"
+    if (sys.env.get("repo_url").exists(_.contains("wix-framework"))) "wix_framework" else "other"
 
   private def writeToDisk(workspaceFileContents: String): Unit = {
     Files.write(repoRoot.resolve("WORKSPACE.template"), workspaceFileContents.getBytes)
