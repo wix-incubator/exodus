@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 TEMPLATE_NAME = "WORKSPACE.template"
+CI_ENV_FLAG_FILE = "/tools/ci.environment"
 
 parser = argparse.ArgumentParser()
 parser.add_argument('workspace_dir')
@@ -13,7 +14,8 @@ args = parser.parse_args()
 workspace_dir = args.workspace_dir
 
 workspace_path = workspace_dir + "/WORKSPACE"
-if os.path.isfile(workspace_path) and os.stat(workspace_path).st_size != 0:
+if (os.path.isfile(workspace_path) and os.stat(workspace_path).st_size != 0) and \
+        (not os.path.isfile(workspace_dir + CI_ENV_FLAG_FILE)):
     sys.exit(0)
 
 template_path = workspace_dir + "/" + TEMPLATE_NAME
