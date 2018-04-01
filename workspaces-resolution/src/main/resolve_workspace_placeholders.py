@@ -22,11 +22,11 @@ if os.path.isfile(template_path):
 else:
     raise ValueError("template file ({}) is missing".format(TEMPLATE_NAME))
 
-repos = {"core_server_build_tools":"git@github.com:wix-private/core-server-build-tools.git"}
+repos = {"core_server_build_tools": "git@github.com:wix-private/core-server-build-tools.git"}
 
 last_commits = {}
 
-for repo, repo_url in repos.iteritems():
+for (repo, repo_url) in repos.items():
     commits_output = subprocess.check_output(['git', 'ls-remote', '--heads', repo_url, 'refs/heads/master'])
     last_commit = commits_output.decode("utf-8").splitlines()[0].split('\t')[0]
     last_commits[repo] = last_commit
@@ -35,7 +35,7 @@ for repo, repo_url in repos.iteritems():
 with open(template_path) as template_file:
     template_content = template_file.read()
 
-for repo, value_of_last_commit in last_commits.iteritems():
+for (repo, value_of_last_commit) in last_commits.items():
     escaped_repo_name = repo.replace("-","_").replace("/","_")
     placeholder_token = "%s_commit" % escaped_repo_name
     template_content = template_content.replace(placeholder_token, "\"%s\"" % value_of_last_commit, 1)
