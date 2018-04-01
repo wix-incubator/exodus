@@ -1,4 +1,12 @@
 #!/bin/bash
 
-python tools/resolve_workspace_placeholders.py
+WORKSPACE_DIR="${PWD}"
+while [[ "${WORKSPACE_DIR}" != / ]]; do
+    if [[ -e "${WORKSPACE_DIR}/WORKSPACE" ]]; then
+      break;
+    fi
+    WORKSPACE_DIR="$(dirname "${WORKSPACE_DIR}")"
+done
+
+python $WORKSPACE_DIR/tools/resolve_workspace_placeholders.py $WORKSPACE_DIR
 exec -a "bazel-after-workspace-resolve" "${BAZEL_REAL}" "$@"

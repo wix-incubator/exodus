@@ -1,3 +1,4 @@
+import argparse
 import os.path
 import subprocess
 
@@ -5,13 +6,17 @@ import sys
 
 TEMPLATE_NAME = "WORKSPACE.template"
 
-cwd = os.getcwd()
+parser = argparse.ArgumentParser()
+parser.add_argument('workspace_dir')
+args = parser.parse_args()
 
-workspace_path = cwd + "/WORKSPACE"
+workspace_dir = args.workspace_dir
+
+workspace_path = workspace_dir + "/WORKSPACE"
 if os.path.isfile(workspace_path) and os.stat(workspace_path).st_size != 0:
     sys.exit(0)
 
-template_path = cwd + "/" + TEMPLATE_NAME
+template_path = workspace_dir + "/" + TEMPLATE_NAME
 if os.path.isfile(template_path):
     template_file_already_resolved = True
 else:
