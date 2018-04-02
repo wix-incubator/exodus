@@ -67,6 +67,7 @@ pipeline {
                     unstable_by_exit_code("UNIT", """|#!/bin/bash
                                              |bazel test \\
                                              |      --test_tag_filters=UT,-IT \\
+                                             |      --flaky_test_attempts=3 \\
                                              |      ${env.BAZEL_FLAGS} \\
                                              |      //...
                                              |""".stripMargin())
