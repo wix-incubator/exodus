@@ -51,6 +51,11 @@ pipeline {
                 sh 'buildifier $(find . -iname BUILD.bazel -type f)'
             }
         }
+        stage('pre-build') {
+            steps {
+                sh "touch tools/ci.environment"
+            }
+        }
         stage('build') {
             steps {
                 sh "bazel build --strategy=Scalac=worker //..."
