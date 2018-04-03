@@ -5,16 +5,21 @@ import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinat
 import com.wixpress.build.bazel.LibraryRule
 import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.maven
+import ModuleDependenciesTransformer.ProductionDepsTargetName
 
-class MavenDependencyTransformer(repoModules: Set[SourceModule]) {
+class MavenDependencyTransformer(repoModules: Set[SourceModule], externalPackageLocator: ExternalSourceModuleRegistry) {
 
   def toBazelDependency(dependency: maven.Dependency): Option[String] = {
     if (ignoredDependency(dependency.coordinates)) None else Some(
       findInRepoModules(dependency.coordinates)
         .map(asRepoSourceDependency)
+        .orElse(asExternalTargetDependency(dependency.coordinates))
         .getOrElse(asThirdPartyDependency(dependency))
     )
   }
+
+  private def asExternalTargetDependency(coordinates: Coordinates) =
+    externalPackageLocator.lookupBy(coordinates.groupId, coordinates.artifactId).map(_ + s":$ProductionDepsTargetName")
 
   private def ignoredDependency(coordinates: Coordinates) = protoArtifact(coordinates)
 
@@ -28,8 +33,8 @@ class MavenDependencyTransformer(repoModules: Set[SourceModule]) {
 
   private def asRepoSourceDependency(sourceModule: SourceModule): String = {
     val packageName = sourceModule.relativePathFromMonoRepoRoot
-    val targetName = "main_dependencies"
-    s"//$packageName:$targetName"
+
+    s"//$packageName:$ProductionDepsTargetName"
   }
 
 

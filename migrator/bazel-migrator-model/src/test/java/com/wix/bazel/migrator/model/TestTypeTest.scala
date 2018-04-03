@@ -1,7 +1,5 @@
 package com.wix.bazel.migrator.model
 
-import java.nio.file.{Path, Paths}
-
 import com.wix.bazel.migrator.model.TestType._
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.core.Fragments
@@ -26,10 +24,7 @@ class TestTypeTest extends SpecificationWithJUnit {
     "TestSome.java" -> UT,
     "ArbitraryFile.scala" -> TestType.None,
     "some/package/TestNotInRoot.scala" -> UT)
-    .map(wrapNamesInPaths)
 
-  def wrapNamesInPaths(nameType: (String, TestType)): (Path, TestType) =
-    Paths.get(nameType._1) -> nameType._2
 
   "TestType.reduce" should {
     Fragments.foreach(testTypesMixesToCombinedTestType) { case (mixedTestTypes, testType) =>

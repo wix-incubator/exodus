@@ -1,6 +1,6 @@
 package com.wix.bazel.migrator.transform
 
-import java.nio.file.Path
+import java.nio.file.Paths
 
 import com.wix.bazel.migrator.model.Target.TargetDependency
 import com.wix.bazel.migrator.model._
@@ -47,9 +47,14 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
     } else {
       val codes = keyToCodes.getOrElse(this, Set.empty).view
       val codePurpose = CodePurpose(packageRelativePath, codes.map(_.testType))
-      Target.Jvm(name, sources, packageRelativePath, targetDependencies, codePurpose, codeDirPath.module)
+      val externalTargets = codes
+        .flatMap(_.externalSourceDependencies)
+        .map(Target.External.deserialize)
+        .map(TargetDependency(_, isCompileDependency = true))
+      Target.Jvm(name, sources, packageRelativePath, targetDependencies ++ externalTargets, codePurpose, codeDirPath.module)
     }
   }
+
 
   private def replaceEmptyStringWithDot(s: String) = if (s.isEmpty) "." else s
 
@@ -82,14 +87,14 @@ private[transform] object ResourceKey {
     ResourceKey(source.codeDirPath, sharedPackage, relativeSubPackages.map(padNonEmptyWithSlash))
   }
 
-  private def extractSourcePackageFrom(relativeSourceDirPathFromModuleRoot: String, filePath: Path): String =
+  private def extractSourcePackageFrom(relativeSourceDirPathFromModuleRoot: String, filePath: String): String =
   //TODO we need to have PackageResourceKey (existing one) SourceDirResourceKey (proto) and maybe also FileResourceKey (for finer grain targets)
   //Need to think how the Transformer gets the chain of "Foos" that build a ResourceKey from a code according to rules
   //rules can be static ( always do package/file) be based on source dir (for proto always do some strategy) or module based
     if (relativeSourceDirPathFromModuleRoot.endsWith("proto")) {
       ""
     } else {
-      Option(filePath.getParent).map(_.toString).getOrElse("")
+      Option(Paths.get(filePath).getParent).map(_.toString).getOrElse("")
     }
 
   private def commonPrefix(packages: Set[String]): String = {

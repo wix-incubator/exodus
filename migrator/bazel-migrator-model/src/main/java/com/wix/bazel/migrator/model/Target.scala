@@ -60,4 +60,16 @@ object Target {
                       belongingPackageRelativePath: String,
                       externalWorkspace: String) extends Target
 
+  object External {
+    private val externalTargetPattern = "@([^/]+)//([^:]+):(.+)".r("workspace", "relative-path", "target-name")
+
+    def deserialize(label: String): Target.External =
+      externalTargetPattern.findFirstMatchIn(label)
+        .map(m =>
+          Target.External(m.group("target-name"), belongingPackageRelativePath = m.group("relative-path"), m.group("workspace"))
+        ).getOrElse(
+        throw new RuntimeException(s"Could not deserialize String:$label")
+      )
+  }
+
 }

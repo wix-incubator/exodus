@@ -1,6 +1,6 @@
 package com.wix.bazel.migrator.transform
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
 
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.SourceModules
@@ -51,7 +51,7 @@ class InternalFileDepsOverridesDependencyAnalyzer(sourceModules: SourceModules, 
     val indexOfSrc = filePathParts.indexOf("src")
     CodePath(moduleForRelativePath(filePathParts.slice(0, indexOfSrc).mkString("/")),
       filePathParts.slice(indexOfSrc, indexOfSrc + 3).mkString("/"),
-      Paths.get(filePathParts.slice(indexOfSrc + 3, filePathParts.length).mkString("/")))
+      filePathParts.slice(indexOfSrc + 3, filePathParts.length).mkString("/"))
   }
 
   private def dependencyOn(isCompileDependency: Boolean)(relativeFilePath: String): Dependency =

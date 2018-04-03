@@ -1,7 +1,5 @@
 package com.wix.bazel.migrator.model
 
-import java.nio.file.Path
-
 sealed trait TestType {
   protected def +(testType: TestType): TestType = testTypesAddition(testType)
   protected def testTypesAddition: Map[TestType, TestType]
@@ -41,7 +39,7 @@ object TestType {
   private val AffixToTestTypes = Map("Test" -> UT, "IT" -> ITE2E, "E2E" -> ITE2E)
 
 
-  def from(fileName: Path): TestType = {
+  def from(fileName: String): TestType = {
     val strippedFileName = stripPackageAndExtension(fileName)
 
     AffixToTestTypes.keys
@@ -51,17 +49,17 @@ object TestType {
   }
 
 
-  private def stripPackageAndExtension(fileName: Path) = {
+  private def stripPackageAndExtension(fileName: String) = {
     val packageLessName = stripPackage(fileName)
     val extensionLessName = stripExtension(packageLessName)
     extensionLessName
   }
 
-  private def stripExtension(fileName: Path) =
-    fileName.toString.split('.').head
+  private def stripExtension(fileName: String) =
+    fileName.split('.').head
 
-  private def stripPackage(fileName: Path) =
-    fileName.getFileName
+  private def stripPackage(fileName: String) =
+    fileName.split('/').last
 
   private def matches(nameWithoutExtension: String)(affix: String) =
     nameWithoutExtension.endsWith(affix) || nameWithoutExtension.startsWith(affix)

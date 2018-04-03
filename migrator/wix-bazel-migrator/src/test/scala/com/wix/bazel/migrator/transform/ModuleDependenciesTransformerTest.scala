@@ -14,9 +14,10 @@ import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
 //noinspection TypeAnnotation
-class ModuleDepsTransformerTest extends SpecificationWithJUnit {
+class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
 
   trait ctx extends Scope {
+    val externalPackageLocator = new FakeExternalSourceModuleRegistry(Map.empty)
     val compileThirdPartyDependency = MavenMakers.aDependency("ext-compile-dep", MavenScope.Compile)
     val compileInternalDependency = MavenMakers.aDependency("some-internal-lib", MavenScope.Compile)
 
@@ -75,7 +76,7 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
   "module-deps transformer," >> {
     "if given no package with the same relative path," should {
       "add package with module deps target of compile and runtime dependencies" in new ctx {
-        new ModuleDepsTransformer(modules).transform(emptyPackagesSet) must contain(
+        new ModuleDependenciesTransformer(modules, externalPackageLocator).transform(emptyPackagesSet) must contain(
           aPackage(
             target = a(moduleDepsTarget(
               name = "main_dependencies",
@@ -93,7 +94,7 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
       }
 
       "add package with module deps target with test dependencies" in new ctx {
-        new ModuleDepsTransformer(modules).transform(emptyPackagesSet) must contain(
+        new ModuleDependenciesTransformer(modules, externalPackageLocator).transform(emptyPackagesSet) must contain(
           aPackage(
             target = a(moduleDepsTarget(
               name = "tests_dependencies",
@@ -112,7 +113,8 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
 
       "empty module deps target for module without any dependencies or resources" in new ctx {
         val leafModule = ModuleMaker.aModule("some-module")
-        new ModuleDepsTransformer(Set(leafModule)).transform(emptyPackagesSet) must contain(
+
+        new ModuleDependenciesTransformer(Set(leafModule), externalPackageLocator).transform(emptyPackagesSet) must contain(
           aPackage(
             target = a(moduleDepsTarget(
               name = "main_dependencies",
@@ -124,7 +126,8 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
 
       "empty tests module deps target for module without any dependencies or resources" in new ctx {
         val leafModule = ModuleMaker.aModule("some-module")
-        new ModuleDepsTransformer(Set(leafModule)).transform(emptyPackagesSet) must contain(
+
+        new ModuleDependenciesTransformer(Set(leafModule), externalPackageLocator).transform(emptyPackagesSet) must contain(
           aPackage(
             target = a(moduleDepsTarget(
               name = "tests_dependencies",
@@ -133,8 +136,6 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
               testOnly = beTrue
             ))))
       }
-
-
     }
 
     "if given package with the same relative path," should {
@@ -145,9 +146,10 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
           relativePathFromMonoRepoRoot = leafModule.relativePathFromMonoRepoRoot,
           targets = Set(existingTarget),
           originatingSourceModule = leafModule))
+        private val transformer = new ModuleDependenciesTransformer(Set(leafModule), externalPackageLocator)
 
-        private val transformer = new ModuleDepsTransformer(Set(leafModule))
         private val packages: Set[model.Package] = transformer.transform(packageSet)
+
         packages must contain(
           aPackageWithMultipleTargets(
             targets = contain(exactly(
@@ -162,7 +164,7 @@ class ModuleDepsTransformerTest extends SpecificationWithJUnit {
     "if given package in the root of the repo should serialize resources paths without extra slash" in {
       val interestingModule = ModuleMaker.aModule("", MavenMakers.someCoordinates("dontcare"))
         .withResourcesFolder("src/main/resources")
-      val transformer = new ModuleDepsTransformer(Set(interestingModule))
+      val transformer = new ModuleDependenciesTransformer(Set(interestingModule), new FakeExternalSourceModuleRegistry(Map.empty))
 
       val packages = transformer.transform(Set(model.Package("", Set.empty, interestingModule)))
 

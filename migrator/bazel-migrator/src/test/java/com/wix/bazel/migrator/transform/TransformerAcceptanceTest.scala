@@ -1,5 +1,7 @@
 package com.wix.bazel.migrator.transform
 
+import java.util.InputMismatchException
+
 import com.wix.bazel.migrator.model.Matchers._
 import com.wix.bazel.migrator.model.Target.TargetDependency
 import com.wix.bazel.migrator.model.TestType._
@@ -63,8 +65,8 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       packages must contain(
         aPackage(relativePath = endingWith("com/wix/lib2"), target = a(jvmTarget(name = "lib2", dependencies = contain(exactly(
-                    aTargetDependency(name = "lib", belongsToPackage = endingWith("com/wix/lib")),
-                    aTargetDependency(name = "otherLib", belongsToPackage = endingWith("com/wix/otherLib")))))))
+          aTargetDependency(name = "lib", belongsToPackage = endingWith("com/wix/lib")),
+          aTargetDependency(name = "otherLib", belongsToPackage = endingWith("com/wix/otherLib")))))))
       )
     }
 
@@ -174,7 +176,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       packages must contain(exactly(
         aPackage(relativePath = startingWithAndEndingWith("/group2-dirs/artifact2-dirs", "com/wix/group2/artifact2"),
           target = a(jvmTarget(name = "artifact2", dependencies = contain(
-                      aTargetDependency(name = "artifact1", belongsToPackage = startingWithAndEndingWith("/group1-dirs/artifact1-dirs", "com/wix/group1/artifact1")))))),
+            aTargetDependency(name = "artifact1", belongsToPackage = startingWithAndEndingWith("/group1-dirs/artifact1-dirs", "com/wix/group1/artifact1")))))),
         aPackage(relativePath = startingWithAndEndingWith("/group1-dirs/artifact1-dirs", "com/wix/group1/artifact1"))
       ))
     }
@@ -198,7 +200,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
           target = a(jvmTarget(name = aggregatorOf("artifact2", "artifact3")))),
         aPackage(relativePath = startingWithAndEndingWith("/group1-dirs/artifact1-dirs", "com/wix/group1/artifact1"),
           target = a(jvmTarget(name = "artifact1", dependencies = contain(
-                      aTargetDependency(name = aggregatorOf("artifact2", "artifact3"), belongsToPackage = endingWith("group2"))))))
+            aTargetDependency(name = aggregatorOf("artifact2", "artifact3"), belongsToPackage = endingWith("group2"))))))
       ))
     }
 
@@ -414,9 +416,9 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       packages must contain(
         aPackage(relativePath = endingWith("com/wix/user"), target = a(jvmTarget(name = "user", dependencies = contain(exactly(
-                    aTargetDependency(name = "lib1", belongsToPackage = endingWith("com/wix/lib1"), isCompileDependency = beTrue),
-                    aTargetDependency(name = "lib2", belongsToPackage = endingWith("com/wix/lib2"), isCompileDependency = beFalse))
-                  ))))
+          aTargetDependency(name = "lib1", belongsToPackage = endingWith("com/wix/lib1"), isCompileDependency = beTrue),
+          aTargetDependency(name = "lib2", belongsToPackage = endingWith("com/wix/lib2"), isCompileDependency = beFalse))
+        ))))
       )
     }
 
@@ -437,8 +439,8 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       packages must contain(
         aPackage(relativePath = endingWith("com/wix/lib"), target = a(jvmTarget(name = "lib", dependencies = contain(exactly(
-                    aTargetDependency(name = "someLib"),
-                    aTargetDependency(name = "someOtherLib"))))))
+          aTargetDependency(name = "someLib"),
+          aTargetDependency(name = "someOtherLib"))))))
       )
     }
 
@@ -475,7 +477,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
           target = a(protoTarget(
             name = "proto",
             dependencies = contain(exactly(
-                aTarget(name = "proto", belongsToPackage = startingWith("/proto-root"))))
+              aTarget(name = "proto", belongsToPackage = startingWith("/proto-root"))))
           )))
       ))
     }
@@ -512,6 +514,88 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       ))
     }
 
+    "convert bazel label string to ExternalTarget" in new Context {
+      def repo = Repo().withCode(
+        code(module = aModule(), filePath = "com/wix/lib/Code.java", externalDependencies = Set("@external_workspace//some/path:target_name"))
+      )
+
+      val packages = transformer.transform(repo.modules)
+
+      packages must contain(exactly(
+        aPackage(relativePath = endingWith("com/wix/lib"),
+          target = a(
+            jvmTarget(
+              name = "lib",
+              dependencies = contain(exactly(
+                aTargetDependencyOn(
+                  a(externalTarget(
+                    name = "target_name",
+                    belongsToPackage = endingWith("some/path"),
+                    externalWorkspace = equalTo("external_workspace")
+                  )),
+                  isCompileDependency = beTrue
+                )
+              )
+              )
+            )
+          )
+        )))
+    }
+
+
+    "collect External Targets from multiple code" in new Context {
+      def module = aModule()
+
+      def repo = {
+        Repo()
+          .withCode(
+            code(module = module, filePath = "com/wix/lib/Code.java", externalDependencies = Set("@external_workspace//some/path:target_name"))
+          )
+          .withCode(
+            code(module = module, filePath = "com/wix/lib/OtherCode.java", externalDependencies = Set("@other_workspace//some/path:other_target"))
+          )
+      }
+
+      val packages = transformer.transform(repo.modules)
+
+      packages must contain(exactly(
+        aPackage(relativePath = endWith("com/wix/lib"),
+          target = a(
+            jvmTarget(
+              name = "lib",
+              dependencies = contain(exactly(
+                aTargetDependencyOn(
+                  a(externalTarget(
+                    name = "target_name",
+                    belongsToPackage = endingWith("some/path"),
+                    externalWorkspace = equalTo("external_workspace")
+                  )),
+                  isCompileDependency = beTrue
+                ),
+                aTargetDependencyOn(
+                  a(externalTarget(
+                    name = "other_target",
+                    belongsToPackage = endingWith("some/path"),
+                    externalWorkspace = equalTo("other_workspace")
+                  )),
+                  isCompileDependency = beTrue
+                )
+              )
+              )
+            )
+          )
+        )))
+    }
+
+    "throw exception when given code with invalid bazel label as external dependencies" in new Context {
+      def repo = Repo().withCode(
+        code(module = aModule(), filePath = "com/wix/lib/Code.java", externalDependencies = Set("some invalid label"))
+      )
+
+      transformer.transform(repo.modules) must throwA[RuntimeException]
+    }
+
+
     //two different types, compile wins?
     //cycles?
   }
@@ -533,10 +617,19 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
   }
 
   def aTargetDependency(name: String,
-              belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
-              isCompileDependency: Matcher[Boolean] = AlwaysMatcher[Boolean]()
-             ): Matcher[TargetDependency] =
+                        belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
+                        isCompileDependency: Matcher[Boolean] = AlwaysMatcher[Boolean]()
+                       ): Matcher[TargetDependency] =
     aTarget(name, belongsToPackage) ^^ {
+      (_: TargetDependency).target aka "target"
+    } and isCompileDependency ^^ {
+      (_: TargetDependency).isCompileDependency aka "is compile dependency"
+    }
+
+  def aTargetDependencyOn(target: Matcher[Target] = AlwaysMatcher[Target](),
+                          isCompileDependency: Matcher[Boolean] = AlwaysMatcher[Boolean]()
+                         ): Matcher[TargetDependency] =
+    target ^^ {
       (_: TargetDependency).target aka "target"
     } and isCompileDependency ^^ {
       (_: TargetDependency).isCompileDependency aka "is compile dependency"
@@ -546,13 +639,13 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
                       belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
                       dependencies: Matcher[Set[Target]] = AlwaysMatcher[Set[Target]](),
                       codePurpose: Matcher[CodePurpose] = AlwaysMatcher[CodePurpose]()
-               ): Matcher[Target.Resources] =
+                     ): Matcher[Target.Resources] =
     aTarget(name, belongsToPackage) and
       dependencies ^^ {
         (_: Target.Resources).dependencies aka "dependencies"
       } and codePurpose ^^ {
-        (_: Target.Resources).codePurpose aka "code purpose"
-      }
+      (_: Target.Resources).codePurpose aka "code purpose"
+    }
 
   def aggregatorOf(targets: String*): String = "agg=" + targets.mkString("+")
 

@@ -17,7 +17,11 @@ object AnalyzeFailure {
 
   case class SourceMissing(filePath: String, module: SourceModule) extends AnalyzeFailure
 
+  case class ExternalBazelLabelMissing(coordinates: String, filepath: String) extends AnalyzeFailure
+
   case class MultipleSourceModules(modules: Iterable[SourceModule]) extends AnalyzeFailure
+
+  case class MultipleMatchingDependencies(dependencies: Iterable[String]) extends AnalyzeFailure
 
   case class SomeException(err: Throwable) extends AnalyzeFailure
 

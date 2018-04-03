@@ -4,16 +4,13 @@ import com.wix.bazel.migrator.model
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.Target.ModuleDeps
 import com.wixpress.build.maven.MavenScope
+import ModuleDependenciesTransformer._
 
-class ModuleDepsTransformer(repoModules: Set[SourceModule]) {
-  private val dependencyTransformer = new MavenDependencyTransformer(repoModules)
+class ModuleDependenciesTransformer(repoModules: Set[SourceModule], externalPackageLocator: ExternalSourceModuleRegistry) {
+  private val dependencyTransformer = new MavenDependencyTransformer(repoModules, externalPackageLocator)
 
   def transform(existingPackages: Set[model.Package]): Set[model.Package] =
     combinePackageSets(repoModules.map(extractModulePackage), existingPackages)
-
-
-  private val ProductionDepsTargetName = "main_dependencies"
-  private val TestsDepsTargetName = "tests_dependencies"
 
   private def extractModulePackage(module: SourceModule) = {
     val productionDepsTarget = ModuleDeps(
@@ -56,7 +53,7 @@ class ModuleDepsTransformer(repoModules: Set[SourceModule]) {
       if (module.relativePathFromMonoRepoRoot.isEmpty)
         ""
       else
-      module.relativePathFromMonoRepoRoot + "/"
+        module.relativePathFromMonoRepoRoot + "/"
     s"//$slashProtectedModuleRelativePath$path:resources"
   }
 
@@ -70,4 +67,9 @@ class ModuleDepsTransformer(repoModules: Set[SourceModule]) {
     packages.head.copy(targets = packages.flatMap(_.targets).toSet)
 
 
+}
+
+object ModuleDependenciesTransformer {
+  private[transform] val ProductionDepsTargetName = "main_dependencies"
+  private[transform] val TestsDepsTargetName = "tests_dependencies"
 }

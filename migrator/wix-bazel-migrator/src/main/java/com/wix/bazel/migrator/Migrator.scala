@@ -1,13 +1,13 @@
 package com.wix.bazel.migrator
 
 import better.files.FileOps
-import com.wix.bazel.migrator.model.{Package, SourceModule}
+import com.wix.bazel.migrator.model.Package
 import com.wix.bazel.migrator.transform._
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NoPersistenceBazelRepository
 import com.wixpress.build.maven._
-import com.wixpress.build.sync.{DiffSynchronizer, HighestVersionConflictResolution}
+import com.wixpress.build.sync.DiffSynchronizer
 
 /*
   should probably allow to customize:
@@ -25,9 +25,10 @@ object Migrator extends MigratorApp {
 
 
   def bazelPackages = {
+    val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(externalSourceDependencies, new CodotaExternalSourceModuleRegistry)
     val rawPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
     val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(rawPackages)
-    val withModuleDepsPackages = new ModuleDepsTransformer(codeModules).transform(withProtoPackages)
+    val withModuleDepsPackages = new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry).transform(withProtoPackages)
     withModuleDepsPackages
   }
 
@@ -77,26 +78,17 @@ object Migrator extends MigratorApp {
   private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(bazelPackages)
 
 
-
   private def writeExternal(): Unit = {
     new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()
 
     val bazelRepo = new NoPersistenceBazelRepository(repoRoot.toScala)
-    val internalCoordinates = codeModules.map(_.coordinates)
+    val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies
     val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
       resolver = aetherResolver,
       globalExcludes = internalCoordinates
     )
 
-    val repoCoordinates = codeModules.map(_.coordinates)
-
-    val directDependencies = codeModules.flatMap(_.dependencies.directDependencies).filterExternalDeps(repoCoordinates)
-
-    val externalDependencies = new DependencyCollector(aetherResolver)
-      .addOrOverrideDependencies(constantDependencies)
-      .addOrOverrideDependencies(new HighestVersionConflictResolution().resolve(directDependencies))
-      .mergeExclusionsOfSameCoordinates()
-      .dependencySet()
+    val externalDependencies: Set[Dependency] = externalBinaryDependencies.map(Dependency(_, MavenScope.Compile))
 
     val managedDependenciesFromMaven = aetherResolver
       .managedDependenciesOf(managedDependenciesArtifact)
@@ -121,9 +113,5 @@ object Migrator extends MigratorApp {
     }
   }
 
-  implicit class DependencySetExtensions(dependencies: Set[Dependency]) {
-    def filterExternalDeps(repoCoordinates: Set[Coordinates]) = {
-      dependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
-    }
-  }
+
 }
