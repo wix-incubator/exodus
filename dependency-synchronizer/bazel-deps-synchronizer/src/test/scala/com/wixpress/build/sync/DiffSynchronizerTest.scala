@@ -18,7 +18,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
       val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency))
       val synchronizer = givenSynchornizerFor(resolver)
 
-      synchronizer.sync(flattenedFullTransitiveClosureOfLocalDepsBasedOnManagedDeps = Set(aManagedDependency))
+      synchronizer.sync(localNodes = Set(aRootDependencyNode(aManagedDependency)))
 
       bazelDriver.bazelExternalDependencyFor(aManagedDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = None,
@@ -31,10 +31,10 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       val divergentDependency = managedDependency.withVersion("new-version")
 
-      val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency, divergentDependency))
+      val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency))
       val synchronizer = givenSynchornizerFor(resolver)
 
-      synchronizer.sync(Set(divergentDependency))
+      synchronizer.sync(Set(aRootDependencyNode(divergentDependency)))
 
       bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = Some(divergentDependency.coordinates),
@@ -46,12 +46,12 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
       givenBazelWorkspaceWithManagedDependencies(aRootDependencyNode(managedDependency))
 
       val divergentDependency = managedDependency.withVersion("new-version")
+      val singleDependency = SingleDependency(divergentDependency, transitiveDependency)
 
-      val resolver = givenFakeResolverForDependencies(singleDependencies = Set(SingleDependency(divergentDependency, transitiveDependency)),
-        rootDependencies = Set(managedDependency))
+      val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency))
       val synchronizer = givenSynchornizerFor(resolver)
 
-      synchronizer.sync(Set(divergentDependency, transitiveDependency))
+      synchronizer.sync(dependencyNodesFrom(singleDependency))
 
       bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = Some(divergentDependency.coordinates),
@@ -66,17 +66,17 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     }
 
     "persist dependency's maven_jar without its dependency because managed has the dependency as well. persist all scala_import targets " in new baseCtx {
-      givenBazelWorkspaceWithManagedDependencies(
-        DependencyNode(managedDependency, Set(transitiveDependency)),
-        aRootDependencyNode(transitiveDependency))
+      val originalSingleDependency = SingleDependency(managedDependency, transitiveDependency)
+
+      givenBazelWorkspaceWithManagedDependencies(dependencyNodesFrom(originalSingleDependency))
 
       val divergentDependency = managedDependency.withVersion("new-version")
+      val divergentSingleDependency = SingleDependency(divergentDependency, transitiveDependency)
 
-      val resolver = givenFakeResolverForDependencies(Set(SingleDependency(divergentDependency, transitiveDependency),
-        SingleDependency(managedDependency, transitiveDependency)))
+      val resolver = givenFakeResolverForDependencies(Set(originalSingleDependency))
       val synchronizer = givenSynchornizerFor(resolver)
 
-      synchronizer.sync(Set(divergentDependency, transitiveDependency))
+      synchronizer.sync(dependencyNodesFrom(divergentSingleDependency))
 
       bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = Some(divergentDependency.coordinates),
@@ -91,19 +91,19 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     }
 
     "persist maven jar with local divergent version and divergent dependency" in new baseCtx {
+      val originalSingleDependency = SingleDependency(managedDependency, transitiveDependency)
+
       val divergentTransitiveDependency = aDependency("local-transitive")
 
-      givenBazelWorkspaceWithManagedDependencies(
-        DependencyNode(managedDependency, Set(transitiveDependency)),
-        aRootDependencyNode(transitiveDependency))
+      givenBazelWorkspaceWithManagedDependencies(dependencyNodesFrom(originalSingleDependency))
 
       val divergentDependency = managedDependency.withVersion("new-version")
+      val divergentSingleDependency = SingleDependency(divergentDependency, divergentTransitiveDependency)
 
-      val resolver = givenFakeResolverForDependencies(Set(SingleDependency(divergentDependency, divergentTransitiveDependency),
-        SingleDependency(managedDependency, transitiveDependency)))
+      val resolver = givenFakeResolverForDependencies(Set(originalSingleDependency))
       val synchronizer = givenSynchornizerFor(resolver)
 
-      synchronizer.sync(Set(divergentDependency, divergentTransitiveDependency))
+      synchronizer.sync(dependencyNodesFrom(divergentSingleDependency))
 
       bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = Some(divergentDependency.coordinates),
@@ -120,13 +120,12 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     "not persist managed dependencies not found in local deps" in new baseCtx {
       val localDependency = aDependency("local")
 
-      givenBazelWorkspaceWithManagedDependencies(
-        aRootDependencyNode(managedDependency))
+      givenBazelWorkspaceWithManagedDependencies(aRootDependencyNode(managedDependency))
 
-      val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency, localDependency))
+      val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency))
       val synchronizer = givenSynchornizerFor(resolver)
 
-      synchronizer.sync(Set(localDependency))
+      synchronizer.sync(Set(aRootDependencyNode(localDependency)))
 
       bazelDriver.bazelExternalDependencyFor(managedDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = None,
@@ -138,10 +137,10 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       val divergentDependency = managedDependency.withScope(MavenScope.Test)
 
-      val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency, divergentDependency))
+      val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency))
       val synchronizer = givenSynchornizerFor(resolver)
 
-      synchronizer.sync(Set(divergentDependency))
+      synchronizer.sync(Set(aRootDependencyNode(divergentDependency)))
 
       bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = None,
@@ -150,20 +149,17 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     }
 
     "persist dependency's maven_jar without its exclusion. persist scala_import target with exclusion" in new baseCtx {
-      givenBazelWorkspaceWithManagedDependencies(
-        DependencyNode(managedDependency, Set(transitiveDependency)),
-        aRootDependencyNode(transitiveDependency))
+      val managedSingleDependency = SingleDependency(managedDependency, transitiveDependency)
+      givenBazelWorkspaceWithManagedDependencies(dependencyNodesFrom(managedSingleDependency))
 
-      private val transitiveCoordinates: Coordinates = transitiveDependency.coordinates
+      val transitiveCoordinates: Coordinates = transitiveDependency.coordinates
       val someExclusion = Exclusion(transitiveCoordinates.groupId, transitiveCoordinates.artifactId)
 
       val divergentDependency = managedDependency.withExclusions(Set(someExclusion))
-
-      val resolver = givenFakeResolverForDependencies(singleDependencies = Set(SingleDependency(managedDependency, transitiveDependency)),
-        rootDependencies = Set(divergentDependency))
+      val resolver = givenFakeResolverForDependencies(singleDependencies = Set(managedSingleDependency))
       val synchronizer = givenSynchornizerFor(resolver)
 
-      synchronizer.sync(Set(divergentDependency, transitiveDependency))
+      synchronizer.sync(Set(aRootDependencyNode(divergentDependency), aRootDependencyNode(transitiveDependency)))
 
       bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = Some(divergentDependency.coordinates),
@@ -190,8 +186,12 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     val managedDependency = aDependency("base")
     val transitiveDependency = aDependency("transitive").withScope(MavenScope.Runtime)
 
-    def givenBazelWorkspaceWithManagedDependencies(managedDeps: DependencyNode*) = {
+    def givenBazelWorkspaceWithManagedDependencies(managedDeps: DependencyNode*): Unit = {
       new BazelDependenciesWriter(externalFakeLocalWorkspace).writeDependencies(managedDeps.toSet)
+    }
+
+    def givenBazelWorkspaceWithManagedDependencies(managedDeps: Set[DependencyNode]): Unit = {
+      givenBazelWorkspaceWithManagedDependencies(managedDeps.toSeq:_*)
     }
 
     def givenFakeResolverForDependencies(singleDependencies: Set[SingleDependency] = Set.empty, rootDependencies: Set[Dependency] = Set.empty) = {
@@ -210,4 +210,3 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
 }
 
-case class SingleDependency(dependant: Dependency, dependency: Dependency)

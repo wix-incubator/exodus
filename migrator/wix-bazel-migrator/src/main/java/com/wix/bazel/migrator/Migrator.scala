@@ -7,7 +7,7 @@ import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NoPersistenceBazelRepository
 import com.wixpress.build.maven._
-import com.wixpress.build.sync.BazelMavenSynchronizer
+import com.wixpress.build.sync.{DiffSynchronizer, HighestVersionConflictResolution}
 
 /*
   should probably allow to customize:
@@ -88,14 +88,25 @@ object Migrator extends MigratorApp {
       globalExcludes = internalCoordinates
     )
 
-    val mavenSynchronizer = new BazelMavenSynchronizer(filteringResolver, bazelRepo)
+    val repoCoordinates = codeModules.map(_.coordinates)
+
+    val directDependencies = codeModules.flatMap(_.dependencies.directDependencies).filterExternalDeps(repoCoordinates)
 
     val externalDependencies = new DependencyCollector(aetherResolver)
       .addOrOverrideDependencies(constantDependencies)
-      .addOrOverrideDependencies(collectExternalDependenciesUsedByRepoModules(codeModules))
+      .addOrOverrideDependencies(new HighestVersionConflictResolution().resolve(directDependencies))
       .mergeExclusionsOfSameCoordinates()
       .dependencySet()
-    mavenSynchronizer.sync(managedDependenciesArtifact, externalDependencies)
+
+    val managedDependenciesFromMaven = aetherResolver
+      .managedDependenciesOf(managedDependenciesArtifact)
+      .forceCompileScope
+
+    val localNodes = filteringResolver.dependencyClosureOf(externalDependencies.forceCompileScope, managedDependenciesFromMaven)
+
+    val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
+    val diffSynchronizer = new DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver)
+    diffSynchronizer.sync(localNodes)
 
     new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)
   }
@@ -104,15 +115,15 @@ object Migrator extends MigratorApp {
     new BazelCustomRunnerWriter(repoRoot.toPath).write()
   }
 
-  private def collectExternalDependenciesUsedByRepoModules(repoModules: Set[SourceModule]): Set[Dependency] = {
-    val allDirectDependencies = repoModules.flatMap(_.dependencies.directDependencies)
-    val repoCoordinates = repoModules.map(_.coordinates)
-    allDirectDependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
-  }
-
   private def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {
     if (conflicts.fail.nonEmpty) {
       throw new RuntimeException("Found failing third party conflicts (look for \"Found conflicts\" in log)")
+    }
+  }
+
+  implicit class DependencySetExtensions(dependencies: Set[Dependency]) {
+    def filterExternalDeps(repoCoordinates: Set[Coordinates]) = {
+      dependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
     }
   }
 }

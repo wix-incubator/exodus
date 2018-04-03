@@ -15,6 +15,10 @@ case class Dependency(coordinates: Coordinates, scope: MavenScope, exclusions: S
 
 object Dependency {
   implicit class DependenciesExtended(dependencies:Set[Dependency]) {
-    def forceCompileScope: Set[Dependency] = dependencies.map(_.copy(scope = MavenScope.Compile))
+    def forceCompileScope: Set[Dependency] = dependencies.map(_.forceCompileScope)
+  }
+
+  implicit class DependencyExtended(dependency:Dependency) {
+    def forceCompileScope: Dependency = dependency.copy(scope = MavenScope.Compile)
   }
 }

@@ -87,6 +87,9 @@ class WorkspaceWriter(repoRoot: Path) {
          |
          |third_party_dependencies()
          |
+         |load("@core_server_build_tools//:third_party.bzl", "managed_third_party_dependencies")
+         |
+         |managed_third_party_dependencies()
          |${workspaceSuffixOverride()}
       """.stripMargin
 

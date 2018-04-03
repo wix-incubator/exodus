@@ -8,6 +8,8 @@ pipeline {
     environment {
         CODOTA_TOKEN = credentials("codota-token")
         REPO_NAME = find_repo_name()
+        MANAGED_DEPS_REPO_NAME = "core-server-build-tools"
+        MANAGED_DEPS_REPO_URL = "git@github.com:wix-private/core-server-build-tools.git"
         BRANCH_NAME = "bazel-mig-${env.BUILD_ID}"
         bazel_log_file = "bazel-build.log"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
@@ -28,6 +30,15 @@ pipeline {
                 }
             }
         }
+        stage('checkout-managed-deps-repo') {
+            steps {
+                echo "checkout of: ${env.MANAGED_DEPS_REPO_NAME}"
+                dir("${env.MANAGED_DEPS_REPO_NAME}") {
+                    checkout([$class: 'GitSCM', branches: [[name: 'master' ]],
+                              userRemoteConfigs: [[url: "${env.MANAGED_DEPS_REPO_URL}"]]])
+                }
+            }
+        }
         stage('migrate') {
             steps {
                 dir("${env.REPO_NAME}") {
@@ -36,7 +47,7 @@ pipeline {
                     sh 'find . -path "*/*BUILD.bazel" -exec rm -f {} \\;'
                 }
                 dir("wix-bazel-migrator") {
-                    sh "java -Xmx12G -Dcodota.token=${env.CODOTA_TOKEN} -Dclean.codota.analysis.cache=true -Dskip.classpath=false -Dskip.transformation=false -Dfail.on.severe.conflicts=true -Drepo.root=../${repo_name} -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
+                    sh "java -Xmx12G -Dcodota.token=${env.CODOTA_TOKEN} -Dclean.codota.analysis.cache=true -Dskip.classpath=false -Dskip.transformation=false -Dfail.on.severe.conflicts=true -Drepo.root=../${repo_name} -Dmanaged.deps.repo=../${env.MANAGED_DEPS_REPO_NAME} -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
                 }
             }
         }

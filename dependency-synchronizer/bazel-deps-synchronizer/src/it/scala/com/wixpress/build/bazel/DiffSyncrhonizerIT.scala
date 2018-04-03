@@ -1,9 +1,9 @@
 package com.wixpress.build.bazel
 
-import com.wixpress.build.{BazelExternalDependency, BazelWorkspaceDriver}
-import com.wixpress.build.maven.MavenMakers.{aDependency, aRootDependencyNode}
+import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
-import com.wixpress.build.sync.{DiffSynchronizer, SingleDependency}
+import com.wixpress.build.sync.DiffSynchronizer
+import com.wixpress.build.{BazelExternalDependency, BazelWorkspaceDriver}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -24,7 +24,10 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
       val synchronizer = givenSynchornizerFor(resolver)
 
       val localTransitiveDependencyRunTimeScope = transitiveDependencyCompileScope.withScope(MavenScope.Runtime)
-      synchronizer.sync(Set(managedDependency, localTransitiveDependencyRunTimeScope))
+
+      val resolvedNodes = resolver.dependencyClosureOf(Set(managedDependency, localTransitiveDependencyRunTimeScope), Set())
+
+      synchronizer.sync(resolvedNodes)
 
       bazelDriver.bazelExternalDependencyFor(managedDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = None,
@@ -49,7 +52,10 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
       val synchronizer = givenSynchornizerFor(resolver)
 
       val localTransitiveDependencyCompileScope = transitiveDependencyRuntimeScope.withScope(MavenScope.Compile)
-      synchronizer.sync(Set(managedDependency, localTransitiveDependencyCompileScope))
+
+      val resolvedNodes = resolver.dependencyClosureOf(Set(managedDependency, localTransitiveDependencyCompileScope), Set())
+
+      synchronizer.sync(resolvedNodes)
 
       bazelDriver.bazelExternalDependencyFor(managedDependency.coordinates) mustEqual BazelExternalDependency(
         mavenCoordinates = None,

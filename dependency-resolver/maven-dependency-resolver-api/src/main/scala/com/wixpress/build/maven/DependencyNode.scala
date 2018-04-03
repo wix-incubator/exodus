@@ -10,3 +10,9 @@ case class DependencyNode(baseDependency: Dependency, dependencies: Set[Dependen
       .map(_.coordinates)
 
 }
+
+object DependencyNode {
+  implicit class DependencyNodesExtended(dependencyNodes:Set[DependencyNode]) {
+    def forceCompileScope: Set[DependencyNode] = dependencyNodes.map(node => node.copy(baseDependency = node.baseDependency.forceCompileScope))
+  }
+}

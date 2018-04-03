@@ -24,6 +24,7 @@ trait MigratorApp extends App {
 
   // Conveniences --
   def repoRoot = configuration.repoRoot
+  def managedDepsRepoRoot = configuration.managedDepsRepo
   lazy val sourceModules = readSourceModules()
   def codeModules = sourceModules.codeModules
   def codotaToken = configuration.codotaToken

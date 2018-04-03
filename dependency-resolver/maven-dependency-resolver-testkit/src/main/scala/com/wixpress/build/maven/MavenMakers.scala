@@ -45,4 +45,9 @@ object MavenMakers {
     Dependency(artifact, MavenScope.Compile, exclusions)
 
   def aRootDependencyNode(dependency: Dependency) = DependencyNode(dependency,Set.empty)
+  def dependencyNodesFrom(singleDependency: SingleDependency): Set[DependencyNode] =
+    Set(DependencyNode(singleDependency.dependant,Set(singleDependency.dependency)), DependencyNode(singleDependency.dependency, Set()))
+
 }
+
+case class SingleDependency(dependant: Dependency, dependency: Dependency)
