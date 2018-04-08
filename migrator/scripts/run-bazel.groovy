@@ -68,7 +68,7 @@ pipeline {
         always {
             script {
                 if (env.FOUND_TEST == "true") {
-                    archiveArtifacts 'bazel-out/**/test.log,bazel-testlogs/**/test.xml'
+                    archiveArtifacts 'bazel-out/**/testlogs/**/*.log,bazel-testlogs/**/test.xml'
                     junit "bazel-testlogs/**/test.xml"
                 }
             }
