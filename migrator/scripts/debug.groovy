@@ -6,6 +6,8 @@ pipeline {
     environment {
         CODOTA_TOKEN = credentials("codota-token")
         REPO_NAME = find_repo_name()
+        MANAGED_DEPS_REPO_URL = "git@github.com:wix-private/core-server-build-tools.git"
+        MANAGED_DEPS_REPO_NAME = "core-server-build-tools"
         BRANCH_NAME = "bazel-mig-${env.BUILD_ID}"
     }
     stages {
@@ -25,6 +27,10 @@ pipeline {
                 dir("${env.REPO_NAME}") {
                     git "${env.repo_url}"
                 }
+                dir("${env.MANAGED_DEPS_REPO_NAME}") {
+                    checkout([$class: 'GitSCM', branches: [[name: 'master' ]],
+                              userRemoteConfigs: [[url: "${env.MANAGED_DEPS_REPO_URL}"]]])
+                }
             }
         }
         stage('debug') {
@@ -34,6 +40,7 @@ pipeline {
                           |   -Dcodota.token=${env.CODOTA_TOKEN} \\
                           |   -Dskip.classpath=${env.skip_classpath} \\
                           |   -Dskip.transformation=false \\
+                          |   -Dmanaged.deps.repo=../${env.MANAGED_DEPS_REPO_NAME} \\
                           |   ${env.EXTRA_DEPS} \\
                           |   -Dfail.on.severe.conflicts=true \\
                           |   -Drepo.root=../${repo_name}  \\
