@@ -2,6 +2,8 @@ package com.wix.bazel.migrator.transform
 
 import com.wixpress.build.maven.Coordinates
 
+import scala.util.{Failure, Success, Try}
+
 class CachingEagerExternalSourceModuleRegistry private(lookups: Map[(String, String), String]) extends ExternalSourceModuleRegistry {
   override def lookupBy(groupId: String, artifactId: String): Option[String] = lookups.get((groupId, artifactId))
 }
@@ -14,22 +16,21 @@ object CachingEagerExternalSourceModuleRegistry {
   }
 
   private def lookups(externalSourceDependencies: Set[Coordinates], registry: ExternalSourceModuleRegistry) = {
-    val maybeLocations = externalSourceDependencies.map(artifactToLocation(registry))
-    val notFound = maybeLocations.collect {
-      case Left(d) => d
-    }
+    val maybeLocations = externalSourceDependencies.par.map(artifactToLocation(registry))
+    val notFound = maybeLocations.collect { case Left(d) => d }
     if (notFound.nonEmpty) {
-      throw new RuntimeException(s"could not find location of the following artifacts: ${notFound.mkString(", ")}")
+      throw new RuntimeException(s"issue finding locations of the following artifacts: \n\t ${notFound.mkString(",\n\t")}")
     }
-    maybeLocations.collect { case Right(mapping) => mapping }.toMap
+    maybeLocations.collect { case Right(mapping) => mapping }.toMap.seq
   }
 
   private def artifactToLocation(registry: ExternalSourceModuleRegistry)(coordinates: Coordinates) = {
     val groupId = coordinates.groupId
     val artifactId = coordinates.artifactId
-    registry.lookupBy(groupId, artifactId) match {
-      case Some(location) => Right((groupId, artifactId) -> location)
-      case None => Left(s"${coordinates.serialized}")
+    Try(registry.lookupBy(groupId, artifactId)) match {
+      case Success(Some(location)) => Right((groupId, artifactId) -> location)
+      case Success(None) => Left(s"${coordinates.serialized}: NotFound")
+      case Failure(e) => Left(s"${coordinates.serialized}: $e")
     }
   }
 }

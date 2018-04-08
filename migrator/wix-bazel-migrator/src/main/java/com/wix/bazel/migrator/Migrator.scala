@@ -23,9 +23,8 @@ object Migrator extends MigratorApp {
   val thirdPartyConflicts = checkConflictsInThirdPartyDependencies(aetherResolver)
   if (configuration.failOnSevereConflicts) failIfFoundSevereConflictsIn(thirdPartyConflicts)
 
-
   def bazelPackages = {
-    val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(externalSourceDependencies, new CodotaExternalSourceModuleRegistry)
+    val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(externalSourceDependencies, new CodotaExternalSourceModuleRegistry(configuration.codotaToken))
     val rawPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
     val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(rawPackages)
     val withModuleDepsPackages = new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry).transform(withProtoPackages)

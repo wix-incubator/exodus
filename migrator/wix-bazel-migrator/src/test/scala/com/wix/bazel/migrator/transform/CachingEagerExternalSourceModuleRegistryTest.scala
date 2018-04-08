@@ -29,10 +29,25 @@ class CachingEagerExternalSourceModuleRegistryTest extends SpecificationWithJUni
       cachingLocator.lookupBy(aDependency.groupId, aDependency.artifactId) aka s"location of ${aDependency.serialized}" must beEmpty
     }
 
-    "throw exception if given locator cannot locate external package for some of repo external dependencies" in {
+    "throw exception if given locator cannot locate path for some of repo external dependencies" in {
       val aDependency = someCoordinates("dep")
       val anotherDependency = someCoordinates("other-dep")
       val locator: ExternalSourceModuleRegistry = new FakeExternalSourceModuleRegistry(Map.empty)
+      val repoExternalDependencies = Set(aDependency, anotherDependency)
+
+      CachingEagerExternalSourceModuleRegistry.build(repoExternalDependencies, locator) must throwA[RuntimeException](aDependency.serialized)
+      CachingEagerExternalSourceModuleRegistry.build(repoExternalDependencies, locator) must throwA[RuntimeException](anotherDependency.serialized)
+    }
+
+    "throw exception if given locator throws exception while locating path for some of repo external dependencies" in {
+      val aDependency = someCoordinates("dep")
+      val anotherDependency = someCoordinates("other-dep")
+      val locator: ExternalSourceModuleRegistry =
+        new FakeExternalSourceModuleRegistry(Map.empty,
+          exceptionThrowingLocations = Set(
+            (aDependency.groupId, aDependency.artifactId),
+            (anotherDependency.groupId, anotherDependency.artifactId)
+          ))
       val repoExternalDependencies = Set(aDependency, anotherDependency)
 
       CachingEagerExternalSourceModuleRegistry.build(repoExternalDependencies, locator) must throwA[RuntimeException](aDependency.serialized)
