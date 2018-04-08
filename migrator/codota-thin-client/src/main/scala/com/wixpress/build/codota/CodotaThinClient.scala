@@ -5,7 +5,7 @@ import java.net.SocketTimeoutException
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.slf4j.LoggerFactory
-import scalaj.http.{Http, HttpResponse}
+import scalaj.http.{Http, HttpOptions, HttpResponse}
 
 class CodotaThinClient(
                         token: String,
@@ -13,7 +13,7 @@ class CodotaThinClient(
                         baseURL: String = CodotaThinClient.DefaultBaseURL,
                         maxRetries: Int = 5) {
   private val logger = LoggerFactory.getLogger(getClass)
-
+  private val timeout: Int = 1000
   private val mapper = new ObjectMapper()
     .registerModule(DefaultScalaModule)
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -49,6 +49,7 @@ class CodotaThinClient(
       .param("codePack", codePack)
       .param("artifactName", artifactName)
       .header("Authorization", s"bearer $token")
+      .option(HttpOptions.readTimeout(timeout))
   }
 
   private def extractPath(response: HttpResponse[String], artifactName: String) = {

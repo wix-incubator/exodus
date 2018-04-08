@@ -28,7 +28,7 @@ class CodotaFakeServer(port: Int, codePack: String, artifactName: String, path: 
       HttpResponse(status = StatusCodes.NotFound).withEntity(HttpEntity(s"No such project ${codePackOf(r).get}"))
     case r: HttpRequest if matches(r) =>
       if (delayCount > 0) {
-        Thread.sleep(10000)
+        Thread.sleep(1500)
         delayCount -= 1
       }
       HttpResponse()

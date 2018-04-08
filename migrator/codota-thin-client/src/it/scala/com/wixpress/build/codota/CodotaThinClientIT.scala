@@ -1,9 +1,11 @@
 package com.wixpress.build.codota
 
 
-import java.net.{ServerSocket, SocketTimeoutException}
+import java.net.SocketTimeoutException
 
 import org.specs2.mutable.{BeforeAfter, SpecificationWithJUnit}
+
+import scala.util.Random
 
 
 class CodotaThinClientIT extends SpecificationWithJUnit {
@@ -18,18 +20,20 @@ class CodotaThinClientIT extends SpecificationWithJUnit {
     }
 
     "retry in case of timeouts" in new Ctx {
-      codotaFakeServer.delayTheNextNCalls(n = 2)
+      codotaFakeServer.delayTheNextNCalls(n = 1)
       client.pathFor(artifactName) must beSome(path)
     }
 
 
-    "throw TimeoutException in case still getting timeout after 5 retries" in new Ctx {
-      codotaFakeServer.delayTheNextNCalls(n = 6)
+    "throw TimeoutException in case still getting timeout after given max retries" in new Ctx {
+      override def client = new CodotaThinClient(validToken, serverCodePack , codotaFakeServer.url,maxRetries = 2)
+
+      codotaFakeServer.delayTheNextNCalls(n = 3)
       client.pathFor(artifactName) must throwA[SocketTimeoutException]
     }
 
     "throw NotAuthorizedException in case given invalid token" in new Ctx {
-      override def client = new CodotaThinClient("someInvalidToken", "wix_enc", codotaFakeServer.url)
+      override def client = new CodotaThinClient("someInvalidToken", serverCodePack, codotaFakeServer.url)
 
       client.pathFor(artifactName) must throwA[NotAuthorizedException]
     }
@@ -63,7 +67,12 @@ class CodotaThinClientIT extends SpecificationWithJUnit {
 
     override def after(): Unit = codotaFakeServer.stop()
 
-    private def selectRandomPort() = new ServerSocket(0).getLocalPort
+    private def selectRandomPort() = {
+      val rnd = new Random()
+      val startPortRange = 55000
+      val endPortRange   = 56000
+      startPortRange + rnd.nextInt( (endPortRange - startPortRange) + 1 )
+    }
   }
 
 }
