@@ -1,0 +1,48 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_specs2_junit_test(
+    name = "codota",
+    srcs = [
+        "//migrator/codota-thin-client/src/it/scala/com/wixpress/build/codota:sources",
+    ],
+    data = ["//migrator/codota-thin-client:coordinates"],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/codota-thin-client:coordinates)"],
+    prefixes = [
+        "IT",
+        "E2E",
+    ],
+    suffixes = [
+        "IT",
+        "E2E",
+    ],
+    tags = [
+        "E2E",
+        "IT",
+        "block-network",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/codota-thin-client:tests_dependencies",
+        "//migrator/codota-thin-client/src/main/scala/com/wixpress/build/codota",
+        "//third_party/com/typesafe/akka:akka_actor_2_12",
+        "//third_party/com/typesafe/akka:akka_http_core_2_12",
+        "//third_party/com/typesafe/akka:akka_parsing_2_12",
+        "//third_party/com/typesafe/akka:akka_stream_2_12",
+        "//third_party/com/wix:http_testkit_2_12",
+        "//third_party/com/wix:http_testkit_core_2_12",
+        "//third_party/com/wix:http_testkit_server_2_12",
+        "//third_party/org/scala-lang/modules:scala_java8_compat_2_12",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/codota-thin-client/src/it/scala/com/wixpress/build/codota:__pkg__"],
+)

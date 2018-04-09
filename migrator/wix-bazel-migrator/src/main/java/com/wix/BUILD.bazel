@@ -22,6 +22,7 @@ scala_library(
         "//migrator/bazel-external-graph-transformer/src/main/scala/com/wix/bazel/migrator/transform",
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
         "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/transform",
+        "//migrator/codota-thin-client/src/main/scala/com/wixpress/build/codota",
         "//migrator/wix-bazel-migrator:main_dependencies",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/workspace",
         "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",

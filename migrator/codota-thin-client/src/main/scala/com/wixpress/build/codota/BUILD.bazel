@@ -1,0 +1,30 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "codota",
+    srcs = [
+        "//migrator/codota-thin-client/src/main/scala/com/wixpress/build/codota:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/codota-thin-client:main_dependencies",
+        "//third_party/com/fasterxml/jackson/core:jackson_annotations",
+        "//third_party/com/fasterxml/jackson/core:jackson_core",
+        "//third_party/com/fasterxml/jackson/core:jackson_databind",
+        "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
+        "//third_party/org/scalaj:scalaj_http_2_12",
+        "//third_party/org/slf4j:slf4j_api",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/codota-thin-client/src/main/scala/com/wixpress/build/codota:__pkg__"],
+)

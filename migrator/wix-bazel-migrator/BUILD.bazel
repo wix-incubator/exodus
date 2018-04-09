@@ -9,6 +9,7 @@ scala_import(
         "//dependency-synchronizer/bazel-deps-synchronizer:main_dependencies",
         "//migrator/bazel-external-graph-transformer:main_dependencies",
         "//migrator/bazel-migrator:main_dependencies",
+        "//migrator/codota-thin-client:main_dependencies",
         "//repo-analyzer/maven-repo-analyzer:main_dependencies",
         "//third_party/ch/qos/logback:logback_classic",
         "//third_party/com/codota:codota_sdk_java",

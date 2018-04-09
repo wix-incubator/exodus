@@ -1,0 +1,32 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_import(
+    name = "main_dependencies",
+    runtime_deps = [
+        "//third_party/ch/qos/logback:logback_classic",
+    ],
+    deps = [
+        "//third_party/com/fasterxml/jackson/core:jackson_databind",
+        "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
+        "//third_party/org/scala-lang:scala_library",
+        "//third_party/org/scalaj:scalaj_http_2_12",
+        "//third_party/org/slf4j:slf4j_api",
+    ],
+)
+
+scala_import(
+    name = "tests_dependencies",
+    testonly = 1,
+    runtime_deps = [
+        "//migrator/codota-thin-client/src/it/resources",
+    ],
+    deps = [
+        "main_dependencies",
+        "//third_party/com/wix:http_testkit_2_12",
+    ],
+)
+
+filegroup(
+    name = "coordinates",
+    srcs = ["MANIFEST.MF"],
+)

@@ -40,7 +40,6 @@ scala_specs2_junit_test(
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/sync",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/bazel",
-        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/sync",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "//third_party/com/fasterxml/jackson/core:jackson_annotations",
         "//third_party/com/fasterxml/jackson/core:jackson_core",

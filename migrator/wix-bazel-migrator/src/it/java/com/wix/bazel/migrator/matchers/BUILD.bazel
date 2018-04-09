@@ -3,7 +3,9 @@ package(default_visibility = ["//visibility:public"])
 scala_library(
     name = "matchers",
     testonly = 1,
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers:sources",
+    ],
     javacopts = [
         "-g",
         "-deprecation",
@@ -12,8 +14,13 @@ scala_library(
     runtime_deps = [
     ],
     deps = [
-        "//third_party/com/github/marschall:memoryfilesystem",
         "//migrator/wix-bazel-migrator:tests_dependencies",
         "//third_party/com/wixpress/hoopoe:hoopoe_specs2",
     ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers:__pkg__"],
 )
