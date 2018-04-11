@@ -1,7 +1,6 @@
 package com.wix.bazel.migrator
 
 import better.files.FileOps
-import com.wix.bazel.migrator.model.Package
 import com.wix.bazel.migrator.transform._
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.build.maven.analysis.ThirdPartyConflicts
@@ -41,6 +40,13 @@ object Migrator extends MigratorApp {
   writeBazelCustomRunnerScript()
 
   private def transform() = {
+    val transformer = new BazelTransformer(dependencyAnalyzer)
+    val bazelPackages = transformer.transform(codeModules)
+    Persister.persistTransformationResults(bazelPackages)
+    bazelPackages
+  }
+
+  private def dependencyAnalyzer = {
     val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
     val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
     val mutuallyExclusiveCompositeDependencyAnalyzer = if (wixFrameworkMigration)
@@ -50,13 +56,10 @@ object Migrator extends MigratorApp {
         new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath))
     else
       new CompositeDependencyAnalyzer(
-      cachingCodotaDependencyAnalyzer,
-      new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath))
-
-    val transformer = new BazelTransformer(mutuallyExclusiveCompositeDependencyAnalyzer)
-    val bazelPackages: Set[Package] = transformer.transform(codeModules)
-    Persister.persistTransformationResults(bazelPackages)
-    bazelPackages
+        cachingCodotaDependencyAnalyzer,
+        new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath))
+    val codePathOverrides = new CodePathOverridesReader(codeModules).from(repoRoot.toPath)
+    CodePathOverridingDependencyAnalyzer.build(mutuallyExclusiveCompositeDependencyAnalyzer, codePathOverrides)
   }
 
   private def wixFrameworkMigration = sys.env.get("repo_url").exists(_.contains("wix-framework"))

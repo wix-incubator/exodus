@@ -29,7 +29,7 @@ class SourceModuleSupportingDeserializer(modules: Set[SourceModule]) extends Jso
       case JsonToken.VALUE_STRING => {
         val relativePath = p.readValueAs(classOf[String])
         modules.find(_.relativePathFromMonoRepoRoot == relativePath)
-          .getOrElse(throw ctxt.wrongTokenException(p, JsonToken.VALUE_STRING, s"could not find module with relative path for $relativePath"))
+          .getOrElse(throw ctxt.weirdStringException(relativePath, classOf[SourceModule], s"could not find module with relative path for $relativePath"))
       }
       case token => throw ctxt.wrongTokenException(p, JsonToken.VALUE_STRING, s"The value of a module must be a string and currently is $token")
     }

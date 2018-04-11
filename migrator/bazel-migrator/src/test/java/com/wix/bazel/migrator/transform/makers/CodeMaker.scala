@@ -7,7 +7,7 @@ import com.wix.bazel.migrator.transform.{Code, Dependency}
 
 object CodeMaker {
 
-  def code(filePath: String,
+  def code(filePath: String = "com/wixpress/example/SomeCode.java",
            module: SourceModule = aModule(),
            relativeSourceDirPathFromModuleRoot: String = "src/main/java",
            dependencies: List[Dependency] = Nil,

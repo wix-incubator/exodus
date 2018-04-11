@@ -653,12 +653,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 }
 
 
-class FakeDependencyAnalyzer(repo: Repo) extends DependencyAnalyzer {
 
-  private val code = repo.code.groupBy(_.codePath.module)
-
-  override def allCodeForModule(module: SourceModule): List[Code] = code.getOrElse(module, Nil)
-}
 
 
 //TODO add test (maybe scala check) to check ResourceKey.commonPrefix mainly so that we will be comfortable knowing all edge cases are handled. for example com/wix/lib/sub and com/wix/lib2/sub2
