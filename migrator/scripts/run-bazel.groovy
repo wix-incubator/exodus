@@ -110,21 +110,21 @@ def unstable_by_exit_code(phase, some_script) {
 
 def sendNotification(good) {
     def slack_file = "bazel_migration/slack_channels.txt"
+    def channels = ['bazel-mig-alerts']
     if (fileExists(slack_file)) {
-        def channels = (readFile(slack_file)).split(',')
-        if (good) {
-            header = ":trophy: migration task '${env.JOB_NAME}' FIXED :trophy:"
-            color = "good"
-        } else {
-            header = ":thumbsdown: migration task '${env.JOB_NAME}' REGRESSED :thumbsdown:"
-            color = "warning"
-        }
-        def msg = compose(header)
-        channels.each { channel ->
-            slackSend channel: "#$channel", color: color, message: msg
-        }
+        channels = channels + (readFile(slack_file)).split(',')
     }
-
+    if (good) {
+        header = ":trophy: migration task '${env.JOB_NAME}' FIXED :trophy:"
+        color = "good"
+    } else {
+        header = ":thumbsdown: migration task '${env.JOB_NAME}' REGRESSED :thumbsdown:"
+        color = "warning"
+    }
+    def msg = compose(header)
+    channels.each { channel ->
+        slackSend channel: "#$channel", color: color, message: msg
+    }
 }
 
 
@@ -154,3 +154,4 @@ def changesMessage() {
     }
     '*CHANGELOG:*\n```' + String.valueOf(msg.join("\n")) + '```' + suffix
 }
+
