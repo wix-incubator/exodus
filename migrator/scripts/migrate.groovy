@@ -107,6 +107,16 @@ pipeline {
                 build job: "06-update-codota-labels", parameters: [string(name: 'BRANCH_NAME', value: "${env.BRANCH_NAME}")], propagate: false, wait: false
             }
         }
+        regression{
+            script{
+                sendNotification(false)
+            }
+        }
+        fixed{
+            script{
+                sendNotification(true)
+            }
+        }
     }
 }
 
@@ -118,3 +128,50 @@ def find_repo_name() {
     return name
 }
 
+
+def sendNotification(good) {
+    def slack_file = "bazel_migration/slack_channels.txt"
+    if (fileExists(slack_file)) {
+        def channels = (readFile(slack_file)).split(',')
+        if (good) {
+            header = ":trophy: migration task '${env.JOB_NAME}' FIXED :trophy:"
+            color = "good"
+        } else {
+            header = ":thumbsdown: migration task '${env.JOB_NAME}' REGRESSED :thumbsdown:"
+            color = "warning"
+        }
+        def msg = compose(header)
+        channels.each { channel ->
+            slackSend channel: "#$channel", color: color, message: msg
+        }
+    }
+
+}
+
+
+def compose(String header) {
+    """*${header}*
+    |===================================
+    | *URL*: ${env.BUILD_URL}
+    |${changesMessage()}
+    |""".stripMargin()
+}
+
+def changesMessage() {
+    def changeLogSets = currentBuild.changeSets
+    def msg = []
+    changeLogSets.each {
+        def entries = it.items
+        entries.each { entry ->
+            msg += "${entry.commitId[0..5]}   ${entry.author.fullName}   [${new Date(entry.timestamp).format("MM-dd HH:mm")}]    ${entry.msg.take(30)}"
+        }
+    }
+    def suffix = ""
+    if (msg.isEmpty()){
+        msg += "NO CHANGES"
+    } else if (msg.size() > 5) {
+        msg = msg.take(5)
+        suffix = "\nsee more here ${env.BUILD_URL}/changes"
+    }
+    '*CHANGELOG:*\n```' + String.valueOf(msg.join("\n")) + '```' + suffix
+}
