@@ -8,13 +8,13 @@ import com.wix.e2e.http.{HttpRequest, RequestHandler}
 
 import scala.compat.java8.OptionConverters.toScala
 
-class CodotaFakeServer(port: Int, codePack: String, artifactName: String, path: String, token: String) {
+class CodotaFakeServer(codePack: String, artifactName: String, path: String, token: String) {
   private val response = s"""{"metadata":"{\\"path\\":\\"$path\\"}"}"""
   private val repositoriesAPIPath = "/api/codenav/artifact"
-  private val probe = WebServerFactory.aMockWebServerWith(handler).onPort(port).build
+  private val probe = WebServerFactory.aMockWebServerWith(handler).build
   var delayCount = 0
 
-  val url: String = s"http://${probe.baseUri.host}:$port"
+  def url: String = s"http://${probe.baseUri.host}:${probe.baseUri.port}"
 
   def delayTheNextNCalls(n: Int): Unit = delayCount = n
 

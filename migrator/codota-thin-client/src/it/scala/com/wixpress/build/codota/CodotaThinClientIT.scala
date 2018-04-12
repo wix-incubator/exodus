@@ -61,18 +61,11 @@ class CodotaThinClientIT extends SpecificationWithJUnit {
     def client: CodotaThinClient = new CodotaThinClient(validToken, serverCodePack, codotaFakeServer.url)
 
     val validToken = "validToken"
-    val codotaFakeServer = new CodotaFakeServer(selectRandomPort(), serverCodePack, artifactName, path, validToken)
+    val codotaFakeServer = new CodotaFakeServer(serverCodePack, artifactName, path, validToken)
 
     override def before(): Unit = codotaFakeServer.start()
 
     override def after(): Unit = codotaFakeServer.stop()
-
-    private def selectRandomPort() = {
-      val rnd = new Random()
-      val startPortRange = 55000
-      val endPortRange   = 56000
-      startPortRange + rnd.nextInt( (endPortRange - startPortRange) + 1 )
-    }
   }
 
 }
