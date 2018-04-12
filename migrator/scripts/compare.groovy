@@ -2,8 +2,10 @@ pipeline {
     agent any
     stages {
         stage('checkout') {
-            dir("${env.REPO_NAME}"){
-                git "${env.repo_url}"
+            steps {
+                dir("${env.REPO_NAME}") {
+                    git "${env.repo_url}"
+                }
             }
         }
         stage('maven artifacts') {
