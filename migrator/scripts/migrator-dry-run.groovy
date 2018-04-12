@@ -9,11 +9,8 @@ pipeline {
         MANAGED_DEPS_REPO_NAME = "core-server-build-tools"
         MANAGED_DEPS_REPO_URL = "git@github.com:wix-private/core-server-build-tools.git"
         BAZEL_FLAGS = '''|-k \\
-                         |--strategy=Scalac=worker \\
                          |--experimental_sandbox_base=/dev/shm \\
                          |--sandbox_tmpfs_path=/tmp \\
-                         |--test_output=errors \\
-                         |--test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
