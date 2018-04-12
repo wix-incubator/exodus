@@ -3,6 +3,7 @@ package com.wix.bazel.migrator
 import better.files.FileOps
 import com.wix.bazel.migrator.transform._
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
+import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NoPersistenceBazelRepository
 import com.wixpress.build.maven._
@@ -107,6 +108,7 @@ object Migrator extends MigratorApp {
 
   private def writeBazelCustomRunnerScript(): Unit = {
     new BazelCustomRunnerWriter(repoRoot.toPath).write()
+    new GitIgnoreAppender(repoRoot.toPath).append("tools/commits.bzl")
   }
 
   private def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {

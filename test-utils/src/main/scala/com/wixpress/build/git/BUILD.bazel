@@ -1,0 +1,26 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "git",
+    srcs = [
+        "//test-utils/src/main/scala/com/wixpress/build/git:sources",
+    ],
+    javacopts = [
+        "-g",
+        "-deprecation",
+        "-XepDisableAllChecks",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//third_party/com/gitblit:gitblit",
+        "//third_party/com/github/pathikrit:better_files_2_12",
+        "//third_party/org/eclipse/jgit:org_eclipse_jgit",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//test-utils/src/main/scala/com/wixpress/build/git:__pkg__"],
+)

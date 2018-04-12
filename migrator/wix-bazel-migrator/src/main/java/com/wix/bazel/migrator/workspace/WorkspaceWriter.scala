@@ -35,11 +35,12 @@ class WorkspaceWriter(repoRoot: Path) {
          |
          |
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
+         |load("//:tools/commits.bzl", "REPO_COMMITS")
          |
          |git_repository(
          |             name = "core_server_build_tools",
          |             remote = "git@github.com:wix-private/core-server-build-tools.git",
-         |             commit = core_server_build_tools_commit
+         |             commit = REPO_COMMITS['core_server_build_tools_commit']
          |)
          |${importFwIfThisIsNotFw(workspaceName)}
          |load("@core_server_build_tools//:repositories.bzl", "scala_repositories")
@@ -118,8 +119,7 @@ class WorkspaceWriter(repoRoot: Path) {
     if (sys.env.get("repo_url").exists(_.contains("wix-framework"))) "wix_framework" else "other"
 
   private def writeToDisk(workspaceFileContents: String): Unit = {
-    Files.write(repoRoot.resolve("WORKSPACE.template"), workspaceFileContents.getBytes)
-    Files.write(repoRoot.resolve("WORKSPACE"), "".getBytes)
+    Files.write(repoRoot.resolve("WORKSPACE"), workspaceFileContents.getBytes)
   }
 
 

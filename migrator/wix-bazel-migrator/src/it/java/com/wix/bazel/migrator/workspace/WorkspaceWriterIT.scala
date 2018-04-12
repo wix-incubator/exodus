@@ -11,8 +11,7 @@ class WorkspaceWriterIT extends SpecificationWithJUnit with InMemoryFilesMatcher
     "write workspace resolving script and a custom script that calls the former script and then runs bazel" in {
       writer.write()
 
-      path("WORKSPACE") must beEmptyRegularFile
-      path("WORKSPACE.template") must beRegularFile
+      path("WORKSPACE") must beRegularFile
     }
   }
 
