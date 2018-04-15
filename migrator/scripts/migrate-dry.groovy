@@ -47,8 +47,15 @@ pipeline {
                     sh 'find . -path "*/*BUILD.bazel" -exec rm -f {} \\;'
                 }
                 dir("wix-bazel-migrator") {
-                    sh "java -Xmx12G -Dcodota.token=${env.CODOTA_TOKEN} -Dclean.codota.analysis.cache=true -Dskip.classpath=false -Dskip.transformation=false -Dfail.on.severe.conflicts=true -Drepo.root=../${repo_name} -Dmanaged.deps.repo=../${env.MANAGED_DEPS_REPO_NAME} -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
-                }
+                    sh """|java -Xmx12G \\
+                          |   -Dcodota.token=${env.CODOTA_TOKEN} \\
+                          |   -Dskip.classpath=false \\
+                          |   -Dskip.transformation=false \\
+                          |   -Dmanaged.deps.repo=../${env.MANAGED_DEPS_REPO_NAME} \\
+                          |   -Dfail.on.severe.conflicts=true \\
+                          |   -Drepo.root=../${repo_name}  \\
+                          |   -Drepo.url=${env.repo_url} \\
+                          |   -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar""".stripMargin()                }
             }
         }
         stage('post-migrate') {

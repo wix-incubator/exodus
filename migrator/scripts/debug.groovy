@@ -44,6 +44,7 @@ pipeline {
                           |   ${env.EXTRA_DEPS} \\
                           |   -Dfail.on.severe.conflicts=true \\
                           |   -Drepo.root=../${repo_name}  \\
+                          |   -Drepo.url=${env.repo_url} \\
                           |   -cp wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar \\
                           |   ${env.main_class}""".stripMargin()
                 }

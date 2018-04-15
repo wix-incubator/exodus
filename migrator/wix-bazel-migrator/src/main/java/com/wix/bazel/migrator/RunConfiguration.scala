@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 
 case class RunConfiguration(repoRoot: File,
+                            repoUrl: String,
                             managedDepsRepo: File,
                             codotaToken: String,
                             performMavenClasspathResolution: Boolean = true,
@@ -17,19 +18,29 @@ object RunConfiguration {
 
     opt[String]('r', "repo")
       .required()
-      .withFallback(() => sys.props.get("repo.root").getOrElse(throw new IllegalArgumentException("no repo root defined")))
+      .withFallback(() => sys.props.get("repo.root")
+        .getOrElse(throw new IllegalArgumentException("no repo root defined")))
       .validate(f => if (Files.isDirectory(Paths.get(f))) success else failure(s"repo $f must be existing directory"))
       .action { case (f, cfg) => cfg.copy(repoRoot = new File(f)) }
 
     opt[String]('r', "managed-deps-repo")
       .required()
-      .withFallback(() => sys.props.get("managed.deps.repo").getOrElse(throw new IllegalArgumentException("no managed deps repo defined")))
+      .withFallback(() => sys.props.get("managed.deps.repo")
+        .getOrElse(throw new IllegalArgumentException("no managed deps repo defined")))
       .validate(f => if (Files.isDirectory(Paths.get(f))) success else failure(s"repo $f must be existing directory"))
       .action { case (f, cfg) => cfg.copy(managedDepsRepo = new File(f)) }
 
+    opt[String]("repo-git-url")
+      .required()
+      .withFallback(() => sys.props.get("repo.url").orElse(sys.env.get("repo_url"))
+        .getOrElse(throw new IllegalArgumentException("no repository git url defined")))
+      .validate(url => if (url.startsWith("git@") && url.endsWith(".git")) success else failure(s"$url must be valid git url"))
+      .action { case (url, cfg) => cfg.copy(repoUrl = url)}
+
     opt[String]("codota-token")
       .required()
-      .withFallback(() => sys.props.get("codota.token").getOrElse(throw new IllegalArgumentException("no codota token defined")))
+      .withFallback(() => sys.props.get("codota.token")
+        .getOrElse(throw new IllegalArgumentException("no codota token defined")))
       .action { case (token, cfg) => cfg.copy(codotaToken = token) }
 
     opt[Boolean]("skip-maven")
@@ -55,6 +66,6 @@ object RunConfiguration {
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)
 
   def from(cliArgs: Array[String]): RunConfiguration = {
-   parser.parse(cliArgs, RunConfiguration(null, null, null)).getOrElse(sys.exit(-1))
+   parser.parse(cliArgs, RunConfiguration(null, null, null, null)).getOrElse(sys.exit(-1))
   }
 }

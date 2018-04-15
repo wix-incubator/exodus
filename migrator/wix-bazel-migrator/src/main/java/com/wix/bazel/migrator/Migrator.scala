@@ -6,6 +6,7 @@ import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NoPersistenceBazelRepository
+import com.wixpress.build.bazel.repositories.WorkspaceName
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.DiffSynchronizer
 
@@ -64,8 +65,7 @@ object Migrator extends MigratorApp {
     CodePathOverridingDependencyAnalyzer.build(mutuallyExclusiveCompositeDependencyAnalyzer, codePathOverrides)
   }
 
-  private def wixFrameworkMigration = sys.env.get("repo_url").exists(_.contains("wix-framework"))
-
+  private def wixFrameworkMigration = configuration.repoUrl.contains("wix-framework")
 
   private def writeBazelRc(): Unit =
     new BazelRcWriter(repoRoot).write()
@@ -74,7 +74,7 @@ object Migrator extends MigratorApp {
     new BazelRcRemoteWriter(repoRoot).write()
 
   private def writeWorkspace(): Unit =
-    new WorkspaceWriter(repoRoot.toPath).write()
+    new WorkspaceWriter(repoRoot.toPath, WorkspaceName.by(configuration.repoUrl)).write()
 
   private def writePrelude(): Unit =
     new PreludeWriter(repoRoot.toPath).write()
@@ -83,7 +83,6 @@ object Migrator extends MigratorApp {
     new DefaultJavaToolchainWriter(repoRoot.toPath).write()
 
   private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(bazelPackages)
-
 
   private def writeExternal(): Unit = {
     new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()

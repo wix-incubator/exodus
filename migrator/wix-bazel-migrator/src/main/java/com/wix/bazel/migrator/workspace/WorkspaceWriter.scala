@@ -2,10 +2,9 @@ package com.wix.bazel.migrator.workspace
 
 import java.nio.file.{Files, Path}
 
-class WorkspaceWriter(repoRoot: Path) {
+class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
 
   def write(): Unit = {
-    val workspaceName = currentWorkspaceNameFrom(repoRoot)
     val workspaceFileContents =
       s"""
          |workspace(name = "$workspaceName")
@@ -101,8 +100,11 @@ class WorkspaceWriter(repoRoot: Path) {
     WorkspaceOverridesReader.from(repoRoot).suffix
   }
 
+  // TODO:
+  // 1) fix the "git_repository" name once fw merges commit with new name
+  // 2) remove this completely when workspace writer starts using external repositories writer
   private def importFwIfThisIsNotFw(workspaceName: String) =
-    if (workspaceName == "wix_framework")
+    if (workspaceName == "wix_platform_wix_framework")
       ""
     else
       s"""
@@ -114,9 +116,6 @@ class WorkspaceWriter(repoRoot: Path) {
          |)
          |""".stripMargin
 
-  //TODO get as parameter
-  private def currentWorkspaceNameFrom(repoRoot: Path) =
-    if (sys.env.get("repo_url").exists(_.contains("wix-framework"))) "wix_framework" else "other"
 
   private def writeToDisk(workspaceFileContents: String): Unit = {
     Files.write(repoRoot.resolve("WORKSPACE"), workspaceFileContents.getBytes)
