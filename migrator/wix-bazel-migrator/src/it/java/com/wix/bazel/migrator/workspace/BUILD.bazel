@@ -32,6 +32,7 @@ scala_specs2_junit_test(
         "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers",
         "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/transform",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/workspace",
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator",
         "//third_party/com/fasterxml/jackson/core:jackson_annotations",
         "//third_party/com/fasterxml/jackson/core:jackson_core",
         "//third_party/com/fasterxml/jackson/core:jackson_databind",
