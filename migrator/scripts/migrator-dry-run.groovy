@@ -20,69 +20,86 @@ pipeline {
     stages {
         stage('checkout') {
             steps {
-                copyArtifacts flatten: true, projectName: "${MIGRATOR_BUILD_JOB}", selector: upstream(allowUpstreamDependencies: false, fallbackToLastSuccessful: true, upstreamFilterStrategy: 'UseGlobalSetting')
-                git "${env.repo_url}"
-            }
-        }
-        stage('checkout-managed-deps-repo') {
-            steps {
-                echo "checkout of: ${env.MANAGED_DEPS_REPO_NAME}"
+                dir("migrator") {
+                    copyArtifacts flatten: true, projectName: "${MIGRATOR_BUILD_JOB}", selector: upstream(allowUpstreamDependencies: false, fallbackToLastSuccessful: true, upstreamFilterStrategy: 'UseGlobalSetting')
+                }
+                dir("${env.REPO_NAME}") {
+                    git "${env.repo_url}"
+                }
                 dir("${env.MANAGED_DEPS_REPO_NAME}") {
+                    echo "checkout of: ${env.MANAGED_DEPS_REPO_NAME}"
                     checkout([$class: 'GitSCM', branches: [[name: 'master' ]],
                               userRemoteConfigs: [[url: "${env.MANAGED_DEPS_REPO_URL}"]]])
                 }
             }
         }
+        stage('clean') {
+            steps {
+                dir("${env.REPO_NAME}") {
+                    sh 'rm -rf third_party'
+                    sh 'find . -path "*/*BUILD" -exec rm -f {} \\;'
+                    sh 'find . -path "*/*BUILD.bazel" -exec rm -f {} \\;'
+                }
+            }
+        }
         stage('migrate') {
             steps {
-                sh 'rm -rf third_party'
-                sh 'find . -path "*/*BUILD" -exec rm -f {} \\;'
-                sh 'find . -path "*/*BUILD.bazel" -exec rm -f {} \\;'
-                sh """|java -Xmx12G \\
-                          |   -Dcodota.token=${env.CODOTA_TOKEN} \\
-                          |   -Dskip.classpath=false \\
-                          |   -Dskip.transformation=false \\
-                          |   -Dmanaged.deps.repo=../${env.MANAGED_DEPS_REPO_NAME} \\
-                          |   -Dfail.on.severe.conflicts=true \\
-                          |   -Drepo.root=../${repo_name}  \\
-                          |   -Drepo.url=${env.repo_url} \\
-                          |   -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar""".stripMargin()
-                sh "buildozer 'add tags manual' //third_party/...:%scala_import"
-                script{
-                    if (fileExists('bazel_migration/post-migration.sh')){
-                        sh "sh bazel_migration/post-migration.sh"
-                    }
+                dir("migrator") {
+                    sh """|java -Xmx12G \\
+                      |   -Dcodota.token=${env.CODOTA_TOKEN} \\
+                      |   -Dskip.classpath=false \\
+                      |   -Dskip.transformation=false \\
+                      |   -Dmanaged.deps.repo=../${env.MANAGED_DEPS_REPO_NAME} \\
+                      |   -Dfail.on.severe.conflicts=true \\
+                      |   -Drepo.root=../${repo_name}  \\
+                      |   -Drepo.url=${env.repo_url} \\
+                      |   -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar""".stripMargin()
                 }
-                sh 'buildifier $(find . -iname BUILD.bazel -type f)'
+                dir("${env.REPO_NAME}") {
+                    sh "buildozer 'add tags manual' //third_party/...:%scala_import"
+                    script {
+                        if (fileExists('bazel_migration/post-migration.sh')) {
+                            sh "sh bazel_migration/post-migration.sh"
+                        }
+                    }
+                    sh 'buildifier $(find . -iname BUILD.bazel -type f)'
+                }
             }
         }
         stage('pre-build') {
             steps {
-                sh "touch tools/ci.environment"
+                dir("${env.REPO_NAME}") {
+                    sh "touch tools/ci.environment"
+                }
             }
         }
         stage('build') {
             steps {
-                sh "bazel build --strategy=Scalac=worker //..."
+                dir("${env.REPO_NAME}") {
+                    sh "bazel build --strategy=Scalac=worker //..."
+                }
             }
         }
         stage('UT') {
             steps {
-                script {
-                    unstable_by_exit_code("UNIT", """|#!/bin/bash
+                dir("${env.REPO_NAME}") {
+                    script {
+                        unstable_by_exit_code("UNIT", """|#!/bin/bash
                                              |bazel test \\
                                              |      --test_tag_filters=UT,-IT \\
                                              |      --flaky_test_attempts=3 \\
                                              |      ${env.BAZEL_FLAGS} \\
                                              |      //...
                                              |""".stripMargin())
+                    }
                 }
             }
         }
         stage('IT') {
             steps {
-                script {
-                    unstable_by_exit_code("IT/E2E", """|#!/bin/bash
+                dir("${env.REPO_NAME}") {
+                    script {
+                        unstable_by_exit_code("IT/E2E", """|#!/bin/bash
                                              |export DOCKER_HOST=$env.TEST_DOCKER_HOST
                                              |bazel test \\
                                              |      --test_tag_filters=IT \\
@@ -92,6 +109,7 @@ pipeline {
                                              |      --jobs=1 \\
                                              |      //...
                                              |""".stripMargin())
+                    }
                 }
             }
         }
@@ -100,18 +118,22 @@ pipeline {
         always {
             script {
                 if (env.FOUND_TEST == "true") {
-                    archiveArtifacts 'bazel-out/**/test.log,bazel-testlogs/**/test.xml'
-                    junit "bazel-testlogs/**/test.xml"
+                    archiveArtifacts "${env.REPO_NAME}/bazel-out/**/test.log,bazel-testlogs/**/test.xml"
+                    junit "${env.REPO_NAME}/bazel-testlogs/**/test.xml"
                 }
                 try {
                     echo "[INFO] creating tar.gz files for migration artifacts..."
-                    sh """|tar czf classpathModules.cache.tar.gz classpathModules.cache
-                          |tar czf cache.tar.gz cache
-                          |tar czf dag.bazel.tar.gz dag.bazel""".stripMargin()
+                    dir("migrator") {
+                        sh """|tar czf classpathModules.cache.tar.gz classpathModules.cache
+                              |tar czf cache.tar.gz cache
+                              |tar czf dag.bazel.tar.gz dag.bazel""".stripMargin()
+                    }
                 } catch (err) {
                     echo "[WARN] could not create all tar.gz files ${err}"
                 } finally {
-                    archiveArtifacts "classpathModules.cache.tar.gz,dag.bazel.tar.gz,wix-bazel-migrator/cache.tar.gz"
+                    dir("migrator") {
+                        archiveArtifacts "classpathModules.cache.tar.gz,dag.bazel.tar.gz,wix-bazel-migrator/cache.tar.gz"
+                    }
                 }
             }
         }
