@@ -28,8 +28,12 @@ scala_specs2_junit_test(
     runtime_deps = [
     ],
     deps = [
+        "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/transform",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
         "//migrator/wix-bazel-migrator:tests_dependencies",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator+bazel/migrator/transform+build/maven/analysis",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
         "//third_party/com/fasterxml/jackson/core:jackson_annotations",
         "//third_party/com/fasterxml/jackson/core:jackson_core",
