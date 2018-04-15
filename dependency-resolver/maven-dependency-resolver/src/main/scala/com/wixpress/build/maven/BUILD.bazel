@@ -5,11 +5,6 @@ scala_library(
     srcs = [
         "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven:sources",
     ],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     runtime_deps = [
     ],
     deps = [

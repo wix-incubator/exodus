@@ -6,11 +6,6 @@ scala_specs2_junit_test(
         "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/workspace/resolution:sources",
     ],
     data = ["//migrator/wix-bazel-migrator:coordinates"],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     jvm_flags = ["-Dexisting.manifest=$(location //migrator/wix-bazel-migrator:coordinates)"],
     prefixes = [
         "IT",
@@ -30,8 +25,7 @@ scala_specs2_junit_test(
     deps = [
         "//migrator/wix-bazel-migrator:tests_dependencies",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/workspace/resolution",
-        "//test-utils/src/main/scala/com/wixpress/build/git:git",
-        "//third_party/com/gitblit:gitblit",
+        "//test-utils/src/main/scala/com/wixpress/build/git",
         "//third_party/com/github/pathikrit:better_files_2_12",
         "//third_party/org/eclipse/jgit:org_eclipse_jgit",
     ],
@@ -40,5 +34,5 @@ scala_specs2_junit_test(
 filegroup(
     name = "sources",
     srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/workspace:__pkg__"],
+    visibility = ["//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/workspace/resolution:__pkg__"],
 )

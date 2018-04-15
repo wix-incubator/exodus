@@ -7,11 +7,6 @@ scala_library(
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform:sources",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/build/maven/analysis:sources",
     ],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     runtime_deps = [
     ],
     deps = [
@@ -39,5 +34,6 @@ scala_library(
         "//third_party/junit",
         "//third_party/org/apache/maven:maven_artifact",
         "//third_party/org/slf4j:slf4j_api",
+        "//wix-bazel-repositories/bazel-repositories-core/src/main/scala/com/wixpress/build/bazel/repositories",
     ],
 )

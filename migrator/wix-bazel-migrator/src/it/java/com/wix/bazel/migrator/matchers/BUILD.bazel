@@ -6,11 +6,6 @@ scala_library(
     srcs = [
         "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers:sources",
     ],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     runtime_deps = [
     ],
     deps = [

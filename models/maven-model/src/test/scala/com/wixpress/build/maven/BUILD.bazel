@@ -7,11 +7,6 @@ scala_specs2_junit_test(
         "//models/maven-model/src/test/scala/com/wixpress/build/maven:sources",
     ],
     data = ["//models/maven-model:coordinates"],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     jvm_flags = ["-Dexisting.manifest=$(location //models/maven-model:coordinates)"],
     prefixes = ["Test"],
     suffixes = ["Test"],

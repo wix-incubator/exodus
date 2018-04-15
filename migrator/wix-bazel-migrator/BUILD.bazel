@@ -19,6 +19,7 @@ scala_import(
         "//third_party/com/github/scopt:scopt_2_12",
         "//third_party/org/scala-lang:scala_library",
         "//third_party/org/scalaj:scalaj_http_2_12",
+        "//wix-bazel-repositories/bazel-repositories-core:main_dependencies",
     ],
 )
 
@@ -29,6 +30,8 @@ scala_import(
         "main_dependencies",
         "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
         "//migrator/bazel-migrator-model-testkit:main_dependencies",
+        "//test-utils:main_dependencies",
+        "//third_party/com/gitblit",
         "//third_party/com/github/marschall:memoryfilesystem",
         "//third_party/com/wixpress/hoopoe:hoopoe_specs2",
     ],

@@ -6,11 +6,6 @@ scala_specs2_junit_test(
         "//repo-analyzer/maven-repo-analyzer/src/it/java/com/wix/build/maven/analysis:sources",
     ],
     data = ["//repo-analyzer/maven-repo-analyzer:coordinates"],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     jvm_flags = ["-Dexisting.manifest=$(location //repo-analyzer/maven-repo-analyzer:coordinates)"],
     prefixes = [
         "IT",

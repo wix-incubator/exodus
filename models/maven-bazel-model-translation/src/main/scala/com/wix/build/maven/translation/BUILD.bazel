@@ -5,11 +5,6 @@ scala_library(
     srcs = [
         "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation:sources",
     ],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     runtime_deps = [
     ],
     deps = [

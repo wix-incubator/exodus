@@ -7,11 +7,6 @@ scala_specs2_junit_test(
         "//migrator/bazel-external-graph-transformer/src/test/scala/com/wix/bazel/migrator/transform:sources",
     ],
     data = ["//migrator/bazel-external-graph-transformer:coordinates"],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     jvm_flags = ["-Dexisting.manifest=$(location //migrator/bazel-external-graph-transformer:coordinates)"],
     prefixes = ["Test"],
     suffixes = ["Test"],

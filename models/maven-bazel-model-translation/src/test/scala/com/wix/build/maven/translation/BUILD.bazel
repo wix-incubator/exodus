@@ -7,11 +7,6 @@ scala_specs2_junit_test(
         "//models/maven-bazel-model-translation/src/test/scala/com/wix/build/maven/translation:sources",
     ],
     data = ["//models/maven-bazel-model-translation:coordinates"],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     jvm_flags = ["-Dexisting.manifest=$(location //models/maven-bazel-model-translation:coordinates)"],
     prefixes = ["Test"],
     suffixes = ["Test"],

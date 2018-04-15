@@ -5,11 +5,6 @@ scala_library(
     srcs = [
         "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers:sources",
     ],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     runtime_deps = [
     ],
     deps = [

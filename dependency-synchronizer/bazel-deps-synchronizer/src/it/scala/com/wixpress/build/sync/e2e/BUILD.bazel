@@ -6,11 +6,6 @@ scala_library(
     srcs = [
         "//dependency-synchronizer/bazel-deps-synchronizer/src/it/scala/com/wixpress/build/sync/e2e:sources",
     ],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     runtime_deps = [
     ],
     deps = [

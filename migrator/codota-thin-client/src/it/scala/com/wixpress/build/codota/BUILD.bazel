@@ -6,11 +6,6 @@ scala_specs2_junit_test(
         "//migrator/codota-thin-client/src/it/scala/com/wixpress/build/codota:sources",
     ],
     data = ["//migrator/codota-thin-client:coordinates"],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     jvm_flags = ["-Dexisting.manifest=$(location //migrator/codota-thin-client:coordinates)"],
     prefixes = [
         "IT",

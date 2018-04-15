@@ -7,11 +7,6 @@ scala_specs2_junit_test(
         "//migrator/wix-bazel-migrator/src/test/scala/com/wix/bazel/migrator/transform:sources",
     ],
     data = ["//migrator/wix-bazel-migrator:coordinates"],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     jvm_flags = ["-Dexisting.manifest=$(location //migrator/wix-bazel-migrator:coordinates)"],
     prefixes = ["Test"],
     suffixes = ["Test"],

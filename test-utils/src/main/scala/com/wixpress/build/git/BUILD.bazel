@@ -5,15 +5,11 @@ scala_library(
     srcs = [
         "//test-utils/src/main/scala/com/wixpress/build/git:sources",
     ],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     runtime_deps = [
     ],
     deps = [
-        "//third_party/com/gitblit:gitblit",
+        "//test-utils:main_dependencies",
+        "//third_party/com/gitblit",
         "//third_party/com/github/pathikrit:better_files_2_12",
         "//third_party/org/eclipse/jgit:org_eclipse_jgit",
     ],

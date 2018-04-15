@@ -5,11 +5,6 @@ scala_library(
     srcs = [
         "//migrator/bazel-external-graph-transformer/src/main/scala/com/wix/bazel/migrator/transform:sources",
     ],
-    javacopts = [
-        "-g",
-        "-deprecation",
-        "-XepDisableAllChecks",
-    ],
     runtime_deps = [
     ],
     deps = [

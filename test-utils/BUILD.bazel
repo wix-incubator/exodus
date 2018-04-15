@@ -1,0 +1,23 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_import(
+    name = "main_dependencies",
+    deps = [
+        "//third_party/com/gitblit",
+        "//third_party/com/github/pathikrit:better_files_2_12",
+        "//third_party/org/scala-lang:scala_library",
+    ],
+)
+
+scala_import(
+    name = "tests_dependencies",
+    testonly = 1,
+    deps = [
+        "main_dependencies",
+    ],
+)
+
+filegroup(
+    name = "coordinates",
+    srcs = ["MANIFEST.MF"],
+)
