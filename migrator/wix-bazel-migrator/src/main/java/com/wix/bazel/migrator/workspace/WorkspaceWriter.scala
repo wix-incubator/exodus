@@ -4,6 +4,12 @@ import java.nio.file.{Files, Path}
 
 class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
 
+  // TODO: temp solution until the next framework merge
+  private val oldFrameworkWSName = "wix_framework"
+  private val newFrameworkWSName = "wix_platform_wix_framework"
+
+  private val frameworkWSName = if (currentWorkspaceIsFW) newFrameworkWSName else oldFrameworkWSName
+
   def write(): Unit = {
     val workspaceFileContents =
       s"""
@@ -44,14 +50,14 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |${importFwIfThisIsNotFw(workspaceName)}
          |load("@core_server_build_tools//:repositories.bzl", "scala_repositories")
          |scala_repositories()
-         |load("@wix_framework//test-infrastructures-modules/mysql-testkit/downloader:mysql_installer.bzl", "mysql_default_version", "mysql")
+         |load("@$frameworkWSName//test-infrastructures-modules/mysql-testkit/downloader:mysql_installer.bzl", "mysql_default_version", "mysql")
          |mysql_default_version()
          |mysql("5.6", "latest")
          |maven_jar(
          |    name = "com_wix_wix_embedded_mysql_download_and_extract_jar_with_dependencies",
          |    artifact = "com.wix:wix-embedded-mysql-download-and-extract:jar:jar-with-dependencies:3.1.0",
          |)
-         |load("@wix_framework//test-infrastructures-modules/mongo-test-kit/downloader:mongo_installer.bzl", "mongo_default_version", "mongo")
+         |load("@$frameworkWSName//test-infrastructures-modules/mongo-test-kit/downloader:mongo_installer.bzl", "mongo_default_version", "mongo")
          |mongo_default_version()
          |mongo("3.3.1")
          |maven_jar(
@@ -100,11 +106,13 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
     WorkspaceOverridesReader.from(repoRoot).suffix
   }
 
+  private def currentWorkspaceIsFW = workspaceName == newFrameworkWSName
+
   // TODO:
   // 1) fix the "git_repository" name once fw merges commit with new name
   // 2) remove this completely when workspace writer starts using external repositories writer
   private def importFwIfThisIsNotFw(workspaceName: String) =
-    if (workspaceName == "wix_platform_wix_framework")
+    if (currentWorkspaceIsFW)
       ""
     else
       s"""
@@ -115,7 +123,6 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |             commit = "654f262d07ac14ae145bcd35f702e0e32440b84d"
          |)
          |""".stripMargin
-
 
   private def writeToDisk(workspaceFileContents: String): Unit = {
     Files.write(repoRoot.resolve("WORKSPACE"), workspaceFileContents.getBytes)
