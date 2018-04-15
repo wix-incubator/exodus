@@ -22,6 +22,7 @@ class TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot: File) {
 
   private def createBuildFileIfMissing(): Unit = {
     val buildFilePath = new File(repoRoot, "BUILD.bazel").toPath
-    Files.write(buildFilePath, Array.emptyByteArray, StandardOpenOption.APPEND, StandardOpenOption.CREATE)
+    if (!Files.exists(buildFilePath))
+      Files.createFile(buildFilePath)
   }
 }
