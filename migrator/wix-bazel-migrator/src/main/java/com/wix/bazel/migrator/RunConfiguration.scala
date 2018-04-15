@@ -17,19 +17,19 @@ object RunConfiguration {
 
     opt[String]('r', "repo")
       .required()
-      .withFallback(() => sys.props.get("repo.root").get)
+      .withFallback(() => sys.props.get("repo.root").getOrElse(throw new IllegalArgumentException("no repo root defined")))
       .validate(f => if (Files.isDirectory(Paths.get(f))) success else failure(s"repo $f must be existing directory"))
       .action { case (f, cfg) => cfg.copy(repoRoot = new File(f)) }
 
     opt[String]('r', "managed-deps-repo")
       .required()
-      .withFallback(() => sys.props.get("managed.deps.repo").get)
+      .withFallback(() => sys.props.get("managed.deps.repo").getOrElse(throw new IllegalArgumentException("no managed deps repo defined")))
       .validate(f => if (Files.isDirectory(Paths.get(f))) success else failure(s"repo $f must be existing directory"))
       .action { case (f, cfg) => cfg.copy(managedDepsRepo = new File(f)) }
 
     opt[String]("codota-token")
       .required()
-      .withFallback(() => sys.props.get("codota.token").get)
+      .withFallback(() => sys.props.get("codota.token").getOrElse(throw new IllegalArgumentException("no codota token defined")))
       .action { case (token, cfg) => cfg.copy(codotaToken = token) }
 
     opt[Boolean]("skip-maven")
