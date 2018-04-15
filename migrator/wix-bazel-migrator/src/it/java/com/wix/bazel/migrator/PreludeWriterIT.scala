@@ -1,14 +1,7 @@
 package com.wix.bazel.migrator
 
-import java.util.UUID
 
-import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
-import com.wix.bazel.migrator.matchers.InMemoryFilesMatchers
-import org.specs2.mutable.SpecificationWithJUnit
-import org.specs2.specification.Scope
-
-
-class PreludeWriterIT extends SpecificationWithJUnit with InMemoryFilesMatchers {
+class PreludeWriterIT extends BaseWriterIT {
   "PreludeWriter" should {
     "write empty BUILD file (since Bazel requires the dir to be a bazel package)" in new ctx {
       writer.write()
@@ -33,14 +26,9 @@ class PreludeWriterIT extends SpecificationWithJUnit with InMemoryFilesMatchers 
     }
   }
 
-  abstract class ctx extends Scope {
-    val fileSystem = MemoryFileSystemBuilder.newLinux().build()
-    val repoRoot = fileSystem.getPath("repoRoot")
-
+  abstract class ctx extends baseCtx {
     val writer = new PreludeWriter(repoRoot)
 
-    def path(withName: String) = repoRoot.resolve(s"tools/build_rules/$withName")
-
-    def random = UUID.randomUUID().toString
+    override def path(withName: String) = repoRoot.resolve(s"tools/build_rules/$withName")
   }
 }

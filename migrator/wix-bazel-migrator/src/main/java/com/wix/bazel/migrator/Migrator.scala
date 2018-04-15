@@ -39,6 +39,7 @@ object Migrator extends MigratorApp {
   writeInternal()
   writeExternal()
   writeBazelCustomRunnerScript()
+  writeDefaultJavaToolchain()
 
   private def transform() = {
     val transformer = new BazelTransformer(dependencyAnalyzer)
@@ -77,6 +78,9 @@ object Migrator extends MigratorApp {
 
   private def writePrelude(): Unit =
     new PreludeWriter(repoRoot.toPath).write()
+
+  private def writeDefaultJavaToolchain(): Unit =
+    new DefaultJavaToolchainWriter(repoRoot.toPath).write()
 
   private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(bazelPackages)
 

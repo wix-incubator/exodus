@@ -1,13 +1,10 @@
 package com.wix.bazel.migrator
 
-import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import com.wix.bazel.migrator.BazelCustomRunnerWriter._
-import com.wix.bazel.migrator.matchers.InMemoryFilesMatchers
-import org.specs2.mutable.SpecificationWithJUnit
 
-class BazelCustomRunnerWriterIT extends SpecificationWithJUnit with InMemoryFilesMatchers {
+class BazelCustomRunnerWriterIT extends BaseWriterIT {
   "BazelCustomRunnerWriter" should {
-    "write workspace resolving script and a custom script that calls the former script and then runs bazel" in {
+    "write workspace resolving script and a custom script that calls the former script and then runs bazel" in new ctx {
       writer.write()
 
       path(s"tools/$WorkspaceResolveScriptFileName") must beRegularFile(withContentFromResource = WorkspaceResolveScriptFileName)
@@ -15,12 +12,10 @@ class BazelCustomRunnerWriterIT extends SpecificationWithJUnit with InMemoryFile
     }
   }
 
-  // note: MemoryFileSystemBuilder has bugs related to file permissions so can't test if file is executable
-  // https://github.com/marschall/memoryfilesystem/issues/98
-  val fileSystem = MemoryFileSystemBuilder.newLinux().build()
-  val repoRoot = fileSystem.getPath("repoRoot")
 
-  def path(withName: String) = repoRoot.resolve(withName)
-
-  val writer = new BazelCustomRunnerWriter(repoRoot)
+  abstract class ctx extends baseCtx {
+    // note: MemoryFileSystemBuilder has bugs related to file permissions so can't test if file is executable
+    // https://github.com/marschall/memoryfilesystem/issues/98
+    val writer = new BazelCustomRunnerWriter(repoRoot)
+  }
 }

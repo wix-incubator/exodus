@@ -1,28 +1,17 @@
 package com.wix.bazel.migrator.workspace
 
-import java.nio.file.Files
+import com.wix.bazel.migrator.BaseWriterIT
 
-import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
-import com.wix.bazel.migrator.matchers.InMemoryFilesMatchers
-import org.specs2.mutable.SpecificationWithJUnit
-
-class WorkspaceWriterIT extends SpecificationWithJUnit with InMemoryFilesMatchers {
+class WorkspaceWriterIT extends BaseWriterIT {
   "BazelCustomRunnerWriter" should {
-    "write workspace resolving script and a custom script that calls the former script and then runs bazel" in {
+    "write workspace resolving script and a custom script that calls the former script and then runs bazel" in new ctx {
       writer.write()
 
       path("WORKSPACE") must beRegularFile
     }
   }
 
-  val fileSystem = MemoryFileSystemBuilder.newLinux().build()
-  val repoRoot = {
-    val path = fileSystem.getPath("repoRoot")
-    Files.createDirectories(path)
-    path
+  abstract class ctx extends baseCtx {
+    val writer = new WorkspaceWriter(repoRoot)
   }
-
-  def path(withName: String) = repoRoot.resolve(withName)
-
-  val writer = new WorkspaceWriter(repoRoot)
 }

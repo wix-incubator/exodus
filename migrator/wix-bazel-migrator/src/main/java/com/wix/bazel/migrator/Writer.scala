@@ -268,7 +268,6 @@ class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
          |    srcs = [${writeDependencies(writeSources(target))}],
          |    deps = [${writeDependencies(compileTimeTargets)}],
          |    runtime_deps = [${writeDependencies(runtimeTargets)}],
-         |    javacopts = ["-g", "-deprecation", "-XepDisableAllChecks"],
     """.stripMargin + footer + "\n)\n"
   }
 

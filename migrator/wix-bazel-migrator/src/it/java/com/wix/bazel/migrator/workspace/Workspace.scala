@@ -27,7 +27,7 @@ class Workspace(name: String) {
     WorkspaceBuildResult(code, logger.lines)
   }
 
-  private def addFile(path: String, content: String = "") = {
+  private def addFile(path: String, content: String) = {
     val file = root.resolve(path)
     Files.createDirectories(file.getParent)
     Files.write(file, content.getBytes)
