@@ -43,12 +43,13 @@ trait MigratorApp extends App {
   private def collectExternalDependenciesUsedByRepoModules() =
     codeModules.flatMap(_.dependencies.directDependencies).filterExternalDeps(codeModules.map(_.coordinates))
 
-  lazy val externalSourceDependencies: Set[Coordinates] =
-    if (configuration.interRepoSourceDependency) externalDependencies.collect {
-      case d if hasSourceDependencyProperties(d.coordinates) => d.coordinates
-    } else Set.empty
+  lazy val externalSourceDependencies: Set[Dependency] =
+    if (configuration.interRepoSourceDependency)
+      externalDependencies.filter(d => hasSourceDependencyProperties(d.coordinates))
+    else
+      Set.empty
 
-  lazy val externalBinaryDependencies: Set[Coordinates] = externalDependencies.map(_.coordinates) diff externalSourceDependencies
+  lazy val externalBinaryDependencies: Set[Dependency] = externalDependencies diff externalSourceDependencies
 
   private def hasSourceDependencyProperties(artifact: Coordinates) = {
     artifact.version.endsWith("-SNAPSHOT")
@@ -110,7 +111,7 @@ trait MigratorApp extends App {
   }
 
   implicit class DependencySetExtensions(dependencies: Set[Dependency]) {
-    def filterExternalDeps(repoCoordinates: Set[Coordinates]) = {
+    def filterExternalDeps(repoCoordinates: Set[Coordinates]): Set[Dependency] = {
       dependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
     }
   }

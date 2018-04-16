@@ -25,7 +25,9 @@ object Migrator extends MigratorApp {
   if (configuration.failOnSevereConflicts) failIfFoundSevereConflictsIn(thirdPartyConflicts)
 
   def bazelPackages = {
-    val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(externalSourceDependencies, new CodotaExternalSourceModuleRegistry(configuration.codotaToken))
+    val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
+      externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
+      registry = new CodotaExternalSourceModuleRegistry(configuration.codotaToken))
     val rawPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
     val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(rawPackages)
     val withModuleDepsPackages = new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry).transform(withProtoPackages)
@@ -86,19 +88,17 @@ object Migrator extends MigratorApp {
     new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()
 
     val bazelRepo = new NoPersistenceBazelRepository(repoRoot.toScala)
-    val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies
+    val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies.map(_.coordinates)
     val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
       resolver = aetherResolver,
       globalExcludes = internalCoordinates
     )
 
-    val externalDependencies: Set[Dependency] = externalBinaryDependencies.map(Dependency(_, MavenScope.Compile))
-
     val managedDependenciesFromMaven = aetherResolver
       .managedDependenciesOf(managedDependenciesArtifact)
       .forceCompileScope
 
-    val localNodes = filteringResolver.dependencyClosureOf(externalDependencies.forceCompileScope, managedDependenciesFromMaven)
+    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven)
 
     val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
     val diffSynchronizer = new DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver)
