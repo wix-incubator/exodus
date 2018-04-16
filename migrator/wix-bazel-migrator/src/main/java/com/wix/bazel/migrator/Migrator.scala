@@ -52,7 +52,7 @@ object Migrator extends MigratorApp {
   private def dependencyAnalyzer = {
     val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
     val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
-    val mutuallyExclusiveCompositeDependencyAnalyzer = if (wixFrameworkMigration)
+    if (wixFrameworkMigration)
       new CompositeDependencyAnalyzer(
         cachingCodotaDependencyAnalyzer,
         new ManualInfoDependencyAnalyzer(sourceModules),
@@ -61,8 +61,6 @@ object Migrator extends MigratorApp {
       new CompositeDependencyAnalyzer(
         cachingCodotaDependencyAnalyzer,
         new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath))
-    val codePathOverrides = new CodePathOverridesReader(codeModules).from(repoRoot.toPath)
-    CodePathOverridingDependencyAnalyzer.build(mutuallyExclusiveCompositeDependencyAnalyzer, codePathOverrides)
   }
 
   private def wixFrameworkMigration = configuration.repoUrl.contains("wix-framework")

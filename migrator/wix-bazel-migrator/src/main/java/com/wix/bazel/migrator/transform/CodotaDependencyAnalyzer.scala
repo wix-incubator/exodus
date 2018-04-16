@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.collection.generic.CanBuildFrom
-import scala.collection.{GenIterable, GenTraversableOnce}
+import scala.collection.{GenIterable, GenTraversableOnce, mutable}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
@@ -29,6 +29,8 @@ class CodotaDependencyAnalyzer(
                                 codotaToken: String,
                                 interRepoSourceDependency: Boolean = false) extends DependencyAnalyzer {
 
+
+  private val generatedCodeRegistry = new GeneratedCodeRegistry(GeneratedCodeOverridesReader.from(repoRoot.toPath))
   private val repoCoordinates = modules.map(_.coordinates)
   private val log = LoggerFactory.getLogger(getClass)
   //noinspection TypeAnnotation
@@ -51,7 +53,10 @@ class CodotaDependencyAnalyzer(
 
   private def extensionSupported(filePath: String) = filePath.endsWith("java") || filePath.endsWith("scala") || filePath.endsWith("proto")
 
-  private def supportedFile(filePath: String) = !sourceFilesOverrides.mutedFile(filePath) && extensionSupported(filePath)
+  private def interestingFile(module:SourceModule)(filePath: String):Boolean =
+    supportedFile(filePath) && !generatedCodeRegistry.isSourceOfGeneratedCode(module.coordinates.groupId, module.coordinates.artifactId, filePath)
+
+  private def supportedFile(filePath: String):Boolean = !sourceFilesOverrides.mutedFile(filePath) && extensionSupported(filePath)
 
   override def allCodeForModule(module: SourceModule): List[Code] = {
     log.debug(s"starting $module")
@@ -104,17 +109,24 @@ class CodotaDependencyAnalyzer(
   }
 
 
+  private def possibleOverriddenFilePath(module: SourceModule, filePath: String): String =
+    possibleOverriddenFilePath(module.coordinates.groupId, module.coordinates.artifactId, filePath)
+
+  private def possibleOverriddenFilePath(groupId: String, artifactId: String, filePath: String): String =
+    generatedCodeRegistry.sourceFilePathFor(groupId, artifactId, filePath)
+
   private def codesFrom(analysisResults: AnalysisResults, module: SourceModule) = {
-    val analyzeFailureOrCodes = analysisResults.filesToDependencyInfo.par.filterKeys(supportedFile).map { case (filePath, dependencyInfo) =>
+    val analyzeFailureOrCodes = analysisResults.filesToDependencyInfo.par.filterKeys(interestingFile(module)).map { case (filePath, dependencyInfo) =>
       val sourceModuleFilePathMetadata = FailureMetadata.SourceModuleFilePath(filePath, module)
+      val realFilePath = possibleOverriddenFilePath(module, filePath)
       for {
-        sourceDir <- sourceDirEither(module, filePath).right
+        sourceDir <- sourceDirEither(module, realFilePath).right
         depInfo <- validateAnalysisExistsFor(dependencyInfo).augment(sourceModuleFilePathMetadata).right
         internalDepsExtended <- validateAnalysisExistsFor(depInfo.getInternalDepsExtended).augment(InternalDepMissingExtended(depInfo)).augment(sourceModuleFilePathMetadata).right
         simplifiedDependencies <- asSimplifiedDependencies(module, internalDepsExtended.asScala.par, analysisResults.isTestCode).augment(sourceModuleFilePathMetadata).right
-        depsOnRepoCode <- internalDependencies(module, filePath, simplifiedDependencies).augment(InternalDepMissingExtended(depInfo)).augment(sourceModuleFilePathMetadata).right
+        depsOnRepoCode <- internalDependencies(module, realFilePath, simplifiedDependencies).augment(InternalDepMissingExtended(depInfo)).augment(sourceModuleFilePathMetadata).right
         externalSourceDeps <- externalSourceDependencyLabelOf(simplifiedDependencies)
-      } yield Code(CodePath(module, sourceDir, filePath), depsOnRepoCode, externalSourceDeps)
+      } yield Code(CodePath(module, sourceDir, realFilePath), depsOnRepoCode, externalSourceDeps)
     }
     EitherSequence.sequence(analyzeFailureOrCodes).fold(fail, _.toList)
   }
@@ -157,9 +169,15 @@ class CodotaDependencyAnalyzer(
 
   private def toSimplifiedCoordinates(dependencyGroup: Iterable[OptionalInternalDependency]): Iterable[Either[AnalyzeFailure, (SimplifiedCoordinates, SimplifiedCodotaDependency)]] =
     dependencyGroup.map { dep =>
-      mavenCoordinatesFromCodotaArtifactName(dep.getArtifactName, dep.getFilepath).right.map(simplifiedCoordinates => {
-        (simplifiedCoordinates, SimplifiedCodotaDependency(dep.getFilepath, simplifiedCoordinates, Option(dep.getMetadata).map(_.getLabel), repoCoordinates.exists(_.matchesOnGroupIdArtifactId(simplifiedCoordinates))))
-      })
+      coordiantesAndRealFilePathFrom(dep.getArtifactName, dep.getFilepath).right.map {
+        case (simplifiedCoordinates, realFilePath) =>
+          val dependency = SimplifiedCodotaDependency(
+            filepath = realFilePath,
+            simplifiedCoordinates = simplifiedCoordinates,
+            label = Option(dep.getMetadata).map(_.getLabel),
+            partOfProject = repoCoordinates.exists(_.matchesOnGroupIdArtifactId(simplifiedCoordinates)))
+          (simplifiedCoordinates, dependency)
+      }
     }
 
   private def coordinatesSetToSimplifiedDependency(currentModule: SourceModule, isTestCode: Boolean)(externalModulesAndFilePaths: Iterable[(SimplifiedCoordinates, SimplifiedCodotaDependency)]): Either[AnalyzeFailure, Option[SimplifiedCodotaDependency]] = {
@@ -230,12 +248,13 @@ class CodotaDependencyAnalyzer(
   private def retainOnlySupportedFilesIn(internalDeps: Iterable[OptionalInternalDependency]) =
     internalDeps.filter(depInfo => supportedFile(depInfo.getFilepath))
 
-  private def mavenCoordinatesFromCodotaArtifactName(artifactName: String, filepath: String): Either[AnalyzeFailure, SimplifiedCoordinates] = {
+  private def coordiantesAndRealFilePathFrom(artifactName: String, filepath: String): Either[AnalyzeFailure, (SimplifiedCoordinates, String)] = {
     Try {
       val (groupId, suffix) = artifactName.splitAt(artifactName.lastIndexOf('.'))
       val artifactId = suffix.drop(1).split('[').head
-      val classifier = classifierAccordingTo(artifactName, filepath)
-      SimplifiedCoordinates(groupId, artifactId, classifier)
+      val realFilePath = possibleOverriddenFilePath(groupId, artifactId, filepath)
+      val classifier = classifierAccordingTo(artifactName, realFilePath)
+      (SimplifiedCoordinates(groupId, artifactId, classifier), realFilePath)
     } match {
       case Success(a) => Right(a)
       case Failure(e) => Left(AnalyzeFailure.SomeException(e))
@@ -286,7 +305,7 @@ class CodotaDependencyAnalyzer(
     }
 
     def sequence[A: Mergeable, B, M[X] <: GenTraversableOnce[X]](in: M[Either[A, B]])(implicit cbf: CanBuildFrom[M[Either[A, B]], B, M[B]]): Either[A, M[B]] = {
-      val aOrBuilder = in.foldLeft[Either[A, scala.collection.mutable.Builder[B, M[B]]]](Right(cbf.apply())) {
+      val aOrBuilder = in.foldLeft[Either[A, mutable.Builder[B, M[B]]]](Right(cbf.apply())) {
         case (Right(builder), Right(b)) => Right(builder += b)
         case (Right(_), Left(a)) => Left(a)
         case (Left(a1), Left(a2)) => Left(implicitly[Mergeable[A]].merge(a1, a2))

@@ -4,21 +4,19 @@ import java.nio.file.{Files, Path}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.wix.bazel.migrator.model.SourceModule
 
-class CodePathOverridesReader(modules: Set[SourceModule]) {
+object GeneratedCodeOverridesReader {
   private val mapper = new ObjectMapper()
     .registerModule(DefaultScalaModule)
-    .registerModule(new SourceModuleSupportingModule(modules))
 
-  def from(repoRoot: Path): CodePathOverrides = {
+  def from(repoRoot: Path): GeneratedCodeLinksOverrides = {
     val overridesPath = repoRoot.resolve("bazel_migration").resolve("code_paths.overrides")
     if (Files.exists(overridesPath))
       mapper.readValue(
         Files.newBufferedReader(overridesPath),
-        classOf[CodePathOverrides]
+        classOf[GeneratedCodeLinksOverrides]
       )
     else
-      CodePathOverrides.empty
+      GeneratedCodeLinksOverrides.empty
   }
 }

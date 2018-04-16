@@ -9,7 +9,7 @@ import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 trait OverridesReaderITSupport {
   val overridesPath: Path
 
-  def objectMapper: ObjectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
+  val objectMapper: ObjectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   private lazy val fileSystem = MemoryFileSystemBuilder.newLinux().build()
   val repoRoot: Path = fileSystem.getPath("repoRoot")
