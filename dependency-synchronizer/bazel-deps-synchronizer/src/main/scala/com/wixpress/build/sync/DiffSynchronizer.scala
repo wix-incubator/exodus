@@ -11,7 +11,7 @@ case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelReposit
     val reader = new BazelDependenciesReader(bazelRepositoryWithManagedDependencies.localWorkspace("master"))
     val managedDeps = reader.allDependenciesAsMavenDependencies()
 
-    val managedNodes = resolver.dependencyClosureOf(managedDeps, withManagedDependencies = Set.empty)
+    val managedNodes = resolver.dependencyClosureOf(managedDeps, withManagedDependencies = managedDeps)
 
     val workspaceDependenciesToUpdate = localNodes.forceCompileScope diff managedNodes
 

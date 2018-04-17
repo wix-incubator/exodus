@@ -58,7 +58,7 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
       synchronizer.sync(resolvedNodes)
 
       bazelDriver.bazelExternalDependencyFor(managedDependency.coordinates) mustEqual BazelExternalDependency(
-        mavenCoordinates = None,
+        mavenCoordinates = Some(managedDependency.coordinates),
         libraryRule = Some(LibraryRule.of(
           artifact = managedDependency.coordinates,
           runtimeDependencies = Set(transitiveDependency.coordinates))))

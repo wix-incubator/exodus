@@ -117,6 +117,32 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
           artifact = divergentTransitiveDependency.coordinates)))
     }
 
+    "not persist maven jar of dependency nor of transitive dependency, because managed has the same depednecies " +
+      "even though resolver has the same declared dependency with a divergent transitive dependency" in new baseCtx {
+      val originalSingleDependency = SingleDependency(managedDependency, transitiveDependency)
+
+      givenBazelWorkspaceWithManagedDependencies(dependencyNodesFrom(originalSingleDependency))
+
+      val divergentTransitiveDependency = transitiveDependency.withVersion("new-version")
+      val divergentSingleDependency = SingleDependency(managedDependency, divergentTransitiveDependency)
+
+      val resolver = givenFakeResolverForDependencies(Set(divergentSingleDependency))
+      val synchronizer = givenSynchornizerFor(resolver)
+
+      synchronizer.sync(dependencyNodesFrom(originalSingleDependency))
+
+      bazelDriver.bazelExternalDependencyFor(managedDependency.coordinates) mustEqual BazelExternalDependency(
+        mavenCoordinates = None,
+        libraryRule = Some(LibraryRule.of(
+          artifact = managedDependency.coordinates,
+          runtimeDependencies = Set(transitiveDependency.coordinates))))
+
+      bazelDriver.bazelExternalDependencyFor(transitiveDependency.coordinates) mustEqual BazelExternalDependency(
+        mavenCoordinates = None,
+        libraryRule = Some(LibraryRule.of(
+          artifact = transitiveDependency.coordinates)))
+    }
+
     "not persist managed dependencies not found in local deps" in new baseCtx {
       val localDependency = aDependency("local")
 
