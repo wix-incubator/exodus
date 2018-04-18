@@ -13,6 +13,8 @@ case class RunConfiguration(repoRoot: File,
                             interRepoSourceDependency: Boolean = false)
 
 object RunConfiguration {
+  private val Empty = RunConfiguration(null, null, null, null)
+
   private val parser = new scopt.OptionParser[RunConfiguration]("Migrator") {
     head("Wix Bazel Migrator")
 
@@ -66,6 +68,6 @@ object RunConfiguration {
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)
 
   def from(cliArgs: Array[String]): RunConfiguration = {
-   parser.parse(cliArgs, RunConfiguration(null, null, null, null)).getOrElse(sys.exit(-1))
+   parser.parse(cliArgs, Empty).getOrElse(sys.exit(-1))
   }
 }

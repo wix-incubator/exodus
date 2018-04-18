@@ -1,14 +1,8 @@
 package com.wix.bazel.migrator
 
-import better.files.FileOps
-import com.wix.bazel.migrator.transform._
-import com.wix.bazel.migrator.workspace.WorkspaceWriter
-import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
-import com.wix.build.maven.analysis.ThirdPartyConflicts
-import com.wixpress.build.bazel.NoPersistenceBazelRepository
-import com.wixpress.build.bazel.repositories.WorkspaceName
-import com.wixpress.build.maven._
-import com.wixpress.build.sync.DiffSynchronizer
+import com.wix.bazel.migrator.tinker.Tinker
+
+import scala.io.Source
 
 /*
   should probably allow to customize:
@@ -19,104 +13,15 @@ import com.wixpress.build.sync.DiffSynchronizer
   the first 3 will enable deleting the "Generator" object and just build a run configuration which does it
  */
 object Migrator extends MigratorApp {
-  println(s"starting migration with configuration [$configuration]")
+  migrate()
 
-  val thirdPartyConflicts = checkConflictsInThirdPartyDependencies(aetherResolver)
-  if (configuration.failOnSevereConflicts) failIfFoundSevereConflictsIn(thirdPartyConflicts)
-
-  def bazelPackages = {
-    val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
-      externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
-      registry = new CodotaExternalSourceModuleRegistry(configuration.codotaToken))
-    val rawPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
-    val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(rawPackages)
-    val withModuleDepsPackages = new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry).transform(withProtoPackages)
-    withModuleDepsPackages
+  def migrate(): Unit = {
+    printHeader()
+    new Tinker(configuration).migrate()
   }
 
-
-  writeBazelRc()
-  writePrelude()
-  writeBazelRemoteRc()
-  writeWorkspace()
-  writeInternal()
-  writeExternal()
-  writeBazelCustomRunnerScript()
-  writeDefaultJavaToolchain()
-
-  private def transform() = {
-    val transformer = new BazelTransformer(dependencyAnalyzer)
-    val bazelPackages = transformer.transform(codeModules)
-    Persister.persistTransformationResults(bazelPackages)
-    bazelPackages
+  private def printHeader(): Unit = {
+    println(Source.fromInputStream(Migrator.getClass.getResourceAsStream("/banner.txt")).mkString)
+    println(s"starting migration with configuration [$configuration]")
   }
-
-  private def dependencyAnalyzer = {
-    val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
-    val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
-    if (wixFrameworkMigration)
-      new CompositeDependencyAnalyzer(
-        cachingCodotaDependencyAnalyzer,
-        new ManualInfoDependencyAnalyzer(sourceModules),
-        new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath))
-    else
-      new CompositeDependencyAnalyzer(
-        cachingCodotaDependencyAnalyzer,
-        new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot.toPath))
-  }
-
-  private def wixFrameworkMigration = configuration.repoUrl.contains("wix-framework")
-
-  private def writeBazelRc(): Unit =
-    new BazelRcWriter(repoRoot).write()
-
-  private def writeBazelRemoteRc(): Unit =
-    new BazelRcRemoteWriter(repoRoot).write()
-
-  private def writeWorkspace(): Unit =
-    new WorkspaceWriter(repoRoot.toPath, WorkspaceName.by(configuration.repoUrl)).write()
-
-  private def writePrelude(): Unit =
-    new PreludeWriter(repoRoot.toPath).write()
-
-  private def writeDefaultJavaToolchain(): Unit =
-    new DefaultJavaToolchainWriter(repoRoot.toPath).write()
-
-  private def writeInternal(): Unit = new Writer(repoRoot, codeModules).write(bazelPackages)
-
-  private def writeExternal(): Unit = {
-    new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()
-
-    val bazelRepo = new NoPersistenceBazelRepository(repoRoot.toScala)
-    val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies.map(_.coordinates)
-    val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
-      resolver = aetherResolver,
-      globalExcludes = internalCoordinates
-    )
-
-    val managedDependenciesFromMaven = aetherResolver
-      .managedDependenciesOf(managedDependenciesArtifact)
-      .forceCompileScope
-
-    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven)
-
-    val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
-    val diffSynchronizer = new DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver)
-    diffSynchronizer.sync(localNodes)
-
-    new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)
-  }
-
-  private def writeBazelCustomRunnerScript(): Unit = {
-    new BazelCustomRunnerWriter(repoRoot.toPath).write()
-    new GitIgnoreAppender(repoRoot.toPath).append("tools/commits.bzl")
-  }
-
-  private def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {
-    if (conflicts.fail.nonEmpty) {
-      throw new RuntimeException("Found failing third party conflicts (look for \"Found conflicts\" in log)")
-    }
-  }
-
-
 }

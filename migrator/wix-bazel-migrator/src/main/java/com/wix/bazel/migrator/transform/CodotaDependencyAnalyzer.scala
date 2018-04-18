@@ -1,7 +1,6 @@
 package com.wix.bazel.migrator.transform
 
-import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path, Paths}
 
 import com.codota.service.client.{CodotaHttpException, SearchClient}
 import com.codota.service.connector.{ApacheServiceConnector, ConnectorSettings}
@@ -23,14 +22,13 @@ import scala.collection.{GenIterable, GenTraversableOnce, mutable}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
-class CodotaDependencyAnalyzer(
-                                repoRoot: File,
-                                modules: Set[SourceModule],
-                                codotaToken: String,
-                                interRepoSourceDependency: Boolean = false) extends DependencyAnalyzer {
+class CodotaDependencyAnalyzer(repoRoot: Path,
+                               modules: Set[SourceModule],
+                               codotaToken: String,
+                               interRepoSourceDependency: Boolean = false) extends DependencyAnalyzer {
 
 
-  private val generatedCodeRegistry = new GeneratedCodeRegistry(GeneratedCodeOverridesReader.from(repoRoot.toPath))
+  private val generatedCodeRegistry = new GeneratedCodeRegistry(GeneratedCodeOverridesReader.from(repoRoot))
   private val repoCoordinates = modules.map(_.coordinates)
   private val log = LoggerFactory.getLogger(getClass)
   //noinspection TypeAnnotation
@@ -339,12 +337,12 @@ class CodotaDependencyAnalyzer(
       "src/it/scala",
       "src/e2e/java",
       "src/e2e/scala").find { srcDir =>
-      val path = Paths.get(repoRoot.getAbsolutePath, module.relativePathFromMonoRepoRoot, srcDir, filePath)
+      val path = Paths.get(repoRoot.toAbsolutePath.toString, module.relativePathFromMonoRepoRoot, srcDir, filePath)
       Files.exists(path)
     }
 
   private def readMutedFiles() = {
-    val mutedFilesOverrides = repoRoot.toPath.resolve("bazel_migration").resolve("source_files.overrides")
+    val mutedFilesOverrides = repoRoot.resolve("bazel_migration").resolve("source_files.overrides")
 
     if (Files.isReadable(mutedFilesOverrides)) {
       val objectMapper = new ObjectMapper()

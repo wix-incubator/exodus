@@ -16,10 +16,10 @@ import scala.util.{Failure, Success, Try}
 
 
 object FindMisAnalyzedInternalDependencies extends DebuggingMigratorApp {
-  val codotaArtifacts = codeModules.map(artifact => artifact.coordinates.groupId + "." + artifact.coordinates.artifactId)
+  val codotaArtifacts = tinker.codeModules.map(artifact => artifact.coordinates.groupId + "." + artifact.coordinates.artifactId)
   val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
   codotaClient.setDefaultCodePack("wix_enc")
-  codotaClient.setToken(codotaToken)
+  codotaClient.setToken(tinker.codotaToken)
 
   val map = codotaArtifacts.flatMap { artifactName =>
     codotaClient.allFilesForArtifact(artifactName).asScala.toList.flatMap { filePath: String =>
@@ -47,7 +47,7 @@ trait DebuggingMigratorApp extends MigratorApp {
   protected def requestedModule(): SourceModule = {
     val relativePath = sys.props.getOrElse("module.relativePath",
       throw new IllegalArgumentException("module.relativePath system property is required to run for specific module"))
-    val module = sourceModules.findByRelativePath(relativePath)
+    val module = tinker.sourceModules.findByRelativePath(relativePath)
       .getOrElse(throw new IllegalArgumentException(s"No module with relative path $relativePath"))
     module
   }
@@ -58,7 +58,7 @@ trait CodotaClientDebuggingMigratorApp extends DebuggingMigratorApp {
     ConnectorSettings.setHost(ConnectorSettings.Host.GATEWAY)
     val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
     codotaClient.setDefaultCodePack("wix_enc")
-    codotaClient.setToken(codotaToken)
+    codotaClient.setToken(tinker.codotaToken)
     codotaClient
   }
 
@@ -87,21 +87,21 @@ object PrintArtifactFilesAndTheirDependencies extends CodotaClientDebuggingMigra
 object PrintAllSourceModules extends DebuggingMigratorApp {
   omWithFullBlownSourceModules
     .writerWithDefaultPrettyPrinter()
-    .writeValue(System.out, sourceModules.codeModules)
+    .writeValue(System.out, tinker.sourceModules.codeModules)
 }
 
 object PrintAllCodeForSpecificModule extends DebuggingMigratorApp {
-  val dependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
+  val dependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(tinker.codotaDependencyAnalyzer)
   val code = dependencyAnalyzer.allCodeForModule(requestedModule())
 
   writer.writeValue(System.out, code)
 }
 
 object FlushOutCodeAnalysisIssuesPerModule extends DebuggingMigratorApp {
-  val outputs = codeModules.par.map { sourceModule =>
+  val outputs = tinker.codeModules.par.map { sourceModule =>
     println(s"starting ${sourceModule.coordinates.serialized} (${sourceModule.relativePathFromMonoRepoRoot})")
     val outcome = Try {
-      codotaDependencyAnalyzer.allCodeForModule(sourceModule)
+      tinker.codotaDependencyAnalyzer.allCodeForModule(sourceModule)
       sourceModule
     } match {
       case Success(_) => "PASSED"
@@ -128,7 +128,7 @@ object FlushOutCodeAnalysisIssuesPerModule extends DebuggingMigratorApp {
 }
 
 object CheckThirdPartyConflicts extends DebuggingMigratorApp {
-  val conflicts = checkConflictsInThirdPartyDependencies(aetherResolver)
+  val conflicts = tinker.checkConflictsInThirdPartyDependencies()
   if (conflicts.fail.nonEmpty || conflicts.warn.nonEmpty) {
     throw new RuntimeException("Conflicts is not empty")
   }

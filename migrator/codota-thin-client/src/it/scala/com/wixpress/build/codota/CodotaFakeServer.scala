@@ -1,7 +1,5 @@
 package com.wixpress.build.codota
 
-import java.util.Optional
-
 import akka.http.scaladsl.model.{HttpEntity, HttpMethods, HttpResponse, StatusCodes}
 import com.wix.e2e.http.server.WebServerFactory
 import com.wix.e2e.http.{HttpRequest, RequestHandler}
@@ -48,6 +46,6 @@ class CodotaFakeServer(codePack: String, artifactName: String, path: String, tok
   private def matches(httpRequest: HttpRequest): Boolean =
     (httpRequest.method == HttpMethods.GET) &&
       httpRequest.getUri.path() == repositoriesAPIPath &&
-      httpRequest.getUri().query().get("artifactName") == Optional.of(artifactName)
+      toScala(httpRequest.getUri().query().get("artifactName")).contains(artifactName)
 
 }

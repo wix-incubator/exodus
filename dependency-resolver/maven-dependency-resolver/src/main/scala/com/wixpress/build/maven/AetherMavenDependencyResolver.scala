@@ -21,6 +21,7 @@ import org.eclipse.aether.util.graph.visitor.PreorderNodeListGenerator
 import org.eclipse.aether.util.repository.SimpleArtifactDescriptorPolicy
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.util.Try
 
 class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
@@ -31,12 +32,12 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
 
   private val forcedManagedDependencies = Set.empty[Dependency]
 
+  private val artifactDescriptorStore = mutable.Map[Artifact, ArtifactDescriptorResult]() withDefault artifactDescriptorOf
+
   override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = {
-    val artifactDescriptor = artifactDescriptorOf(descriptorRequest(artifact))
+    val artifactDescriptor = artifactDescriptorStore(artifact.asAetherArtifact)
     dependenciesSetFrom(artifactDescriptor.getManagedDependencies.asScala)
   }
-
-  private def descriptorRequest(of: Coordinates): ArtifactDescriptorRequest = descriptorRequest(of.asAetherArtifact)
 
   override def directDependenciesOf(coordinates: Coordinates): Set[Dependency] =
     directDependenciesOf(artifactFromCoordinates(coordinates))
@@ -48,8 +49,16 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     directDependenciesOf(artifactFromPath(pathToPom))
 
   private def directDependenciesOf(artifact: DefaultArtifact) = {
-    val artifactDescriptor = artifactDescriptorOf(descriptorRequest(artifact))
+    val artifactDescriptor = artifactDescriptorStore(artifact)
     dependenciesSetFrom(artifactDescriptor.getDependencies.asScala)
+  }
+
+  private def artifactDescriptorOf(artifact: Artifact): ArtifactDescriptorResult = {
+    val request = descriptorRequest(artifact)
+    val res = withSession(ignoreMissingDependencies = false, repositorySystem.readArtifactDescriptor(_, request))
+    artifactDescriptorStore.update(artifact, res)
+
+    res
   }
 
   private def artifactDescriptorOf(request: ArtifactDescriptorRequest): ArtifactDescriptorResult =
@@ -120,7 +129,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     result.get
   }
 
-  private def dependencyNodesOf(collectResult: CollectResult) = {
+  private def dependencyNodesOf(collectResult: CollectResult): mutable.Seq[AetherDependencyNode] = {
     val preOrder = new PreorderNodeListGenerator
     val visitor = new RetainNonConflictingDependencyNodesVisitor(preOrder)
     collectResult.getRoot.accept(visitor)
@@ -142,6 +151,13 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     (new CollectRequest)
       .setDependencies(dependencies)
       .setManagedDependencies(managedDeps)
+      .setRepositories(remoteRepositories)
+  }
+
+  private def collectRequestOf(baseDependencies: Set[Dependency]) = {
+    val dependencies = baseDependencies.map(_.asAetherDependency).toList.asJava
+    (new CollectRequest)
+      .setDependencies(dependencies)
       .setRepositories(remoteRepositories)
   }
 

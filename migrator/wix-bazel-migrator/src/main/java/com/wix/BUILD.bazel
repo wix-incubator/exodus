@@ -4,6 +4,7 @@ scala_library(
     name = "agg=bazel/migrator+bazel/migrator/transform+build/maven/analysis",
     srcs = [
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator:sources",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/tinker:sources",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform:sources",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/build/maven/analysis:sources",
     ],

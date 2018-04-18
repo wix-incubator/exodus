@@ -1,7 +1,6 @@
 package com.wix.bazel.migrator
 
-import java.io.File
-import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import java.nio.file.{Files, Path, StandardOpenOption}
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -56,23 +55,20 @@ object Writer extends MigratorApp {
     }
   }
 
-  val writer = new Writer(repoRoot, codeModules)
-  val bazelPackages = Persister.readTransformationResults()
-  writer.write(bazelPackages)
+  val writer = new Writer(tinker.repoRoot, tinker.codeModules, Persister.readTransformationResults())
+  writer.write()
 }
 
-class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
+class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) {
 
-  private val sourcesPackageWriter = new SourcesPackageWriter(repoRoot.toPath)
-
-  def write(bazelPackages: Set[Package]): Unit = {
+  def write(): Unit = {
     //we're writing the resources targets first since they might get overridden by identified dependencies from the analysis
     //this can happen since we have partial analysis on resources folders
     writeStaticResources()
     writeProjectPackages(bazelPackages)
     // need to be last because it append target to existing BUILD.bazel files
     writeCoordinates()
-    sourcesPackageWriter.write(bazelPackages)
+    new SourcesPackageWriter(repoRoot, bazelPackages).write()
   }
 
   private def writeProjectPackages(bazelPackages: Set[Package]): Unit =
@@ -126,7 +122,7 @@ class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
     packageBuildDescriptorPath(bazelPackage.relativePathFromMonoRepoRoot)
 
   private def packageBuildDescriptorPath(packageRelativePathFromRoot: String) =
-    new File(new File(repoRoot, packageRelativePathFromRoot), "BUILD.bazel").toPath
+    repoRoot.resolve(packageRelativePathFromRoot).resolve("BUILD.bazel")
 
   private def writePackage(bazelPackage: Package): String =
     writePackage(bazelPackage.targets.map(writeTarget))
@@ -411,7 +407,7 @@ class Writer(repoRoot: File, repoModules: Set[SourceModule]) {
       |    srcs = ["MANIFEST.MF"],
       |)
       |""".stripMargin
-  private val overrides = Writer.readOverrides(repoRoot.toPath)
+  private val overrides = Writer.readOverrides(repoRoot)
   private val FixedVersionToEnableRepeatableMigrations = "fixed.version-SNAPSHOT"
 
   private val ForceTestOnly: Map[String, Boolean] =

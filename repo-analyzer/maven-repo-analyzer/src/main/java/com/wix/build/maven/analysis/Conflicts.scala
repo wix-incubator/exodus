@@ -4,7 +4,7 @@ import com.wixpress.build.maven.{Coordinates, Dependency}
 
 case class ThirdPartyConflicts(fail: Set[ThirdPartyConflict], warn: Set[ThirdPartyConflict])
 
-trait ThirdPartyConflict
+sealed trait ThirdPartyConflict
 
 case class MultipleVersionDependencyConflict(groupId: String, artifactId: String, versions: Set[CoordinatesWithConsumers]) extends ThirdPartyConflict
 

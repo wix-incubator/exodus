@@ -1,9 +1,8 @@
 package com.wix.bazel.migrator
 
-import java.io.File
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
-class BazelRcWriter(repoRoot: File) {
+class BazelRcWriter(repoRoot: Path) {
 
   def write(): Unit = {
     val contents =
@@ -23,7 +22,7 @@ class BazelRcWriter(repoRoot: File) {
   }
 
   private def writeToDisk(contents: String): Unit =
-    Files.write(new File(repoRoot, ".bazelrc").toPath, contents.getBytes)
+    Files.write(repoRoot.resolve(".bazelrc"), contents.getBytes)
 
 
 }

@@ -1,9 +1,8 @@
 package com.wix.bazel.migrator
 
-import java.io.File
-import java.nio.file.{Files, StandardOpenOption}
+import java.nio.file.{Files, Path}
 
-class TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot: File) {
+class TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot: Path) {
 
   def write(): Unit = {
     val thirdPartyDepsSkylarkFileContents =
@@ -18,10 +17,10 @@ class TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot: File) {
   }
 
   private def writeToDisk(thirdPartyDepsSkylarkFileContents: String): Unit =
-    Files.write(new File(repoRoot, "third_party.bzl").toPath, thirdPartyDepsSkylarkFileContents.getBytes)
+    Files.write(repoRoot.resolve("third_party.bzl"), thirdPartyDepsSkylarkFileContents.getBytes)
 
   private def createBuildFileIfMissing(): Unit = {
-    val buildFilePath = new File(repoRoot, "BUILD.bazel").toPath
+    val buildFilePath = repoRoot.resolve("BUILD.bazel")
     if (!Files.exists(buildFilePath))
       Files.createFile(buildFilePath)
   }

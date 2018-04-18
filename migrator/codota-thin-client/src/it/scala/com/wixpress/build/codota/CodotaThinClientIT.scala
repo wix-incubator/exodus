@@ -5,8 +5,6 @@ import java.net.SocketTimeoutException
 
 import org.specs2.mutable.{BeforeAfter, SpecificationWithJUnit}
 
-import scala.util.Random
-
 
 class CodotaThinClientIT extends SpecificationWithJUnit {
 
@@ -26,7 +24,7 @@ class CodotaThinClientIT extends SpecificationWithJUnit {
 
 
     "throw TimeoutException in case still getting timeout after given max retries" in new Ctx {
-      override def client = new CodotaThinClient(validToken, serverCodePack , codotaFakeServer.url,maxRetries = 2)
+      override def client = new CodotaThinClient(validToken, serverCodePack, codotaFakeServer.url, maxRetries = 2)
 
       codotaFakeServer.delayTheNextNCalls(n = 3)
       client.pathFor(artifactName) must throwA[SocketTimeoutException]

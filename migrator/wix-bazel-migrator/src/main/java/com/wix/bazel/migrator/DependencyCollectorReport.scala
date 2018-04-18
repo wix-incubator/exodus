@@ -1,24 +1,29 @@
 package com.wix.bazel.migrator
 
 import com.wix.bazel.migrator.model.SourceModule
+import com.wix.bazel.migrator.tinker.AppTinker
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.HighestVersionConflictResolution
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 
 object DependencyCollectorReport extends MigratorApp {
   println("[INFO]   STARTED DEPENDENCY COLLECTOR REPORT")
-  val modules = sourceModules.codeModules
+  val modules = tinker.sourceModules.codeModules
   val repoCoordinates = modules.map(_.coordinates)
-  val ar = managedDependenciesArtifact
+  val ar = AppTinker.ManagedDependenciesArtifact
 
   val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
-    resolver = aetherResolver,
+    resolver = tinker.aetherResolver,
     globalExcludes = repoCoordinates
   )
 
-  val directClosureCollector =  new CollectClosureFromDirectDeps(filteringResolver,constantDependencies,managedDependenciesArtifact)
-  val allDepsCollector =  new CollectAllDeps(filteringResolver,constantDependencies,managedDependenciesArtifact)
-  val allDepsButPreferDirectCollector =  new CollectAllDepsButFavorDirect(filteringResolver,constantDependencies,managedDependenciesArtifact)
+  val directClosureCollector =  new CollectClosureFromDirectDeps(filteringResolver,
+    tinker.constantDependencies,
+    AppTinker.ManagedDependenciesArtifact)
+  val allDepsCollector =  new CollectAllDeps(filteringResolver, tinker.constantDependencies, AppTinker.ManagedDependenciesArtifact)
+  val allDepsButPreferDirectCollector =  new CollectAllDepsButFavorDirect(filteringResolver,
+    tinker.constantDependencies,
+    AppTinker.ManagedDependenciesArtifact)
 
   printDiff("1-regular",directClosureCollector)
   println("")
@@ -34,9 +39,9 @@ object DependencyCollectorReport extends MigratorApp {
     val collectedDeps = collector.collectDependencies(modules)
     val conflicts = modules.flatMap(conflictsWith(collectedDeps, collectorId))
     conflicts.map(_.serialized).toList.sorted.foreach(conflict => println(s"$collectorId|$conflict"))
-    conflicts.groupBy(_.conflictType).mapValues(_.size).foreach{case (conflictType,count)=>{
+    conflicts.groupBy(_.conflictType).mapValues(_.size).foreach{case (conflictType, count) =>
       println(s"$collectorId | $conflictType count: $count")
-    }}
+    }
   }
 
   private def conflictsWith(repoDepsArtifacts: Set[Dependency], method: String)(module: SourceModule): Set[DependencyConflict] = {

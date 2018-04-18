@@ -1,9 +1,8 @@
 package com.wix.bazel.migrator
 
-import java.io.File
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
-class BazelRcRemoteWriter(repoRoot: File) {
+class BazelRcRemoteWriter(repoRoot: Path) {
 
   def write(): Unit = {
     val contents =
@@ -89,7 +88,7 @@ class BazelRcRemoteWriter(repoRoot: File) {
   }
 
   private def writeToDisk(contents: String): Unit =
-    Files.write(new File(repoRoot, ".bazelrc.remote").toPath, contents.getBytes)
+    Files.write(repoRoot.resolve(".bazelrc.remote"), contents.getBytes)
 
 
 }

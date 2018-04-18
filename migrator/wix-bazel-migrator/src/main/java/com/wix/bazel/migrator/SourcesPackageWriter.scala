@@ -4,8 +4,8 @@ import java.nio.file.{Files, Path, StandardOpenOption}
 
 import com.wix.bazel.migrator.model.{Package, Target}
 
-class SourcesPackageWriter(repoRoot: Path) {
-  def write(bazelPackages: Set[Package]): Unit = {
+class SourcesPackageWriter(repoRoot: Path, bazelPackages: Set[Package]) {
+  def write(): Unit = {
     bazelPackages
       .flatMap(jvmTargetsAndRelativePathFromMonoRepoRoot)
       .flatMap(sourceDirAndRelativePackagePaths)
@@ -13,10 +13,12 @@ class SourcesPackageWriter(repoRoot: Path) {
       .foreach(writeSourcesTarget)
   }
 
-  private def jvmTargetsAndRelativePathFromMonoRepoRoot(bazelPackage: Package) = {
-    (bazelPackage.targets.collect { case jvm: Target.Jvm =>
-      jvm
-    } zip Stream.continually(bazelPackage.relativePathFromMonoRepoRoot) ).map(JvmTargetAndRelativePathFromMonoRepoRoot(_))
+  private def jvmTargetsAndRelativePathFromMonoRepoRoot(bazelPackage: Package): Set[JvmTargetAndRelativePath] = {
+    val r = bazelPackage.targets.collect {
+      case jvm: Target.Jvm => (jvm, bazelPackage.relativePathFromMonoRepoRoot)
+    }
+
+    r.map(JvmTargetAndRelativePathFromMonoRepoRoot(_))
   }
 
   def sourceDirAndRelativePackagePaths(jvmTargetAndRelativePath: JvmTargetAndRelativePath): Set[SourceDirPathAndRelativePackagePath] = {

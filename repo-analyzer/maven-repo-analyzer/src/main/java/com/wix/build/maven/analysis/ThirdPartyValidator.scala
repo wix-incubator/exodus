@@ -15,17 +15,17 @@ class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies:
     (allDirectCoordinates -- sourceModulesAsDependencies)
       .filterNot(isIntraOrganizationDependency)
 
-  private def sourceModulesAsDependencies = simplifiedModuleToDirectDependenciesMap.keySet
-
-  private def allDirectDependencies = simplifiedModuleToDirectDependenciesMap.values.flatten.toSet
-
-  private def allDirectCoordinates = allDirectDependencies.map(_.coordinates)
-
   def checkForConflicts(): ThirdPartyConflicts =
     ThirdPartyConflicts(
       fail = Set.empty,
       warn = conflictsOfMultipleVersions ++ conflictsWithManagedDependencies ++ conflictsOfExclusionCollision
     )
+
+  private def sourceModulesAsDependencies = simplifiedModuleToDirectDependenciesMap.keySet
+
+  private def allDirectDependencies = simplifiedModuleToDirectDependenciesMap.values.flatten.toSet
+
+  private def allDirectCoordinates = allDirectDependencies.map(_.coordinates)
 
   private def conflictsOfExclusionCollision: Set[DifferentExclusionCollision] = {
     directThirdPartDependencies

@@ -4,14 +4,17 @@ import java.net.SocketTimeoutException
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.wixpress.build.codota.CodotaThinClient.{PathAttemptResult, RetriesLoop}
 import org.slf4j.LoggerFactory
+
+import scala.util.{Failure, Success, Try}
 import scalaj.http.{Http, HttpOptions, HttpResponse}
 
-class CodotaThinClient(
-                        token: String,
-                        codePack: String,
-                        baseURL: String = CodotaThinClient.DefaultBaseURL,
-                        maxRetries: Int = 5) {
+class CodotaThinClient(token: String,
+                       codePack: String,
+                       baseURL: String = CodotaThinClient.DefaultBaseURL,
+                       maxRetries: Int = 5) {
+
   private val logger = LoggerFactory.getLogger(getClass)
   private val timeout: Int = 1000
   private val mapper = new ObjectMapper()
@@ -19,51 +22,81 @@ class CodotaThinClient(
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
 
-  private val requestURLTemplate = baseURL + s"/api/codenav/artifact"
+  private val requestURLTemplate = s"$baseURL/api/codenav/artifact"
 
   def pathFor(artifactName: String): Option[String] = {
-    pathFor(artifactName, maxRetries)
+    retriesLoop(artifactName).collectFirst {
+      case Success(p) => p
+    }.flatten
   }
 
-  def pathFor(artifactName: String, retry: Int): Option[String] = {
-    try {
-      val response = requestFor(artifactName).asString
-      response.code match {
-        case 200 => extractPath(response, artifactName)
-        case 401 => throw NotAuthorizedException(response.body)
-        case 404 if response.body.contains(codePack) => throw CodePackNotFoundException(response.body)
-        case 404 => throw ArtifactNotFoundException(response.body)
-      }
-    } catch {
-      case _: SocketTimeoutException if retry > 0 =>
-        val attempt = maxRetries - retry
-        logger.warn(s"($attempt/$maxRetries) Timeout when trying to get path for $artifactName")
-        Thread.sleep(3000 / retry)
-        pathFor(artifactName, retry - 1)
-      case e: Throwable => throw e
+  private def retriesLoop(artifactName: String): RetriesLoop = {
+    (1 to maxRetries).toStream.map(pathForArtifact(_, artifactName))
+  }
+
+  private def pathForArtifact(retry: Int, artifactName: String): PathAttemptResult = {
+    pathForArtifact(artifactName) match {
+      case Success(p) => Success(p)
+      case Failure(e: SocketTimeoutException) if retry < maxRetries =>
+        handleSocketTimeout(retry, artifactName, e)
+      case Failure(e) => throw e
     }
   }
 
-  private def requestFor(artifactName: String) = {
-    Http(requestURLTemplate.format(artifactName))
-      .param("codePack", codePack)
-      .param("artifactName", artifactName)
-      .header("Authorization", s"bearer $token")
-      .option(HttpOptions.readTimeout(timeout))
+  private def handleSocketTimeout(retry: Int, artifactName: String, e: SocketTimeoutException) = {
+    logger.warn(s"($retry/$maxRetries) Timeout when trying to get path for $artifactName")
+    Thread.sleep(3000 / ((maxRetries - retry) + 1))
+    Failure(e)
   }
 
-  private def extractPath(response: HttpResponse[String], artifactName: String) = {
-    val body = response.body
-    val artifact = mapper.readValue(body, classOf[Artifact])
-    Option(artifact.metadata) match {
-      case Some(metadata) => Option(mapper.readValue(metadata, classOf[ArtifactMetadata])).map(_.path)
-      case None => throw NoMetadataException(artifactName)
+  private def pathForArtifact(artifactName: String): PathAttemptResult = {
+    for {
+      response <- requestFor(artifactName)
+      body <- responseBody(response)
+      path <- extractPath(body, artifactName)
+    } yield path
+  }
+
+  private def requestFor(artifactName: String) = {
+    Try {
+      Http(requestURLTemplate)
+        .param("codePack", codePack)
+        .param("artifactName", artifactName)
+        .header("Authorization", s"bearer $token")
+        .option(HttpOptions.readTimeout(timeout))
+        .asString
+    }
+  }
+
+  private def responseBody(resp: HttpResponse[String]) = {
+    Try {
+      val body = resp.body
+      val code = resp.code
+
+      code match {
+        case 200 => body
+        case 401 => throw NotAuthorizedException(body)
+        case 404 if body.contains(codePack) => throw CodePackNotFoundException(body)
+        case 404 => throw ArtifactNotFoundException(body)
+      }
+    }
+  }
+
+  private def extractPath(body: String, artifactName: String) = {
+    Try {
+      val artifact = mapper.readValue(body, classOf[Artifact])
+      Option(artifact.metadata) match {
+        case Some(metadata) => Option(mapper.readValue(metadata, classOf[ArtifactMetadata])).map(_.path)
+        case None => throw NoMetadataException(artifactName)
+      }
     }
   }
 }
 
 object CodotaThinClient {
   val DefaultBaseURL = "https://gateway.codota.com"
+  type PathAttemptResult = Try[Option[String]]
+  type RetriesLoop = Stream[PathAttemptResult]
 }
 
 case class Artifact(metadata: String)
