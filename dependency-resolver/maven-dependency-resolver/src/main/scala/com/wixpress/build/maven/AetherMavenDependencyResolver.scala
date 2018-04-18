@@ -154,13 +154,6 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
       .setRepositories(remoteRepositories)
   }
 
-  private def collectRequestOf(baseDependencies: Set[Dependency]) = {
-    val dependencies = baseDependencies.map(_.asAetherDependency).toList.asJava
-    (new CollectRequest)
-      .setDependencies(dependencies)
-      .setRepositories(remoteRepositories)
-  }
-
   private def remoteRepositories = {
     def mapper(repo: (String, Int)) = {
       val repoURL = repo._1
