@@ -122,7 +122,11 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     packageBuildDescriptorPath(bazelPackage.relativePathFromMonoRepoRoot)
 
   private def packageBuildDescriptorPath(packageRelativePathFromRoot: String) =
-    repoRoot.resolve(packageRelativePathFromRoot).resolve("BUILD.bazel")
+    repoRoot.resolve(ensureRelative(packageRelativePathFromRoot)).resolve("BUILD.bazel")
+
+  private def ensureRelative(path: String) = Option(path)
+    .filterNot(_.startsWith("/"))
+    .getOrElse(path.takeRight(path.length-1))
 
   private def writePackage(bazelPackage: Package): String =
     writePackage(bazelPackage.targets.map(writeTarget))
