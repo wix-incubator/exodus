@@ -21,7 +21,7 @@ scala_specs2_junit_test(
         "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
         "//migrator/wix-bazel-migrator:tests_dependencies",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator+bazel/migrator/transform+build/maven/analysis",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator+bazel/migrator/tinker+bazel/migrator/transform+build/maven/analysis",
         "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
     ],
