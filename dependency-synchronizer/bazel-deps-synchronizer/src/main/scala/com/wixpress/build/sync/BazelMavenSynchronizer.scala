@@ -18,6 +18,9 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
     val dependenciesToUpdate = newDependencyNodes(dependencyManagementSource, dependencies, localCopy)
     logger.info(s"syncing ${dependenciesToUpdate.size} dependencies")
+
+    logger.info(s"First dep to sync is ${dependenciesToUpdate.head.baseDependency}.")
+
     if (dependenciesToUpdate.isEmpty)
       return
 
@@ -34,8 +37,12 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
     val currentDependenciesFromBazel = new BazelDependenciesReader(localWorkspace).allDependenciesAsMavenDependencies()
 
+    logger.info(s"retrieved ${currentDependenciesFromBazel.size} dependencies from local workspace")
+
     val dependenciesToSync = uniqueDependenciesFrom(dependencies)
     val newManagedDependencies = dependenciesToSync diff currentDependenciesFromBazel
+
+    logger.info(s"calculated ${newManagedDependencies.size} dependencies that need to added/updated")
 
     mavenDependencyResolver.dependencyClosureOf(newManagedDependencies, managedDependenciesFromMaven)
   }
