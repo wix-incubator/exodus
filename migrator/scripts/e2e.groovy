@@ -1,5 +1,3 @@
-def maven_success = false
-
 pipeline {
     agent any
     options {
@@ -7,6 +5,8 @@ pipeline {
     }
     environment {
         LATEST_COMMIT_HASH_COMMAND = "git ls-remote -q ${env.repo_url} | head -1 | cut -f 1"
+        // if migration failed - tell downstream jobs to read the master
+        MIGRATION_BRANCH = "master"
     }
     stages {
         stage('setup') {
@@ -33,7 +33,10 @@ pipeline {
                                 ]
                                 build job: "03-fix-strict-deps", wait: true, propagate: false, parameters: parameters
                                 build job: "05-run-bazel-rbe", wait: false, propagate: false, parameters: parameters
-                                build job: "02-run-bazel", wait: true, propagate: false, parameters: parameters
+                                bazel_run = build job: "02-run-bazel", wait: true, propagate: false, parameters: parameters
+                                env.BAZEL_SUCCESS = "${bazel_run.result == "SUCCESS"}"
+                                env.BAZEL_RUN_NUMBER = "${bazel_run.number}"
+                                env.MIGRATION_BRANCH = migration_branch
                             }
                         }
                     }
@@ -43,6 +46,7 @@ pipeline {
                         script {
                             def m = build job: "02-run-maven", wait: true, propagate: false, parameters: [string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")]
                             maven_success = (m.result == "SUCCESS") || (m.result == "UNSTABLE")
+                            env.MAVEN_SUCCESS = "${maven_success}"
                         }
                     }
                 }
@@ -51,7 +55,13 @@ pipeline {
         stage('compare') {
             steps {
                 script {
-                    build job: "03-compare", wait: true, parameters: [booleanParam(name: 'MAVEN_SUCCESS', value: maven_success)]
+                    params = [
+                        string(name: "ALLOW_MERGE", value: env.BAZEL_SUCCESS),
+                        string(name: 'BAZEL_RUN_NUMBER', value: env.BAZEL_RUN_NUMBER),
+                        string(name: 'MAVEN_RUN_NUMBER', value : env.MAVEN_RUN_NUMBER),
+                        string(name: 'BRANCH_NAME', value : env.MIGRATION_BRANCH)
+                    ]
+                    build job: "03-compare", wait: true, parameters: params
                 }
             }
         }

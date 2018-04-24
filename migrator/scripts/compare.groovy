@@ -4,7 +4,7 @@ pipeline {
         stage('checkout') {
             steps {
                 dir("${env.REPO_NAME}") {
-                    git "${env.repo_url}"
+                    git url: "${env.repo_url}", branch: "${BRANCH_NAME}"
                 }
             }
         }
@@ -12,7 +12,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        copyArtifacts projectName: '02-run-maven', target: 'maven-output', selector: lastCompleted()
+                        copyArtifacts projectName: '02-run-maven', target: 'maven-output', selector: specific("${MAVEN_RUN_NUMBER}")
                     } catch (err) {
                         echo "[WARN] unable to copy maven artifacts, perhaps none exist?"
                     }
@@ -23,7 +23,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        copyArtifacts projectName: '02-run-bazel', target: 'bazel-output', selector: lastCompleted()
+                        copyArtifacts projectName: '02-run-bazel', target: 'bazel-output', selector: specific("${BAZEL_RUN_NUMBER}")
                     } catch (err) {
                         echo "[WARN] unable to copy bazel artifacts, perhaps none exist?"
                     }
@@ -36,6 +36,7 @@ pipeline {
                     if (!has_artifacts('bazel') && !has_artifacts('maven')) {
                         echo "No tests were detected in both maven and bazel"
                         currentBuild.result = 'UNSTABLE'
+                        env.ALLOW_MERGE = "false"
                         return
                     }
 
@@ -52,6 +53,7 @@ pipeline {
                     if (!has_artifacts('bazel')) {
                         echo "[WARN] Unable to perform comparison - bazel artifacts were not found."
                         currentBuild.result = 'UNSTABLE'
+                        env.ALLOW_MERGE = "false"
                         return
                     }
 
@@ -66,7 +68,22 @@ pipeline {
                                   |""".stripMargin()
                         }
                     }
+                    env.ALLOW_MERGE_FILE_EXISTS = "${fileExists "${env.REPO_NAME}/bazel_migration/auto-merge"}"
                 }
+            }
+        }
+        stage("auto-merge"){
+            when{
+                environment name : "ALLOW_MERGE", value : "true"
+                environment name : "ALLOW_MERGE_FILE_EXISTS", value : "true"
+            }
+            steps{
+                 dir("${env.REPO_NAME}"){
+                      sh """|git checkout ${env.BRANCH_NAME}
+                            |git commit --allow-empty -m "passed compare - #automerge"
+                            |git push origin ${env.BRANCH_NAME}
+                            |""".stripMargin()
+                 }    
             }
         }
     }
