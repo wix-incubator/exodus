@@ -24,7 +24,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     writeBazelCustomRunnerScript()
     writeDefaultJavaToolchain()
 
-    reportCollisions()
+    syncLocalThirdPartyDeps()
   }
 
   private def failOnConflictsIfNeeded(): Unit = if (configuration.failOnSevereConflicts)
@@ -56,7 +56,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   private def writeDefaultJavaToolchain(): Unit =
     new DefaultJavaToolchainWriter(repoRoot).write()
 
-  private def reportCollisions(): Unit = {
+  private def syncLocalThirdPartyDeps(): Unit = {
     val bazelRepo = new NoPersistenceBazelRepository(repoRoot)
     val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies.map(_.coordinates)
     val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
