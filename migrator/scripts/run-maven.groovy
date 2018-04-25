@@ -10,6 +10,7 @@ pipeline {
     environment {
         MAVEN_INSTALL = "export MAVEN_OPTS='-Xmx8G';mvn clean install -B -Dwix.environment=CI -DtestFailureIgnore=true -DshouldSkipAssembly=true"
         JAVA_HOME = tool name: 'jdk8u152'
+        PATH = "$JAVA_HOME/bin:$PATH"
         REPO_NAME = find_repo_name()
         COMMIT_HASH = "${env.COMMIT_HASH}"
     }
