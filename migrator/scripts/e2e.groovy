@@ -45,8 +45,7 @@ pipeline {
                     steps {
                         script {
                             def m = build job: "02-run-maven", wait: true, propagate: false, parameters: [string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")]
-                            maven_success = (m.result == "SUCCESS") || (m.result == "UNSTABLE")
-                            env.MAVEN_SUCCESS = "${maven_success}"
+                            env.MAVEN_RUN_NUMBER = "${m.number}"
                         }
                     }
                 }
