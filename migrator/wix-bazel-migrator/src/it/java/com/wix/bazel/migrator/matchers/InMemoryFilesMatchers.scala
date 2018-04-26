@@ -2,6 +2,7 @@ package com.wix.bazel.migrator.matchers
 
 import java.nio.file.{Files, Path}
 
+import com.wix.bazel.migrator.matchers.InMemoryFilesHelpers.pathContent
 import org.specs2.matcher.{Matcher, Matchers}
 
 import scala.io.Source.fromInputStream
@@ -12,12 +13,15 @@ trait InMemoryFilesMatchers { self : Matchers =>
   def beEmptyRegularFile: Matcher[Path] = beRegularFile and beEmpty
   private def beEmpty: Matcher[Path] = equalTo(0) ^^ { (p: Path) => Files.readAllBytes(p).length }
 
+  def beRegularFile(withContentMatcher: Matcher[Path]): Matcher[Path] = beRegularFile and withContentMatcher
   def beRegularFile(withContent: Seq[String]): Matcher[Path] = beRegularFile and contain(withContent)
   def beRegularFile(withContentFromResource: String): Matcher[Path] = beRegularFile and contain(withContentFromResource)
 
   private def contain(lines: Seq[String]): Matcher[Path] = equalTo(lines.mkString(System.lineSeparator)) ^^ { (p: Path) => pathContent(p) }
   private def contain(resourceName: String): Matcher[Path] =
     equalTo(fromInputStream(getClass.getResourceAsStream(s"/$resourceName")).mkString) ^^ { (p: Path) => pathContent(p) }
+}
 
-  private def pathContent(p: Path) = new String(Files.readAllBytes(p))
+object InMemoryFilesHelpers {
+  def pathContent(p: Path) = new String(Files.readAllBytes(p))
 }

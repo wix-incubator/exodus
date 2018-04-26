@@ -17,7 +17,7 @@ class BazelRcWriter(repoRoot: Path) {
          |test --experimental_ui
          |test --test_tmpdir=/tmp
          |test --action_env=BUILD_TOOL=BAZEL
-      """.stripMargin
+         |""".stripMargin
     writeToDisk(contents)
   }
 
