@@ -28,7 +28,7 @@ pipeline {
         stage('build') {
             steps {
                 sh "bazel info"
-                sh "bazel build --strategy=Scalac=worker //..."
+                sh "bazel build -k --strategy=Scalac=worker //..."
             }
         }
         stage('UT') {

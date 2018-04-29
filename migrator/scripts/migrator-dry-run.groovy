@@ -76,7 +76,7 @@ pipeline {
         stage('build') {
             steps {
                 dir("${env.REPO_NAME}") {
-                    sh "bazel build --strategy=Scalac=worker //..."
+                    sh "bazel build -k --strategy=Scalac=worker //..."
                 }
             }
         }
