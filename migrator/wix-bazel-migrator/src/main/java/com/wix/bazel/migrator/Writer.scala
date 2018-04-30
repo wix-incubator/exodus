@@ -415,28 +415,28 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   private val FixedVersionToEnableRepeatableMigrations = "fixed.version-SNAPSHOT"
 
   private val ForceTestOnly: Map[String, Boolean] =
-    overrides.targetOverrides.flatMap(targetOverride => targetOverride.testOnly.map(testOnly => targetOverride.label -> testOnly)).toMap.withDefaultValue(false)
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.testOnly.map(testOnly => encodePluses(targetOverride.label) -> testOnly)).toMap.withDefaultValue(false)
 
   private val ForceTestType: Map[String, TestType] =
-    overrides.targetOverrides.flatMap(targetOverride => targetOverride.testType.map(testType => targetOverride.label -> Writer.testTypeFromOverride(testType))).toMap
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.testType.map(testType => encodePluses(targetOverride.label) -> Writer.testTypeFromOverride(testType))).toMap
 
   private val ForceTagsTestType: Map[String, TestType] =
-    overrides.targetOverrides.flatMap(targetOverride => targetOverride.tags.map(tags => targetOverride.label -> Writer.testTypeFromOverride(tags))).toMap
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.tags.map(tags => encodePluses(targetOverride.label) -> Writer.testTypeFromOverride(tags))).toMap
 
   private val AdditionalJvmFlags: Map[String, String] =
-    overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalJvmFlags.map(flags => targetOverride.label -> concat(flags.filterNot(_.startsWith("-Djava.io.tmpdir="))))).toMap.withDefaultValue("")
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalJvmFlags.map(flags => encodePluses(targetOverride.label) -> concat(flags.filterNot(_.startsWith("-Djava.io.tmpdir="))))).toMap.withDefaultValue("")
 
   private val AdditionalDataDeps: Map[String, String] =
-    overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalDataDeps.map(dataDeps => targetOverride.label -> concat(dataDeps))).toMap.withDefaultValue("")
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalDataDeps.map(dataDeps => encodePluses(targetOverride.label) -> concat(dataDeps))).toMap.withDefaultValue("")
 
   private val ForceTestSize: Map[String, String] =
-    overrides.targetOverrides.flatMap(targetOverride => targetOverride.testSize.map(testSize => targetOverride.label -> prefixWithSizeIfNonEmpty(testSize))).toMap
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.testSize.map(testSize => encodePluses(targetOverride.label) -> prefixWithSizeIfNonEmpty(testSize))).toMap
 
   private val ForceTargetAlias: Map[String, String] =
-    overrides.targetOverrides.flatMap(targetOverride => targetOverride.newName.map(newName => targetOverride.label -> newName)).toMap
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.newName.map(newName => encodePluses(targetOverride.label) -> newName)).toMap
 
   private val AdditionalProtoAttributes: Map[String, String] =
-    overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalProtoAttributes.map(additionalProtoAttributes => targetOverride.label -> additionalProtoAttributes)).toMap.withDefaultValue("")
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalProtoAttributes.map(additionalProtoAttributes => encodePluses(targetOverride.label) -> additionalProtoAttributes)).toMap.withDefaultValue("")
 
   private def concat(flags: List[String]): String = flags.mkString(", \"", "\", \"", "\"")
 
@@ -446,4 +446,6 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
       case nonEmptyTestSize => s"""size = "$nonEmptyTestSize","""
     }
 
+  // We need this because of https://github.com/wix/wix-embedded-mysql/blob/5d0d1b4b90eb5316d5b4cdd796bd4d4fd7cb4af1/wix-embedded-mysql/src/main/java/com/wix/mysql/ScriptResolver.java#L54
+  private def encodePluses(str: String): String = str.replace('+', '_')
 }

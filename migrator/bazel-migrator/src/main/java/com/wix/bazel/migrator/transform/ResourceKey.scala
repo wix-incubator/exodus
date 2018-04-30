@@ -59,7 +59,7 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
   private def replaceEmptyStringWithDot(s: String) = if (s.isEmpty) "." else s
 
   private def concatSubPackagesToCompositeName(packages: Set[String]) = "agg=" +
-    packages.map(_.stripPrefix("/")).map(replaceEmptyStringWithDot).toSeq.sorted.mkString("+")
+    packages.map(_.stripPrefix("/")).map(replaceEmptyStringWithDot).toSeq.sorted.mkString("_")
 
   private def lowestSourcePackage(sourcePackage: String): String = sourcePackage.split('/').last
 

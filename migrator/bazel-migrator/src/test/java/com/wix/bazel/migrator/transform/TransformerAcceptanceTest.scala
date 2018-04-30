@@ -1,7 +1,5 @@
 package com.wix.bazel.migrator.transform
 
-import java.util.InputMismatchException
-
 import com.wix.bazel.migrator.model.Matchers._
 import com.wix.bazel.migrator.model.Target.TargetDependency
 import com.wix.bazel.migrator.model.TestType._
@@ -291,7 +289,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
       val packages = transformer.transform(repo.modules)
 
-      packages must contain(exactly(aPackage(target = aTarget(name = "agg=lib+lib2"))))
+      packages must contain(exactly(aPackage(target = aTarget(name = "agg=lib_lib2"))))
     }
 
     "externalize originating source module for jvm targets to allow scope track-back" in new Context {
@@ -647,7 +645,7 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
       (_: Target.Resources).codePurpose aka "code purpose"
     }
 
-  def aggregatorOf(targets: String*): String = "agg=" + targets.mkString("+")
+  def aggregatorOf(targets: String*): String = "agg=" + targets.mkString("_")
 
   def test(testType: TestType): Matcher[CodePurpose] = be_===(CodePurpose.Test(testType))
 }
