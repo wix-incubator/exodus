@@ -12,7 +12,9 @@ object MavenScope {
 
   case object Provided extends MavenScope("provided")
 
-  private val allScopes = List(Runtime, Compile, Test, Provided)
+  case object System extends MavenScope("system")
+
+  private val allScopes = List(Runtime, Compile, Test, Provided, System)
 
   def of(scopeName: String): MavenScope = allScopes.find(_.name.equalsIgnoreCase(scopeName))
     .getOrElse(MavenScope.Compile)

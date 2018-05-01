@@ -8,7 +8,8 @@ class MavenScopeTest extends SpecificationWithJUnit {
     ScopeToName(MavenScope.Compile,"compile"),
     ScopeToName(MavenScope.Test,"test"),
     ScopeToName(MavenScope.Runtime,"runtime"),
-    ScopeToName(MavenScope.Provided,"provided")
+    ScopeToName(MavenScope.Provided,"provided"),
+    ScopeToName(MavenScope.System,"system")
   )
   private def extractTest(scopeToName:ScopeToName):Fragment ={
     s"parse ${scopeToName.scope} from string '${scopeToName.name}'" in {
