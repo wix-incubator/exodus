@@ -30,6 +30,8 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
     val providedInternalDependency = MavenMakers.aDependency("some-provided-module", MavenScope.Provided)
     val providedThirdPartyDependency = MavenMakers.aDependency("ext-provided-dep", MavenScope.Provided)
 
+    val systemThirdPartyDependency = MavenMakers.aDependency("ext-system-dep", MavenScope.System)
+
     def dummyTarget(forModule: SourceModule) = Target.Jvm(
       name = "dont-care",
       sources = Set.empty,
@@ -124,6 +126,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
             ))))
       }
 
+
       "empty tests module deps target for module without any dependencies or resources" in new ctx {
         val leafModule = ModuleMaker.aModule("some-module")
 
@@ -134,6 +137,18 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
               deps = contain(exactly("main_dependencies")),
               runtimeDeps = beEmpty,
               testOnly = beTrue
+            ))))
+      }
+
+      "disregard system dependency" in new ctx {
+        val moduleWithSystemDependency = ModuleMaker.aModule("some-module").withDirectDependency(systemThirdPartyDependency)
+
+        new ModuleDependenciesTransformer(Set(moduleWithSystemDependency), externalPackageLocator).transform(emptyPackagesSet) must contain(
+          aPackage(
+            target = a(moduleDepsTarget(
+              name = "main_dependencies",
+              deps = beEmpty,
+              runtimeDeps = beEmpty
             ))))
       }
     }
