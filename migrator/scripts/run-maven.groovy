@@ -8,7 +8,7 @@ pipeline {
         maven 'M3'
     }
     environment {
-        MAVEN_OPTS = "-Xmx8G -XX:MaxMetaspaceSize=1G -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
+        MAVEN_OPTS = "-Xmx12G -XX:MaxMetaspaceSize=1G -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
         MAVEN_INSTALL = "mvn clean install -B -Dwix.environment=CI -DtestFailureIgnore=true -DshouldSkipAssembly=true"
         JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$JAVA_HOME/bin:$PATH"
