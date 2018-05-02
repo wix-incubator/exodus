@@ -44,7 +44,7 @@ pipeline {
                         git "git@github.com:wix-private/core-server-build-tools.git"
                         ansiColor('xterm') {
                             sh """|cd scripts
-                                  |pip3 install --user -r requirements.txt
+                                  |pip3 install --user --extra-index-url https://pypi.python.org/simple -r requirements.txt
                                   |python3 -u maven_bazel_diff.py maven-count ${WORKSPACE}/maven-output ${WORKSPACE}/bazel-output
                                   |""".stripMargin()
                         }
@@ -62,7 +62,7 @@ pipeline {
                         ansiColor('xterm') {
                             sh """|export PYTHONIOENCODING=UTF-8
                                   |cd scripts
-                                  |pip3 install --user -r requirements.txt
+                                  |pip3 install --user --extra-index-url https://pypi.python.org/simple -r requirements.txt
                                   |python3 -u maven_bazel_diff.py maven-count ${WORKSPACE}/maven-output ${WORKSPACE}/bazel-output
                                   |python3 -u maven_bazel_diff.py compare ${WORKSPACE}/maven-output ${WORKSPACE}/bazel-output
                                   |""".stripMargin()
