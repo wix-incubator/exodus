@@ -10,6 +10,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
 
   private val frameworkWSName = if (currentWorkspaceIsFW) newFrameworkWSName else oldFrameworkWSName
 
+  private val serverInfraWSName = "server_infra"
+
   def write(): Unit = {
     val workspaceFileContents =
       s"""
@@ -74,17 +76,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |
          |register_toolchains("@core_server_build_tools//toolchains:wix_defaults_global_toolchain")
          |
-         |wix_grpc_version="68e470581d60342c6da9fd1852082ef8bd916c1e" # update this as needed
-         |
-         |git_repository(
-         |             name = "wix_grpc",
-         |             remote = "git@github.com:wix-platform/bazel_proto_poc.git",
-         |             commit = wix_grpc_version
-         |)
-         |
-         |load("@wix_grpc//src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")
-         |
-         |grpc_repositories()
+         |${loadGrpcRepos(workspaceName)}
          |
          |http_archive(
          |    name = "com_google_protobuf",
@@ -126,6 +118,26 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |             commit = "654f262d07ac14ae145bcd35f702e0e32440b84d"
          |)
          |""".stripMargin
+
+  private def loadGrpcRepos(workspaceName: String) = {
+      val loadStatement = if (workspaceName == serverInfraWSName)
+        s"""load("//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")"""
+      else
+        s"""|wix_grpc_version="68e470581d60342c6da9fd1852082ef8bd916c1e" # update this as needed
+            |
+            |git_repository(
+            |             name = "wix_grpc",
+            |             remote = "git@github.com:wix-platform/bazel_proto_poc.git",
+            |             commit = wix_grpc_version
+            |)
+            |
+            |load("@wix_grpc//src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")""".stripMargin
+
+    loadStatement +
+      """|
+         |grpc_repositories()""".stripMargin
+
+  }
 
   private def writeToDisk(workspaceFileContents: String): Unit = {
     Files.write(repoRoot.resolve("WORKSPACE"), workspaceFileContents.getBytes)
