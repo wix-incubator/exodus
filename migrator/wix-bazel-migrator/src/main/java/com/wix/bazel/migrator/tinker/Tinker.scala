@@ -43,7 +43,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     new WorkspaceWriter(repoRoot, WorkspaceName.by(configuration.repoUrl)).write()
 
   private def writeInternal(): Unit =
-    new Writer(repoRoot, codeModules, bazelPackages).write()
+    new Writer(repoRoot, codeModules, bazelPackages, WorkspaceName.by(configuration.repoUrl)).write()
 
   private def writeExternal(): Unit =
     new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()

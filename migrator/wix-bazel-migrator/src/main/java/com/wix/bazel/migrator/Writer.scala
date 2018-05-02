@@ -7,8 +7,10 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target._
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Scope, SourceModule, Target, TestType}
+import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.LibraryRule
+import com.wixpress.build.bazel.repositories.WorkspaceName
 import com.wixpress.build.maven.Coordinates
 
 object PrintJvmTargetsSources {
@@ -55,11 +57,11 @@ object Writer extends MigratorApp {
     }
   }
 
-  val writer = new Writer(tinker.repoRoot, tinker.codeModules, Persister.readTransformationResults())
+  val writer = new Writer(tinker.repoRoot, tinker.codeModules, Persister.readTransformationResults(), WorkspaceName.by(configuration.repoUrl))
   writer.write()
 }
 
-class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) {
+class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package], workspaceName: String) {
 
   def write(): Unit = {
     //we're writing the resources targets first since they might get overridden by identified dependencies from the analysis
@@ -134,9 +136,15 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   private def writePackage(serializedTargets: Set[String]) =
     DefaultPublicVisibility + serializedTargets.toSeq.sorted.mkString("\n\n")
 
-  private def writeProto(proto: Target.Proto): String = {
+  private def writeProto(proto: Target.Proto, workspaceName: String): String = {
+
+    val loadStatement = if (workspaceName == WorkspaceWriter.serverInfraWSName)
+        """load("//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
+      else
+        """load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
+
     s"""
-       |load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")
+       |$loadStatement
        |
        |wix_proto_library(
        |    name = "${proto.name}",
@@ -166,7 +174,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     target match {
       case jvmLibrary: Target.Jvm => writeJvm(jvmLibrary)
       case resources: Target.Resources => writeResources(resources)
-      case proto: Target.Proto => writeProto(proto)
+      case proto: Target.Proto => writeProto(proto, workspaceName)
       case moduleDeps: Target.ModuleDeps => writeModuleDeps(moduleDeps)
     }
   }

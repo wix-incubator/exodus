@@ -1,16 +1,10 @@
 package com.wix.bazel.migrator.workspace
 
 import java.nio.file.{Files, Path}
+import WorkspaceWriter._
 
 class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
-
-  // TODO: temp solution until the next framework merge
-  private val oldFrameworkWSName = "wix_framework"
-  private val newFrameworkWSName = "wix_platform_wix_framework"
-
   private val frameworkWSName = if (currentWorkspaceIsFW) newFrameworkWSName else oldFrameworkWSName
-
-  private val serverInfraWSName = "server_infra"
 
   def write(): Unit = {
     val workspaceFileContents =
@@ -144,4 +138,12 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
   }
 
 
+}
+
+object WorkspaceWriter {
+  // TODO: temp solution until the next framework merge
+  private val oldFrameworkWSName = "wix_framework"
+  private val newFrameworkWSName = "wix_platform_wix_framework"
+
+  val serverInfraWSName = "server_infra"
 }
