@@ -139,7 +139,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   private def writeProto(proto: Target.Proto, workspaceName: String): String = {
 
     val loadStatement = if (workspaceName == WorkspaceWriter.serverInfraWSName)
-        """load("//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
+        """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
       else
         """load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
 
