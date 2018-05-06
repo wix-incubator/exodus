@@ -28,21 +28,28 @@ pipeline {
         stage('mvn') {
             steps {
                 script {
-                    dir("${env.REPO_NAME}") {
-                        if (fileExists('./pom.xml')) {
-                            sh "${env.MAVEN_INSTALL}"
-                        } else {
-                            def root = pwd()
-                            def dirs =  sh(returnStdout: true, script: "ls -d ${root}/*").trim().split(System.getProperty("line.separator"))
-                            dirs.each {
-                                pom = it + "/pom.xml"
-                                if (fileExists(pom)) 
-                                    dir(it) {
-                                        sh "${env.MAVEN_INSTALL}"
-                                    }
+                    wrap([
+                        $class: 'LogfilesizecheckerWrapper',
+                        'maxLogSize': 3000,
+                        'failBuild': true,
+                        'setOwn': true]) {
+                            
+                        dir("${env.REPO_NAME}") {
+                            if (fileExists('./pom.xml')) {
+                                sh "${env.MAVEN_INSTALL}"
+                            } else {
+                                def root = pwd()
+                                def dirs =  sh(returnStdout: true, script: "ls -d ${root}/*").trim().split(System.getProperty("line.separator"))
+                                dirs.each {
+                                    pom = it + "/pom.xml"
+                                    if (fileExists(pom)) 
+                                        dir(it) {
+                                            sh "${env.MAVEN_INSTALL}"
+                                        }
+                                }
                             }
-                        }
-                    } 
+                        } 
+                    }
                 }
             }
         }
