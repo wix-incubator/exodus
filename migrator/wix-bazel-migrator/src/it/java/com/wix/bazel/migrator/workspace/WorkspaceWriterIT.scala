@@ -24,7 +24,7 @@ import better.files.File
       writer.write()
 
       File(repoRoot.resolve("WORKSPACE")).contentAsString must contain(
-        """load("//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")""")
+        """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")""")
     }
 
     "load grpc_repositories from poc when migrating non server-infra repo" in new ctx {

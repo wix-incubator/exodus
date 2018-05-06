@@ -115,7 +115,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
 
   private def loadGrpcRepos(workspaceName: String) = {
       val loadStatement = if (workspaceName == serverInfraWSName)
-        s"""load("//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")"""
+        s"""load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")"""
       else
         s"""|wix_grpc_version="68e470581d60342c6da9fd1852082ef8bd916c1e" # update this as needed
             |
