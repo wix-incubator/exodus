@@ -1,0 +1,1 @@
+../../../../../workspaces-resolution/src/main/resolve_external_wix_repositories.py

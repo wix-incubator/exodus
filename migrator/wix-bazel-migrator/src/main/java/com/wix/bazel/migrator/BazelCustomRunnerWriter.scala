@@ -34,6 +34,6 @@ class BazelCustomRunnerWriter(repoRoot: Path) {
 }
 
 object BazelCustomRunnerWriter {
-  val WorkspaceResolveScriptFileName = "resolve_workspace_placeholders.py"
+  val WorkspaceResolveScriptFileName = "resolve_external_wix_repositories.py"
   val CustomBazelScriptName = "custom-bazel-script"
 }

@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path}
 import WorkspaceWriter._
 
 class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
-  private val frameworkWSName = if (currentWorkspaceIsFW) newFrameworkWSName else oldFrameworkWSName
+  private val frameworkWSName = "wix_platform_wix_framework"
 
   def write(): Unit = {
     val workspaceFileContents =
@@ -39,14 +39,11 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |
          |
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
-         |load("//:tools/commits.bzl", "REPO_COMMITS")
          |
-         |git_repository(
-         |             name = "core_server_build_tools",
-         |             remote = "git@github.com:wix-private/core-server-build-tools.git",
-         |             commit = REPO_COMMITS['core_server_build_tools_commit']
-         |)
-         |${importFwIfThisIsNotFw(workspaceName)}
+         |load("//:tools/external_wix_repositories.bzl", "external_wix_repositories")
+         |
+         |external_wix_repositories()
+         |
          |load("@core_server_build_tools//:repositories.bzl", "scala_repositories")
          |scala_repositories()
          |load("@$frameworkWSName//test-infrastructures-modules/mysql-testkit/downloader:mysql_installer.bzl", "mysql_default_version", "mysql")
@@ -94,24 +91,6 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
   private def workspaceSuffixOverride(): String = {
     WorkspaceOverridesReader.from(repoRoot).suffix
   }
-
-  private def currentWorkspaceIsFW = workspaceName == newFrameworkWSName
-
-  // TODO:
-  // 1) fix the "git_repository" name once fw merges commit with new name
-  // 2) remove this completely when workspace writer starts using external repositories writer
-  private def importFwIfThisIsNotFw(workspaceName: String) =
-    if (currentWorkspaceIsFW)
-      ""
-    else
-      s"""
-         |
-         |git_repository(
-         |             name = "wix_framework",
-         |             remote = "git@github.com:wix-platform/wix-framework.git",
-         |             commit = "654f262d07ac14ae145bcd35f702e0e32440b84d"
-         |)
-         |""".stripMargin
 
   private def loadGrpcRepos(workspaceName: String) = {
       val loadStatement = if (workspaceName == serverInfraWSName)

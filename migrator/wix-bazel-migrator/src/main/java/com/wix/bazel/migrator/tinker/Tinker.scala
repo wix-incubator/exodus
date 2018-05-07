@@ -50,7 +50,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
 
   private def writeBazelCustomRunnerScript(): Unit = {
     new BazelCustomRunnerWriter(repoRoot).write()
-    new GitIgnoreAppender(repoRoot).append("tools/commits.bzl")
+    new GitIgnoreAppender(repoRoot).append("tools/external_wix_repositories.bzl")
   }
 
   private def writeDefaultJavaToolchain(): Unit =

@@ -1,1 +1,0 @@
-../../../../../workspaces-resolution/src/main/resolve_workspace_placeholders.py
