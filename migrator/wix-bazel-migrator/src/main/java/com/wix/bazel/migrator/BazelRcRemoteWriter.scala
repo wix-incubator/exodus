@@ -39,7 +39,7 @@ class BazelRcRemoteWriter(repoRoot: Path) {
        |build:remote --host_javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
        |build:remote --javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
        |build:remote --crosstool_top=@bazel_toolchains//configs/debian8_clang/0.3.0/bazel_0.13.0/default:toolchain
-       |build:remote --experimental_remote_platform_override='properties:{ name:"container-image" value:"docker://gcr.io/gcb-with-custom-workers/rbe-toolchain-container@sha256:13825335701b40780639b3ca61d53ef358effb42638e4774ad5401bca92afe66" }'
+       |build:remote --experimental_remote_platform_override='properties:{ name:"container-image" value:"docker://gcr.io/gcb-with-custom-workers/rbe-toolchain-container@sha256:084bcbfb51e425816f955ea19c82e9817386776bcdcc8a9011685ac93e5e4b01" }'
        |
        |# Set various strategies so that all actions execute remotely. Mixing remote
        |# and local execution will lead to errors unless the toolchain and remote
