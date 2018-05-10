@@ -58,7 +58,7 @@ pipeline {
         always {
             script {
                 dir("${env.REPO_NAME}") {
-                    archiveArtifacts "**/target/**/TEST-*.xml,bazel_migration/*.*"
+                    archiveArtifacts artifacts: "**/target/**/TEST-*.xml,bazel_migration/*.*", allowEmptyArchive: true
                 }
             }
         }
