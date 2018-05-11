@@ -21,6 +21,7 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.{GenIterable, GenTraversableOnce, mutable}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
+import CodotaDependencyAnalyzer._
 
 class CodotaDependencyAnalyzer(repoRoot: Path,
                                modules: Set[SourceModule],
@@ -65,7 +66,7 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
 
   private def bulkModuleDependenciesOf(module: SourceModule): ModuleAnalysisResults = {
     val prodArtifactName = codotaArtifactNameFrom(module)
-    val prodCode = codotaClient.getArtifactDependencies(prodArtifactName).asScala.toMap
+    val prodCode = codotaClient.artifactDependenciesOf(prodArtifactName)
 
     //module might not have tests
     val testArtifactName = prodArtifactName + "[tests]"
@@ -77,25 +78,25 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
 
   case class ModuleAnalysisResults(prodResults: AnalysisResults, testResults: AnalysisResults)
 
-  case class AnalysisResults(filesToDependencyInfo: Map[String, DependencyInfo], isTestCode: Boolean)
+  case class AnalysisResults(filesToDependencyInfo: Map[String, List[DependencyInfo]], isTestCode: Boolean)
 
   case class SimplifiedCodotaDependency(filepath: String, simplifiedCoordinates: SimplifiedCoordinates, label: Option[String], partOfProject: Boolean)
 
   object AnalysisResults {
-    def ofProd(results: Map[String, DependencyInfo]): AnalysisResults =
+    def ofProd(results: Map[String, List[DependencyInfo]]): AnalysisResults =
       AnalysisResults(results, isTestCode = false)
 
-    def ofTests(results: Map[String, DependencyInfo]): AnalysisResults =
+    def ofTests(results: Map[String, List[DependencyInfo]]): AnalysisResults =
       AnalysisResults(results, isTestCode = true)
   }
 
   private def tryToGetTestCode(testArtifactName: String) = {
     val notFoundException = (value: CodotaHttpException) => value.status == 404
     val testCode = tryRetry(butDoNotRetryIf = notFoundException) {
-      codotaClient.getArtifactDependencies(testArtifactName).asScala.toMap
+      codotaClient.artifactDependenciesOf(testArtifactName)
     } match {
-      case x: util.Success[Map[String, DependencyInfo]] => x.value
-      case Failure(y: CodotaHttpException) if notFoundException(y) => Map.empty[String, DependencyInfo]
+      case x: util.Success[Map[String, List[DependencyInfo]]] => x.value
+      case Failure(y: CodotaHttpException) if notFoundException(y) => Map.empty[String, List[DependencyInfo]]
       case z: util.Failure[_] => throw z.exception
     }
     testCode
@@ -119,10 +120,11 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
       val realFilePath = possibleOverriddenFilePath(module, filePath)
       for {
         sourceDir <- sourceDirEither(module, realFilePath).right
-        depInfo <- validateAnalysisExistsFor(dependencyInfo).augment(sourceModuleFilePathMetadata).right
-        internalDepsExtended <- validateAnalysisExistsFor(depInfo.getInternalDepsExtended).augment(InternalDepMissingExtended(depInfo)).augment(sourceModuleFilePathMetadata).right
-        simplifiedDependencies <- asSimplifiedDependencies(module, internalDepsExtended.asScala.par, analysisResults.isTestCode).augment(sourceModuleFilePathMetadata).right
-        depsOnRepoCode <- internalDependencies(module, realFilePath, simplifiedDependencies).augment(InternalDepMissingExtended(depInfo)).augment(sourceModuleFilePathMetadata).right
+        depInfos <- validateAnalysisExistsFor(dependencyInfo).augment(sourceModuleFilePathMetadata).right
+        maybeInternalDepsExtended = depInfos.map(_.getInternalDepsExtended.asScala)
+        internalDepsExtended <- validateAnalysisExistsFor(maybeInternalDepsExtended).augment(InternalDepMissingExtended(depInfos)).augment(sourceModuleFilePathMetadata).right
+        simplifiedDependencies <- asSimplifiedDependencies(module, internalDepsExtended.flatten.par, analysisResults.isTestCode).augment(sourceModuleFilePathMetadata).right
+        depsOnRepoCode <- internalDependencies(module, realFilePath, simplifiedDependencies).augment(InternalDepMissingExtended(depInfos)).augment(sourceModuleFilePathMetadata).right
         externalSourceDeps <- externalSourceDependencyLabelOf(simplifiedDependencies)
       } yield Code(CodePath(module, sourceDir, realFilePath), depsOnRepoCode, externalSourceDeps)
     }
@@ -372,6 +374,22 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
 
   }
 
+}
+
+object CodotaDependencyAnalyzer {
+
+  implicit class SearchClientExtensions(client: SearchClient) {
+    def artifactDependenciesOf(prodArtifactName: String) = {
+      val filesToDeps = client.getArtifactDependencies(prodArtifactName).asScala.toList
+        .map(entry => (entry.getKey, entry.getValue))
+
+      groupDuplicateFiles(filesToDeps)
+    }
+  }
+
+  def groupDuplicateFiles(rawMapping: List[(String, DependencyInfo)]) = {
+    rawMapping.groupBy(_._1).mapValues(_.map(_._2))
+  }
 }
 
 case class SourceFilesOverrides(mutedFiles: Set[String] = Set.empty) {

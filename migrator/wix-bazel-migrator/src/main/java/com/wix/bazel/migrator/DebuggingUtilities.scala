@@ -13,7 +13,7 @@ import com.wix.bazel.migrator.transform._
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
-
+import CodotaDependencyAnalyzer._
 
 object FindMisAnalyzedInternalDependencies extends DebuggingMigratorApp {
   val codotaArtifacts = tinker.codeModules.map(artifact => artifact.coordinates.groupId + "." + artifact.coordinates.artifactId)
@@ -81,7 +81,7 @@ object PrintDependenciesForSpecificFile extends CodotaClientDebuggingMigratorApp
 }
 
 object PrintArtifactFilesAndTheirDependencies extends CodotaClientDebuggingMigratorApp {
-  writer.writeValue(System.out, codotaClient.getArtifactDependencies(artifactName).asScala.toMap)
+  writer.writeValue(System.out, codotaClient.artifactDependenciesOf(artifactName))
 }
 
 object PrintAllSourceModules extends DebuggingMigratorApp {

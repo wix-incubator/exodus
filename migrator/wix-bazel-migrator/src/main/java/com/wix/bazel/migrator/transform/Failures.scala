@@ -44,7 +44,7 @@ object FailureMetadata {
 
   case class InternalDep(internalDepGroup: Iterable[DependencyInfo.OptionalInternalDependency]) extends FailureMetadata
 
-  case class InternalDepMissingExtended(depInfo: DependencyInfo) extends FailureMetadata
+  case class InternalDepMissingExtended(depInfo: List[DependencyInfo]) extends FailureMetadata
 
   case class MissingArtifactInCodota(artifactName: String) extends FailureMetadata
 }

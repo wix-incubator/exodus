@@ -40,7 +40,7 @@
         <dependency>
             <groupId>com.codota</groupId>
             <artifactId>codota-sdk-java</artifactId>
-            <version>1.0.7</version>
+            <version>1.0.10</version>
         </dependency>
         <dependency>
             <groupId>com.wixpress.build</groupId>
