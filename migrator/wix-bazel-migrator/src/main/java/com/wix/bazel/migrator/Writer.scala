@@ -138,11 +138,10 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
 
   private def writeProto(proto: Target.Proto, workspaceName: String): String = {
 
-    val protoDeps = dedupGlobalProtoDependencies(proto)
-    val loadStatement = if (workspaceName == WorkspaceWriter.serverInfraWSName)
-      """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
-    else
-      """load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
+    val (originalProtoDeps, jvmDeps) = partitionByDepType(proto)
+    val protoDeps = dedupGlobalProtoDependencies(originalProtoDeps)
+    val loadStatement = writeProtoLoadStatement(workspaceName)
+    val jvmDepsSerialized = writeJvmDeps(workspaceName, jvmDeps)
 
     s"""
        |$loadStatement
@@ -156,20 +155,40 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
        |
        |wix_scala_proto_library(
        |    name = "${proto.name}_scala",
-       |    deps = [":${proto.name}"],
+       |    deps = [":${proto.name}"],$jvmDepsSerialized
        |    visibility = ["//visibility:public"],
        |    ${AdditionalProtoAttributes(unAliasedLabelOf(proto))}
        |)
      """.stripMargin
   }
 
+  private def partitionByDepType(proto: Proto) = {
+    proto.dependencies.partition {
+      case p: Proto => true
+      case _ => false
+    }
+  }
 
-  private def dedupGlobalProtoDependencies(proto: Proto) = {
+  private def writeProtoLoadStatement(workspaceName: String) = {
+    if (workspaceName == WorkspaceWriter.serverInfraWSName)
+      """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
+    else
+      """load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
+  }
+
+  // TODO: should be used by all repos
+  private def writeJvmDeps(workspaceName: String, jvmDeps: Set[Target]) = {
+    if (workspaceName == WorkspaceWriter.serverInfraWSName)
+      s"""\n    scala_deps = [${writeDependencies(jvmDeps.map(writeSourceDependency))}],"""
+    else ""
+  }
+
+  private def dedupGlobalProtoDependencies(protoDeps: Set[Target]) = {
     def wixFWProtoDependencies(d: Target) = {
       d.name == "proto" && d.belongingPackageRelativePath.endsWith("framework/protos/src/main/proto")
     }
 
-    proto.dependencies.filterNot(wixFWProtoDependencies)
+    protoDeps.filterNot(wixFWProtoDependencies)
   }
 
   def writeModuleDeps(moduleDeps: ModuleDeps): String = {
