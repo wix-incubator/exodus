@@ -19,7 +19,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     val dependenciesToUpdate = newDependencyNodes(dependencyManagementSource, dependencies, localCopy)
     logger.info(s"syncing ${dependenciesToUpdate.size} dependencies")
 
-    logger.info(s"First dep to sync is ${dependenciesToUpdate.head.baseDependency}.")
+    dependenciesToUpdate.headOption.foreach{depNode => logger.info(s"First dep to sync is ${depNode.baseDependency}.")}
 
     if (dependenciesToUpdate.isEmpty)
       return
