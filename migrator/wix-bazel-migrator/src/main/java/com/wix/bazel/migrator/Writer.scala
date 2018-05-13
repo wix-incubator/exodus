@@ -138,10 +138,11 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
 
   private def writeProto(proto: Target.Proto, workspaceName: String): String = {
 
+    val protoDeps = dedupGlobalProtoDependencies(proto)
     val loadStatement = if (workspaceName == WorkspaceWriter.serverInfraWSName)
-        """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
-      else
-        """load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
+      """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
+    else
+      """load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
 
     s"""
        |$loadStatement
@@ -149,7 +150,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
        |wix_proto_library(
        |    name = "${proto.name}",
        |    srcs = glob(["**/*.proto"]),
-       |    deps = [${writeDependencies(proto.dependencies.map(writeSourceDependency))}],
+       |    deps = [${writeDependencies(protoDeps.map(writeSourceDependency))}],
        |    visibility = ["//visibility:public"],
        |)
        |
@@ -162,6 +163,14 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
      """.stripMargin
   }
 
+
+  private def dedupGlobalProtoDependencies(proto: Proto) = {
+    def wixFWProtoDependencies(d: Target) = {
+      d.name == "proto" && d.belongingPackageRelativePath.endsWith("framework/protos/src/main/proto")
+    }
+
+    proto.dependencies.filterNot(wixFWProtoDependencies)
+  }
 
   def writeModuleDeps(moduleDeps: ModuleDeps): String = {
     val libraryRule = new LibraryRule(name = moduleDeps.name, compileTimeDeps = moduleDeps.deps, runtimeDeps = moduleDeps.runtimeDeps, testOnly = moduleDeps.testOnly)
