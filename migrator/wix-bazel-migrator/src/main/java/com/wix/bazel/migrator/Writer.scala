@@ -155,7 +155,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
        |
        |wix_scala_proto_library(
        |    name = "${proto.name}_scala",
-       |    deps = [":${proto.name}"],$jvmDepsSerialized
+       |    deps = [":${proto.name}"]$jvmDepsSerialized,
        |    visibility = ["//visibility:public"],
        |    ${AdditionalProtoAttributes(unAliasedLabelOf(proto))}
        |)
@@ -179,7 +179,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   // TODO: should be used by all repos
   private def writeJvmDeps(workspaceName: String, jvmDeps: Set[Target]) = {
     if (workspaceName == WorkspaceWriter.serverInfraWSName)
-      s"""\n    scala_deps = [${writeDependencies(jvmDeps.map(writeSourceDependency))}],"""
+      s""" + [${writeDependencies(jvmDeps.map(writeSourceDependency))}]"""
     else ""
   }
 
