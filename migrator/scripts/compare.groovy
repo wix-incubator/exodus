@@ -1,6 +1,15 @@
 pipeline {
     agent any
     stages {
+        stage('can-compare') {
+            steps {
+                script {
+                    if ("${env.MAVEN_SUCCESS}" != true) {
+                        error("Unable to perform comparison, maven run did not finish successfully.")
+                    }
+                }
+            }
+        }
         stage('checkout') {
             steps {
                 dir("${env.REPO_NAME}") {

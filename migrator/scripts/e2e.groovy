@@ -46,6 +46,7 @@ pipeline {
                         script {
                             def m = build job: "02-run-maven", wait: true, propagate: false, parameters: [string(name: 'COMMIT_HASH', value: "${env.GIT_COMMIT_HASH}")]
                             env.MAVEN_RUN_NUMBER = "${m.number}"
+                            env.MAVEN_SUCCESS = "${m.result == "SUCCESS"}"
                         }
                     }
                 }
@@ -56,6 +57,7 @@ pipeline {
                 script {
                     params = [
                         string(name: "ALLOW_MERGE", value: env.BAZEL_SUCCESS),
+                        string(name: 'MAVEN_SUCCESS', value: env.MAVEN_SUCCESS),
                         string(name: 'BAZEL_RUN_NUMBER', value: env.BAZEL_RUN_NUMBER),
                         string(name: 'MAVEN_RUN_NUMBER', value : env.MAVEN_RUN_NUMBER),
                         string(name: 'BRANCH_NAME', value : env.MIGRATION_BRANCH)

@@ -54,17 +54,20 @@ node {
                                 parameters: [string(name: 'COMMIT_HASH', value: git_commit_hash), booleanParam(name: 'CLEAN', value: false)]
                         dir(name){
                             writeFile file:"maven_run_number", text: "${maven_run.number}"
+                            writeFile file:"maven_success", text: "${maven_run.result == "SUCCESS"}"
                         }
                     }
             )
             dir(name){
                 def params = [
                             string(name: "ALLOW_MERGE", value: readFile("bazel_success")),
+                            string(name: "MAVEN_SUCCESS", value: readFile("maven_success")),
                             string(name: 'BAZEL_RUN_NUMBER', value: readFile("bazel_run_number")),
                             string(name: 'MAVEN_RUN_NUMBER', value : readFile("maven_run_number")),
                             string(name: 'BRANCH_NAME', value : readFile("migration_branch"))
                         ]
                 echo "[$name] ALLOW_MERGE=${readFile("bazel_success")}"
+                echo "[$name] MAVEN_SUCCESS=${readFile("maven_success")}"
                 echo "[$name] BAZEL_RUN_NUMBER=${readFile("bazel_run_number")}"
                 echo "[$name] MAVEN_RUN_NUMBER=${readFile("maven_run_number")}"
                 echo "[$name] BRANCH_NAME=${readFile("migration_branch")}"
