@@ -155,7 +155,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
        |
        |wix_scala_proto_library(
        |    name = "${proto.name}_scala",
-       |    deps = [":${proto.name}"]$jvmDepsSerialized,
+       |    deps = [":${proto.name}",$jvmDepsSerialized],
        |    visibility = ["//visibility:public"],
        |    ${AdditionalProtoAttributes(unAliasedLabelOf(proto))}
        |)
@@ -176,11 +176,11 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
       """load("@wix_grpc//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
   }
 
-  // TODO: should be used by all repos
   private def writeJvmDeps(workspaceName: String, jvmDeps: Set[Target]) = {
-    if (workspaceName == WorkspaceWriter.serverInfraWSName)
-      s""" + [${writeDependencies(jvmDeps.map(writeSourceDependency))}]"""
-    else ""
+    if (jvmDeps.nonEmpty)
+      s""" ${writeDependencies(jvmDeps.map(writeSourceDependency))}"""
+    else
+      ""
   }
 
   private def dedupGlobalProtoDependencies(protoDeps: Set[Target]) = {
