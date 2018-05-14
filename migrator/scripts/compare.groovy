@@ -1,12 +1,11 @@
 pipeline {
     agent any
     stages {
-        stage('can-compare') {
+        stage('should-fail') {
+            when { not { environment name: "MAVEN_SUCCESS", value: "true" } }
             steps {
                 script {
-                    if ("${env.MAVEN_SUCCESS}" != true) {
-                        error("Unable to perform comparison, maven run did not finish successfully.")
-                    }
+                    error("Unable to perform comparison, maven run did not finish successfully.")
                 }
             }
         }
