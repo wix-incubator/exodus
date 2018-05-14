@@ -165,6 +165,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   private def partitionByDepType(proto: Proto) = {
     proto.dependencies.partition {
       case p: Proto => true
+      case e: External if e.name == "proto" => true
       case _ => false
     }
   }
