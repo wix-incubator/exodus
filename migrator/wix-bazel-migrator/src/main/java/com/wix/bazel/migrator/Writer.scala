@@ -2,11 +2,10 @@ package com.wix.bazel.migrator
 
 import java.nio.file.{Files, Path, StandardOpenOption}
 
-import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target._
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Scope, SourceModule, Target, TestType}
+import com.wix.bazel.migrator.transform.InternalTargetOverridesReader
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.LibraryRule
@@ -22,39 +21,12 @@ object PrintJvmTargetsSources {
   }
 }
 
-case class InternalTargetsOverrides(targetOverrides: Set[InternalTargetOverride] = Set.empty)
-
-case class InternalTargetOverride(label: String,
-                                  testOnly: Option[Boolean] = None,
-                                  testType: Option[String] = None, //testtype
-                                  testSize: Option[String] = None,
-                                  tags: Option[String] = None, //testtype
-                                  additionalJvmFlags: Option[List[String]] = None,
-                                  additionalDataDeps: Option[List[String]] = None,
-                                  newName: Option[String] = None,
-                                  additionalProtoAttributes : Option[String] = None
-                                 )
-
 object Writer extends MigratorApp {
   private def testTypeFromOverride(overrideTestType: String) = overrideTestType match {
     case "ITE2E" => TestType.ITE2E
     case "UT" => TestType.UT
     case "None" => TestType.None
     case "Mixed" => TestType.Mixed
-  }
-
-  private def readOverrides(repoRootPath: Path): InternalTargetsOverrides = {
-    val internalTargetsOverrides = repoRootPath.resolve("bazel_migration").resolve("internal_targets.overrides")
-
-    if (Files.isReadable(internalTargetsOverrides)) {
-      val objectMapper = new ObjectMapper()
-        .registerModule(DefaultScalaModule)
-        .addMixIn(classOf[TestType], classOf[TypeAddingMixin])
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      objectMapper.readValue(Files.newInputStream(internalTargetsOverrides), classOf[InternalTargetsOverrides])
-    } else {
-      InternalTargetsOverrides()
-    }
   }
 
   val writer = new Writer(tinker.repoRoot, tinker.codeModules, Persister.readTransformationResults(), WorkspaceName.by(configuration.repoUrl))
@@ -265,13 +237,14 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
                           testType: TestType,
                           sourceModule: SourceModule,
                           additionalJvmFlags: String,
-                          additionalDataDeps: String
+                          additionalDataDeps: String,
+                          dockerImagesDeps: String
                         ) = testType.toString match {
     case "None" => ""
     case _ =>
       val existingManifestLabel = s"//${sourceModule.relativePathFromMonoRepoRoot}:coordinates"
       s"""
-         |    data = ["$existingManifestLabel"$additionalDataDeps],
+         |    data = ["$existingManifestLabel"$additionalDataDeps$dockerImagesDeps],
          |    jvm_flags = ["-Dexisting.manifest=$$(location $existingManifestLabel)"$additionalJvmFlags],
      """.stripMargin
   }
@@ -296,8 +269,9 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
         val maybeOverriddenTagsTestType = ForceTagsTestType.getOrElse(unAliasedLabelOf(target), maybeOverriddenTestType)
         val additionalJvmFlags = AdditionalJvmFlags(unAliasedLabelOf(target))
         val additionalDataDeps = AdditionalDataDeps(unAliasedLabelOf(target))
+        val dockerImagesDeps = DockerImagesDeps(unAliasedLabelOf(target))
         val maybeOverriddenTestSize = ForceTestSize.getOrElse(unAliasedLabelOf(target), defaultSizeForType(maybeOverriddenTestType))
-        (testHeader(maybeOverriddenTestType, maybeOverriddenTagsTestType, maybeOverriddenTestSize), testFooter(maybeOverriddenTestType, target.originatingSourceModule, additionalJvmFlags, additionalDataDeps))
+        (testHeader(maybeOverriddenTestType, maybeOverriddenTagsTestType, maybeOverriddenTestSize), testFooter(maybeOverriddenTestType, target.originatingSourceModule, additionalJvmFlags, additionalDataDeps, dockerImagesDeps))
     }
     header +
       s"""
@@ -448,7 +422,9 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
       |    srcs = ["MANIFEST.MF"],
       |)
       |""".stripMargin
-  private val overrides = Writer.readOverrides(repoRoot)
+
+  private val overrides = InternalTargetOverridesReader.from(repoRoot)
+
   private val FixedVersionToEnableRepeatableMigrations = "fixed.version-SNAPSHOT"
 
   private val ForceTestOnly: Map[String, Boolean] =
@@ -466,6 +442,9 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   private val AdditionalDataDeps: Map[String, String] =
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalDataDeps.map(dataDeps => encodePluses(targetOverride.label) -> concat(dataDeps))).toMap.withDefaultValue("")
 
+  private val DockerImagesDeps: Map[String, String] =
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.dockerImagesDeps.map(dockerImages => encodePluses(targetOverride.label) -> concat(dockerImages.map(asThirdPartyDockerImageTar)))).toMap.withDefaultValue("")
+
   private val ForceTestSize: Map[String, String] =
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.testSize.map(testSize => encodePluses(targetOverride.label) -> prefixWithSizeIfNonEmpty(testSize))).toMap
 
@@ -474,6 +453,8 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
 
   private val AdditionalProtoAttributes: Map[String, String] =
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalProtoAttributes.map(additionalProtoAttributes => encodePluses(targetOverride.label) -> additionalProtoAttributes)).toMap.withDefaultValue("")
+
+  private def asThirdPartyDockerImageTar(image: String): String = "//third_party/docker_images:".concat(DockerImage(image).tarName)
 
   private def concat(flags: List[String]): String = flags.mkString(", \"", "\", \"", "\"")
 

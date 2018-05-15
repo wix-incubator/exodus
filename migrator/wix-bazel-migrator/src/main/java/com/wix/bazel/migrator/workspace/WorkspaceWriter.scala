@@ -83,7 +83,18 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |
          |managed_third_party_dependencies()
          |${workspaceSuffixOverride()}
-      """.stripMargin
+         |
+         |http_archive(
+         |    name = "io_bazel_rules_docker",
+         |    sha256 = "6dede2c65ce86289969b907f343a1382d33c14fbce5e30dd17bb59bb55bb6593",
+         |    strip_prefix = "rules_docker-0.4.0",
+         |    urls = ["https://github.com/bazelbuild/rules_docker/archive/v0.4.0.tar.gz"],
+         |)
+         |
+         |load("//third_party/docker_images:docker_images.bzl", "docker_images")
+         |
+         |docker_images()
+         |""".stripMargin
 
     writeToDisk(workspaceFileContents)
   }

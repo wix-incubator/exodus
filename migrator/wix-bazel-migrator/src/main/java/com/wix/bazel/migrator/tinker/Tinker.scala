@@ -21,6 +21,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     writeWorkspace()
     writeInternal()
     writeExternal()
+    writeDockerImages()
     writeBazelCustomRunnerScript()
     writeDefaultJavaToolchain()
 
@@ -47,6 +48,9 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
 
   private def writeExternal(): Unit =
     new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()
+
+  private def writeDockerImages(): Unit =
+    new DockerImagesWriter(repoRoot, InternalTargetOverridesReader.from(repoRoot)).write()
 
   private def writeBazelCustomRunnerScript(): Unit = {
     new BazelCustomRunnerWriter(repoRoot).write()
