@@ -52,7 +52,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |mysql("5.6", "latest")
          |maven_jar(
          |    name = "com_wix_wix_embedded_mysql_download_and_extract_jar_with_dependencies",
-         |    artifact = "com.wix:wix-embedded-mysql-download-and-extract:jar:jar-with-dependencies:3.1.0",
+         |    artifact = "com.wix:wix-embedded-mysql-download-and-extract:jar:jar-with-dependencies:4.1.2",
          |)
          |load("@$frameworkWSName//test-infrastructures-modules/mongo-test-kit/downloader:mongo_installer.bzl", "mongo_default_version", "mongo")
          |mongo_default_version()
