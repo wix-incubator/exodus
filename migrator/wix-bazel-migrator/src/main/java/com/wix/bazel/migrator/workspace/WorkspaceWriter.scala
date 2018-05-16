@@ -16,7 +16,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |             name = "io_bazel_rules_scala",
          |             url = "https://github.com/wix/rules_scala/archive/%s.zip"%rules_scala_version,
          |             type = "zip",
-         |             strip_prefix= "rules_scala-%s" % rules_scala_version
+         |             strip_prefix= "rules_scala-%s" % rules_scala_version,
+         |             sha256 = "4564387f36405f7c27adbfe6f511acf362ac51d1c3fb74f9235e7eed76bb89ef",
          |)
          |
          |# Required configuration for remote build execution

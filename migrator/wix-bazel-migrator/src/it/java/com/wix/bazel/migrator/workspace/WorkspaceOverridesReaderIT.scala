@@ -1,45 +1,28 @@
 package com.wix.bazel.migrator.workspace
 
-import com.fasterxml.jackson.core.JsonProcessingException
 import com.wix.bazel.migrator.transform.OverridesReaderITSupport
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
 class WorkspaceOverridesReaderIT extends SpecificationWithJUnit {
   "WorkspaceOverridesReader" should {
-    "throw parse exception given invalid overrides json string" in new Context {
-      writeOverrides("{invalid")
-
-      WorkspaceOverridesReader.from(repoRoot) must throwA[JsonProcessingException]
-    }
-
-    "read overrides from generated json" in new Context {
+    "read overrides from generated files" in new Context {
       val originalOverrides = WorkspaceOverrides(suffix = someWorkspaceSuffix)
-      writeOverrides(objectMapper.writeValueAsString(originalOverrides))
+      writeOverrides(originalOverrides.suffix)
 
-      WorkspaceOverridesReader.from(repoRoot) mustEqual originalOverrides
-    }
-
-    "read overrides from manual json" in new Context {
-      writeOverrides("""{
-                       |  "suffix" : "some suffix"
-                       |}""".stripMargin)
-
-      val overrides = WorkspaceOverridesReader.from(repoRoot)
-
-      overrides.suffix mustEqual "some suffix"
+      WorkspaceOverridesReader.from(repoRoot) must beEqualTo(originalOverrides)
     }
 
     "default to no overrides when trying to read an non existent overrides file" in new Context {
       val overrides = WorkspaceOverridesReader.from(repoRoot)
 
-      overrides.suffix must be empty
+      overrides.suffix must beEmpty
     }
   }
 
   abstract class Context extends Scope with OverridesReaderITSupport {
 
-    override val overridesPath = setupOverridesPath(repoRoot, "workspace.overrides")
+    override val overridesPath = setupOverridesPath(repoRoot, "workspace.suffix.overrides")
 
     val someWorkspaceSuffix = "someWorkspaceSuffix"
   }

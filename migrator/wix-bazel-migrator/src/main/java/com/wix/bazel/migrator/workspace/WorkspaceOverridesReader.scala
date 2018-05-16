@@ -2,19 +2,16 @@ package com.wix.bazel.migrator.workspace
 
 import java.nio.file.{Files, Path}
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-
 object WorkspaceOverridesReader {
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
-
   def from(repoRoot: Path): WorkspaceOverrides = {
-    val overridesPath = repoRoot.resolve("bazel_migration").resolve("workspace.overrides")
+    val overridesPath = repoRoot.resolve("bazel_migration").resolve("workspace.suffix.overrides")
     if (Files.exists(overridesPath))
-      mapper.readValue(Files.newBufferedReader(overridesPath),classOf[WorkspaceOverrides])
+      WorkspaceOverrides(readPath(overridesPath))
     else
       WorkspaceOverrides("")
   }
+
+  private def readPath(path: Path) = new String(Files.readAllBytes(path))
 
 }
 
