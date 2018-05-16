@@ -9,10 +9,6 @@ scala_library(
     ],
     deps = [
         "//migrator/wix-bazel-migrator:main_dependencies",
-        "//third_party/com/fasterxml/jackson/core:jackson_annotations",
-        "//third_party/com/fasterxml/jackson/core:jackson_core",
-        "//third_party/com/fasterxml/jackson/core:jackson_databind",
-        "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
         "//third_party/junit",
     ],
 )
