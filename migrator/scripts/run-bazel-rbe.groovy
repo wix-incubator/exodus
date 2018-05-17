@@ -30,13 +30,19 @@ pipeline {
                 sh "bazel info"
                 echo "Running all tests excluding tests with tag 'docker'"
                 script {
-                    unstable_by_exit_code("UNIT", """|#!/bin/bash
-                                             |bazel ${env.BAZEL_STARTUP_OPTS} \\
-                                             |test \\
-                                             |      --test_tag_filters=-docker \\
-                                             |      ${env.BAZEL_FLAGS} \\
-                                             |      //...
-                                             |""".stripMargin())
+                    wrap([
+                        $class: 'LogfilesizecheckerWrapper',
+                        'maxLogSize': 3000,
+                        'failBuild': true,
+                        'setOwn': true]) {
+                            unstable_by_exit_code("UNIT", """|#!/bin/bash
+                                                    |bazel ${env.BAZEL_STARTUP_OPTS} \\
+                                                    |test \\
+                                                    |      --test_tag_filters=-docker \\
+                                                    |      ${env.BAZEL_FLAGS} \\
+                                                    |      //...
+                                                    |""".stripMargin())
+                        }
                 }
             }
         }

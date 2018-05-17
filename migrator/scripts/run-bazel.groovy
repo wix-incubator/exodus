@@ -47,16 +47,22 @@ pipeline {
         stage('IT') {
             steps {
                 script {
-                    unstable_by_exit_code("IT/E2E", """|#!/bin/bash
-                                             |export DOCKER_HOST=$env.TEST_DOCKER_HOST
-                                             |bazel test \\
-                                             |      --test_tag_filters=IT \\
-                                             |      --strategy=TestRunner=standalone \\
-                                             |      ${env.BAZEL_FLAGS} \\
-                                             |      --test_env=DOCKER_HOST \\
-                                             |      --jobs=1 \\
-                                             |      //...
-                                             |""".stripMargin())
+                    wrap([
+                        $class: 'LogfilesizecheckerWrapper',
+                        'maxLogSize': 3000,
+                        'failBuild': true,
+                        'setOwn': true]) {
+                        unstable_by_exit_code("IT/E2E", """|#!/bin/bash
+                                                |export DOCKER_HOST=$env.TEST_DOCKER_HOST
+                                                |bazel test \\
+                                                |      --test_tag_filters=IT \\
+                                                |      --strategy=TestRunner=standalone \\
+                                                |      ${env.BAZEL_FLAGS} \\
+                                                |      --test_env=DOCKER_HOST \\
+                                                |      --jobs=1 \\
+                                                |      //...
+                                                |""".stripMargin())
+                    }
                 }
             }
         }
