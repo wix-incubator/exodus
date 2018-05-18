@@ -7,7 +7,6 @@ pipeline {
     environment {
         BAZEL_FLAGS = '''|-k \\
                          |--experimental_sandbox_base=/dev/shm \\
-                         |--sandbox_tmpfs_path=/tmp \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
