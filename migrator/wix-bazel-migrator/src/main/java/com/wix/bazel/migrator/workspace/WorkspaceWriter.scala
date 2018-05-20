@@ -10,14 +10,14 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
     val workspaceFileContents =
       s"""
          |workspace(name = "$workspaceName")
-         |rules_scala_version="72b402753b82377251d2370a3accfd4999707418" # update this as needed
+         |rules_scala_version="a750e5b266addca34af26b939b2602d0e7801655" # update this as needed
          |
          |http_archive(
          |             name = "io_bazel_rules_scala",
          |             url = "https://github.com/wix/rules_scala/archive/%s.zip"%rules_scala_version,
          |             type = "zip",
          |             strip_prefix= "rules_scala-%s" % rules_scala_version,
-         |             sha256 = "4564387f36405f7c27adbfe6f511acf362ac51d1c3fb74f9235e7eed76bb89ef",
+         |             sha256 = "c6c26039dd573e2c5aff06d0b37ead94675b249190f191957936cb0b4d69fa25",
          |)
          |
          |# Required configuration for remote build execution
