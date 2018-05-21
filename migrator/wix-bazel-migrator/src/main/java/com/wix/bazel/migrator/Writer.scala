@@ -196,41 +196,21 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   //toString since case objects aren't well supported in jackson scala
   private def testHeader(testType: TestType, tagsTestType: TestType, testSize: String): String = testType.toString match {
     case "UT" =>
-      s"""scala_specs2_junit_test(
-         |    prefixes = ["Test"],
-         |    suffixes = ["Test"],
-         |    tags = [${tags(tagsTestType)}],
+      s"""specs2_unit_test(
          |    $testSize
     """.stripMargin
     case "ITE2E" =>
-      s"""scala_specs2_junit_test(
-         |    prefixes = ["IT", "E2E"],
-         |    suffixes = ["IT", "E2E"],
-         |    tags = [${tags(tagsTestType)}],
+      s"""specs2_ite2e_test(
          |    $testSize
     """.stripMargin
     case "Mixed" =>
-      s"""scala_specs2_junit_test(
-         |    prefixes = ["Test",  "IT", "E2E"],
-         |    suffixes = ["Test",  "IT", "E2E"],
-         |    tags = [${tags(tagsTestType)}],
+      s"""specs2_mixed_test(
          |    $testSize
     """.stripMargin
     case "None" =>
       s"""scala_library(
          |    testonly = 1,
     """.stripMargin
-  }
-
-  private def defaultSizeForType(testType: TestType) = testType.toString match {
-    case "UT" => """size = "small","""
-    case _ => ""
-  }
-
-  private def tags(tagsTestType: TestType): String = tagsTestType.toString match {
-    case "UT" => """"UT""""
-    case "ITE2E" => """"IT", "E2E", "block-network""""
-    case "Mixed" => """"UT", "IT", "E2E", "block-network""""
   }
 
   private def testFooter(
@@ -270,7 +250,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
         val additionalJvmFlags = AdditionalJvmFlags(unAliasedLabelOf(target))
         val additionalDataDeps = AdditionalDataDeps(unAliasedLabelOf(target))
         val dockerImagesDeps = DockerImagesDeps(unAliasedLabelOf(target))
-        val maybeOverriddenTestSize = ForceTestSize.getOrElse(unAliasedLabelOf(target), defaultSizeForType(maybeOverriddenTestType))
+        val maybeOverriddenTestSize = ForceTestSize.getOrElse(unAliasedLabelOf(target), "")
         (testHeader(maybeOverriddenTestType, maybeOverriddenTagsTestType, maybeOverriddenTestSize), testFooter(maybeOverriddenTestType, target.originatingSourceModule, additionalJvmFlags, additionalDataDeps, dockerImagesDeps))
     }
     header +

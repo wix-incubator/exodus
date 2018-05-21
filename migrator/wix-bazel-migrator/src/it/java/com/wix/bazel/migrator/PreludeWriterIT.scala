@@ -12,7 +12,8 @@ class PreludeWriterIT extends BaseWriterIT {
     "write prelude_bazel file with default content" in new ctx {
       writer.write()
 
-      path(withName = "prelude_bazel") must beRegularFile(withContent = Seq(PreludeWriter.ScalaLibraryImport, PreludeWriter.ScalaImport))
+      path(withName = "prelude_bazel") must beRegularFile(withContent =
+        Seq(PreludeWriter.ScalaLibraryImport, PreludeWriter.ScalaImport, PreludeWriter.TestImport))
     }
 
     //API for tests

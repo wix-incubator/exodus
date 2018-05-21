@@ -8,7 +8,7 @@ import com.wix.bazel.migrator.matchers.InMemoryFilesMatchers
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
-abstract class BaseWriterIT extends SpecificationWithJUnit with InMemoryFilesMatchers{
+abstract class BaseWriterIT extends SpecificationWithJUnit with InMemoryFilesMatchers {
 
   abstract class baseCtx extends Scope {
     val fileSystem = MemoryFileSystemBuilder.newLinux().build()
