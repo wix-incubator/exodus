@@ -198,20 +198,32 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     case "UT" =>
       s"""specs2_unit_test(
          |    $testSize
+         |    ${overrideTagsIfNeeded(testType, tagsTestType)}
     """.stripMargin
     case "ITE2E" =>
       s"""specs2_ite2e_test(
          |    $testSize
+         |    ${overrideTagsIfNeeded(testType, tagsTestType)}
     """.stripMargin
     case "Mixed" =>
       s"""specs2_mixed_test(
          |    $testSize
+         |    ${overrideTagsIfNeeded(testType, tagsTestType)}
     """.stripMargin
     case "None" =>
       s"""scala_library(
          |    testonly = 1,
     """.stripMargin
   }
+
+  private def tags(tagsTestType: TestType): String = tagsTestType.toString match {
+    case "UT" => """"UT""""
+    case "ITE2E" => """"IT", "E2E", "block-network""""
+    case "Mixed" => """"UT", "IT", "E2E", "block-network""""
+  }
+
+  private def overrideTagsIfNeeded(testType: TestType, tagsTestType: TestType): String =
+    if (testType != tagsTestType) s"tags = [${tags(tagsTestType)}]," else ""
 
   private def testFooter(
                           testType: TestType,
