@@ -1,25 +1,12 @@
 package(default_visibility = ["//visibility:public"])
 
-scala_specs2_junit_test(
+specs2_ite2e_test(
     name = "codota",
     srcs = [
         "//migrator/codota-thin-client/src/it/scala/com/wixpress/build/codota:sources",
     ],
     data = ["//migrator/codota-thin-client:coordinates"],
     jvm_flags = ["-Dexisting.manifest=$(location //migrator/codota-thin-client:coordinates)"],
-    prefixes = [
-        "IT",
-        "E2E",
-    ],
-    suffixes = [
-        "IT",
-        "E2E",
-    ],
-    tags = [
-        "E2E",
-        "IT",
-        "block-network",
-    ],
     runtime_deps = [
     ],
     deps = [

@@ -1,16 +1,12 @@
 package(default_visibility = ["//visibility:public"])
 
-scala_specs2_junit_test(
+specs2_unit_test(
     name = "sync",
-    size = "small",
     srcs = [
         "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/sync:sources",
     ],
     data = ["//dependency-synchronizer/bazel-deps-synchronizer:coordinates"],
     jvm_flags = ["-Dexisting.manifest=$(location //dependency-synchronizer/bazel-deps-synchronizer:coordinates)"],
-    prefixes = ["Test"],
-    suffixes = ["Test"],
-    tags = ["UT"],
     runtime_deps = [
     ],
     deps = [

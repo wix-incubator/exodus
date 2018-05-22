@@ -1,16 +1,12 @@
 package(default_visibility = ["//visibility:public"])
 
-scala_specs2_junit_test(
+specs2_unit_test(
     name = "transform",
-    size = "small",
     srcs = [
         "//migrator/bazel-migrator/src/test/java/com/wix/bazel/migrator/transform:sources",
     ],
     data = ["//migrator/bazel-migrator:coordinates"],
     jvm_flags = ["-Dexisting.manifest=$(location //migrator/bazel-migrator:coordinates)"],
-    prefixes = ["Test"],
-    suffixes = ["Test"],
-    tags = ["UT"],
     runtime_deps = [
     ],
     deps = [

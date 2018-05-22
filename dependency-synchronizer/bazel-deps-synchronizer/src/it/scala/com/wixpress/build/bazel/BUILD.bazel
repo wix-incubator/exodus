@@ -1,28 +1,12 @@
 package(default_visibility = ["//visibility:public"])
 
-scala_specs2_junit_test(
+specs2_mixed_test(
     name = "bazel",
     srcs = [
         "//dependency-synchronizer/bazel-deps-synchronizer/src/it/scala/com/wixpress/build/bazel:sources",
     ],
     data = ["//dependency-synchronizer/bazel-deps-synchronizer:coordinates"],
     jvm_flags = ["-Dexisting.manifest=$(location //dependency-synchronizer/bazel-deps-synchronizer:coordinates)"],
-    prefixes = [
-        "Test",
-        "IT",
-        "E2E",
-    ],
-    suffixes = [
-        "Test",
-        "IT",
-        "E2E",
-    ],
-    tags = [
-        "E2E",
-        "IT",
-        "UT",
-        "block-network",
-    ],
     runtime_deps = [
     ],
     deps = [

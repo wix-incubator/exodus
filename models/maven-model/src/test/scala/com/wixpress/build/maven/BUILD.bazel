@@ -1,16 +1,12 @@
 package(default_visibility = ["//visibility:public"])
 
-scala_specs2_junit_test(
+specs2_unit_test(
     name = "maven",
-    size = "small",
     srcs = [
         "//models/maven-model/src/test/scala/com/wixpress/build/maven:sources",
     ],
     data = ["//models/maven-model:coordinates"],
     jvm_flags = ["-Dexisting.manifest=$(location //models/maven-model:coordinates)"],
-    prefixes = ["Test"],
-    suffixes = ["Test"],
-    tags = ["UT"],
     runtime_deps = [
     ],
     deps = [
