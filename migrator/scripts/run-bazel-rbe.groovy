@@ -46,11 +46,6 @@ pipeline {
                 }
             }
         }
-        stage('build') {
-            steps {
-                sh "bazel ${env.BAZEL_STARTUP_OPTS} build ${env.BAZEL_FLAGS} //..."
-            }
-        }
     }
     post {
         always {
