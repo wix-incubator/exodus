@@ -11,6 +11,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.Retry._
 import com.wix.bazel.migrator.model._
 import com.wix.bazel.migrator.transform.AnalyzeFailure.MissingAnalysisInCodota
+import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer._
 import com.wix.bazel.migrator.transform.FailureMetadata.InternalDepMissingExtended
 import com.wixpress.build.maven
 import com.wixpress.build.maven.{Coordinates, MavenScope}
@@ -21,7 +22,6 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.{GenIterable, GenTraversableOnce, mutable}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
-import CodotaDependencyAnalyzer._
 
 class CodotaDependencyAnalyzer(repoRoot: Path,
                                modules: Set[SourceModule],
@@ -52,10 +52,10 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
 
   private def extensionSupported(filePath: String) = filePath.endsWith("java") || filePath.endsWith("scala") || filePath.endsWith("proto")
 
-  private def interestingFile(module:SourceModule)(filePath: String):Boolean =
+  private def interestingFile(module: SourceModule)(filePath: String): Boolean =
     supportedFile(filePath) && !generatedCodeRegistry.isSourceOfGeneratedCode(module.coordinates.groupId, module.coordinates.artifactId, filePath)
 
-  private def supportedFile(filePath: String):Boolean = !sourceFilesOverrides.mutedFile(filePath) && extensionSupported(filePath)
+  private def supportedFile(filePath: String): Boolean = !sourceFilesOverrides.mutedFile(filePath) && extensionSupported(filePath)
 
   override def allCodeForModule(module: SourceModule): List[Code] = {
     log.debug(s"starting $module")
@@ -121,7 +121,7 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
       for {
         sourceDir <- sourceDirEither(module, realFilePath).right
         depInfos <- validateAnalysisExistsFor(dependencyInfo).augment(sourceModuleFilePathMetadata).right
-        maybeInternalDepsExtended = depInfos.map(_.getInternalDepsExtended.asScala)
+        maybeInternalDepsExtended <- validateInternalDepsExtendedFor(depInfos).augment(sourceModuleFilePathMetadata).right
         internalDepsExtended <- validateAnalysisExistsFor(maybeInternalDepsExtended).augment(InternalDepMissingExtended(depInfos)).augment(sourceModuleFilePathMetadata).right
         simplifiedDependencies <- asSimplifiedDependencies(module, internalDepsExtended.flatten.par, analysisResults.isTestCode).augment(sourceModuleFilePathMetadata).right
         depsOnRepoCode <- internalDependencies(module, realFilePath, simplifiedDependencies).augment(InternalDepMissingExtended(depInfos)).augment(sourceModuleFilePathMetadata).right
@@ -129,6 +129,18 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
       } yield Code(CodePath(module, sourceDir, realFilePath), depsOnRepoCode, externalSourceDeps)
     }
     EitherSequence.sequence(analyzeFailureOrCodes).fold(fail, _.toList)
+  }
+
+  private type iterableDependencies = Iterable[java.util.Collection[OptionalInternalDependency]]
+
+  private def validateInternalDepsExtendedFor(dependencyInfos: List[DependencyInfo]):
+  Either[AnalyzeFailure, Seq[iterableDependencies]] =
+    EitherSequence.sequence(dependencyInfos.map(validateInternalDepsExtendedFor))
+
+  private def validateInternalDepsExtendedFor(maybeDependencyInfo: DependencyInfo): Either[AnalyzeFailure, iterableDependencies] =
+    maybeDependencyInfo match {
+    case null => Left(MissingAnalysisInCodota())
+    case d: DependencyInfo => validateAnalysisExistsFor(d.getInternalDepsExtended).map(_.asScala)
   }
 
   private def externalSourceDependencyLabelOf(simplifiedDependencies: List[SimplifiedCodotaDependency]): Either[AnalyzeFailure, Set[String]] = {
