@@ -1,7 +1,7 @@
 pipeline {
     agent any
     options {
-        timeout(time: 180, unit: 'MINUTES')
+        timeout(time: 40, unit: 'MINUTES')
         timestamps()
     }
     environment {
@@ -24,44 +24,15 @@ pipeline {
                 sh "touch tools/ci.environment"
             }
         }
-        stage('build') {
-            steps {
-                sh "bazel info"
-                sh "bazel build -k --strategy=Scalac=worker //..."
-            }
-        }
-        stage('UT') {
+        stage('test') {
             steps {
                 script {
                     unstable_by_exit_code("UNIT", """|#!/bin/bash
                                              |bazel test \\
-                                             |      --test_tag_filters=UT,-IT \\
                                              |      --flaky_test_attempts=3 \\
                                              |      ${env.BAZEL_FLAGS} \\
                                              |      //...
                                              |""".stripMargin())
-                }
-            }
-        }
-        stage('IT') {
-            steps {
-                script {
-                    wrap([
-                        $class: 'LogfilesizecheckerWrapper',
-                        'maxLogSize': 3000,
-                        'failBuild': true,
-                        'setOwn': true]) {
-                        unstable_by_exit_code("IT/E2E", """|#!/bin/bash
-                                                |export DOCKER_HOST=$env.TEST_DOCKER_HOST
-                                                |bazel test \\
-                                                |      --test_tag_filters=IT \\
-                                                |      --strategy=TestRunner=standalone \\
-                                                |      ${env.BAZEL_FLAGS} \\
-                                                |      --test_env=DOCKER_HOST \\
-                                                |      --jobs=1 \\
-                                                |      //...
-                                                |""".stripMargin())
-                    }
                 }
             }
         }
@@ -72,7 +43,6 @@ pipeline {
                 if (env.FOUND_TEST == "true") {
                     junit "bazel-testlogs/**/test.xml"
                     archiveArtifacts 'bazel-out/**/testlogs/**/*.log,bazel-testlogs/**/test.xml,bazel-out/**/test.outputs/outputs.zip'
-                    
                 }
             }
         }
