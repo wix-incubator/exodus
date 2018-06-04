@@ -33,6 +33,7 @@ pipeline {
                                 ]
                                 build job: "03-fix-strict-deps", wait: true, propagate: false, parameters: parameters
                                 build job: "05-run-bazel-rbe", wait: false, propagate: false, parameters: parameters
+                                build job: "run-bazel-sandboxed", wait: false, propagate: false, parameters: parameters
                                 bazel_run = build job: "02-run-bazel", wait: true, propagate: false, parameters: parameters
                                 env.BAZEL_SUCCESS = "${bazel_run.result == "SUCCESS"}"
                                 env.BAZEL_RUN_NUMBER = "${bazel_run.number}"

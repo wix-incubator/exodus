@@ -14,6 +14,7 @@ node {
         def run_bazel = name + "/02-run-bazel"
         def run_maven = name + "/02-run-maven"
         def run_rbe = name + "/05-run-bazel-rbe"
+        def run_sandbox = name + "/run-bazel-sandboxed"
         def delay = "${env.delay_between_trigger}".toInteger()
         def sleep_time = count * delay
         def seq = {
