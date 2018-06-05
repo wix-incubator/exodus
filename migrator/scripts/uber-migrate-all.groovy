@@ -38,6 +38,7 @@ node {
                             ]
                             build job: fix_deps, wait: true, propagate: false, parameters: parameters + booleanParam(name: 'TRIGGER_BUILD', value: false)
                             build job: run_rbe, wait: false, propagate: false, parameters: parameters
+                            build job: run_sandbox, wait: false, propagate: false, parameters: parameters
                             def bazel_run = build job: run_bazel, wait: true, propagate: false, parameters: parameters
                             bazel_run_number = bazel_run.number
                             if (bazel_run.result == "SUCCESS"){
