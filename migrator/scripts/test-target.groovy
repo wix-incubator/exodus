@@ -10,6 +10,7 @@ pipeline {
                          |--sandbox_tmpfs_path=/tmp \\
                          |--test_output=errors \\
                          |--test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false \\
+                         |--test_env=LC_ALL="en_US.UTF-8" \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
