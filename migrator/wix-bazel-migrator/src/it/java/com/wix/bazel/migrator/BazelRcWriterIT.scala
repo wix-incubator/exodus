@@ -45,6 +45,15 @@ class BazelRcWriterIT extends BaseWriterIT {
       bazelRCPath must beRegularFile(withContentMatching = endingWith(System.lineSeparator()))
     }
 
+    "reset the file with default options" in new ctx {
+      val prefix = "--some existing option"
+      File(bazelRCPath).createIfNotExists().overwrite(prefix)
+
+      bazelRcWriter.resetFileWithDefaultOptions()
+
+      bazelRCPath must beRegularFile(withContentMatching = contentContainsExactlyLines(BazelRcWriter.defaultOptions))
+    }
+
   }
 
   trait ctx extends baseCtx {
@@ -53,6 +62,9 @@ class BazelRcWriterIT extends BaseWriterIT {
   }
 
   def contentContainsLine(line: String): Matcher[String] = contentContainsLines(List(line))
+
   def contentContainsLines(lines: List[String]): Matcher[String] = {(_:String).split(System.lineSeparator()).toList} ^^ containAllOf(lines)
+
+  def contentContainsExactlyLines(lines: List[String]): Matcher[String] = {(_:String).split(System.lineSeparator()).toList} ^^ containTheSameElementsAs(lines)
 
 }

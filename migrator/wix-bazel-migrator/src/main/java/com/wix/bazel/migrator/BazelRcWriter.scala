@@ -2,14 +2,25 @@ package com.wix.bazel.migrator
 
 import java.nio.file.{Files, Path, StandardOpenOption}
 
+import com.wix.bazel.migrator.BazelRcWriter.defaultOptions
+
 class BazelRcWriter(repoRoot: Path) {
+
+  private val bazelRcPath = repoRoot.resolve(".bazelrc")
+
+  def resetFileWithDefaultOptions():Unit = {
+    deleteIfExists()
+    appendLines(defaultOptions)
+  }
 
   def appendLine(line: String): Unit = appendLines(List(line))
 
   def appendLines(lines: List[String]): Unit = writeToDisk(lines.mkString("", System.lineSeparator(), System.lineSeparator()))
 
+  private def deleteIfExists(): Unit = Files.deleteIfExists(bazelRcPath)
+
   private def writeToDisk(contents: String): Unit =
-    Files.write(repoRoot.resolve(".bazelrc"), contents.getBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE)
+    Files.write(bazelRcPath, contents.getBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE)
 
 
 }
