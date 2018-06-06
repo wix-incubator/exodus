@@ -32,7 +32,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     failIfFoundSevereConflictsIn(checkConflictsInThirdPartyDependencies(aetherResolver))
 
   private def writeBazelRc(): Unit =
-    new BazelRcWriter(repoRoot).write()
+    new BazelRcWriter(repoRoot).appendLines(BazelRcWriter.defaultOptions)
 
   private def writePrelude(): Unit =
     new PreludeWriter(repoRoot).write()

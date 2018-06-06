@@ -42,10 +42,7 @@ class DefaultJavaToolchainWriterIT extends BaseWriterIT {
     "create .bazelrc file is missing" in new ctx {
       writer.write()
 
-      path(withName = ".bazelrc") must beRegularFile(
-        withContent =
-          DefaultJavaToolchainWriter.bazelRcToolchainUsage(DefaultJavaToolchainWriter.DefaultJavaToolchainName).split(System.lineSeparator)
-      )
+      path(withName = ".bazelrc") must beRegularFile(withContentMatching = contain(DefaultJavaToolchainWriter.bazelRcToolchainUsage(DefaultJavaToolchainWriter.DefaultJavaToolchainName)))
     }
 
     "append java tool usage to bazelrc file" in new ctx {
@@ -53,11 +50,7 @@ class DefaultJavaToolchainWriterIT extends BaseWriterIT {
 
       writer.write()
 
-      path(withName = ".bazelrc") must beRegularFile(
-        withContent =
-          (bazelRcContent +
-            DefaultJavaToolchainWriter.bazelRcToolchainUsage(DefaultJavaToolchainWriter.DefaultJavaToolchainName)).split(System.lineSeparator)
-      )
+      path(withName = ".bazelrc") must beRegularFile(withContentMatching = contain(DefaultJavaToolchainWriter.bazelRcToolchainUsage(DefaultJavaToolchainWriter.DefaultJavaToolchainName)))
     }
   }
 

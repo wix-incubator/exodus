@@ -1,8 +1,8 @@
 package com.wix.bazel.migrator
 
-import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
+import java.nio.file.{Files, Path, StandardOpenOption}
 
-import DefaultJavaToolchainWriter._
+import com.wix.bazel.migrator.DefaultJavaToolchainWriter._
 
 class DefaultJavaToolchainWriter(repoRoot: Path, javacopts: Seq[String] = DefaultJavaToolchainWriter.DefaultJavacOpts) {
   def write(): Unit = {
@@ -16,7 +16,7 @@ class DefaultJavaToolchainWriter(repoRoot: Path, javacopts: Seq[String] = Defaul
     appendOrCreateFile("BUILD.bazel", createDefaultToolchain(javacopts, targetName))
 
   private def updateBazelRcFile(targetName: String): Unit =
-    appendOrCreateFile(".bazelrc", bazelRcToolchainUsage(targetName))
+    new BazelRcWriter(repoRoot).appendLine(bazelRcToolchainUsage(targetName))
 
   private def appendOrCreateFile(filename: String, content: String): Unit =
     Files.write(repoRoot.resolve(filename), content.getBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE)

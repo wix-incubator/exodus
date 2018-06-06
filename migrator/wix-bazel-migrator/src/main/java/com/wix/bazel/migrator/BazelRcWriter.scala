@@ -1,28 +1,29 @@
 package com.wix.bazel.migrator
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, StandardOpenOption}
 
 class BazelRcWriter(repoRoot: Path) {
 
-  def write(): Unit = {
-    val contents =
-      """|startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
-         |build --strategy=Scalac=worker
-         |build --strict_proto_deps=off
-         |build --strict_java_deps=warn
-         |test --strategy=Scalac=worker
-         |test --test_output=errors
-         |test --test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false
-         |build --experimental_ui
-         |test --experimental_ui
-         |test --test_tmpdir=/tmp
-         |test --action_env=BUILD_TOOL=BAZEL
-         |""".stripMargin
-    writeToDisk(contents)
-  }
+  def appendLine(line: String): Unit = appendLines(List(line))
+
+  def appendLines(lines: List[String]): Unit = writeToDisk(lines.mkString("", System.lineSeparator(), System.lineSeparator()))
 
   private def writeToDisk(contents: String): Unit =
-    Files.write(repoRoot.resolve(".bazelrc"), contents.getBytes)
+    Files.write(repoRoot.resolve(".bazelrc"), contents.getBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE)
 
 
+}
+
+object BazelRcWriter {
+  val defaultOptions: List[String] = List("startup --host_jvm_args=-Dbazel.DigestFunction=SHA256",
+    "build --strategy=Scalac=worker",
+    "build --strict_proto_deps=off",
+    "build --strict_java_deps=warn",
+    "test --strategy=Scalac=worker",
+    "test --test_output=errors",
+    "test --test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false",
+    "build --experimental_ui",
+    "test --experimental_ui",
+    "test --test_tmpdir=/tmp",
+    "test --action_env=BUILD_TOOL=BAZEL")
 }
