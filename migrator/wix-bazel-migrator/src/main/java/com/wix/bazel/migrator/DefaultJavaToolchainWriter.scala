@@ -33,7 +33,7 @@ object DefaultJavaToolchainWriter {
 
   val LoadDefaultToolchain: String = """load("@bazel_tools//tools/jdk:default_java_toolchain.bzl", "default_java_toolchain")""".stripMargin
 
-  def bazelRcToolchainUsage(targetName: String): String = s"build --java_toolchain=//:$targetName\n"
+  def bazelRcToolchainUsage(targetName: String): String = s"build --java_toolchain=//:$targetName"
 
   def createDefaultToolchain(javacOpts: Seq[String], targetName: String): String =
     s"""
