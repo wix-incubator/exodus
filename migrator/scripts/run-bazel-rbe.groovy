@@ -35,6 +35,7 @@ pipeline {
                         'maxLogSize': 3000,
                         'failBuild': true,
                         'setOwn': true]) {
+                            tee('bazel-log.output') {
                             unstable_by_exit_code("UNIT", """|#!/bin/bash
                                                     |bazel ${env.BAZEL_STARTUP_OPTS} \\
                                                     |test \\
@@ -42,6 +43,7 @@ pipeline {
                                                     |      ${env.BAZEL_FLAGS} \\
                                                     |      //...
                                                     |""".stripMargin())
+                            }
                         }
                 }
             }
@@ -50,8 +52,14 @@ pipeline {
     post {
         always {
             script {
+                println(findInvocations())
+                findInvocations().each{invocation_id->
+                    link = "https://source.cloud.google.com/results/invocations/${invocation_id}/targets"
+                    println "See results here: ${link}"
+                    currentBuild.description = """<a href="$link" target="_blank">$invocation_id</a>"""
+                }
                 if (env.FOUND_TEST == "true") {
-                    junit "bazel-testlogs/**/test.xml"
+                    junit allowEmptyResults: true, testResults: "bazel-testlogs/**/test.xml"
                     archiveArtifacts 'bazel-out/**/test.log,bazel-testlogs/**/test.xml'
                 }
             }
@@ -90,6 +98,18 @@ def unstable_by_exit_code(phase, some_script) {
     }
 }
 
+def findInvocations(){
+    log = readFile('bazel-log.output')
+    def match = log =~ /.+invocation_id: (.+)/
+    if (match.size() > 0) {
+        def id = match[0][1]
+        println ("id = $id")
+        return [id]
+    } else {
+        println ("[WARN] could not find remote invocation id")
+        return []
+    }
+}
 
 def sendNotification(good) {
     def slack_file = "bazel_migration/slack_channels.txt"
