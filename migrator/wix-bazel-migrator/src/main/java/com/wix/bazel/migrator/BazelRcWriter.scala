@@ -36,5 +36,7 @@ object BazelRcWriter {
     "build --experimental_ui",
     "test --experimental_ui",
     "test --test_tmpdir=/tmp",
-    "test --action_env=BUILD_TOOL=BAZEL")
+    "test --action_env=BUILD_TOOL=BAZEL",
+    "--test_env=LC_ALL=\"en_US.UTF-8\"" //linux sandbox encoding issue https://github.com/bazelbuild/bazel/issues/4277
+  )
 }
