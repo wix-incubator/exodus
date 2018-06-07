@@ -11,6 +11,7 @@ case class InternalTargetOverride(label: String,
                                   additionalDataDeps: Option[List[String]] = None,
                                   dockerImagesDeps: Option[List[String]] = None,
                                   newName: Option[String] = None,
-                                  additionalProtoAttributes : Option[String] = None
+                                  additionalProtoAttributes : Option[String] = None,
+                                  blockNetwork: Option[Boolean] = None
                                  )
 

@@ -194,8 +194,9 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     resources.codePurpose.toString.contains("Test")
 
   //toString since case objects aren't well supported in jackson scala
-  private def testHeader(testType: TestType, tagsTestType: TestType, testSize: String): String = testType.toString match {
+  private def testHeader(testType: TestType, tagsTestType: TestType, testSize: String, blockNetwork: Option[Boolean]): String = testType.toString match {
     case "UT" =>
+      blockNetwork.foreach(_ => println("[WARN]  Block network override is not supported for unit tests"))
       s"""specs2_unit_test(
          |    $testSize
          |    ${overrideTagsIfNeeded(testType, tagsTestType)}
@@ -204,11 +205,13 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
       s"""specs2_ite2e_test(
          |    $testSize
          |    ${overrideTagsIfNeeded(testType, tagsTestType)}
+         |    ${overrideBlockNetworkIfNeeded(blockNetwork)}
     """.stripMargin
     case "Mixed" =>
       s"""specs2_mixed_test(
          |    $testSize
          |    ${overrideTagsIfNeeded(testType, tagsTestType)}
+         |    ${overrideBlockNetworkIfNeeded(blockNetwork)}
     """.stripMargin
     case "None" =>
       s"""scala_library(
@@ -224,6 +227,15 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
 
   private def overrideTagsIfNeeded(testType: TestType, tagsTestType: TestType): String =
     if (testType != tagsTestType) s"tags = [${tags(tagsTestType)}]," else ""
+
+  private def overrideBlockNetworkIfNeeded(blockNetwork: Option[Boolean]): String = {
+    val blockNetworkPrefix = "block_network ="
+    blockNetwork match {
+      case None => ""
+      case Some(true) => blockNetworkPrefix + "True"
+      case Some(false) => blockNetworkPrefix + "False"
+    }
+  }
 
   private def testFooter(
                           testType: TestType,
@@ -263,7 +275,9 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
         val additionalDataDeps = AdditionalDataDeps(unAliasedLabelOf(target))
         val dockerImagesDeps = DockerImagesDeps(unAliasedLabelOf(target))
         val maybeOverriddenTestSize = ForceTestSize.getOrElse(unAliasedLabelOf(target), "")
-        (testHeader(maybeOverriddenTestType, maybeOverriddenTagsTestType, maybeOverriddenTestSize), testFooter(maybeOverriddenTestType, target.originatingSourceModule, additionalJvmFlags, additionalDataDeps, dockerImagesDeps))
+        val overriddenBlockNetwork = BlockNetwork.get(unAliasedLabelOf(target))
+        (testHeader(maybeOverriddenTestType, maybeOverriddenTagsTestType, maybeOverriddenTestSize, overriddenBlockNetwork),
+          testFooter(maybeOverriddenTestType, target.originatingSourceModule, additionalJvmFlags, additionalDataDeps, dockerImagesDeps))
     }
     header +
       s"""
@@ -445,6 +459,9 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
 
   private val AdditionalProtoAttributes: Map[String, String] =
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalProtoAttributes.map(additionalProtoAttributes => encodePluses(targetOverride.label) -> additionalProtoAttributes)).toMap.withDefaultValue("")
+
+  private val BlockNetwork: Map[String, Boolean] =
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.blockNetwork.map(blockNetwork => encodePluses(targetOverride.label) -> blockNetwork)).toMap
 
   private def asThirdPartyDockerImageTar(image: String): String = "//third_party/docker_images:".concat(DockerImage(image).tarName)
 

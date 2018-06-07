@@ -48,6 +48,22 @@ class InternalTargetOverridesReaderIT extends SpecificationWithJUnit {
       InternalTargetOverridesReader.from(repoRoot) must beEqualTo(
         InternalTargetsOverrides(Set(InternalTargetOverride(label, dockerImagesDeps = Option(List(dockerImage))))))
     }
+
+    "read block network from manual json" in new Context {
+      val label = "//some/path/to/target:target"
+      val blockNetwork = false
+
+      writeOverrides(
+        s"""{
+           |  "targetOverrides" : [ {
+           |      "label" : "$label",
+           |      "blockNetwork" : $blockNetwork
+           |  } ]
+           |}""".stripMargin)
+
+      InternalTargetOverridesReader.from(repoRoot) must beEqualTo(
+        InternalTargetsOverrides(Set(InternalTargetOverride(label, blockNetwork = Some(blockNetwork)))))
+    }
   }
 
   abstract class Context extends Scope with OverridesReaderITSupport {
