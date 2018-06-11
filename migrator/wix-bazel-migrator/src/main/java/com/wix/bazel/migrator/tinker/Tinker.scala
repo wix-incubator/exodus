@@ -26,6 +26,8 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     writeDefaultJavaToolchain()
 
     syncLocalThirdPartyDeps()
+
+    cleanGitIgnore()
   }
 
   private def failOnConflictsIfNeeded(): Unit = if (configuration.failOnSevereConflicts)
@@ -81,6 +83,9 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
 
     new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)
   }
+
+  private def cleanGitIgnore(): Unit =
+    new GitIgnoreCleaner(repoRoot).clean()
 
   private def bazelPackages = {
     val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
