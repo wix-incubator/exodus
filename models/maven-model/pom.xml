@@ -39,6 +39,7 @@
             <artifactId>specs2-matcher_${scala.dependencies.version}</artifactId>
             <scope>test</scope>
         </dependency>
+        
     </dependencies>
  
 </project>
