@@ -33,6 +33,7 @@ object BazelRcWriter {
     "test --strategy=Scalac=worker",
     "test --test_output=errors",
     "test --test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false",
+    "test --test_arg=--jvm_flags=-Dwix.environment=CI",
     "build --experimental_ui",
     "test --experimental_ui",
     "test --test_tmpdir=/tmp",
