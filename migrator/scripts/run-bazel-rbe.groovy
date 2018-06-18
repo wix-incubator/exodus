@@ -30,6 +30,8 @@ pipeline {
                 sh "bazel info"
                 echo "Running all tests excluding tests with tag 'docker'"
                 script {
+                    bazelrc = readFile(".bazelrc").replaceAll("build --disk_cache","# build --disk_cache")
+                    writeFile file: ".bazelrc", text: bazelrc
                     wrap([
                         $class: 'LogfilesizecheckerWrapper',
                         'maxLogSize': 3000,
