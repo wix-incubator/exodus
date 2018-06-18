@@ -21,8 +21,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |)
          |
          |# Required configuration for remote build execution
-         |bazel_toolchains_version="f8847f64e6950e8ab9fde1c0aba768550b0d9ab2"
-         |bazel_toolchains_sha256="794366f51fea224b3656a0b0f8f1518e739748646523a572fcd3d68614a0e670"
+         |bazel_toolchains_version="2cec6c9f6d12224e93d9b3f337b24e41602de3ba"
+         |bazel_toolchains_sha256="9b8d85b61d8945422e86ac31e4d4d2d967542c080d1da1b45364da7fd6bdd638"
          |http_archive(
          |             name = "bazel_toolchains",
          |             urls = [
