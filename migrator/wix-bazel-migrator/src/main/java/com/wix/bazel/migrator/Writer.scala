@@ -229,11 +229,11 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     if (testType != tagsTestType) s"tags = [${tags(tagsTestType)}]," else ""
 
   private def overrideBlockNetworkIfNeeded(blockNetwork: Option[Boolean]): String = {
-    val blockNetworkPrefix = "block_network ="
+    val blockNetworkPrefix = "block_network = "
     blockNetwork match {
       case None => ""
-      case Some(true) => blockNetworkPrefix + "True"
-      case Some(false) => blockNetworkPrefix + "False"
+      case Some(true) => blockNetworkPrefix + "True,"
+      case Some(false) => blockNetworkPrefix + "False,"
     }
   }
 
