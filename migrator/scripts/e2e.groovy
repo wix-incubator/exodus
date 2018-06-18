@@ -5,8 +5,6 @@ pipeline {
     }
     environment {
         LATEST_COMMIT_HASH_COMMAND = "git ls-remote -q ${env.repo_url} | head -1 | cut -f 1"
-        // if migration failed - tell downstream jobs to read the master
-        MIGRATION_BRANCH = "master"
     }
     stages {
         stage('setup') {
@@ -38,6 +36,10 @@ pipeline {
                                 env.BAZEL_SUCCESS = "${bazel_run.result == "SUCCESS"}"
                                 env.BAZEL_RUN_NUMBER = "${bazel_run.number}"
                                 env.MIGRATION_BRANCH = migration_branch
+                            } else {
+                                env.BAZEL_SUCCESS = "false"
+                                env.BAZEL_RUN_NUMBER = "-1"
+                                env.MIGRATION_BRANCH = "migration-failed-no-branch"
                             }
                         }
                     }
