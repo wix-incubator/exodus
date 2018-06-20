@@ -108,7 +108,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
       val loadStatement = if (workspaceName == serverInfraWSName)
         s"""load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")"""
       else
-        s"""|wix_grpc_version="68e470581d60342c6da9fd1852082ef8bd916c1e" # update this as needed
+        s"""|wix_grpc_version="091ffb2098f5a449687600c963b2c672973627c4" # update this as needed
             |
             |git_repository(
             |             name = "wix_grpc",
