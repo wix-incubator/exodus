@@ -4,29 +4,28 @@ import com.wixpress.build.maven.Exclusion
 import org.specs2.mutable.SpecificationWithJUnit
 
 //noinspection TypeAnnotation
-class LibraryRuleTest extends SpecificationWithJUnit {
-  "LibraryRule" should {
-    "serialize rule with no attributes" in {
-      val rule = LibraryRule(name = "name")
+class ImportExternalRuleTest extends SpecificationWithJUnit {
+  "ImportExternalRule" should {
+
+    // TODO: wrap licenses and server_urls with macro
+    // also wrap if statement in macro
+    "serialize rule with default attributes" in {
+      val rule = ImportExternalRule(name = "name", artifact = "artifact")
 
       rule.serialized must beEqualIgnoringSpaces(
-        """scala_import(
+        """if native.existing_rule("name") == None:
+          |  scala_maven_import_external(
           |    name = "name",
+          |    artifact = "artifact",
+          |    licenses = ["notice"], # Apache 2.0
+          |    server_urls = ["http://repo.dev.wixpress.com/artifactory/libs-snapshots"],
           |)""".stripMargin)
     }
 
-    "serialize rule jar" in {
-      val rule = LibraryRule(name = "name",jars = Set("@jar_reference"))
-
-      rule.serialized must containIgnoringSpaces(
-        """jars = [
-          |    "@jar_reference"
-          |]""".stripMargin)
-    }
-
     "serialize rule compile time dependency" in {
-      val rule = LibraryRule(
+      val rule = ImportExternalRule(
         name = "name",
+        artifact = "artifact",
         compileTimeDeps = Set("some-compile-time-dep")
       )
 
@@ -37,8 +36,9 @@ class LibraryRuleTest extends SpecificationWithJUnit {
     }
 
     "serialize rule runtime dependency" in {
-      val rule = LibraryRule(
+      val rule = ImportExternalRule(
         name = "name",
+        artifact = "artifact",
         runtimeDeps = Set("some-runtime-dep")
       )
 
@@ -49,8 +49,9 @@ class LibraryRuleTest extends SpecificationWithJUnit {
     }
 
     "serialize rule with exports" in {
-      val rule = LibraryRule(
+      val rule = ImportExternalRule(
         name = "name",
+        artifact = "artifact",
         exports = Set("some-export")
       )
 
@@ -61,8 +62,9 @@ class LibraryRuleTest extends SpecificationWithJUnit {
     }
 
     "serialize rule with exclude" in {
-      val rule = LibraryRule(
+      val rule = ImportExternalRule(
         name = "name",
+        artifact = "artifact",
         exclusions = Set(Exclusion("excluded.group", "excluded-artifact"))
       )
 
@@ -70,8 +72,9 @@ class LibraryRuleTest extends SpecificationWithJUnit {
     }
 
     "serialize rule with multiple dependencies" in {
-      val rule = LibraryRule(
+      val rule = ImportExternalRule(
         name = "name",
+        artifact = "artifact",
         compileTimeDeps = Set("dep3", "dep1", "dep2")
       )
 
@@ -84,18 +87,21 @@ class LibraryRuleTest extends SpecificationWithJUnit {
     }
 
     "serialize rule with testonly" in {
-      val rule = LibraryRule(
+      val rule = ImportExternalRule(
         name = "name",
+        artifact = "artifact",
         testOnly = true
       )
 
-      rule.serialized must containIgnoringSpaces(
+      val serialized = rule.serialized
+      serialized must containIgnoringSpaces(
         """testonly = 1,""".stripMargin)
     }
 
     "not serialize testonly for rules that do not need it" in {
-      val rule = LibraryRule(
-        name = "name"
+      val rule = ImportExternalRule(
+        name = "name",
+        artifact = "artifact"
       )
 
       rule.serialized must not(containIgnoringSpaces(

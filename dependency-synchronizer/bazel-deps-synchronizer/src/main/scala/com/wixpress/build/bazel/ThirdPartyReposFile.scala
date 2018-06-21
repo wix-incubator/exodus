@@ -1,33 +1,60 @@
 package com.wixpress.build.bazel
 
+import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
 import com.wixpress.build.maven.Coordinates
 
 import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
-import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 object ThirdPartyReposFile {
 
   val thirdPartyReposFilePath = "third_party.bzl"
 
   case class Builder(content: String = "") {
-    def withMavenJar(coordinates: Coordinates): Builder =
-      Builder(newThirdPartyReposWithMavenJar(coordinates))
-
-    private def newThirdPartyReposWithMavenJar(coordinates: Coordinates) = {
-      regexOfWorkspaceRuleWithNameMatching(coordinates.workspaceRuleName)
-        .findFirstMatchIn(content) match {
-        case Some(matched) => updateMavenJar(content, coordinates, matched)
-        case None => appendMavenJar(content, coordinates)
+    def fromCoordinates(coordinates: Coordinates): Builder = {
+      coordinates.packaging match {
+        case Some("jar") => withLoadStatementsFor(coordinates)
+        case _ => withMavenArtifact(coordinates)
       }
     }
 
-    private def updateMavenJar(thirdPartyRepos: String, coordinates: Coordinates, matched: Regex.Match): String = {
+    def withLoadStatementsFor(coordinates: Coordinates): Builder =
+    {
+      val updatedContent = regexOfLoadRuleWithNameMatching(coordinates.groupIdForBazel)
+        .findFirstMatchIn(content) match {
+        case None => appendLoadStatements(content, coordinates)
+        case _ => content
+      }
+      Builder(updatedContent)
+    }
+
+    private def appendLoadStatements(thirdPartyRepos: String, coordinates: Coordinates): String = {
+      s"""${serializedLoadImportExternalTargetsFile(coordinates)}
+         |
+         |$thirdPartyRepos
+         |
+         |${serializedImportExternalTargetsFileMethodCall(coordinates)}
+         |""".stripMargin
+      }
+
+    def withMavenArtifact(coordinates: Coordinates): Builder =
+      Builder(newThirdPartyReposWithMavenArchive(coordinates))
+
+    private def newThirdPartyReposWithMavenArchive(coordinates: Coordinates) = {
+      regexOfWorkspaceRuleWithNameMatching(coordinates.workspaceRuleName)
+        .findFirstMatchIn(content) match {
+        case Some(matched) => updateMavenArtifact(content, coordinates, matched)
+        case None => appendMavenArtifact(content, coordinates)
+      }
+    }
+
+    private def updateMavenArtifact(thirdPartyRepos: String, coordinates: Coordinates, matched: Regex.Match): String = {
       val newMavenJarRule = WorkspaceRule.of(coordinates).serialized
       thirdPartyRepos.take(matched.start - "  ".length) + newMavenJarRule + thirdPartyRepos.drop(matched.end)
     }
 
-    private def appendMavenJar(thirdPartyRepos: String, coordinates: Coordinates): String =
+    private def appendMavenArtifact(thirdPartyRepos: String, coordinates: Coordinates): String =
       s"""$thirdPartyRepos
          |
          |${WorkspaceRule.of(coordinates).serialized}
@@ -46,7 +73,7 @@ object ThirdPartyReposFile {
     }
 
     def findCoordinatesByName(name: String): Option[Coordinates] =
-      findMavenJarByName(name = name, within = content)
+      findMavenArtifactByName(name = name, within = content)
         .map(extractFullMatchText)
         .flatMap(parseCoordinates)
 
@@ -64,7 +91,7 @@ object ThirdPartyReposFile {
   private def splitToStringsWithMavenJarsInside(thirdPartyRepos: String) =
     for (m <- GeneralWorkspaceRuleRegex.findAllMatchIn(thirdPartyRepos)) yield m.group(0)
 
-  private def findMavenJarByName(name: String, within: String) =
+  private def findMavenArtifactByName(name: String, within: String) =
     regexOfWorkspaceRuleWithNameMatching(name).findFirstMatchIn(within)
 
   private val GeneralWorkspaceRuleRegex = regexOfWorkspaceRuleWithNameMatching(".+?")
@@ -72,4 +99,7 @@ object ThirdPartyReposFile {
   private def regexOfWorkspaceRuleWithNameMatching(pattern: String) =
     ("""(?s)if native\.existing_rule\("""" + pattern + """"\) == None:\s*?[^\s]+"""
       + """\(\s*?name\s*?=\s*?"""" + pattern + """",[\s#]*?artifact.*?\)""").r
+
+  private def regexOfLoadRuleWithNameMatching(pattern: String) =
+    ("""(?s)load\("//:third_party/""" + pattern + """.bzl", """ + pattern + """_deps = "dependencies"\)""").r
 }

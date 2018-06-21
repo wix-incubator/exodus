@@ -6,6 +6,10 @@ object MavenToBazelTranslations {
   implicit class `Maven Coordinates to Bazel rules`(coordinates: Coordinates) {
     import coordinates._
 
+    def groupIdForBazel: String = {
+      fixNameToBazelConventions(groupId)
+    }
+
     def workspaceRuleName: String = {
       val groupIdPart = fixNameToBazelConventions(groupId)
       s"${groupIdPart}_$libraryRuleName"

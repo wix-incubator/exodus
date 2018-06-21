@@ -17,6 +17,7 @@ specs2_unit_test(
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/sync",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/bazel",
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation:translation",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
     ],
 )

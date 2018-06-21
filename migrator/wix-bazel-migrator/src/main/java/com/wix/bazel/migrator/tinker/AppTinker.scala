@@ -9,6 +9,7 @@ import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.{Persister, RunConfiguration}
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.build.maven.analysis.{SourceModules, ThirdPartyConflict, ThirdPartyConflicts, ThirdPartyValidator}
+import com.wixpress.build.bazel.repositories.WorkspaceName
 import com.wixpress.build.maven
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.HighestVersionConflictResolution
@@ -18,6 +19,7 @@ class AppTinker(configuration: RunConfiguration) {
   val repoRoot: Path = configuration.repoRoot.toPath
   val managedDepsRepoRoot: io.File = configuration.managedDepsRepo
   val codotaToken: String = configuration.codotaToken
+  val localWorkspaceName: String = WorkspaceName.by(configuration.repoUrl)
 
   lazy val sourceModules: SourceModules = readSourceModules()
   lazy val codeModules: Set[SourceModule] = sourceModules.codeModules

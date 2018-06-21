@@ -7,7 +7,6 @@ import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NoPersistenceBazelRepository
-import com.wixpress.build.bazel.repositories.WorkspaceName
 import com.wixpress.build.maven.FilteringGlobalExclusionDependencyResolver
 import com.wixpress.build.sync.DiffSynchronizer
 
@@ -44,10 +43,10 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     new BazelRcRemoteWriter(repoRoot).write()
 
   private def writeWorkspace(): Unit =
-    new WorkspaceWriter(repoRoot, WorkspaceName.by(configuration.repoUrl)).write()
+    new WorkspaceWriter(repoRoot, localWorkspaceName).write()
 
   private def writeInternal(): Unit =
-    new Writer(repoRoot, codeModules, bazelPackages, WorkspaceName.by(configuration.repoUrl)).write()
+    new Writer(repoRoot, codeModules, bazelPackages, localWorkspaceName).write()
 
   private def writeExternal(): Unit =
     new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()

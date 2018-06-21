@@ -3,7 +3,7 @@ package com.wixpress.build.sync
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{overrideCoordinatesFrom, runtimeOverrides}
 import com.wixpress.build.bazel.ThirdPartyReposFile._
 import com.wixpress.build.bazel._
-import com.wixpress.build.maven.MavenMakers.aDependency
+import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.BazelMavenSynchronizer.PersistMessageHeader
 import com.wixpress.build.{BazelWorkspaceDriver, MavenJarInBazel}
@@ -26,25 +26,27 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
         syncBasedOn(updatedResolver, Set(updatedDependency))
 
-        bazelDriver.versionOfMavenJar(existingDependency.coordinates) must beSome(updatedDependency.version)
+        bazelDriver.versionOfImportedJar(existingDependency.coordinates) must beSome(updatedDependency.version)
       }
 
       "insert new maven jar to bazel based repo" in new blankBazelWorkspaceAndNewManagedRootDependency {
         syncBasedOn(updatedResolver, Set(newDependency))
 
-        bazelDriver.versionOfMavenJar(newDependency.coordinates) must beSome(newDependency.version)
+        bazelDriver.versionOfImportedJar(newDependency.coordinates) must beSome(newDependency.version)
       }
 
-      "add new target in package under third_party" in new blankBazelWorkspaceAndNewManagedRootDependency {
+      "add new target in import external file under third_party" in new blankBazelWorkspaceAndNewManagedRootDependency {
         syncBasedOn(updatedResolver, Set(newDependency))
 
         bazelMustHaveRuleFor(jar = newDependency.coordinates, runtimeDependencies = Set.empty)
       }
 
       "make sure new BUILD.bazel files in third_parties has appropriate header" in new blankBazelWorkspaceAndNewManagedRootDependency {
-        syncBasedOn(updatedResolver, Set(newDependency))
+        val pomDependency = aPomArtifactDependency("some-artifact")
 
-        val buildFileContent = fakeLocalWorkspace.buildFileContent(LibraryRule.packageNameBy(newDependency.coordinates))
+        syncBasedOn(updatedResolver, Set(pomDependency))
+
+        val buildFileContent = fakeLocalWorkspace.buildFileContent(LibraryRule.packageNameBy(pomDependency.coordinates))
 
         buildFileContent must beSome
         buildFileContent.get must startWith(BazelBuildFile.DefaultHeader)
@@ -54,7 +56,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         syncBasedOn(updatedResolver, Set(newDependency))
 
         val expectedChange = Change(
-          filePaths = Set(thirdPartyReposFilePath, LibraryRule.buildFilePathBy(newDependency.coordinates).get),
+          filePaths = Set(thirdPartyReposFilePath, ImportExternalRule.importExternalFilePathBy(newDependency.coordinates).get),
           message =
             s"""$PersistMessageHeader
                | - ${newDependency.coordinates.serialized}
@@ -84,8 +86,8 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
         syncBasedOn(updatedResolver, Set(updatedBaseDependency))
 
-        bazelDriver.versionOfMavenJar(baseDependency.coordinates) must beSome(updatedBaseDependency.version)
-        bazelDriver.versionOfMavenJar(transitiveDependency.coordinates) must beSome(updatedTransitiveDependency.version)
+        bazelDriver.versionOfImportedJar(baseDependency.coordinates) must beSome(updatedBaseDependency.version)
+        bazelDriver.versionOfImportedJar(transitiveDependency.coordinates) must beSome(updatedTransitiveDependency.version)
 
       }
 
@@ -132,7 +134,8 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
         syncBasedOn(updatedResolver,Set(baseDependency))
 
-        bazelDriver.findLibraryRuleBy(baseDependency.coordinates) must beSome(LibraryRule.of(baseDependency.coordinates).withRuntimeDeps(Set(injectedRuntimeDep)))
+        bazelDriver.findImportExternalRuleBy(baseDependency.coordinates) must beSome(importExternalRuleWith(baseDependency.coordinates)
+          .withRuntimeDeps(Set(injectedRuntimeDep)))
       }
 
       "create appropriate third_party target for the new transitive dependency" in new blankBazelWorkspaceAndNewManagedArtifactWithDependency {
@@ -219,7 +222,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
         synchronizer.sync(dependencyManagementCoordinates, Set(baseDependency))
 
-        bazelDriver.versionOfMavenJar(baseDependency.coordinates) must beSome(baseDependency.version)
+        bazelDriver.versionOfImportedJar(baseDependency.coordinates) must beSome(baseDependency.version)
       }
 
       "refer only to the highest version per dependency that was in extra-dependencies" in new baseCtx {
@@ -234,7 +237,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
         synchronizer.sync(dependencyManagementCoordinates, someCoordinatesOfMultipleVersions.map(_.asDependency))
 
-        bazelDriver.versionOfMavenJar(Coordinates("some-group", "some-artifact", "dont-care")) must beSome("3.5.8")
+        bazelDriver.versionOfImportedJar(Coordinates("some-group", "some-artifact", "dont-care")) must beSome("3.5.8")
       }
 
       "bound version of transitive dependency according to managed dependencies" in new baseCtx{
@@ -249,7 +252,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
         syncBasedOn(updatedResolver,Set(baseDependency))
 
-        bazelDriver.versionOfMavenJar(transitiveDependency.coordinates) must beSome(transitiveManagedDependency.version)
+        bazelDriver.versionOfImportedJar(transitiveDependency.coordinates) must beSome(transitiveManagedDependency.version)
       }
     }
   }
@@ -307,9 +310,10 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
   }
 
   trait baseCtx extends Scope {
-    val fakeLocalWorkspace = new FakeLocalBazelWorkspace
+    val fakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = "some_local_workspace_name")
     val fakeBazelRepository = new InMemoryBazelRepository(fakeLocalWorkspace)
     val bazelDriver = new BazelWorkspaceDriver(fakeLocalWorkspace)
+    val ruleResolver = bazelDriver.ruleResolver
 
     val baseDependency = aDependency("base")
     val transitiveDependency = aDependency("transitive")
@@ -339,19 +343,29 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
                               runtimeDependencies: Set[Coordinates],
                               exclusions: Set[Exclusion] = Set.empty,
                               compileTimeDependencies: Set[Coordinates] = Set.empty) = {
-      val expectedRule = LibraryRule.of(
+      val expectedRule = importExternalRuleWith(
         artifact = jar,
         runtimeDependencies = runtimeDependencies,
         compileTimeDependencies = compileTimeDependencies,
         exclusions = exclusions
       )
-      bazelDriver.findLibraryRuleBy(jar) must beSome(expectedRule)
+      bazelDriver.findImportExternalRuleBy(jar) must beSome(expectedRule)
     }
 
     protected def givenNoDependenciesInBazelWorkspace() = {
       givenBazelWorkspaceWithDependency()
     }
 
+    def importExternalRuleWith(artifact: Coordinates,
+                               runtimeDependencies: Set[Coordinates] = Set.empty,
+                               compileTimeDependencies: Set[Coordinates] = Set.empty,
+                               exclusions: Set[Exclusion] = Set.empty) = {
+      ImportExternalRule.of(artifact,
+        runtimeDependencies,
+        compileTimeDependencies,
+        exclusions,
+        coordinatesToLabel = ruleResolver.labelBy)
+    }
   }
 
   private implicit class `Dependency to Artifact`(baseDependency: Dependency){

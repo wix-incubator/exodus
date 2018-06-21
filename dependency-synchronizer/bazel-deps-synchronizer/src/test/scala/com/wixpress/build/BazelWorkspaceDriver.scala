@@ -3,36 +3,34 @@ package com.wixpress.build
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.{Coordinates, Exclusion}
 import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
+import com.wixpress.build.maven.Coordinates._
 
 class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
+  val ruleResolver = new RuleResolver(bazelRepo.localWorkspaceName)
 
   def writeDependenciesAccordingTo(dependencies: Set[MavenJarInBazel]): Unit = {
-    val allMavenJars = dependencies.map(_.artifact) ++ dependencies.flatMap(_.runtimeDependencies)
-    val newThirdPartyRepos = allMavenJars.foldLeft(bazelRepo.thirdPartyReposFileContent())(addMavenJarToThirdPartyReposFile)
+    val allJarsImports = dependencies.map(_.artifact) ++ dependencies.flatMap(_.runtimeDependencies)
+    val newThirdPartyRepos = allJarsImports.foldLeft(bazelRepo.thirdPartyReposFileContent())(addImportFileLoadStatementsToThirdPartyReposFile)
     bazelRepo.overwriteThirdPartyReposFile(newThirdPartyRepos)
-    dependencies.foreach(updateBuildFile)
+    dependencies.foreach(updateImportExternalTargetsFile)
   }
 
-  def versionOfMavenJar(coordinates: Coordinates): Option[String] = {
-    bazelExternalDependencyFor(coordinates).mavenCoordinates.map(_.version)
+  def versionOfImportedJar(coordinates: Coordinates): Option[String] = {
+    bazelExternalDependencyFor(coordinates).importExternalRule.map(r => deserialize(r.artifact).version)
   }
 
   def bazelExternalDependencyFor(coordinates: Coordinates): BazelExternalDependency = {
-    val maybeWorkspaceRule = findRealCoordinatesOf(coordinates)
+    val maybeImportExternalRule = findImportExternalRuleBy(coordinates)
     val maybeLibraryRule = findLibraryRuleBy(coordinates)
-    BazelExternalDependency(maybeWorkspaceRule, maybeLibraryRule)
+    BazelExternalDependency( maybeImportExternalRule, maybeLibraryRule)
   }
 
-  def addMavenJar(jar: Coordinates): Unit = {
-    val currentThirdPartyRepos = bazelRepo.thirdPartyReposFileContent()
-    val newThirdPartyRepos = addMavenJarToThirdPartyReposFile(currentThirdPartyRepos, jar)
-    bazelRepo.overwriteThirdPartyReposFile(newThirdPartyRepos)
-  }
-
-  private def findRealCoordinatesOf(coordinates: Coordinates): Option[Coordinates] = {
-    val thirdPartyReposFile = bazelRepo.thirdPartyReposFileContent()
-    val workspaceRuleName = coordinates.workspaceRuleName
-    ThirdPartyReposFile.Parser(thirdPartyReposFile).findCoordinatesByName(workspaceRuleName)
+  def findImportExternalRuleBy(coordinates: Coordinates): Option[ImportExternalRule] = {
+    val groupId = coordinates.groupIdForBazel
+    val targetName = coordinates.workspaceRuleName
+    val maybeImportFile = bazelRepo.thirdPartyImportTargetsFileContent(groupId)
+    maybeImportFile.flatMap(ImportExternalTargetsFile.Reader(_).ruleByName(targetName))
   }
 
   def findLibraryRuleBy(coordinates: Coordinates): Option[LibraryRule] = {
@@ -42,26 +40,27 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
     maybeBuildFile.flatMap(BazelBuildFile(_).ruleByName(targetName))
   }
 
-  private def updateBuildFile(mavenJarInBazel: MavenJarInBazel): Unit = {
+  private def updateImportExternalTargetsFile(mavenJarInBazel: MavenJarInBazel): Unit = {
     import mavenJarInBazel._
-    val rule = LibraryRule.of(artifact, runtimeDependencies, compileTimeDependencies, exclusions)
-    val rulePackage = LibraryRule.packageNameBy(artifact)
+    val rule = ImportExternalRule.of(artifact, runtimeDependencies, compileTimeDependencies, exclusions, ruleResolver.labelBy)
+    val artifactGroup = artifact.groupIdForBazel
 
-    val buildFileContent = bazelRepo.buildFileContent(rulePackage).getOrElse("")
+    val importExternalTargetsFileContent = bazelRepo.thirdPartyImportTargetsFileContent(artifactGroup).getOrElse("")
     val newContent =
-      s"""$buildFileContent
+      s"""$importExternalTargetsFileContent
          |
          |${rule.serialized}
        """.stripMargin
 
-    bazelRepo.overwriteBuildFile(rulePackage, newContent)
+    bazelRepo.overwriteThirdPartyImportTargetsFile(artifactGroup, newContent)
   }
 
-  private def addMavenJarToThirdPartyReposFile(currentSkylarkFile: String, mavenJar: Coordinates) = {
-    s"""$currentSkylarkFile
+  private def addImportFileLoadStatementsToThirdPartyReposFile(currentSkylarkFile: String, mavenJar: Coordinates) = {
+    s"""${serializedLoadImportExternalTargetsFile(mavenJar)}
        |
-       |${WorkspaceRule.of(mavenJar).serialized}
+       |$currentSkylarkFile
        |
+       |${serializedImportExternalTargetsFileMethodCall(mavenJar)}
        |""".stripMargin
   }
 
@@ -69,4 +68,4 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
 
 case class MavenJarInBazel(artifact: Coordinates, runtimeDependencies: Set[Coordinates], compileTimeDependencies: Set[Coordinates], exclusions: Set[Exclusion])
 
-case class BazelExternalDependency(mavenCoordinates: Option[Coordinates], libraryRule: Option[LibraryRule])
+case class BazelExternalDependency(importExternalRule: Option[ImportExternalRule], libraryRule: Option[LibraryRule] = None)

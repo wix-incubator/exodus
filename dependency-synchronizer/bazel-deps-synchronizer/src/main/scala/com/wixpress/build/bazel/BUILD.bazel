@@ -18,6 +18,7 @@ scala_library(
         "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
         "//third_party/com/github/pathikrit:better_files_2_12",
         "//third_party/org/eclipse/jgit:org_eclipse_jgit",
+        "//wix-bazel-repositories/bazel-repositories-core/src/main/scala/com/wixpress/build/bazel/repositories",
     ],
 )
 

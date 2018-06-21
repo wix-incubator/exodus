@@ -1,8 +1,11 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.bazel.LibraryRule.RuleType
 import com.wixpress.build.maven.{Coordinates, Exclusion}
-import LibraryRule.RuleType
+
+// going to be deprecated when switching to phase 2
+// kept for now to support pom artifact migration
 case class LibraryRule(
                         name: String,
                         sources : Set[String] = Set.empty,
@@ -12,7 +15,7 @@ case class LibraryRule(
                         compileTimeDeps: Set[String] = Set.empty,
                         exclusions: Set[Exclusion] = Set.empty,
                         testOnly: Boolean = false
-                         ) {
+                         ) extends RuleWithDeps {
 
   private def serializedExclusions = if (exclusions.isEmpty) "" else
     "\n" + exclusions.map(e => s"    # EXCLUDES ${e.serialized}").mkString("\n")
@@ -51,53 +54,34 @@ case class LibraryRule(
       .map(e => s""""$e"""")
       .mkString(",\n        ")
   }
-}
+
+  override def updateDeps(runtimeDeps: Set[String], compileTimeDeps: Set[String]): LibraryRule =
+    copy(runtimeDeps = runtimeDeps, compileTimeDeps = compileTimeDeps)}
 
 
 object LibraryRule {
   val RuleType = "scala_import"
-  def of(
-          artifact: Coordinates,
-          runtimeDependencies: Set[Coordinates] = Set.empty,
-          compileTimeDependencies: Set[Coordinates] = Set.empty,
-          exclusions: Set[Exclusion] = Set.empty): LibraryRule =
-    artifact.packaging match {
-      case Some("jar") => jarLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions)
-      case Some("pom") => pomLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions)
-      case _ => throw new RuntimeException(s"no library rule defined for ${artifact.serialized}")
-    }
 
-  private def pomLibraryRule(
-                              artifact: Coordinates,
-                              runtimeDependencies: Set[Coordinates],
-                              compileTimeDependencies: Set[Coordinates],
-                              exclusions: Set[Exclusion]) = {
+  def pomLibraryRule(
+                      artifact: Coordinates,
+                      runtimeDependencies: Set[Coordinates],
+                      compileTimeDependencies: Set[Coordinates],
+                      exclusions: Set[Exclusion],
+                      coordinatesToLabel: Coordinates => String): LibraryRule = {
     LibraryRule(
       name = artifact.libraryRuleName,
       jars = Set.empty,
-      exports = compileTimeDependencies.map(labelBy),
-      runtimeDeps = runtimeDependencies.map(labelBy),
+      exports = compileTimeDependencies.map(coordinatesToLabel),
+      runtimeDeps = runtimeDependencies.map(coordinatesToLabel),
       exclusions = exclusions
     )
   }
 
-  private def jarLibraryRule(
-                              artifact: Coordinates,
-                              runtimeDependencies: Set[Coordinates],
-                              compileTimeDependencies: Set[Coordinates],
-                              exclusions: Set[Exclusion]) = {
-    LibraryRule(
-      name = artifact.libraryRuleName,
-      jars = Set(s"@${artifact.workspaceRuleName}//jar:file"),
-      compileTimeDeps = compileTimeDependencies.map(labelBy),
-      runtimeDeps = runtimeDependencies.map(labelBy),
-      exclusions = exclusions
-    )
-  }
-  
   def packageNameBy(coordinates: Coordinates): String =  s"third_party/${coordinates.groupId.replace('.', '/')}"
 
-  private def labelBy(coordinates: Coordinates): String =  s"//${packageNameBy(coordinates)}:${coordinates.libraryRuleName}"
+  def nonJarLabelBy(coordinates: Coordinates): String = {
+    s"//${packageNameBy(coordinates)}:${coordinates.libraryRuleName}"
+  }
 
   def buildFilePathBy(coordinates: Coordinates): Option[String] = {
     coordinates.packaging match {

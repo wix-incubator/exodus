@@ -1,8 +1,10 @@
 package com.wixpress.build.bazel
 
-import com.wixpress.build.maven.{Coordinates, Dependency, Exclusion, MavenScope}
+import com.wixpress.build.maven.MavenMakers._
+import com.wixpress.build.maven._
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class BazelDependenciesReaderTest extends SpecificationWithJUnit {
 
@@ -15,9 +17,11 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
       def defaultDependency(groupId: String, artifactId: String, version: String, exclusion: Set[Exclusion] = Set.empty) =
         Dependency(Coordinates(groupId, artifactId, version), MavenScope.Compile, exclusion)
 
-      localWorkspace.overwriteThirdPartyReposFile("")
+      val dep = someCoordinates("some-dep")
+      val ruleName = s"${dep.groupIdForBazel}_some_dep"
 
-      val ruleName = "some_group_some_dep"
+      localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,"")
+
     }
 
     "empty set of dependencies in case given empty third party repos" in new emptyThirdPartyReposCtx {
@@ -26,15 +30,15 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
     }
 
     "a dependency for third party repos with 1 dependency without exclusion" in new emptyThirdPartyReposCtx {
-      localWorkspace.overwriteThirdPartyReposFile(
+      localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,
         s"""
           |if native.existing_rule("$ruleName") == None:
-          |  maven_jar(
+          |  scala_maven_import_external(
           |      name = "$ruleName",
-          |      artifact = "some.group:some-dep:some-version",
+          |      artifact = "${dep.groupId}:some-dep:some-version",
           |  )""".stripMargin)
 
-      reader.allDependenciesAsMavenDependencies() must contain(defaultDependency("some.group", "some-dep", "some-version"))
+      reader.allDependenciesAsMavenDependencies() must contain(defaultDependency(dep.groupId, "some-dep", "some-version"))
     }
 
     "a dependency for third party repos with 1 proto dependency" in new emptyThirdPartyReposCtx {
@@ -54,51 +58,44 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
     }
 
     "a dependency for third party repos with 1 dependency that has an exclusion" in new emptyThirdPartyReposCtx {
-      localWorkspace.overwriteThirdPartyReposFile(
+      localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,
         s"""
           |if native.existing_rule("$ruleName") == None:
-          |   maven_jar(
+          |   scala_maven_import_external(
           |       name = "$ruleName",
-          |       artifact = "some.group:some-dep:some-version",
-          |   )""".stripMargin)
-      localWorkspace.overwriteBuildFile("third_party/some/group",
-        s"""
-          |scala_import(
-          |    name = "some_dep",
-          |    jar = "@$ruleName//jar:file",
-          |    runtime_deps = [
+          |       artifact = "${dep.groupId}:some-dep:some-version",
+          |       runtime_deps = [
           |
-          |    ]
-          |    # EXCLUDES some.group:some-exclude
-          |)
-          |""".stripMargin)
+          |       ]
+          |       # EXCLUDES ${dep.groupId}:some-exclude
+          |   )""".stripMargin)
 
-      reader.allDependenciesAsMavenDependencies() must contain(defaultDependency("some.group", "some-dep", "some-version", Set(Exclusion("some.group", "some-exclude"))))
+      reader.allDependenciesAsMavenDependencies() must contain(defaultDependency(dep.groupId, "some-dep", "some-version", Set(Exclusion("some.group", "some-exclude"))))
     }
 
     "all dependencies for repository with multiple dependencies" in new emptyThirdPartyReposCtx {
       val rule1 = """some_group_some_dep1"""
       val rule2 = """some_group_some_dep2"""
 
-      localWorkspace.overwriteThirdPartyReposFile(
+      localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,
         s"""
            |if native.existing_rule("$rule1") == None:
-           |   maven_jar(
+           |   scala_maven_import_external(
            |       name = "$rule1",
-           |       artifact = "some.group:some-dep1:some-version",
+           |       artifact = "${dep.groupId}:some-dep1:some-version",
            |   )
            |
            |if native.existing_rule("$rule2") == None:
-           |   maven_jar(
+           |   scala_maven_import_external(
            |       name = "$rule2",
-           |       artifact = "some.group:some-dep2:some-version",
+           |       artifact = "${dep.groupId}:some-dep2:some-version",
            |   )""".stripMargin)
 
       private val dependencies: Set[Dependency] = reader.allDependenciesAsMavenDependencies()
       dependencies must containTheSameElementsAs(
         Seq(
-          defaultDependency("some.group", "some-dep1", "some-version"),
-          defaultDependency("some.group", "some-dep2", "some-version")
+          defaultDependency(dep.groupId, "some-dep1", "some-version"),
+          defaultDependency(dep.groupId, "some-dep2", "some-version")
         ))
 
     }

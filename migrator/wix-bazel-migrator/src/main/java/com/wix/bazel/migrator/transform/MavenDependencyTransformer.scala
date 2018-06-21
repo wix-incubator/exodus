@@ -2,7 +2,7 @@ package com.wix.bazel.migrator.transform
 
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
-import com.wixpress.build.bazel.LibraryRule
+import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule}
 import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.maven
 import ModuleDependenciesTransformer.ProductionDepsTargetName
@@ -40,16 +40,19 @@ class MavenDependencyTransformer(repoModules: Set[SourceModule], externalPackage
 
   private def asThirdPartyDependency(dependency: maven.Dependency): String = {
     dependency.coordinates.packaging match {
-      case Some("jar") | Some("pom") => asThirdPartyJarDependency(dependency)
+      case Some("jar") => asThirdPartyJarDependency(dependency)
+      case Some("pom") => asThirdPartyPomDependency(dependency)
       case Some("zip") | Some("tar.gz") => asExternalRepoArchive(dependency)
       case _ => throw new RuntimeException("unsupported dependency packaging on " + dependency.coordinates.serialized)
     }
   }
 
   private def asThirdPartyJarDependency(dependency: maven.Dependency): String = {
-    val packageName = LibraryRule.packageNameBy(dependency.coordinates)
-    val targetName = dependency.coordinates.libraryRuleName
-    s"//$packageName:$targetName"
+    ImportExternalRule.jarLabelBy(dependency.coordinates)
+  }
+
+  private def asThirdPartyPomDependency(dependency: maven.Dependency): String = {
+    LibraryRule.nonJarLabelBy(dependency.coordinates)
   }
 
   private def asExternalRepoArchive(dependency: maven.Dependency): String =

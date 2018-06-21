@@ -3,6 +3,7 @@ package com.wixpress.build.bazel
 import java.io.FileNotFoundException
 
 import better.files._
+import com.wixpress.build.bazel.ImportExternalTargetsFile.thirdPartyImportFilesPathRoot
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.runtimeOverrides
 import com.wixpress.build.bazel.ThirdPartyReposFile.thirdPartyReposFilePath
 import org.specs2.mutable.SpecificationWithJUnit
@@ -80,13 +81,66 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
       buildFile.exists aka "build file exists" must beTrue
       buildFile.contentAsString mustEqual buildFileContent
     }
-  }
 
+    "allow reading a Third Party Import Targets File after creating it" in new blankWorkspaceCtx {
+      val newContent = "newContent"
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).overwriteThirdPartyImportTargetsFile(someGroup, newContent)
+
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).thirdPartyImportTargetsFileContent(someGroup) must beSome(newContent)
+    }
+
+    "allow overwriting and then reading the contents of Third Party Import Targets File" in new blankWorkspaceCtx {
+      val thirdPartyImportFile = blankWorkspaceRootPath.createChild(thirdPartyImportFilesPathRoot, true).createChild(s"$someGroup.bzl")
+      val newContent = "newContent"
+
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).overwriteThirdPartyImportTargetsFile(someGroup, newContent)
+
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).thirdPartyImportTargetsFileContent(someGroup) must beSome(newContent)
+    }
+
+    "Get Empty Third Party Import Targets Files content" in new blankWorkspaceCtx {
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).allThirdPartyImportTargetsFilesContent() must be empty
+    }
+
+    "Get All Third Party Import Targets Files content" in new blankWorkspaceCtx {
+      writeImportFiles(Map(someGroup -> thirdPartyImportFileContent,
+        anotherGroup -> anotherThirdPartyImportFileContent))
+
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).allThirdPartyImportTargetsFilesContent() must containTheSameElementsAs(Seq(thirdPartyImportFileContent, anotherThirdPartyImportFileContent))
+    }
+
+    "return empty workspace name if workspace does not exist" in new blankWorkspaceCtx {
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).localWorkspaceName mustEqual ""
+    }
+
+    "return workspace name" in new blankWorkspaceCtx {
+      val workspaceName = "some_workspace_name"
+      (blankWorkspaceRootPath / "WORKSPACE")
+        .createIfNotExists(createParents = true)
+        .overwrite(s"""workspace(name = "$workspaceName")""")
+
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).localWorkspaceName mustEqual workspaceName
+    }
+  }
 
   trait blankWorkspaceCtx extends Scope {
     val blankWorkspaceRootPath = File.newTemporaryDirectory("bazel")
     blankWorkspaceRootPath
       .toJava.deleteOnExit()
+
+    val thirdPartyImportFileContent = "some content"
+    val anotherThirdPartyImportFileContent = "some other content"
+    val someGroup = "some_group"
+    val anotherGroup = "another_group"
+
+    def writeImportFiles(files: Map[String, String]) = {
+      val thirdPartyImportFilesDir = blankWorkspaceRootPath.createChild(thirdPartyImportFilesPathRoot, true)
+
+      files.foreach{f => val (group_name, content) = f
+        val thirdPartyImportFile = thirdPartyImportFilesDir.createChild(s"$group_name.bzl")
+        thirdPartyImportFile.overwrite(content)
+      }
+    }
   }
 
   private def aFileSystemBazelLocalWorkspace(on: File) = {

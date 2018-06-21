@@ -4,46 +4,57 @@ import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinat
 import com.wixpress.build.maven.{Coordinates, DependencyNode}
 
 class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
+  val ruleResolver = new RuleResolver(localWorkspace.localWorkspaceName)
 
   def writeDependencies(dependencyNodes: DependencyNode*): Set[String] =
     writeDependencies(dependencyNodes.toSet)
 
   def writeDependencies(dependencyNodes: Set[DependencyNode]): Set[String] = {
-    writeWorkspaceRules(dependencyNodes)
-    writeLibraryRules(dependencyNodes)
+    writeThirdPartyReposFile(dependencyNodes)
+    writeThirdPartyFolderContent(dependencyNodes)
     computeAffectedFilesBy(dependencyNodes)
   }
 
-  private def writeWorkspaceRules(dependencyNodes: Set[DependencyNode]): Unit = {
+  private def writeThirdPartyReposFile(dependencyNodes: Set[DependencyNode]): Unit = {
     val actual = dependencyNodes.toList.sortBy(_.baseDependency.coordinates.workspaceRuleName)
     val existingThirdPartyReposFile = localWorkspace.thirdPartyReposFileContent()
     val thirdPartyReposBuilder = actual.map(_.baseDependency.coordinates)
-      .foldLeft(ThirdPartyReposFile.Builder(existingThirdPartyReposFile))(_.withMavenJar(_))
+      .foldLeft(ThirdPartyReposFile.Builder(existingThirdPartyReposFile))(_.fromCoordinates(_))
 
     val content = thirdPartyReposBuilder.content
     val nonEmptyContent = Option(content).filter(_.trim.nonEmpty).fold("  pass")(c => c)
     localWorkspace.overwriteThirdPartyReposFile(nonEmptyContent)
   }
 
-  private def writeLibraryRules(dependencyNodes: Set[DependencyNode]): Unit =
-    dependencyNodes.foreach(writeLibraryRule)
+  private def writeThirdPartyFolderContent(dependencyNodes: Set[DependencyNode]): Unit =
+    dependencyNodes.foreach(overwriteThirdPartyFolderFiles)
 
-  private def writeLibraryRule(dependencyNode: DependencyNode): Unit =
-    maybeLibraryRuleBy(dependencyNode).foreach(libraryRule => {
-      val packageName = LibraryRule.packageNameBy(dependencyNode.baseDependency.coordinates)
-      val buildFileContent =
-        localWorkspace.buildFileContent(packageName).getOrElse(BazelBuildFile.DefaultHeader)
-      val buildFileBuilder = BazelBuildFile(buildFileContent).withTarget(libraryRule)
-      localWorkspace.overwriteBuildFile(packageName, buildFileBuilder.content)
-    })
+  private def overwriteThirdPartyFolderFiles(dependencyNode: DependencyNode): Unit = {
+    maybeRuleBy(dependencyNode).foreach {
+      // still needed for support of scala_import originating from pom aggregators
+      case libraryRule: LibraryRule =>
+        val packageName = LibraryRule.packageNameBy(dependencyNode.baseDependency.coordinates)
+        val buildFileContent =
+          localWorkspace.buildFileContent(packageName).getOrElse(BazelBuildFile.DefaultHeader)
+        val buildFileBuilder = BazelBuildFile(buildFileContent).withTarget(libraryRule)
+        localWorkspace.overwriteBuildFile(packageName, buildFileBuilder.content)
 
-  private def maybeLibraryRuleBy(dependencyNode: DependencyNode) =
+      case importExternalRule: ImportExternalRule =>
+        val thirdPartyGroup = dependencyNode.baseDependency.coordinates.groupIdForBazel
+        val importTargetsFileContent =
+          localWorkspace.thirdPartyImportTargetsFileContent(thirdPartyGroup).getOrElse("")
+        val importTargetsFileWriter = ImportExternalTargetsFile.Writer(importTargetsFileContent).withTarget(importExternalRule)
+        localWorkspace.overwriteThirdPartyImportTargetsFile(thirdPartyGroup, importTargetsFileWriter.content)
+    }
+  }
+
+  private def maybeRuleBy(dependencyNode: DependencyNode) =
     dependencyNode.baseDependency.coordinates.packaging match {
-      case Some("pom") | Some("jar") => Some(libraryRuleBy(dependencyNode))
+      case Some("pom") | Some("jar") => Some(createRuleBy(dependencyNode))
       case _ => None
     }
 
-  private def libraryRuleBy(dependencyNode: DependencyNode) = {
+  private def createRuleBy(dependencyNode: DependencyNode) = {
     val runtimeDependenciesOverrides = localWorkspace.thirdPartyOverrides().runtimeDependenciesOverridesOf(
       OverrideCoordinates(dependencyNode.baseDependency.coordinates.groupId,
         dependencyNode.baseDependency.coordinates.artifactId)
@@ -52,13 +63,13 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
       OverrideCoordinates(dependencyNode.baseDependency.coordinates.groupId,
         dependencyNode.baseDependency.coordinates.artifactId)
     )
-    val rule = LibraryRule.of(
+    val rule = ruleResolver.`for`(
       artifact = dependencyNode.baseDependency.coordinates,
       runtimeDependencies = dependencyNode.runtimeDependencies.filterNot(protoZip),
       compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(protoZip),
       exclusions = dependencyNode.baseDependency.exclusions
     )
-    rule.copy(runtimeDeps = rule.runtimeDeps ++ runtimeDependenciesOverrides,
+    rule.updateDeps(runtimeDeps = rule.runtimeDeps ++ runtimeDependenciesOverrides,
       compileTimeDeps = rule.compileTimeDeps ++ compileTimeDependenciesOverrides)
   }
 
@@ -66,13 +77,23 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
     a.packaging.contains("zip") && a.classifier.contains("proto")
   }
 
-  private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) =
-    dependencyNodes.map(_.baseDependency.coordinates).flatMap(LibraryRule.buildFilePathBy) + ThirdPartyReposFile.thirdPartyReposFilePath
+  private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) = {
+    val affectedFiles = dependencyNodes.map(_.baseDependency.coordinates).flatMap(findFilesAccordingToPackagingOf)
+    affectedFiles + ThirdPartyReposFile.thirdPartyReposFilePath
+  }
 
-  def writeDependencies(workspaceRuleNodes: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]) = {
-    writeWorkspaceRules(workspaceRuleNodes)
+  private def findFilesAccordingToPackagingOf(artifact: Coordinates) = {
+    artifact.packaging match {
+      case Some("jar") => ImportExternalRule.importExternalFilePathBy(artifact)
 
-    writeLibraryRules(libraryRulesNodes)
-    computeAffectedFilesBy(libraryRulesNodes)
+      case _ => LibraryRule.buildFilePathBy(artifact)
+    }
+  }
+
+  def writeDependencies(dependenciesForThirdPartyReposFile: Set[DependencyNode], dependenciesForThirdPartyFolder: Set[DependencyNode]) = {
+    writeThirdPartyReposFile(dependenciesForThirdPartyReposFile)
+
+    writeThirdPartyFolderContent(dependenciesForThirdPartyFolder)
+    computeAffectedFilesBy(dependenciesForThirdPartyFolder)
   }
 }

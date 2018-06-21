@@ -10,7 +10,7 @@ class BazelDependenciesPersisterTest extends SpecificationWithJUnit {
     trait ctx extends Scope {
       val branch = "some-branch"
       val header = "some header"
-      val bazelRepository = new FakeBazelRepository
+      val bazelRepository = new FakeBazelRepository()
       val persister = new BazelDependenciesPersister(header, branch, bazelRepository)
     }
 
@@ -51,7 +51,7 @@ class BazelDependenciesPersisterTest extends SpecificationWithJUnit {
   }
 }
 
-class FakeBazelRepository extends BazelRepository {
+class FakeBazelRepository() extends BazelRepository {
   private val commits = collection.mutable.ListBuffer.empty[DummyCommit]
 
   def lastCommit: DummyCommit = commits.last

@@ -15,6 +15,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
   def sync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]): Unit = {
     logger.info(s"starting sync with managed dependencies in $dependencyManagementSource")
     val localCopy = targetRepository.localWorkspace("master")
+    val localWorkspaceName = localCopy.localWorkspaceName
 
     val dependenciesToUpdate = newDependencyNodes(dependencyManagementSource, dependencies, localCopy)
     logger.info(s"syncing ${dependenciesToUpdate.size} dependencies")
@@ -70,5 +71,5 @@ class HighestVersionConflictResolution {
 
 object BazelMavenSynchronizer {
   val BranchName = "master"
-  val PersistMessageHeader = "Automatic update of global 'third_party.bzl'"
+  val PersistMessageHeader = "Automatic update of 'third_party' import files"
 }

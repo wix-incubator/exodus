@@ -7,7 +7,7 @@ import com.wix.bazel.migrator.model.{CodePurpose, ModuleDependencies, SourceModu
 import com.wix.bazel.migrator.model.makers.ModuleMaker
 import com.wix.bazel.migrator.model.makers.ModuleMaker.ModuleExtended
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
-import com.wixpress.build.bazel.LibraryRule
+import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule}
 import com.wixpress.build.maven
 import com.wixpress.build.maven.{MavenMakers, MavenScope}
 import org.specs2.mutable.SpecificationWithJUnit
@@ -62,7 +62,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
     implicit class DependencyExtended(dependency: maven.Dependency) {
       private val coordinates = dependency.coordinates
 
-      def asThirdPartyDependency: String = s"//${LibraryRule.packageNameBy(coordinates)}:${coordinates.libraryRuleName}"
+      def asThirdPartyDependency: String = s"${ImportExternalRule.jarLabelBy(coordinates)}"
     }
 
     implicit class SourceModuleExtended(module: SourceModule) {

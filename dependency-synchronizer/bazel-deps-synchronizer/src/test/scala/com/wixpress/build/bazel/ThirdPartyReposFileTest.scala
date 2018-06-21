@@ -1,6 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wixpress.build.bazel.CoordinatesTestBuilders._
+import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
 import com.wixpress.build.maven.Coordinates
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -60,16 +61,18 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
   }
 
   "third party repos file builder" should {
-    "update maven jar version in case one with same artifactId and groupId defined in third party repos" in {
-      val thirdPartyRepos = createThirdPartyReposWith(jars)
-      val newHead = jars.head.copy(version = "5.0")
-      val newJars = newHead +: jars.tail
-      val expectedThirdPartyRepos = createThirdPartyReposWith(newJars)
-      ThirdPartyReposFile.Builder(thirdPartyRepos).withMavenJar(newHead).content mustEqual expectedThirdPartyRepos
+    "update maven archive version in case one with same artifactId and groupId defined in third party repos" in {
+      val archives = jars.map(_.copy(packaging = Some("zip")))
+      val thirdPartyRepos = createThirdPartyReposWith(archives)
+      val newHead = archives.head.copy(version = "5.0")
+      val newArchives = newHead +: archives.tail
+      val expectedThirdPartyRepos = createThirdPartyReposWith(newArchives)
+      ThirdPartyReposFile.Builder(thirdPartyRepos).withMavenArtifact(newHead).content mustEqual expectedThirdPartyRepos
     }
 
-    "insert new maven jar in case there is no maven jar with same artifact id and group id" in {
-      val thirdPartyRepos = createThirdPartyReposWith(jars)
+    "insert new maven archive in case there is no maven jar with same artifact id and group id" in {
+      val archives = jars.map(_.copy(packaging = Some("zip")))
+      val thirdPartyRepos = createThirdPartyReposWith(archives)
       val dontCareVersion = "3.0"
       val newJar = Coordinates("new.group", "new-artifact", dontCareVersion)
       val expectedThirdPartyRepos =
@@ -78,7 +81,29 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
            |${WorkspaceRule.of(newJar).serialized}
            |""".stripMargin
 
-      ThirdPartyReposFile.Builder(thirdPartyRepos).withMavenJar(newJar).content mustEqual expectedThirdPartyRepos
+      ThirdPartyReposFile.Builder(thirdPartyRepos).withMavenArtifact(newJar).content mustEqual expectedThirdPartyRepos
+    }
+
+    "do nothing in case one with same groupId but different artifactId is defined in third party repos" in {
+      val thirdPartyRepos = createThirdPartyReposWithLoadStatementFor(jars)
+      val newHead = jars.head.copy(artifactId = "bla-artifact")
+      ThirdPartyReposFile.Builder(thirdPartyRepos).withLoadStatementsFor(newHead).content mustEqual thirdPartyRepos
+    }
+
+    "insert new load statement in case there is no load statement with same group id" in {
+      val thirdPartyRepos = createThirdPartyReposWithLoadStatementFor(jars)
+      val dontCareArtifactId = "some-artifact"
+      val dontCareVersion = "3.0"
+      val newJar = Coordinates("new.group", dontCareArtifactId, dontCareVersion)
+      val expectedThirdPartyRepos =
+        s"""${serializedLoadImportExternalTargetsFile(newJar)}
+           |
+           |$thirdPartyRepos
+           |
+           |${serializedImportExternalTargetsFileMethodCall(newJar)}
+           |""".stripMargin
+
+      ThirdPartyReposFile.Builder(thirdPartyRepos).withLoadStatementsFor(newJar).content mustEqual expectedThirdPartyRepos
     }
   }
 
@@ -100,6 +125,29 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
        |${WorkspaceRule.of(firstJar).serialized}
        |
        |$rest
+       |
+       |### THE END""".stripMargin
+  }
+
+  private def createThirdPartyReposWithLoadStatementFor(coordinates: List[Coordinates]) = {
+    val firstJar: Coordinates = coordinates.head
+    val restOfJars = coordinates.tail
+
+    val restLoads = restOfJars.map(serializedLoadImportExternalTargetsFile).mkString("\n\n")
+    val restCalls = restOfJars.map(serializedImportExternalTargetsFileMethodCall).mkString("\n\n")
+
+
+    s"""load("@core_server_build_tools//:macros.bzl", "maven_archive", "maven_proto")
+       |
+       |${serializedLoadImportExternalTargetsFile(firstJar)}
+       |
+       |$restLoads
+       |
+       |def third_party_dependencies():
+       |
+       |${serializedImportExternalTargetsFileMethodCall(firstJar)}
+       |
+       |$restCalls
        |
        |### THE END""".stripMargin
   }

@@ -3,7 +3,7 @@ package com.wix.bazel.migrator.transform
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.makers.ModuleMaker.aModule
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
-import com.wixpress.build.bazel.LibraryRule
+import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule}
 import com.wixpress.build.maven.{MavenMakers, MavenScope}
 import com.wixpress.build.maven
 import org.specs2.mutable.SpecificationWithJUnit
@@ -33,7 +33,7 @@ class MavenDependencyTransformerTest extends SpecificationWithJUnit {
 
       val translation = translator.toBazelDependency(maven.Dependency(artifact, MavenScope.Compile))
 
-      translation must beSome(s"//${LibraryRule.packageNameBy(artifact)}:${artifact.libraryRuleName}")
+      translation must beSome(ImportExternalRule.jarLabelBy(artifact))
     }
 
     "translate pom dependency that is not in repo to third_party dependency" in new Context {

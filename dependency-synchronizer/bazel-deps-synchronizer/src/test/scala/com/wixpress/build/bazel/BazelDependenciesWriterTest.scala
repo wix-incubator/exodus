@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{compileTimeOverrides, overrideCoordinatesFrom, runtimeOverrides}
-import com.wixpress.build.maven.MavenMakers.{aDependency, aRootDependencyNode}
+import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
 import org.specs2.matcher.{Matcher, SomeCheckedMatcher}
 import org.specs2.mutable.SpecificationWithJUnit
@@ -18,21 +18,20 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
   "BazelDependenciesWriter " >> {
 
     trait emptyThirdPartyReposCtx extends Scope {
-      val localWorkspace = new FakeLocalBazelWorkspace()
+      val localWorkspaceName = "some_workspace_name"
+      val localWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = localWorkspaceName)
       val reader = new BazelDependenciesReader(localWorkspace)
 
       def writer = new BazelDependenciesWriter(localWorkspace)
 
-      def labelOf(dependency: Dependency) = {
+      def labelOfPomArtifact(dependency: Dependency) = {
         val coordinates = dependency.coordinates
-        s"//${packageNameBy(coordinates)}:${coordinates.libraryRuleName}"
+        s"@$localWorkspaceName//${packageNameBy(coordinates)}:${coordinates.libraryRuleName}"
       }
 
-      def serializedMavenJarRuleOf(dependency: Dependency) = {
-        s"""maven_jar(
-           |    name = "${dependency.coordinates.workspaceRuleName}",
-           |    artifact = "${dependency.coordinates.serialized}",
-           |)""".stripMargin
+      def labelOfJarArtifact(dependency: Dependency) = {
+        val coordinates = dependency.coordinates
+        s"@${coordinates.workspaceRuleName}//jar"
       }
 
       localWorkspace.overwriteThirdPartyReposFile("")
@@ -40,7 +39,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
     "given no dependencies" should {
 
-      "write maven_jar rule to third party repos file" in new emptyThirdPartyReposCtx {
+      "write 'pass' to third party repos file" in new emptyThirdPartyReposCtx {
         writer.writeDependencies()
 
         localWorkspace.thirdPartyReposFileContent() must contain("pass")
@@ -50,35 +49,23 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     "given one new root dependency" should {
       trait newRootDependencyNodeCtx extends emptyThirdPartyReposCtx {
         val baseDependency = aDependency("some-dep")
-        val matchingPackage = packageNameBy(baseDependency.coordinates)
+        val matchingGroupId = baseDependency.coordinates.groupIdForBazel
       }
 
-      "write maven_jar rule to third party repos file" in new newRootDependencyNodeCtx {
+      "write scala_maven_import_external rule to third party repos file" in new newRootDependencyNodeCtx {
         writer.writeDependencies(aRootDependencyNode(baseDependency))
 
-        localWorkspace.thirdPartyReposFileContent() must containMavenJarRuleFor(baseDependency.coordinates)
+        localWorkspace.thirdPartyReposFileContent() must containLoadStatementFor(baseDependency.coordinates)
+
+        localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
+          containRootScalaImportExternalRuleFor(baseDependency.coordinates)
       }
-
-      "write scala_import rule to appropriate BUILD.bazel file" in new newRootDependencyNodeCtx {
-        val node: DependencyNode = aRootDependencyNode(baseDependency)
-        writer.writeDependencies(node)
-
-        localWorkspace.buildFileContent(matchingPackage) must containARuleForRootDependency(baseDependency.coordinates)
-      }
-
-      "write default header to new BUILD.bazel files" in new newRootDependencyNodeCtx {
-        writer.writeDependencies(aRootDependencyNode(baseDependency))
-
-        localWorkspace.buildFileContent(matchingPackage) must beSome(contain(BazelBuildFile.DefaultHeader))
-      }
-
     }
 
     "given one new proto dependency" should {
       trait protoDependencyNodeCtx extends emptyThirdPartyReposCtx {
         val protoCoordinates = Coordinates("some.group","some-artifact","version",Some("zip"),Some("proto"))
         val protoDependency = Dependency(protoCoordinates,MavenScope.Compile)
-        val matchingPackage = packageNameBy(protoCoordinates)
       }
 
       "write maven_proto rule to third party repos file" in new protoDependencyNodeCtx {
@@ -102,49 +89,47 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val transitiveDependency = aDependency("transitive", scope)
         val dependencyNode = DependencyNode(baseDependency, Set(transitiveDependency))
 
-        val baseDependencyPackage = packageNameBy(baseDependency.coordinates)
+        val dependencyGroupId = baseDependency.coordinates.groupIdForBazel
       }
       "write target with runtime dependency" in new dependencyWithTransitiveDependencyofScope(MavenScope.Runtime) {
         writer.writeDependencies(dependencyNode)
 
-        localWorkspace.buildFileContent(baseDependencyPackage) must beSome(
-          containsIgnoringSpaces(
-            s"""scala_import(
-               |    name = "${baseDependency.coordinates.libraryRuleName}",
-               |    jars = [
-               |        "@${baseDependency.coordinates.workspaceRuleName}//jar:file"
-               |    ],
-               |    runtime_deps = [
-               |     "${labelOf(transitiveDependency)}"
-               |    ],
-               |)""".stripMargin
-          )
-        )
+        localWorkspace.thirdPartyReposFileContent() must containLoadStatementFor(baseDependency.coordinates)
+
+        localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId) must containScalaImportExternalRuleFor(baseDependency.coordinates,
+          s"""|runtime_deps = [
+              |    "${labelOfJarArtifact(transitiveDependency)}"
+              |],""".stripMargin)
       }
 
       "write target with compile time dependency" in new dependencyWithTransitiveDependencyofScope(MavenScope.Compile) {
         writer.writeDependencies(dependencyNode)
 
-        localWorkspace.buildFileContent(baseDependencyPackage) must beSome(
-          containsIgnoringSpaces(
-            s"""scala_import(
-               |    name = "${baseDependency.coordinates.libraryRuleName}",
-               |    jars = [
-               |        "@${baseDependency.coordinates.workspaceRuleName}//jar:file"
-               |    ],
-               |    deps = [
-               |      "${labelOf(transitiveDependency)}"
-               |    ],
-               |)""".stripMargin
-          )
-        )
+        localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId) must containScalaImportExternalRuleFor(baseDependency.coordinates,
+          s"""|    deps = [
+              |     "${labelOfJarArtifact(transitiveDependency)}"
+              |    ],""".stripMargin)
       }
 
-      "write a target that is originated from pom artifact" in new emptyThirdPartyReposCtx {
+      "write target with compile time pom artifact dependency" in new emptyThirdPartyReposCtx {
+        val baseDependency = aDependency("base")
+        val transitiveDependency = aPomArtifactDependency("transitive", MavenScope.Compile)
+        val dependencyNode = DependencyNode(baseDependency, Set(transitiveDependency))
+        val dependencyGroupId = baseDependency.coordinates.groupIdForBazel
+
+        writer.writeDependencies(dependencyNode)
+
+        localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId) must containScalaImportExternalRuleFor(baseDependency.coordinates,
+          s"""|    deps = [
+              |     "${labelOfPomArtifact(transitiveDependency)}"
+              |    ],""".stripMargin)
+      }
+
+      "write a target that is originated from pom artifact and has transitive jar artifact" in new emptyThirdPartyReposCtx {
         val baseCoordinates = Coordinates("some.group", "some-artifact", "some-version", Some("pom"))
         val baseDependency = Dependency(baseCoordinates, MavenScope.Compile)
-        val transitiveDependency = aDependency("transitive")
-        val dependencyNode = DependencyNode(baseDependency, Set(transitiveDependency))
+        val transitiveJarArtifactDependency = aDependency("transitive")
+        val dependencyNode = DependencyNode(baseDependency, Set(transitiveJarArtifactDependency))
 
         writer.writeDependencies(dependencyNode)
 
@@ -154,7 +139,27 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
             s"""scala_import(
                |    name = "${baseDependency.coordinates.libraryRuleName}",
                |    exports = [
-               |       "${labelOf(transitiveDependency)}"
+               |       "${labelOfJarArtifact(transitiveJarArtifactDependency)}"
+               |    ],
+               |)""".stripMargin
+          ))
+      }
+
+      "write a target that is originated from pom artifact and has transitive pom artifact" in new emptyThirdPartyReposCtx {
+        val baseCoordinates = Coordinates("some.group", "some-artifact", "some-version", Some("pom"))
+        val baseDependency = Dependency(baseCoordinates, MavenScope.Compile)
+        val transitivePomArtifactDependency = aPomArtifactDependency("transitive")
+        val dependencyNode = DependencyNode(baseDependency, Set(transitivePomArtifactDependency))
+
+        writer.writeDependencies(dependencyNode)
+
+        val maybeBuildFile: Option[String] = localWorkspace.buildFileContent(packageNameBy(baseCoordinates))
+        maybeBuildFile must beSome(
+          containsIgnoringSpaces(
+            s"""scala_import(
+               |    name = "${baseDependency.coordinates.libraryRuleName}",
+               |    exports = [
+               |       "${labelOfPomArtifact(transitivePomArtifactDependency)}"
                |    ],
                |)""".stripMargin
           ))
@@ -167,26 +172,20 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         }.map(index => aDependency(s"transitive$index")).reverse
         val dependencyNode = DependencyNode(baseDependency, transitiveDependencies.toSet)
         val serializedLabelsOfTransitiveDependencies = transitiveDependencies
-          .map(labelOf)
+          .map(labelOfJarArtifact)
           .sorted
           .map(label => s""""$label"""")
           .mkString(",\n")
 
         writer.writeDependencies(dependencyNode)
 
-        localWorkspace.buildFileContent(packageNameBy(baseDependency.coordinates)) must beSome(
-          containsIgnoringSpaces(
-            s"""scala_import(
-               |    name = "${baseDependency.coordinates.libraryRuleName}",
-               |    jars = [
-               |        "@${baseDependency.coordinates.workspaceRuleName}//jar:file"
-               |    ],
-               |    deps = [
-               |      $serializedLabelsOfTransitiveDependencies
-               |    ],
-               |)""".stripMargin
+        localWorkspace.thirdPartyImportTargetsFileContent(baseDependency.coordinates.groupIdForBazel) must
+          containScalaImportExternalRuleFor(baseDependency.coordinates,
+            s"""|    deps = [
+                |      $serializedLabelsOfTransitiveDependencies
+                |    ],""".stripMargin
           )
-        )
+
       }
 
       "write target with exclusion" in new emptyThirdPartyReposCtx {
@@ -196,17 +195,10 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         writer.writeDependencies(dependencyNode)
 
-        localWorkspace.buildFileContent(packageNameBy(baseDependency.coordinates)) must beSome(
-          containsIgnoringSpaces(
-            s"""scala_import(
-               |    name = "${baseDependency.coordinates.libraryRuleName}",
-               |    jars = [
-               |        "@${baseDependency.coordinates.workspaceRuleName}//jar:file"
-               |    ],
-               |    # EXCLUDES ${exclusion.serialized}
-               |)""".stripMargin
+        localWorkspace.thirdPartyImportTargetsFileContent(baseDependency.coordinates.groupIdForBazel) must containScalaImportExternalRuleFor(
+          baseDependency.coordinates,
+        s"""|    # EXCLUDES ${exclusion.serialized}""".stripMargin
           )
-        )
       }
 
       "write target with runtime dependencies from overrides" in new dependencyWithTransitiveDependencyofScope(MavenScope.Runtime) {
@@ -219,13 +211,13 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         writer.writeDependencies(dependencyNode)
 
-        localWorkspace.buildFileContent(baseDependencyPackage) must beSome(
-          containsIgnoringSpaces(
+        localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId) must containScalaImportExternalRuleFor(
+            baseDependency.coordinates,
             s"""runtime_deps = [
-               |     "${labelOf(transitiveDependency)}",
+               |     "${labelOfJarArtifact(transitiveDependency)}",
                |     "$customRuntimeDependency"
-               |    ]""".stripMargin
-          ))
+               |    ],""".stripMargin
+          )
       }
 
       "write target with compile time dependencies from overrides" in new dependencyWithTransitiveDependencyofScope(MavenScope.Compile) {
@@ -236,13 +228,13 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         writer.writeDependencies(dependencyNode)
 
-        localWorkspace.buildFileContent(baseDependencyPackage) must beSome(
-          containsIgnoringSpaces(
+        localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId) must containScalaImportExternalRuleFor(
+          baseDependency.coordinates,
             s"""deps = [
-               |     "${labelOf(transitiveDependency)}",
+               |     "${labelOfJarArtifact(transitiveDependency)}",
                |     "$customCompileTimeDependency"
-               |    ]""".stripMargin
-          ))
+               |    ],""".stripMargin
+          )
       }
     }
 
@@ -251,42 +243,38 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val originalBaseDependency = aDependency("some-dep")
         val originalDependencyNode = aRootDependencyNode(originalBaseDependency)
         writer.writeDependencies(originalDependencyNode)
-        val packageOfDependency = packageNameBy(originalBaseDependency.coordinates)
+        val dependencyGroupId = originalBaseDependency.coordinates.groupIdForBazel
       }
 
-      "update version of maven_jar rule" in new updateDependencyNodeCtx {
+      "update version of scala_maven_import_external rule" in new updateDependencyNodeCtx {
         val newDependency = originalBaseDependency.withVersion("other-version")
 
         writer.writeDependencies(aRootDependencyNode(newDependency))
 
         val workspaceContent = localWorkspace.thirdPartyReposFileContent()
 
-        workspaceContent must containMavenJarRuleFor(newDependency.coordinates)
-        workspaceContent must containsExactlyOneRuleOfName(originalBaseDependency.coordinates.workspaceRuleName)
+        workspaceContent must containLoadStatementFor(newDependency.coordinates)
+
+        localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId) must containRootScalaImportExternalRuleFor(
+          newDependency.coordinates)
+
+        localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId) must beSome(containsExactlyOneRuleOfName(originalBaseDependency.coordinates.workspaceRuleName))
       }
 
-      "update dependencies of library rule" in new updateDependencyNodeCtx {
+      "update dependencies of import external rule" in new updateDependencyNodeCtx {
         val newTransitiveDependency = aDependency("transitive")
         val newDependencyNode = DependencyNode(originalBaseDependency, Set(newTransitiveDependency))
 
         writer.writeDependencies(newDependencyNode)
 
-        val buildFileContent = localWorkspace.buildFileContent(packageOfDependency)
+        val importExternalFileContent = localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId)
 
-        buildFileContent must beSome(
-          containsIgnoringSpaces(
-            s"""scala_import(
-               |    name = "${originalBaseDependency.coordinates.libraryRuleName}",
-               |    jars = [
-               |        "@${originalBaseDependency.coordinates.workspaceRuleName}//jar:file"
-               |    ],
-               |    deps = [
-               |      "${labelOf(newTransitiveDependency)}"
-               |    ],
-               |)""".stripMargin
-          )
+        importExternalFileContent must containScalaImportExternalRuleFor(originalBaseDependency.coordinates,
+              s"""|    deps = [
+                  |      "${labelOfJarArtifact(newTransitiveDependency)}"
+                  |    ],""".stripMargin
         )
-        buildFileContent must beSome(containsExactlyOneRuleOfName(originalBaseDependency.coordinates.libraryRuleName))
+        importExternalFileContent must beSome(containsExactlyOneRuleOfName(originalBaseDependency.coordinates.workspaceRuleName))
       }
 
       "update exclusions in library rule" in new updateDependencyNodeCtx {
@@ -296,20 +284,12 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         writer.writeDependencies(newDependencyNode)
 
-        val buildFileContent = localWorkspace.buildFileContent(packageOfDependency)
+        val importExternalFileContent = localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId)
 
-        buildFileContent must beSome(
-          containsIgnoringSpaces(
-            s"""scala_import(
-               |    name = "${originalBaseDependency.coordinates.libraryRuleName}",
-               |    jars = [
-               |       "@${originalBaseDependency.coordinates.workspaceRuleName}//jar:file"
-               |    ],
-               |    # EXCLUDES ${someExclusion.serialized}
-               |)""".stripMargin
+        importExternalFileContent must containScalaImportExternalRuleFor(originalBaseDependency.coordinates,
+               s"""|    # EXCLUDES ${someExclusion.serialized}""".stripMargin
           )
-        )
-        buildFileContent must beSome(containsExactlyOneRuleOfName(originalBaseDependency.coordinates.libraryRuleName))
+        importExternalFileContent must beSome(containsExactlyOneRuleOfName(originalBaseDependency.coordinates.workspaceRuleName))
       }
 
     }
@@ -325,30 +305,30 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         }
       }
 
-      "write multiple targets to the same BUILD.bazel file, in case same groupId" in new multipleDependenciesCtx {
+      "write multiple targets to the same bzl file, in case same groupId" in new multipleDependenciesCtx {
         val otherArtifactWithSameGroupId = someArtifact.copy(artifactId = "other-artifact")
 
         writeArtifactsAsRootDependencies(someArtifact, otherArtifactWithSameGroupId)
 
-        val buildFile = localWorkspace.buildFileContent(packageNameBy(someArtifact))
-        buildFile must containARuleForRootDependency(someArtifact)
-        buildFile must containARuleForRootDependency(otherArtifactWithSameGroupId)
+        val importExternalFile = localWorkspace.thirdPartyImportTargetsFileContent(someArtifact.groupIdForBazel)
+        importExternalFile must containRootScalaImportExternalRuleFor(someArtifact)
+        importExternalFile must containRootScalaImportExternalRuleFor(otherArtifactWithSameGroupId)
       }
 
-      "write multiple maven_jar to WORKSPACE file" in new multipleDependenciesCtx {
+      "write multiple load statements to third party repos file" in new multipleDependenciesCtx {
         writeArtifactsAsRootDependencies(someArtifact, otherArtifact)
 
         val workspace = localWorkspace.thirdPartyReposFileContent()
-        workspace must containMavenJarRuleFor(someArtifact)
-        workspace must containMavenJarRuleFor(otherArtifact)
+        workspace must containLoadStatementFor(someArtifact)
+        workspace must containLoadStatementFor(otherArtifact)
       }
 
       "return list of all files that were written" in new multipleDependenciesCtx {
-        val writtenFiles = writeArtifactsAsRootDependencies(someArtifact, otherArtifact)
+        val writtenFiles = writeArtifactsAsRootDependencies(someArtifact, otherArtifact.copy(packaging = Some("pom")))
 
         writtenFiles must containTheSameElementsAs(Seq(
           thirdPartyReposFilePath,
-          LibraryRule.buildFilePathBy(someArtifact).get,
+          ImportExternalRule.importExternalFilePathBy(someArtifact).get,
           LibraryRule.buildFilePathBy(otherArtifact).get)
         )
       }
@@ -361,24 +341,41 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
   private def countMatches(regex: Regex, string: String) = regex.findAllMatchIn(string).size
 
-  private def containARuleForRootDependency(coordinates: Coordinates): SomeCheckedMatcher[String] =
-    beSome(containsIgnoringSpaces(
-      s"""scala_import(
-         |    name = "${coordinates.libraryRuleName}",
-         |    jars = [
-         |        "@${coordinates.workspaceRuleName}//jar:file"
-         |    ],
-         |)
-      """.stripMargin))
+  private def containLoadStatementFor(coordinates: Coordinates) = {
+    val groupId = coordinates.groupIdForBazel
 
-  private def containMavenJarRuleFor(coordinates: Coordinates) = {
     contain(
-      s"""
-         |  if native.existing_rule("${coordinates.workspaceRuleName}") == None:
-         |    native.maven_jar(
-         |        name = "${coordinates.workspaceRuleName}",
-         |        artifact = "${coordinates.serialized}"
-         |    )""".stripMargin)
+      s"""load("//:third_party/${groupId}.bzl", ${groupId}_deps = "dependencies")""") and
+    contain(s"${groupId}_deps()")
+  }
+
+  private def containRootScalaImportExternalRuleFor(coordinates: Coordinates) = {
+    beSome(
+      containsIgnoringSpaces(
+        s"""| if native.existing_rule("${coordinates.workspaceRuleName}") == None:
+            |   scala_maven_import_external(
+            |       name = "${coordinates.workspaceRuleName}",
+            |       artifact = "${coordinates.serialized}",
+            |       licenses = ["notice"],  # Apache 2.0
+            |       server_urls = ["http://repo.dev.wixpress.com/artifactory/libs-snapshots"],
+            |   )""".stripMargin
+      )
+    )
+  }
+
+  private def containScalaImportExternalRuleFor(coordinates: Coordinates, withExtraParams: String) = {
+    beSome(
+      containsIgnoringSpaces(
+        s"""|if native.existing_rule("${coordinates.workspaceRuleName}") == None:
+            |    scala_maven_import_external(
+            |        name = "${coordinates.workspaceRuleName}",
+            |        artifact = "${coordinates.serialized}",
+            |        licenses = ["notice"],  # Apache 2.0
+            |        server_urls = ["http://repo.dev.wixpress.com/artifactory/libs-snapshots"],
+            |        $withExtraParams
+            |)""".stripMargin
+      )
+    )
   }
 
   private def containMavenProtoRuleFor(coordinates: Coordinates) = {
