@@ -15,11 +15,11 @@ specs2_mixed_test(
         "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/tinker_bazel/migrator/transform_build/maven/analysis",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
-        "//third_party/com/fasterxml/jackson/core:jackson_annotations",
-        "//third_party/com/fasterxml/jackson/core:jackson_core",
-        "//third_party/com/fasterxml/jackson/core:jackson_databind",
-        "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
-        "//third_party/com/github/marschall:memoryfilesystem",
+        "@com_fasterxml_jackson_core_jackson_annotations//:com_fasterxml_jackson_core_jackson_annotations",
+        "@com_fasterxml_jackson_core_jackson_core//:com_fasterxml_jackson_core_jackson_core",
+        "@com_fasterxml_jackson_core_jackson_databind//:com_fasterxml_jackson_core_jackson_databind",
+        "@com_fasterxml_jackson_module_jackson_module_scala_2_12//:com_fasterxml_jackson_module_jackson_module_scala_2_12",
+        "@com_github_marschall_memoryfilesystem//:com_github_marschall_memoryfilesystem",
     ],
 )
 

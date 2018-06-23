@@ -14,7 +14,7 @@ scala_library(
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
         "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "//third_party/junit",
+        "@junit_junit//:junit_junit",
     ],
 )
 

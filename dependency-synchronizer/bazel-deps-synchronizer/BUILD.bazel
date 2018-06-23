@@ -7,13 +7,14 @@ scala_import(
         "//dependency-resolver/maven-dependency-resolver-api:main_dependencies",
         "//models/maven-bazel-model-translation:main_dependencies",
         "//models/maven-model:main_dependencies",
-        "//third_party/com/fasterxml/jackson/core:jackson_core",
-        "//third_party/com/fasterxml/jackson/core:jackson_databind",
-        "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
-        "//third_party/com/github/pathikrit:better_files_2_12",
-        "//third_party/org/apache/maven:maven_artifact",
-        "//third_party/org/eclipse/jgit:org_eclipse_jgit",
-        "//third_party/org/scala-lang:scala_library",
+        "//wix-bazel-repositories/bazel-repositories-core:main_dependencies",
+        "@com_fasterxml_jackson_core_jackson_core//jar",
+        "@com_fasterxml_jackson_core_jackson_databind//jar",
+        "@com_fasterxml_jackson_module_jackson_module_scala_2_12//jar",
+        "@com_github_pathikrit_better_files_2_12//jar",
+        "@org_apache_maven_maven_artifact//jar",
+        "@org_eclipse_jgit_org_eclipse_jgit//jar",
+        "@org_scala_lang_scala_library//jar",
     ],
 )
 
@@ -26,7 +27,7 @@ scala_import(
     deps = [
         "main_dependencies",
         "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
-        "//third_party/com/gitblit",
+        "@com_gitblit_gitblit//jar",
     ],
 )
 

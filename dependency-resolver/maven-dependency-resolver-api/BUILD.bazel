@@ -4,8 +4,8 @@ scala_import(
     name = "main_dependencies",
     deps = [
         "//models/maven-model:main_dependencies",
-        "//third_party/org/apache/maven/resolver:maven_resolver_api",
-        "//third_party/org/scala-lang:scala_library",
+        "@org_apache_maven_resolver_maven_resolver_api//jar",
+        "@org_scala_lang_scala_library//jar",
     ],
 )
 
@@ -14,10 +14,10 @@ scala_import(
     testonly = 1,
     deps = [
         "main_dependencies",
-        "//third_party/org/specs2:specs2_common_2_12",
-        "//third_party/org/specs2:specs2_core_2_12",
-        "//third_party/org/specs2:specs2_junit_2_12",
-        "//third_party/org/specs2:specs2_matcher_2_12",
+        "@org_specs2_specs2_common_2_12//jar",
+        "@org_specs2_specs2_core_2_12//jar",
+        "@org_specs2_specs2_junit_2_12//jar",
+        "@org_specs2_specs2_matcher_2_12//jar",
     ],
 )
 

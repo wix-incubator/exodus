@@ -14,7 +14,7 @@ specs2_unit_test(
         "//dependency-resolver/maven-dependency-resolver-testkit:tests_dependencies",
         "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "//third_party/org/scala-lang/modules:scala_xml_2_12",
+        "@org_scala_lang_modules_scala_xml_2_12//:org_scala_lang_modules_scala_xml_2_12",
     ],
 )
 

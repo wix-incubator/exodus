@@ -3,14 +3,14 @@ package(default_visibility = ["//visibility:public"])
 scala_import(
     name = "main_dependencies",
     runtime_deps = [
-        "//third_party/ch/qos/logback:logback_classic",
+        "@ch_qos_logback_logback_classic//jar",
     ],
     deps = [
-        "//third_party/com/fasterxml/jackson/core:jackson_databind",
-        "//third_party/com/fasterxml/jackson/module:jackson_module_scala_2_12",
-        "//third_party/org/scala-lang:scala_library",
-        "//third_party/org/scalaj:scalaj_http_2_12",
-        "//third_party/org/slf4j:slf4j_api",
+        "@com_fasterxml_jackson_core_jackson_databind//jar",
+        "@com_fasterxml_jackson_module_jackson_module_scala_2_12//jar",
+        "@org_scala_lang_scala_library//jar",
+        "@org_scalaj_scalaj_http_2_12//jar",
+        "@org_slf4j_slf4j_api//jar",
     ],
 )
 
@@ -22,7 +22,7 @@ scala_import(
     ],
     deps = [
         "main_dependencies",
-        "//third_party/com/wix:http_testkit_2_12",
+        "@com_wix_http_testkit_2_12//jar",
     ],
 )
 

@@ -14,7 +14,7 @@ scala_library(
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
         "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/transform",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "//third_party/junit",
+        "@junit_junit//:junit_junit",
     ],
 )
 

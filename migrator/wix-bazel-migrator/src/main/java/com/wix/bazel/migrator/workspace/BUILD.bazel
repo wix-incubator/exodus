@@ -9,7 +9,7 @@ scala_library(
     ],
     deps = [
         "//migrator/wix-bazel-migrator:main_dependencies",
-        "//third_party/junit",
+        "@junit_junit//:junit_junit",
     ],
 )
 

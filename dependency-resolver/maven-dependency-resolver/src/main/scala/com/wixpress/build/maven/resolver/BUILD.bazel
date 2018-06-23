@@ -9,13 +9,13 @@ scala_library(
     ],
     deps = [
         "//dependency-resolver/maven-dependency-resolver:main_dependencies",
-        "//third_party/org/apache/maven:maven_resolver_provider",
-        "//third_party/org/apache/maven/resolver:maven_resolver_api",
-        "//third_party/org/apache/maven/resolver:maven_resolver_connector_basic",
-        "//third_party/org/apache/maven/resolver:maven_resolver_impl",
-        "//third_party/org/apache/maven/resolver:maven_resolver_spi",
-        "//third_party/org/apache/maven/resolver:maven_resolver_transport_file",
-        "//third_party/org/apache/maven/resolver:maven_resolver_transport_http",
+        "@org_apache_maven_maven_resolver_provider//:org_apache_maven_maven_resolver_provider",
+        "@org_apache_maven_resolver_maven_resolver_api//:org_apache_maven_resolver_maven_resolver_api",
+        "@org_apache_maven_resolver_maven_resolver_connector_basic//:org_apache_maven_resolver_maven_resolver_connector_basic",
+        "@org_apache_maven_resolver_maven_resolver_impl//:org_apache_maven_resolver_maven_resolver_impl",
+        "@org_apache_maven_resolver_maven_resolver_spi//:org_apache_maven_resolver_maven_resolver_spi",
+        "@org_apache_maven_resolver_maven_resolver_transport_file//:org_apache_maven_resolver_maven_resolver_transport_file",
+        "@org_apache_maven_resolver_maven_resolver_transport_http//:org_apache_maven_resolver_maven_resolver_transport_http",
     ],
 )
 
