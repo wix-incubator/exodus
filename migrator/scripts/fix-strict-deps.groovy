@@ -25,7 +25,9 @@ pipeline {
         }
         stage('pre-build') {
             steps {
-                sh "touch tools/ci.environment"
+                dir("${env.REPO_NAME}") {
+                    sh "touch tools/ci.environment"
+                }
             }
         }
         stage("bazel clean"){
@@ -100,9 +102,11 @@ def build_and_fix() {
             slackSend "Found 'Unknown label...' warning in ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|link>)"
         }
         echo "found strict deps issues"
-        sh "python ../core-server-build-tools/scripts/fix_transitive.py"
-        buildozerStatusCode = sh script: "buildozer -f bazel-buildozer-commands.txt", returnStatus: true
-        if (buildozerStatusCode == 0) { // buildozer returns 3 when no action was needed
+        result = collectAndRunBuildozerCommands()
+        if (result.noMoreBuildozerCommands) {
+            handleNoMoreBuildozerCommands()
+        }
+        else if (result.successfulRun) {
             env.PUSH_TO_GIT = "true"
             build_and_fix()
         } else {
@@ -111,14 +115,30 @@ def build_and_fix() {
         }
 
     } else if (status == 0) {
-        echo "No buildozer warnings were found"
-        bazelrc = readFile(".bazelrc")
-        if (bazelrc.contains("strict_java_deps=warn")) {
-            writeFile file: ".bazelrc", text: bazelrc.replace("strict_java_deps=warn", "strict_java_deps=error")
-            env.PUSH_TO_GIT = "true"
-        }
+        handleNoMoreBuildozerCommands()
     } else {
         echo "[WARN] No strict deps warnings found but build failed"
         currentBuild.result = 'UNSTABLE'
+    }
+}
+
+Map collectAndRunBuildozerCommands() {
+    sh "python ../core-server-build-tools/scripts/fix_transitive.py"
+    buildozerCommands = readFile "bazel-buildozer-commands.txt"
+    skipRunBuildozer = buildozerCommands.allWhitespace
+    successfulRun = true
+    if (!skipRunBuildozer) {
+        buildozerStatusCode = sh script: "buildozer -f bazel-buildozer-commands.txt", returnStatus: true
+        successfulRun = buildozerStatusCode == 0 // buildozer returns 3 when no action was needed
+    }
+    return [successfulRun: successfulRun, noMoreBuildozerCommands: skipRunBuildozer]
+}
+
+def handleNoMoreBuildozerCommands() {
+    echo "No buildozer warnings were found"
+    bazelrc = readFile(".bazelrc")
+    if (bazelrc.contains("strict_java_deps=warn")) {
+        writeFile file: ".bazelrc", text: bazelrc.replace("strict_java_deps=warn", "strict_java_deps=error")
+        env.PUSH_TO_GIT = "true"
     }
 }
