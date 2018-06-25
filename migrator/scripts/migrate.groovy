@@ -77,14 +77,12 @@ pipeline {
         stage('push-to-git') {
             steps {
                 dir("${env.REPO_NAME}"){
-                    sshagent(['builduser-git']) {
-                        sh """|git checkout -b ${env.BRANCH_NAME}
-                              |git add .
-                              |git reset -- bazel-build.log
-                              |git commit -m "bazel migrator created by ${env.BUILD_URL}"
-                              |git push origin ${env.BRANCH_NAME}
-                              |""".stripMargin()
-                    }
+                   sh """|git checkout -b ${env.BRANCH_NAME}
+                         |git add .
+                         |git reset -- bazel-build.log
+                         |git commit -m "bazel migrator created by ${env.BUILD_URL}"
+                         |git push origin ${env.BRANCH_NAME}
+                         |""".stripMargin()
                     // WARNING: carefully test any change you make to the following line. mistakes here can be fatal!!
                     sh script: "git branch -r | grep bazel-mig | sort -n -r -t \"-\" -k 3 | tail -n +6 | sed  -e 's/origin\\//git push origin :/g' | sh", returnStatus: true
                 }
