@@ -56,11 +56,13 @@ pipeline {
             }
             steps {
                 dir("${env.REPO_NAME}") {
-                    sh """|git checkout ${env.BRANCH_NAME}
-                          |git add "./*BUILD.bazel" .bazelrc
-                          |git commit -m "strict deps fix by ${env.BUILD_URL}"
-                          |git push origin ${env.BRANCH_NAME}
-                          |""".stripMargin()
+                    sshagent(['builduser-git']) {
+                        sh """|git checkout ${env.BRANCH_NAME}
+                              |git add "./*BUILD.bazel" .bazelrc
+                              |git commit -m "strict deps fix by ${env.BUILD_URL}"
+                              |git push origin ${env.BRANCH_NAME}
+                              |""".stripMargin()
+                    }
                 }
             }
         }
