@@ -21,7 +21,7 @@ pipeline {
                  dir("${env.REPO_NAME}") {
                      echo "got commit hash: ${env.COMMIT_HASH}"
                      checkout([$class: 'GitSCM', branches: [[name: env.COMMIT_HASH ]],
-                               userRemoteConfigs: [[url: "${env.repo_url}"]]])
+                               userRemoteConfigs: [[url: "${env.repo_url}",credentialsId:'builduser-git']]])
                 }
             }
         }

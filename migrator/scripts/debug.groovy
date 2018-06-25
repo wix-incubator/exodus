@@ -29,7 +29,7 @@ pipeline {
                 }
                 dir("${env.MANAGED_DEPS_REPO_NAME}") {
                     checkout([$class: 'GitSCM', branches: [[name: 'master' ]],
-                              userRemoteConfigs: [[url: "${env.MANAGED_DEPS_REPO_URL}"]]])
+                              userRemoteConfigs: [[url: "${env.MANAGED_DEPS_REPO_URL}",credentialsId:'builduser-git']]])
                 }
             }
         }
