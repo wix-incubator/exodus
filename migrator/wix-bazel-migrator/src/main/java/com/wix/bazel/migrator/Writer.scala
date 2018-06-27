@@ -9,6 +9,7 @@ import com.wix.bazel.migrator.transform.InternalTargetOverridesReader
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.LibraryRule
+import com.wixpress.build.bazel.LibraryRule.ScalaLibraryRuleType
 import com.wixpress.build.bazel.repositories.WorkspaceName
 import com.wixpress.build.maven.Coordinates
 
@@ -165,7 +166,13 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   }
 
   def writeModuleDeps(moduleDeps: ModuleDeps): String = {
-    val libraryRule = new LibraryRule(name = moduleDeps.name, compileTimeDeps = moduleDeps.deps, runtimeDeps = moduleDeps.runtimeDeps, testOnly = moduleDeps.testOnly)
+    val libraryRule = new LibraryRule(
+      name = moduleDeps.name,
+      compileTimeDeps = moduleDeps.deps,
+      runtimeDeps = moduleDeps.runtimeDeps,
+      testOnly = moduleDeps.testOnly,
+      libraryRuleType = ScalaLibraryRuleType)
+
     s"""
        |${libraryRule.serialized}
      """.stripMargin

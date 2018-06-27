@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.bazel.LibraryRule.RuleType
+import com.wixpress.build.bazel.LibraryRule.{LibraryRuleType, ScalaImportRuleType}
 import com.wixpress.build.maven.{Coordinates, Exclusion}
 
 // going to be deprecated when switching to phase 2
@@ -14,7 +14,8 @@ case class LibraryRule(
                         runtimeDeps: Set[String] = Set.empty,
                         compileTimeDeps: Set[String] = Set.empty,
                         exclusions: Set[Exclusion] = Set.empty,
-                        testOnly: Boolean = false
+                        testOnly: Boolean = false,
+                        libraryRuleType: LibraryRuleType = ScalaImportRuleType
                          ) extends RuleWithDeps {
 
   private def serializedExclusions = if (exclusions.isEmpty) "" else
@@ -23,7 +24,7 @@ case class LibraryRule(
   def withRuntimeDeps(runtimeDeps: Set[String]): LibraryRule = this.copy(runtimeDeps = runtimeDeps)
 
   def serialized: String = {
-    s"""$RuleType(
+    s"""${libraryRuleType.name}(
        |    name = "$name",$serializedTestOnly$serializedAttributes$serializedExclusions
        |)""".stripMargin
   }
@@ -90,4 +91,7 @@ object LibraryRule {
     }
   }
 
+  sealed trait LibraryRuleType { def name: String }
+  case object ScalaLibraryRuleType extends LibraryRuleType { val name = "scala_library" }
+  case object ScalaImportRuleType extends LibraryRuleType { val name = "scala_import" }
 }

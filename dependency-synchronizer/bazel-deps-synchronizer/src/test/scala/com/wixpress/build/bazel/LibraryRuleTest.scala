@@ -1,5 +1,6 @@
 package com.wixpress.build.bazel
 
+import com.wixpress.build.bazel.LibraryRule.ScalaLibraryRuleType
 import com.wixpress.build.maven.Exclusion
 import org.specs2.mutable.SpecificationWithJUnit
 
@@ -11,6 +12,14 @@ class LibraryRuleTest extends SpecificationWithJUnit {
 
       rule.serialized must beEqualIgnoringSpaces(
         """scala_import(
+          |    name = "name",
+          |)""".stripMargin)
+    }
+
+    "serialize rule with scala_library rule type" in {
+      val rule = LibraryRule(name = "name", libraryRuleType = ScalaLibraryRuleType)
+      rule.serialized must beEqualIgnoringSpaces(
+        """scala_library(
           |    name = "name",
           |)""".stripMargin)
     }
