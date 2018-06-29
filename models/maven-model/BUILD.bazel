@@ -1,13 +1,13 @@
 package(default_visibility = ["//visibility:public"])
 
-scala_import(
+scala_library(
     name = "main_dependencies",
     deps = [
         "@org_scala_lang_scala_library//jar",
     ],
 )
 
-scala_import(
+scala_library(
     name = "tests_dependencies",
     testonly = 1,
     deps = [

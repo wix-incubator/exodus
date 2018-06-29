@@ -14,10 +14,6 @@ scala_library(
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/sync",
         "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "@com_gitblit_gitblit//:com_gitblit_gitblit",
-        "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
-        "@junit_junit//:junit_junit",
-        "@org_eclipse_jgit_org_eclipse_jgit//:org_eclipse_jgit_org_eclipse_jgit",
     ],
 )
 

@@ -8,11 +8,9 @@ scala_library(
     runtime_deps = [
     ],
     deps = [
-        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
         "//migrator/bazel-migrator:main_dependencies",
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "@org_jgrapht_jgrapht_core//:org_jgrapht_jgrapht_core",
     ],
 )
 

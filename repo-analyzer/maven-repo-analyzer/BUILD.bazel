@@ -1,6 +1,6 @@
 package(default_visibility = ["//visibility:public"])
 
-scala_import(
+scala_library(
     name = "main_dependencies",
     deps = [
         "//dependency-resolver/maven-dependency-resolver:main_dependencies",
@@ -14,7 +14,7 @@ scala_import(
     ],
 )
 
-scala_import(
+scala_library(
     name = "tests_dependencies",
     testonly = 1,
     deps = [
