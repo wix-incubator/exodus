@@ -12,6 +12,8 @@ scala_library(
         "//dependency-synchronizer/bazel-deps-synchronizer:main_dependencies",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "@org_apache_maven_maven_artifact//:org_apache_maven_maven_artifact",
+        "@org_slf4j_slf4j_api//:org_slf4j_slf4j_api",
     ],
 )
 

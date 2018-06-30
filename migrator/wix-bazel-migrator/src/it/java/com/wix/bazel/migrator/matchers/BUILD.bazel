@@ -10,6 +10,7 @@ scala_library(
     ],
     deps = [
         "//migrator/wix-bazel-migrator:tests_dependencies",
+        "//third_party/com/wixpress/hoopoe:hoopoe_specs2",
     ],
 )
 
