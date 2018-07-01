@@ -105,21 +105,23 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
   }
 
   private def loadGrpcRepos(workspaceName: String) = {
-      val loadStatement = if (workspaceName == serverInfraWSName)
-        s"""load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")"""
-      else
-        s"""|wix_grpc_version="f44a5bd2569b7b87e348ee42b2a2e1a2879ff5d9" # update this as needed
+      val loadRepoStatement = if (workspaceName != serverInfraWSName)
+        s"""|wix_grpc_version="7365dc48fe7df48b35ace42c904368a0a2bfc93d" # update this as needed
             |
             |git_repository(
-            |             name = "wix_grpc",
+            |             #name is server-infra to align with server-infra repo, see https://github.com/wix-platform/bazel_proto_poc/pull/16 for more details
+            |             name = "server-infra",
             |             remote = "git@github.com:wix-platform/bazel_proto_poc.git",
             |             commit = wix_grpc_version
             |)
-            |
-            |load("@wix_grpc//src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")""".stripMargin
+            |""".stripMargin
+      else
+        ""
 
-    loadStatement +
+    loadRepoStatement +
       """|
+         |load("@server-infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")
+         |
          |grpc_repositories()""".stripMargin
 
   }

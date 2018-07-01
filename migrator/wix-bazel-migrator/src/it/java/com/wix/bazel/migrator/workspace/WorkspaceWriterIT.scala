@@ -23,16 +23,14 @@ import better.files.File
       val writer = new WorkspaceWriter(repoRoot, serverInfraWorkspaceName)
       writer.write()
 
-      File(repoRoot.resolve("WORKSPACE")).contentAsString must contain(
-        """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")""")
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must not(contain("git@github.com:wix-platform/bazel_proto_poc.git"))
     }
 
     "load grpc_repositories from poc when migrating non server-infra repo" in new ctx {
       val writer = new WorkspaceWriter(repoRoot, workspaceName)
       writer.write()
 
-      File(repoRoot.resolve("WORKSPACE")).contentAsString must contain(
-        """load("@wix_grpc//src/main/rules:wix_scala_proto_repositories.bzl","grpc_repositories")""")
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must contain("git@github.com:wix-platform/bazel_proto_poc.git")
     }
   }
 
