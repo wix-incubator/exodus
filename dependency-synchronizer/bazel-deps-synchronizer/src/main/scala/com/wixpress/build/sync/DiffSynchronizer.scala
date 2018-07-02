@@ -20,7 +20,6 @@ case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelReposit
 
   private def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]) = {
     val localCopy = targetRepository.localWorkspace("master")
-    val localWorkspaceName = localCopy.localWorkspaceName
     val writer = new BazelDependenciesWriter(localCopy)
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.contains("pom"))
 
