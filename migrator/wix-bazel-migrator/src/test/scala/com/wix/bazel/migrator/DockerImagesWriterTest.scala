@@ -5,13 +5,18 @@ import java.nio.file.{Files, Path}
 import better.files.File
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import com.wix.bazel.migrator.transform.{InternalTargetOverride, InternalTargetsOverrides}
-import org.specs2.matcher.Scope
+import org.specs2.matcher.{Matcher, Scope}
 import org.specs2.mutable.SpecificationWithJUnit
 
 class DockerImagesWriterTest extends SpecificationWithJUnit {
   abstract class ctx extends Scope{
+
+    def containExactlyOnce(substr: String): Matcher[String] = {
+      {a:String => a.indexOf(substr) must not be_== -1} and {a:String => a.indexOf(substr) must beEqualTo(a.lastIndexOf(substr))}
+    }
+
     val rootfs: Path = MemoryFileSystemBuilder.newLinux().build().getPath("repo-root")
-    val overrideWithDockerImages = InternalTargetOverride("some-label", dockerImagesDeps = Option(List("mysql:5.7", "docker-repo.wixpress.com/com.wixpress.whatever/whatever:1.234.5")))
+    val overrideWithDockerImages = InternalTargetOverride("some-label", dockerImagesDeps = Option(List("mysql:5.7", "docker-repo.wixpress.com/com.wixpress.whatever/whatever:1.234.5", "mysql:5.7")))
     val overrides: InternalTargetsOverrides = InternalTargetsOverrides(Set(overrideWithDockerImages))
     new DockerImagesWriter(rootfs, overrides).write()
   }
@@ -55,6 +60,22 @@ class DockerImagesWriterTest extends SpecificationWithJUnit {
         s"""container_image(name="com.wixpress.whatever_whatever_1.234.5", base="@com.wixpress.whatever_whatever_1.234.5//image")""".stripMargin
 
       File(rootfs.resolve("third_party/docker_images/BUILD.bazel")).contentAsString must contain(expected)
+    }
+
+    "deduplicate images in BUILD file" in new ctx {
+
+      val duplicatedImage = "container_image(name=\"mysql_5.7\","
+      private val fileContent: String = File(rootfs.resolve("third_party/docker_images/BUILD.bazel")).contentAsString
+
+      fileContent must containExactlyOnce(duplicatedImage)
+    }
+
+    "deduplicate images in docker_images.bzl file" in new ctx {
+
+      val duplicatedImage = "name = \"mysql_5.7\","
+      private val fileContent: String = File(rootfs.resolve("third_party/docker_images/docker_images.bzl")).contentAsString
+
+      fileContent must containExactlyOnce(duplicatedImage)
     }
   }
 }

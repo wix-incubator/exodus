@@ -9,7 +9,7 @@ class DockerImagesWriter(repoRoot: Path, overrides: InternalTargetsOverrides) {
   private val dockerImagesRootPath = repoRoot.resolve("third_party/docker_images")
 
   def write(): Unit = {
-    val images = overrides.targetOverrides.toSeq.flatMap(_.dockerImagesDeps).flatten.map(DockerImage(_))
+    val images = overrides.targetOverrides.toSeq.flatMap(_.dockerImagesDeps).flatten.map(DockerImage(_)).toSet
 
     createBzlFile(images)
     createBuildFile(images)
@@ -22,7 +22,7 @@ class DockerImagesWriter(repoRoot: Path, overrides: InternalTargetsOverrides) {
     Files.write(filePath, contents.getBytes)
   }
 
-  private def createBzlFile(images: Seq[DockerImage]): Unit = {
+  private def createBzlFile(images: Set[DockerImage]): Unit = {
     val header =
       s"""load(
           |  "@io_bazel_rules_docker//container:container.bzl",
@@ -38,7 +38,7 @@ class DockerImagesWriter(repoRoot: Path, overrides: InternalTargetsOverrides) {
     writeToDisk("docker_images.bzl", header + contents)
   }
 
-  private def createBuildFile(images: Seq[DockerImage]): Unit = {
+  private def createBuildFile(images: Set[DockerImage]): Unit = {
     val header =
       s"""
          |package(default_visibility = ["//visibility:public"])
