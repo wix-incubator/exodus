@@ -30,11 +30,11 @@ object Writer extends MigratorApp {
     case "Mixed" => TestType.Mixed
   }
 
-  val writer = new Writer(tinker.repoRoot, tinker.codeModules, Persister.readTransformationResults(), WorkspaceName.by(configuration.repoUrl))
+  val writer = new Writer(tinker.repoRoot, tinker.codeModules, Persister.readTransformationResults())
   writer.write()
 }
 
-class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package], workspaceName: String) {
+class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) {
 
   def write(): Unit = {
     //we're writing the resources targets first since they might get overridden by identified dependencies from the analysis
@@ -109,12 +109,12 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   private def writePackage(serializedTargets: Set[String]) =
     DefaultPublicVisibility + serializedTargets.toSeq.sorted.mkString("\n\n")
 
-  private def writeProto(proto: Target.Proto, workspaceName: String): String = {
+  private def writeProto(proto: Target.Proto): String = {
 
     val (originalProtoDeps, jvmDeps) = partitionByDepType(proto)
     val protoDeps = dedupGlobalProtoDependencies(originalProtoDeps)
-    val loadStatement = writeProtoLoadStatement(workspaceName)
-    val jvmDepsSerialized = writeJvmDeps(workspaceName, jvmDeps)
+    val loadStatement = writeProtoLoadStatement
+    val jvmDepsSerialized = writeJvmDeps(jvmDeps)
 
     s"""
        |$loadStatement
@@ -143,14 +143,10 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     }
   }
 
-  private def writeProtoLoadStatement(workspaceName: String) = {
-    if (workspaceName == WorkspaceWriter.serverInfraWSName)
+  private def writeProtoLoadStatement = 
       """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
-    else
-      """load("@server-infra//src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
-  }
 
-  private def writeJvmDeps(workspaceName: String, jvmDeps: Set[Target]) = {
+  private def writeJvmDeps(jvmDeps: Set[Target]) = {
     if (jvmDeps.nonEmpty)
       s""" ${writeDependencies(jvmDeps.map(writeSourceDependency))}"""
     else
@@ -182,7 +178,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     target match {
       case jvmLibrary: Target.Jvm => writeJvm(jvmLibrary)
       case resources: Target.Resources => writeResources(resources)
-      case proto: Target.Proto => writeProto(proto, workspaceName)
+      case proto: Target.Proto => writeProto(proto)
       case moduleDeps: Target.ModuleDeps => writeModuleDeps(moduleDeps)
     }
   }
