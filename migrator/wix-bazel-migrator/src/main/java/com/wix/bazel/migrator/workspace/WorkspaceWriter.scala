@@ -63,12 +63,12 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |)
          |
          |
-         |load("@io_bazel_rules_scala//scala_proto:scala_proto.bzl", "scala_proto_repositories")
-         |scala_proto_repositories()
-         |
          |register_toolchains("@core_server_build_tools//toolchains:wix_defaults_global_toolchain")
          |
          |${loadGrpcRepos(workspaceName)}
+         |
+         |load("@server_infra//:proto_repos.bzl", "scala_proto_repositories")
+         |scala_proto_repositories()
          |
          |http_archive(
          |    name = "com_google_protobuf",
@@ -106,7 +106,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
 
   private def loadGrpcRepos(workspaceName: String) = {
       val loadRepoStatement = if (workspaceName != serverInfraWSName)
-        s"""|wix_grpc_version="5e8c4bf35015688974839802b0a43fe40c56381d" # update this as needed
+        s"""|wix_grpc_version="fc4f6f2fea986f2d2983ed2c5ebb2d62291adae1" # update this as needed
             |
             |git_repository(
             |             #name is server_infra to align with server-infra repo, see https://github.com/wix-platform/bazel_proto_poc/pull/16 for more details
