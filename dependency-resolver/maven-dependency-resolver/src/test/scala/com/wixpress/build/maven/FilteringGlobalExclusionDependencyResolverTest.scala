@@ -35,7 +35,7 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
         val transitiveDependency = depFromExclude.copy(
           coordinates = depFromExclude.coordinates.copy(
             version = "different",
-            packaging = Some("other-packaging"),
+            packaging = Packaging("other-packaging"),
             classifier = Some("other-classifier")
           ))
         val resolver = new FakeMavenDependencyResolver(artifacts = Set(

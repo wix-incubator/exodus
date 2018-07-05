@@ -36,21 +36,25 @@ object MavenMakers {
 
   def someCoordinates(artifactId: String): Coordinates = Coordinates("some.group", artifactId, "some-version")
 
-  def someProtoCoordinates(artifactId: String): Coordinates = Coordinates("some.group", artifactId, "some-version", packaging = Some("zip"), classifier = Some("proto"))
+  def someProtoCoordinates(artifactId: String): Coordinates = Coordinates("some.group", artifactId, "some-version", packaging = Packaging("zip"), classifier = Some("proto"))
 
   def aDependency(artifactId:String,scope:MavenScope = MavenScope.Compile, exclusions: Set[Exclusion] = Set.empty) =
     Dependency(someCoordinates(artifactId),scope, exclusions)
 
   def aPomArtifactDependency(artifactId:String,scope:MavenScope = MavenScope.Compile, exclusions: Set[Exclusion] = Set.empty) =
-    Dependency(someCoordinates(artifactId).copy(packaging = Some("pom")),scope, exclusions)
+    Dependency(someCoordinates(artifactId).copy(packaging = Packaging("pom")),scope, exclusions)
 
   def asCompileDependency(artifact: Coordinates, exclusions: Set[Exclusion] = Set.empty): Dependency =
     Dependency(artifact, MavenScope.Compile, exclusions)
 
+  def aTestArchiveTarDependency(artifactId: String): Dependency = Dependency(someCoordinates(artifactId).copy(packaging = Packaging("tar.gz")), MavenScope.Test)
+
+  def aTestArchiveZipDependency(artifactId: String): Dependency = Dependency(someCoordinates(artifactId).copy(packaging = Packaging("zip")), MavenScope.Test)
+
   def aRootDependencyNode(dependency: Dependency) = DependencyNode(dependency,Set.empty)
+
   def dependencyNodesFrom(singleDependency: SingleDependency): Set[DependencyNode] =
     Set(DependencyNode(singleDependency.dependant,Set(singleDependency.dependency)), DependencyNode(singleDependency.dependency, Set()))
-
 }
 
 case class SingleDependency(dependant: Dependency, dependency: Dependency)

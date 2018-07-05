@@ -4,7 +4,7 @@ import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.makers.ModuleMaker.aModule
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
 import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule}
-import com.wixpress.build.maven.{MavenMakers, MavenScope}
+import com.wixpress.build.maven.{MavenMakers, MavenScope, Packaging}
 import com.wixpress.build.maven
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -37,14 +37,14 @@ class MavenDependencyTransformerTest extends SpecificationWithJUnit {
     }
 
     "translate pom dependency that is not in repo to third_party dependency" in new Context {
-      val artifact = MavenMakers.someCoordinates("some-dep").copy(packaging = Some("pom"))
+      val artifact = MavenMakers.someCoordinates("some-dep").copy(packaging = Packaging("pom"))
       val dependency = maven.Dependency(artifact, MavenScope.Compile)
 
       translator.toBazelDependency(dependency) must beSome(s"//${LibraryRule.packageNameBy(artifact)}:${artifact.libraryRuleName}")
     }
 
     "not translate external proto dependency that is not jar" in new Context {
-      val artifact = MavenMakers.someCoordinates("some-proto").copy(packaging = Some("zip"), classifier = Some("proto"))
+      val artifact = MavenMakers.someCoordinates("some-proto").copy(packaging = Packaging("zip"), classifier = Some("proto"))
 
       val translation = translator.toBazelDependency(maven.Dependency(artifact, MavenScope.Compile))
 
@@ -56,7 +56,7 @@ class MavenDependencyTransformerTest extends SpecificationWithJUnit {
     testArchive("tar.gz")
 
     "throw a runtime exception when depending on unsupported packaging" in new Context {
-      val artifact = MavenMakers.someCoordinates("some-archive").copy(packaging = Some("random"))
+      val artifact = MavenMakers.someCoordinates("some-archive").copy(packaging = Packaging("random"))
 
       translator.toBazelDependency(maven.Dependency(artifact, MavenScope.Compile)) must throwA[RuntimeException]
     }
@@ -82,7 +82,7 @@ class MavenDependencyTransformerTest extends SpecificationWithJUnit {
 
   private def testArchive(archiveType: String): Fragment = {
     s"translate external $archiveType dependency to external repository archive label" in new Context {
-      val artifact = MavenMakers.someCoordinates("some-archive").copy(packaging = Some(archiveType))
+      val artifact = MavenMakers.someCoordinates("some-archive").copy(packaging = Packaging(archiveType))
 
       private val translation = translator.toBazelDependency(maven.Dependency(artifact, MavenScope.Compile))
 

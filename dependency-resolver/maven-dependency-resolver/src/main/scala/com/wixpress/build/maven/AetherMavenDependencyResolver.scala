@@ -43,7 +43,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     directDependenciesOf(artifactFromCoordinates(coordinates))
 
   private def artifactFromCoordinates(artifact: Coordinates) =
-    new DefaultArtifact(artifact.groupId, artifact.artifactId, artifact.packaging.getOrElse(""), artifact.version)
+    new DefaultArtifact(artifact.groupId, artifact.artifactId, artifact.packaging.value, artifact.version)
 
   def directDependenciesOf(pathToPom: Path): Set[Dependency] =
     directDependenciesOf(artifactFromPath(pathToPom))
@@ -221,7 +221,7 @@ object AetherDependencyConversions {
         artifact.getGroupId,
         artifact.getArtifactId,
         artifact.getVersion,
-        Option(artifact.getExtension).filter(!_.isEmpty),
+        Packaging(Option(artifact.getExtension).filter(!_.isEmpty).getOrElse("jar")),
         Option(artifact.getClassifier).filter(!_.isEmpty))
   }
 

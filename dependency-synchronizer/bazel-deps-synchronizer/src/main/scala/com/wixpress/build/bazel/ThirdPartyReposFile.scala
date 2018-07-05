@@ -2,7 +2,7 @@ package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
-import com.wixpress.build.maven.Coordinates
+import com.wixpress.build.maven.{Coordinates, Packaging}
 
 import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
@@ -14,7 +14,7 @@ object ThirdPartyReposFile {
   case class Builder(content: String = "") {
     def fromCoordinates(coordinates: Coordinates): Builder = {
       coordinates.packaging match {
-        case Some("jar") => withLoadStatementsFor(coordinates)
+        case Packaging("jar") => withLoadStatementsFor(coordinates)
         case _ => withMavenArtifact(coordinates)
       }
     }

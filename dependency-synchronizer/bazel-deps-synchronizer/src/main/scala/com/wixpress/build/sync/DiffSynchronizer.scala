@@ -21,7 +21,7 @@ case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelReposit
   private def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]) = {
     val localCopy = targetRepository.localWorkspace("master")
     val writer = new BazelDependenciesWriter(localCopy)
-    val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.contains("pom"))
+    val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom")
 
 
     val modifiedFiles = writer.writeDependencies(divergentLocalDependencies, divergentLocalDependencies ++ nodesWithPomPackaging)

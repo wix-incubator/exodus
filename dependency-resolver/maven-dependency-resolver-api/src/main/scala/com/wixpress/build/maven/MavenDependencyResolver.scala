@@ -19,7 +19,7 @@ trait MavenDependencyResolver {
       foundTokenIn(groupId) ||
         foundTokenIn(artifactId) ||
         foundTokenIn(version) ||
-        packaging.exists(foundTokenIn) ||
+        foundTokenIn(packaging.value) ||
         classifier.exists(foundTokenIn)
     ) throw new PropertyNotDefinedException(dependency)
     dependency

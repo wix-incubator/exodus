@@ -3,7 +3,7 @@ package com.wixpress.build.maven
 case class Coordinates(groupId: String,
                        artifactId: String,
                        version: String,
-                       packaging: Option[String] = Some("jar"),
+                       packaging: Packaging = Packaging("jar"),
                        classifier: Option[String] = None) {
 
   def equalsOnGroupIdAndArtifactId(otherCoordinates: Coordinates): Boolean = {
@@ -12,7 +12,7 @@ case class Coordinates(groupId: String,
   }
 
   def serialized: String = s"$groupId:$artifactId:" +
-    serializeOptional(packaging.filterNot(classifier.isEmpty && _ == "jar")) +
+    serializeOptional(Option(packaging.value).filterNot(classifier.isEmpty && _ == "jar")) +
     serializeOptional(classifier) + version
 
   def equalsIgnoringVersion(otherCoordinates: Coordinates): Boolean =
@@ -22,6 +22,10 @@ case class Coordinates(groupId: String,
       this.classifier == otherCoordinates.classifier
 
   private def serializeOptional(optional: Option[String]) = optional.map(string => s"$string:").getOrElse("")
+
+  def isProtoArtifact: Boolean = {
+    packaging.isArchive && classifier.contains("proto")
+  }
 }
 
 object Coordinates {
@@ -32,11 +36,11 @@ object Coordinates {
         Coordinates(groupId = groupId, artifactId = artifactId, version = version)
 
       case Array(groupId, artifactId, packaging, version) =>
-        Coordinates(groupId = groupId, artifactId = artifactId, version = version, packaging = Some(packaging))
+        Coordinates(groupId = groupId, artifactId = artifactId, version = version, packaging = Packaging(packaging))
 
       case Array(groupId, artifactId, packaging, classifier, version) =>
         Coordinates(groupId = groupId, artifactId = artifactId, version = version,
-          packaging = Some(packaging), classifier = Some(classifier))
+          packaging = Packaging(packaging), classifier = Some(classifier))
     }
 
 }

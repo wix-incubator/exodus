@@ -52,7 +52,7 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
 
       reader.allDependenciesAsMavenDependencies() must contain(
         Dependency(
-          Coordinates("some.group", "some-dep", "some-version",Some("zip"),Some("proto")),
+          Coordinates("some.group", "some-dep", "some-version",Packaging("zip"),Some("proto")),
           MavenScope.Compile
         ))
     }

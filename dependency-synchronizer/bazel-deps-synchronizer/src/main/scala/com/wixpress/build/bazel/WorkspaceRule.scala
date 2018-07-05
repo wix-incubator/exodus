@@ -1,7 +1,8 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
-import com.wixpress.build.maven.Coordinates
+import com.wixpress.build.maven
+import com.wixpress.build.maven.{ArchivePackaging, Coordinates, Packaging}
 
 case class WorkspaceRule(ruleType: String = "maven_jar",
                          name: String,
@@ -20,10 +21,10 @@ object WorkspaceRule {
   private def ruleTypeBy(artifact:Coordinates): String ={
     artifact.packaging match {
       //TODO: "pom" packaging should be disregarded
-      case Some("jar") | Some("pom") => "native.maven_jar"
-      case Some("zip") if artifact.classifier.contains("proto") => "maven_proto"
-      case Some("zip") | Some("tar.gz") => "maven_archive"
-      case _ => throw new RuntimeException(s"undefined worksapce rule for artifact ${artifact.serialized}")
+      case Packaging("jar") | Packaging("pom") => "native.maven_jar"
+      case _ if artifact.isProtoArtifact => "maven_proto"
+      case ArchivePackaging() => "maven_archive"
+      case _ => throw new RuntimeException(s"undefined workspace rule for artifact ${artifact.serialized}")
     }
   }
   def of(artifact: Coordinates): WorkspaceRule = {
@@ -32,5 +33,9 @@ object WorkspaceRule {
           name = artifact.workspaceRuleName,
           artifact = artifact
         )
+  }
+
+  def mavenArchiveLabelBy(dependency: maven.Dependency): String = {
+    s"@${dependency.coordinates.workspaceRuleName}//:archive"
   }
 }

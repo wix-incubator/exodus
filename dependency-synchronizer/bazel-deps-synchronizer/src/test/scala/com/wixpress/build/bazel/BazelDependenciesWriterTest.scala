@@ -64,7 +64,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
     "given one new proto dependency" should {
       trait protoDependencyNodeCtx extends emptyThirdPartyReposCtx {
-        val protoCoordinates = Coordinates("some.group","some-artifact","version",Some("zip"),Some("proto"))
+        val protoCoordinates = Coordinates("some.group","some-artifact","version",Packaging("zip"),Some("proto"))
         val protoDependency = Dependency(protoCoordinates,MavenScope.Compile)
       }
 
@@ -126,7 +126,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       }
 
       "write a target that is originated from pom artifact and has transitive jar artifact" in new emptyThirdPartyReposCtx {
-        val baseCoordinates = Coordinates("some.group", "some-artifact", "some-version", Some("pom"))
+        val baseCoordinates = Coordinates("some.group", "some-artifact", "some-version", Packaging("pom"))
         val baseDependency = Dependency(baseCoordinates, MavenScope.Compile)
         val transitiveJarArtifactDependency = aDependency("transitive")
         val dependencyNode = DependencyNode(baseDependency, Set(transitiveJarArtifactDependency))
@@ -146,7 +146,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       }
 
       "write a target that is originated from pom artifact and has transitive pom artifact" in new emptyThirdPartyReposCtx {
-        val baseCoordinates = Coordinates("some.group", "some-artifact", "some-version", Some("pom"))
+        val baseCoordinates = Coordinates("some.group", "some-artifact", "some-version", Packaging("pom"))
         val baseDependency = Dependency(baseCoordinates, MavenScope.Compile)
         val transitivePomArtifactDependency = aPomArtifactDependency("transitive")
         val dependencyNode = DependencyNode(baseDependency, Set(transitivePomArtifactDependency))
@@ -324,7 +324,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       }
 
       "return list of all files that were written" in new multipleDependenciesCtx {
-        val writtenFiles = writeArtifactsAsRootDependencies(someArtifact, otherArtifact.copy(packaging = Some("pom")))
+        val writtenFiles = writeArtifactsAsRootDependencies(someArtifact, otherArtifact.copy(packaging = Packaging("pom")))
 
         writtenFiles must containTheSameElementsAs(Seq(
           thirdPartyReposFilePath,

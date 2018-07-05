@@ -24,6 +24,15 @@ class LibraryRuleTest extends SpecificationWithJUnit {
           |)""".stripMargin)
     }
 
+    "serialize rule with data attribute" in {
+      val rule = LibraryRule(name = "name", data = Set("some-data"))
+
+      rule.serialized must containIgnoringSpaces(
+        """data = [
+          |   "some-data"
+          |]""".stripMargin)
+    }
+
     "serialize rule jar" in {
       val rule = LibraryRule(name = "name",jars = Set("@jar_reference"))
 

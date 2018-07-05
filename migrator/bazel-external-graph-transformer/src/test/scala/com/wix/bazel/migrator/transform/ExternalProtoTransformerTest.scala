@@ -6,6 +6,7 @@ import com.wix.bazel.migrator.model.makers.ModuleMaker._
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.maven
 import com.wixpress.build.maven.MavenMakers.{asCompileDependency, someCoordinates, someProtoCoordinates}
+import com.wixpress.build.maven.Packaging
 import org.specs2.mutable.SpecificationWithJUnit
 
 class ExternalProtoTransformerTest extends SpecificationWithJUnit {
@@ -55,7 +56,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
     "*not* add external modules which don't have both proto classifier and zip packaging as dependencies to proto targets" in {
       val repoModule = aModuleWith(
         asCompileDependency(someCoordinates("external_non_proto_zip").copy(classifier = Some("not-proto"))),
-        asCompileDependency(someCoordinates("external_proto_jar").copy(packaging = Some("not-zip"))),
+        asCompileDependency(someCoordinates("external_proto_jar").copy(packaging = Packaging("not-zip"))),
         asCompileDependency(someProtoCoordinates("external_proto_zip")))
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
         Set(Target.Proto("internal-proto-lib", "module-path", Set.empty)),

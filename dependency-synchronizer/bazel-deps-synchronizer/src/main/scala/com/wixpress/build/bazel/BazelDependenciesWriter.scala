@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
-import com.wixpress.build.maven.{Coordinates, DependencyNode}
+import com.wixpress.build.maven.{Coordinates, DependencyNode, Packaging}
 
 class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
   val ruleResolver = new RuleResolver(localWorkspace.localWorkspaceName)
@@ -50,7 +50,7 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
 
   private def maybeRuleBy(dependencyNode: DependencyNode) =
     dependencyNode.baseDependency.coordinates.packaging match {
-      case Some("pom") | Some("jar") => Some(createRuleBy(dependencyNode))
+      case Packaging("pom") | Packaging("jar") => Some(createRuleBy(dependencyNode))
       case _ => None
     }
 
@@ -65,16 +65,12 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
     )
     val rule = ruleResolver.`for`(
       artifact = dependencyNode.baseDependency.coordinates,
-      runtimeDependencies = dependencyNode.runtimeDependencies.filterNot(protoZip),
-      compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(protoZip),
+      runtimeDependencies = dependencyNode.runtimeDependencies.filterNot(_.isProtoArtifact),
+      compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(_.isProtoArtifact),
       exclusions = dependencyNode.baseDependency.exclusions
     )
     rule.updateDeps(runtimeDeps = rule.runtimeDeps ++ runtimeDependenciesOverrides,
       compileTimeDeps = rule.compileTimeDeps ++ compileTimeDependenciesOverrides)
-  }
-
-  private def protoZip(a: Coordinates) = {
-    a.packaging.contains("zip") && a.classifier.contains("proto")
   }
 
   private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) = {
@@ -84,7 +80,7 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
 
   private def findFilesAccordingToPackagingOf(artifact: Coordinates) = {
     artifact.packaging match {
-      case Some("jar") => ImportExternalRule.importExternalFilePathBy(artifact)
+      case Packaging("jar") => ImportExternalRule.importExternalFilePathBy(artifact)
 
       case _ => LibraryRule.buildFilePathBy(artifact)
     }

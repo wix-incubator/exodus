@@ -9,7 +9,7 @@ import ModuleDependenciesTransformer._
 class ModuleDependenciesTransformer(repoModules: Set[SourceModule], externalPackageLocator: ExternalSourceModuleRegistry) {
   private val dependencyTransformer = new MavenDependencyTransformer(repoModules, externalPackageLocator)
 
-  def transform(existingPackages: Set[model.Package]): Set[model.Package] =
+  def transform(existingPackages: Set[model.Package] = Set.empty[model.Package]): Set[model.Package] =
     combinePackageSets(repoModules.map(extractModulePackage), existingPackages)
 
   private def extractModulePackage(module: SourceModule) = {
@@ -24,14 +24,18 @@ class ModuleDependenciesTransformer(repoModules: Set[SourceModule], externalPack
           extractProdResourcesDependencies(module),
       testOnly = false
     )
+
+    val testDependencies = extractDependenciesOfScope(module, MavenScope.Test)
+    val (data, deps) = testDependencies.partition(dep => dep.coordinates.packaging.isArchive)
     val testDepsTarget = ModuleDeps(
       name = TestsDepsTargetName,
       belongingPackageRelativePath = module.relativePathFromMonoRepoRoot,
-      deps = extractDependenciesOfScope(module, MavenScope.Test)
-        .flatMap(dependencyTransformer.toBazelDependency) + ProductionDepsTargetName,
+      deps = deps.flatMap(dependencyTransformer.toBazelDependency) + ProductionDepsTargetName,
+      data = data.flatMap(dependencyTransformer.toBazelDependency),
       runtimeDeps = extractTestResourcesDependencies(module),
       testOnly = true
     )
+
     model.Package(
       relativePathFromMonoRepoRoot = module.relativePathFromMonoRepoRoot,
       targets = Set(productionDepsTarget, testDepsTarget),

@@ -2,7 +2,7 @@ package com.wixpress.build.bazel
 
 import com.wixpress.build.bazel.CoordinatesTestBuilders._
 import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
-import com.wixpress.build.maven.Coordinates
+import com.wixpress.build.maven.{Coordinates, Packaging}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -62,7 +62,7 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
 
   "third party repos file builder" should {
     "update maven archive version in case one with same artifactId and groupId defined in third party repos" in {
-      val archives = jars.map(_.copy(packaging = Some("zip")))
+      val archives = jars.map(_.copy(packaging = Packaging("zip")))
       val thirdPartyRepos = createThirdPartyReposWith(archives)
       val newHead = archives.head.copy(version = "5.0")
       val newArchives = newHead +: archives.tail
@@ -71,7 +71,7 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
     }
 
     "insert new maven archive in case there is no maven jar with same artifact id and group id" in {
-      val archives = jars.map(_.copy(packaging = Some("zip")))
+      val archives = jars.map(_.copy(packaging = Packaging("zip")))
       val thirdPartyRepos = createThirdPartyReposWith(archives)
       val dontCareVersion = "3.0"
       val newJar = Coordinates("new.group", "new-artifact", dontCareVersion)

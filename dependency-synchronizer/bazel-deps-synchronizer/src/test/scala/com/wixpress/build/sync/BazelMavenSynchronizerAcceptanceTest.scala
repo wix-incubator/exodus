@@ -317,7 +317,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
     val baseDependency = aDependency("base")
     val transitiveDependency = aDependency("transitive")
-    val dependencyManagementCoordinates = Coordinates("some.group", "deps-management", "1.0", Some("pom"))
+    val dependencyManagementCoordinates = Coordinates("some.group", "deps-management", "1.0", Packaging("pom"))
 
     def givenBazelWorkspaceWithDependency(mavenJarInBazel: MavenJarInBazel*) = {
       givenBazelWorkspace(mavenJarInBazel.toSet)

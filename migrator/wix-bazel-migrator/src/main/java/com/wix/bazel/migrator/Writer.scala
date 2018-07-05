@@ -166,6 +166,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
       name = moduleDeps.name,
       compileTimeDeps = moduleDeps.deps,
       runtimeDeps = moduleDeps.runtimeDeps,
+      data = moduleDeps.data,
       testOnly = moduleDeps.testOnly,
       libraryRuleType = ScalaLibraryRuleType)
 

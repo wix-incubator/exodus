@@ -201,7 +201,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
 
       import com.wixpress.build.maven.Dependency
 
-      def someCoordinates = Coordinates("some.package", "foo", "dont-care", packaging = Some("pom"))
+      def someCoordinates = Coordinates("some.package", "foo", "dont-care", packaging = Packaging("pom"))
 
       def someDependency = Dependency(someCoordinates, MavenScope.Compile)
 
@@ -428,7 +428,7 @@ case class Repo(rootAggregatorModule: Option[MavenModule] = None, siblingModules
       dep.setGroupId(d.coordinates.groupId)
       dep.setVersion(d.coordinates.version)
       d.coordinates.classifier.foreach(dep.setClassifier)
-      d.coordinates.packaging.filterNot(_ == "jar").foreach(dep.setType)
+      Option(d.coordinates.packaging.value).filterNot(_ == "jar").foreach(dep.setType)
       dep.setScope(d.scope.name)
       model.addDependency(dep)
     }

@@ -2,7 +2,7 @@ package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.ImportExternalRule.RuleType
-import com.wixpress.build.maven.{Coordinates, Exclusion}
+import com.wixpress.build.maven.{Coordinates, Exclusion, Packaging}
 
 case class ImportExternalRule(name: String,
                               artifact: String,
@@ -79,7 +79,7 @@ object ImportExternalRule {
 
   def importExternalFilePathBy(coordinates: Coordinates): Option[String] = {
     coordinates.packaging match {
-      case Some("jar") => Some("third_party/" + coordinates.groupIdForBazel + ".bzl")
+      case Packaging("jar") => Some("third_party/" + coordinates.groupIdForBazel + ".bzl")
       case _ => None
     }
   }

@@ -100,7 +100,7 @@ class AppTinker(configuration: RunConfiguration) {
   def constantDependencies: Set[Dependency] = {
     aetherResolver.managedDependenciesOf(AppTinker.ThirdPartyDependencySource)
       .filter(_.coordinates.artifactId == "hoopoe-specs2")
-      .filter(_.coordinates.packaging.contains("pom")) +
+      .filter(_.coordinates.packaging.value == "pom") +
       //proto dependencies
       maven.Dependency(Coordinates.deserialize("com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT"), MavenScope.Compile) +
       maven.Dependency(Coordinates.deserialize("com.wixpress.grpc:generator:1.0.0-SNAPSHOT"), MavenScope.Compile) +

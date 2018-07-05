@@ -2,7 +2,7 @@ package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.LibraryRule.{LibraryRuleType, ScalaImportRuleType}
-import com.wixpress.build.maven.{Coordinates, Exclusion}
+import com.wixpress.build.maven.{Coordinates, Exclusion, Packaging}
 
 // going to be deprecated when switching to phase 2
 // kept for now to support pom artifact migration
@@ -14,6 +14,7 @@ case class LibraryRule(
                         runtimeDeps: Set[String] = Set.empty,
                         compileTimeDeps: Set[String] = Set.empty,
                         exclusions: Set[Exclusion] = Set.empty,
+                        data: Set[String] = Set.empty,
                         testOnly: Boolean = false,
                         libraryRuleType: LibraryRuleType = ScalaImportRuleType
                          ) extends RuleWithDeps {
@@ -38,7 +39,8 @@ case class LibraryRule(
   toListEntry("srcs",sources) +
   toListEntry("exports",exports) +
   toListEntry("deps",compileTimeDeps) +
-  toListEntry("runtime_deps",runtimeDeps)
+  toListEntry("runtime_deps",runtimeDeps) +
+  toListEntry("data",data)
 
 
   private def toListEntry(keyName: String, elements: Iterable[String]): String = {
@@ -86,7 +88,7 @@ object LibraryRule {
 
   def buildFilePathBy(coordinates: Coordinates): Option[String] = {
     coordinates.packaging match {
-      case Some("jar") | Some("pom") => Some(packageNameBy (coordinates) + "/BUILD.bazel")
+      case Packaging("jar") | Packaging("pom") => Some(packageNameBy (coordinates) + "/BUILD.bazel")
       case _ => None
     }
   }

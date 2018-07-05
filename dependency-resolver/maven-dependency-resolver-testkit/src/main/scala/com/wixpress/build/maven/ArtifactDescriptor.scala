@@ -19,7 +19,7 @@ import scala.collection.JavaConverters._
 case class ArtifactDescriptor(groupId:Option[String],
                               artifactId:String,
                               version:Option[String],
-                              packaging:Option[String],
+                              packaging:String,
                               dependencies: List[Dependency] = List.empty,
                               managedDependencies: List[Dependency] = List.empty,
                               parentCoordinates: Option[Coordinates] = None) {
@@ -64,7 +64,7 @@ case class ArtifactDescriptor(groupId:Option[String],
     groupId.foreach(project.setGroupId)
     project.setArtifactId(artifactId)
     version.foreach(project.setVersion)
-    packaging.foreach(project.setPackaging)
+    project.setPackaging(packaging)
     parent.foreach(project.setParent)
     dependencies.map(_.asMavenDependency).foreach(project.addDependency)
     dependencyManagement.foreach(project.setDependencyManagement)
@@ -74,7 +74,7 @@ case class ArtifactDescriptor(groupId:Option[String],
   def coordinates: Coordinates = {
     val finalGroupId = groupId.getOrElse(parentCoordinates.get.groupId)
     val finalVersion = version.getOrElse(parentCoordinates.get.version)
-    Coordinates(finalGroupId, artifactId, finalVersion, packaging)
+    Coordinates(finalGroupId, artifactId, finalVersion, Packaging(packaging))
   }
 
   private def dependencyManagement: Option[DependencyManagement] = {
@@ -96,7 +96,7 @@ object ArtifactDescriptor {
       groupId = Some(coordinates.groupId),
       artifactId = coordinates.artifactId,
       version = Some(coordinates.version),
-      packaging = coordinates.packaging,
+      packaging = coordinates.packaging.value,
       dependencies = deps,
       managedDependencies = managedDeps
     )
@@ -120,7 +120,7 @@ object ArtifactDescriptor {
       mavenDep.setGroupId(groupId)
       mavenDep.setArtifactId(artifactId)
       mavenDep.setVersion(version)
-      packaging.foreach(mavenDep.setType)
+      mavenDep.setType(packaging.value)
       classifier.foreach(mavenDep.setClassifier)
       mavenDep.setScope(dependency.scope.name)
       mavenDep.setExclusions(dependency.exclusions.map(toMavenExclusion).toList.asJava)

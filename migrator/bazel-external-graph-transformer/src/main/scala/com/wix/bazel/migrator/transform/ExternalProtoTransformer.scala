@@ -2,7 +2,7 @@ package com.wix.bazel.migrator.transform
 
 import com.wix.bazel.migrator.model.{Package, SourceModule, Target}
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.maven.{Coordinates, Dependency, MavenScope}
+import com.wixpress.build.maven.{Coordinates, Dependency => MavenDependency, MavenScope}
 
 class ExternalProtoTransformer(repoModules: Set[SourceModule]) {
 
@@ -28,14 +28,11 @@ class ExternalProtoTransformer(repoModules: Set[SourceModule]) {
       .map(_.coordinates)
   }
 
-  private def externalDependency(dependency: Dependency) =
+  private def externalDependency(dependency: MavenDependency) =
     !repoArtifacts.exists(_.equalsOnGroupIdAndArtifactId(dependency.coordinates))
 
-
-  private def compileProtoDependency(dependency: Dependency) =
-    dependency.scope == MavenScope.Compile &&
-      dependency.coordinates.classifier.contains("proto") &&
-      dependency.coordinates.packaging.contains("zip")
+  private def compileProtoDependency(dependency: MavenDependency) =
+    dependency.scope == MavenScope.Compile && dependency.coordinates.isProtoArtifact
 
   private def asExternalProtoDependency(coordinates: Coordinates): Target.External =
     Target.External(

@@ -25,7 +25,8 @@ object Target {
                          belongingPackageRelativePath: String,
                          deps: Set[String],
                          runtimeDeps: Set[String],
-                         testOnly: Boolean
+                         testOnly: Boolean,
+                         data: Set[String] = Set.empty
                        ) extends Target
 
 

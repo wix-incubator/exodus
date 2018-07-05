@@ -1,6 +1,6 @@
 package com.wixpress.build.bazel
 
-import com.wixpress.build.maven.{Coordinates, Exclusion}
+import com.wixpress.build.maven.{Coordinates, Exclusion, Packaging}
 class RuleResolver(localWorkspaceName: String) {
 
   def `for`( artifact: Coordinates,
@@ -8,14 +8,14 @@ class RuleResolver(localWorkspaceName: String) {
              compileTimeDependencies: Set[Coordinates] = Set.empty,
              exclusions: Set[Exclusion] = Set.empty): RuleWithDeps =
     artifact.packaging match {
-      case Some("jar") => ImportExternalRule.of(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy)
-      case Some("pom") => LibraryRule.pomLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy)
+      case Packaging("jar") => ImportExternalRule.of(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy)
+      case Packaging("pom") => LibraryRule.pomLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy)
       case _ => throw new RuntimeException(s"no rule defined for ${artifact.serialized}")
     }
 
   def labelBy(coordinates: Coordinates): String = {
     coordinates.packaging match {
-      case Some("jar") => ImportExternalRule.jarLabelBy(coordinates)
+      case Packaging("jar") => ImportExternalRule.jarLabelBy(coordinates)
       case _ => nonJarLabelBy(coordinates)
     }
   }

@@ -1,9 +1,8 @@
 package com.wix.bazel.migrator.transform
 
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
-import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule}
-import com.wixpress.build.maven.Coordinates
+import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, WorkspaceRule}
+import com.wixpress.build.maven.{ArchivePackaging, Coordinates, Packaging}
 import com.wixpress.build.maven
 import ModuleDependenciesTransformer.ProductionDepsTargetName
 
@@ -21,10 +20,7 @@ class MavenDependencyTransformer(repoModules: Set[SourceModule], externalPackage
   private def asExternalTargetDependency(coordinates: Coordinates) =
     externalPackageLocator.lookupBy(coordinates.groupId, coordinates.artifactId).map(_ + s":$ProductionDepsTargetName")
 
-  private def ignoredDependency(coordinates: Coordinates) = protoArtifact(coordinates)
-
-  private def protoArtifact(coordinates: Coordinates) =
-    coordinates.packaging.contains("zip") && coordinates.classifier.contains("proto")
+  private def ignoredDependency(coordinates: Coordinates) = coordinates.isProtoArtifact
 
   private def findInRepoModules(coordinates: Coordinates) = {
     repoModules
@@ -40,9 +36,9 @@ class MavenDependencyTransformer(repoModules: Set[SourceModule], externalPackage
 
   private def asThirdPartyDependency(dependency: maven.Dependency): String = {
     dependency.coordinates.packaging match {
-      case Some("jar") => asThirdPartyJarDependency(dependency)
-      case Some("pom") => asThirdPartyPomDependency(dependency)
-      case Some("zip") | Some("tar.gz") => asExternalRepoArchive(dependency)
+      case Packaging("jar") => asThirdPartyJarDependency(dependency)
+      case Packaging("pom") => asThirdPartyPomDependency(dependency)
+      case ArchivePackaging() => asExternalRepoArchive(dependency)
       case _ => throw new RuntimeException("unsupported dependency packaging on " + dependency.coordinates.serialized)
     }
   }
@@ -56,6 +52,5 @@ class MavenDependencyTransformer(repoModules: Set[SourceModule], externalPackage
   }
 
   private def asExternalRepoArchive(dependency: maven.Dependency): String =
-    s"@${dependency.coordinates.workspaceRuleName}//:archive"
-
+    WorkspaceRule.mavenArchiveLabelBy(dependency)
 }

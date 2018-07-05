@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.maven.Coordinates
+import com.wixpress.build.maven.{Coordinates, Packaging}
 import com.wixpress.build.maven.MavenMakers.someCoordinates
 import org.specs2.mutable.SpecificationWithJUnit
 
@@ -49,16 +49,16 @@ class RuleResolverTest extends SpecificationWithJUnit {
     }
 
     "throw runtime exception rule in case of packaging that is not pom or jar" in {
-      val coordinates = Coordinates("g", "a", "v", Some("zip"), Some("proto"))
+      val coordinates = Coordinates("g", "a", "v", Packaging("zip"), Some("proto"))
       ruleResolver.`for`(coordinates) must throwA[RuntimeException]
     }
 
   }
 
   val artifact = someCoordinates("some-artifact")
-  val pomArtifact = someCoordinates("some-artifact").copy(packaging = Some("pom"))
+  val pomArtifact = someCoordinates("some-artifact").copy(packaging = Packaging("pom"))
   val runtimeDependencies = Set(someCoordinates("runtime-dep"))
   val compileDependencies = Set(someCoordinates("compile-dep"))
-  val pomRuntimeDependencies = runtimeDependencies.map(_.copy(packaging = Some("pom")))
-  val pomCompileDependencies = compileDependencies.map(_.copy(packaging = Some("pom")))
+  val pomRuntimeDependencies = runtimeDependencies.map(_.copy(packaging = Packaging("pom")))
+  val pomCompileDependencies = compileDependencies.map(_.copy(packaging = Packaging("pom")))
 }

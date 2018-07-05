@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.maven.Coordinates
+import com.wixpress.build.maven.{Coordinates, Packaging}
 import org.specs2.mutable.SpecificationWithJUnit
 
 class WorkspaceRuleTest extends SpecificationWithJUnit {
@@ -30,7 +30,7 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         groupId = "some.group.id",
         artifactId = "artifact-id",
         version = "version",
-        packaging = Some("zip"),
+        packaging = Packaging("zip"),
         classifier = Some("proto")
       )
       val expectedWorkspaceRuleText =
@@ -48,7 +48,7 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         groupId = "some.group.id",
         artifactId = "artifact-id",
         version = "version",
-        packaging = Some("zip")
+        packaging = Packaging("zip")
       )
       val expectedWorkspaceRuleText =
         s"""  if native.existing_rule("${someArchiveCoordinates.workspaceRuleName}") == None:
@@ -65,7 +65,7 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         groupId = "some.group.id",
         artifactId = "artifact-id",
         version = "version",
-        packaging = Some("tar.gz")
+        packaging = Packaging("tar.gz")
       )
       val expectedWorkspaceRuleText =
         s"""  if native.existing_rule("${someArchiveCoordinates.workspaceRuleName}") == None:
@@ -82,7 +82,7 @@ class WorkspaceRuleTest extends SpecificationWithJUnit {
         groupId = "some.group.id",
         artifactId = "artifact-id",
         version = "version",
-        packaging = Some("strange-packaging")
+        packaging = Packaging("strange-packaging")
       )
 
       WorkspaceRule.of(someArchiveCoordinates).serialized must throwA[RuntimeException]

@@ -11,7 +11,7 @@ class CoordinatesTest extends SpecificationWithJUnit {
     "set packaging to jar when not defined" in new baseCtx {
       val coordinates = Coordinates("group", "artifact", "version")
 
-      coordinates.packaging must beSome("jar")
+      coordinates.packaging.value mustEqual "jar"
     }
 
     "serialize (groupId,artifactId,version) Coordinates to colon string" in new baseCtx {
@@ -21,7 +21,7 @@ class CoordinatesTest extends SpecificationWithJUnit {
     }
 
     "serialize (groupId,artifactId,packaging,version) Coordinates to colon string, given packaging is not jar" in new baseCtx {
-      val extendedCoordinates = baseCoordinates.copy(packaging = Some(packaging))
+      val extendedCoordinates = baseCoordinates.copy(packaging = Packaging(packaging))
       val expectedColonRepresentation =
         s"${extendedCoordinates.groupId}:${extendedCoordinates.artifactId}:$packaging:${extendedCoordinates.version}"
 
@@ -30,7 +30,7 @@ class CoordinatesTest extends SpecificationWithJUnit {
 
     "serialize (groupId,artifactId,packaging,classifier,version) Coordinates to colon string, even if packaging is jar" in new baseCtx {
       val jarPackaging = "jar"
-      val extendedCoordinates = baseCoordinates.copy(packaging = Some(jarPackaging), classifier = Some(classifier))
+      val extendedCoordinates = baseCoordinates.copy(packaging = Packaging(jarPackaging), classifier = Some(classifier))
       val expectedColonRepresentation =
         s"${extendedCoordinates.groupId}:${extendedCoordinates.artifactId}:$jarPackaging:$classifier:${extendedCoordinates.version}"
 
@@ -38,7 +38,7 @@ class CoordinatesTest extends SpecificationWithJUnit {
     }
 
     "serialize (groupId,artifactId,packaging,classifier,version) Coordinates to colon string" in new baseCtx {
-      val extendedCoordinates = baseCoordinates.copy(packaging = Some(packaging), classifier = Some(classifier))
+      val extendedCoordinates = baseCoordinates.copy(packaging = Packaging(packaging), classifier = Some(classifier))
       val expectedColonRepresentation =
         s"${extendedCoordinates.groupId}:${extendedCoordinates.artifactId}:$packaging:$classifier:${extendedCoordinates.version}"
 
@@ -52,14 +52,14 @@ class CoordinatesTest extends SpecificationWithJUnit {
 
     "deserialize from 4 part colon string to Coordinates" in new baseCtx {
       val colonString = s"$someGroupId:$someArtifactId:$packaging:$someVersion"
-      val extendedCoordinates = baseCoordinates.copy(packaging = Some(packaging))
+      val extendedCoordinates = baseCoordinates.copy(packaging = Packaging(packaging))
 
       Coordinates.deserialize(colonString) mustEqual extendedCoordinates
     }
 
     "deserialize from 5 part colon string to Coordinates" in new baseCtx {
       val colonString = s"$someGroupId:$someArtifactId:$packaging:$classifier:$someVersion"
-      val extendedCoordinates = baseCoordinates.copy(packaging = Some(packaging), classifier = Some(classifier))
+      val extendedCoordinates = baseCoordinates.copy(packaging = Packaging(packaging), classifier = Some(classifier))
 
       Coordinates.deserialize(colonString) mustEqual extendedCoordinates
     }
@@ -109,18 +109,18 @@ class CoordinatesTest extends SpecificationWithJUnit {
 
       def withDifferentClassifier = coordinates.copy(classifier = otherOption(coordinates.classifier))
 
-      def withDifferentPackaging = coordinates.copy(packaging = otherOption(coordinates.packaging))
+      def withDifferentPackaging = coordinates.copy(packaging = Packaging(coordinates.packaging.value + "-other"))
     }
 
     val coordinatesWithDifferentVersionPackagingAndClassifier = baseCoordinates.copy(
       version = "other-version",
-      packaging = Some("other-packaging"),
+      packaging = Packaging("other-packaging"),
       classifier = Some("other-classifier")
     )
 
     val coordinatesWithDifferentPackagingAndClassifier = baseCoordinates.copy(
       version = "other-version",
-      packaging = Some("other-packaging"),
+      packaging = Packaging("other-packaging"),
       classifier = Some("other-classifier")
     )
 

@@ -120,7 +120,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
       "given artifact with parent that has direct dependency should " +
         "return the dependency specified in parent" in new ctx {
-        def parent = Coordinates("some-group", "parent", "some-version", Some("pom"))
+        def parent = Coordinates("some-group", "parent", "some-version", Packaging("pom"))
 
         def interestingArtifact = someCoordinates("base")
 
