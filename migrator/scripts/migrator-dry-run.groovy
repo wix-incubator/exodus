@@ -15,6 +15,7 @@ pipeline {
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
+        BAZEL = "bazel --host_javabase=$JAVA_HOME"
     }
     stages {
         stage('checkout') {
@@ -75,7 +76,7 @@ pipeline {
         stage('build') {
             steps {
                 dir("${env.REPO_NAME}") {
-                    sh "bazel build -k --strategy=Scalac=worker //..."
+                    sh "$BAZEL build -k --strategy=Scalac=worker //..."
                 }
             }
         }
@@ -84,7 +85,7 @@ pipeline {
                 dir("${env.REPO_NAME}") {
                     script {
                         unstable_by_exit_code("UNIT", """|#!/bin/bash
-                                             |bazel test \\
+                                             |$BAZEL test \\
                                              |      --test_tag_filters=UT,-IT \\
                                              |      --flaky_test_attempts=3 \\
                                              |      ${env.BAZEL_FLAGS} \\
@@ -100,7 +101,7 @@ pipeline {
                     script {
                         unstable_by_exit_code("IT/E2E", """|#!/bin/bash
                                              |export DOCKER_HOST=$env.TEST_DOCKER_HOST
-                                             |bazel test \\
+                                             |$BAZEL test \\
                                              |      --test_tag_filters=IT \\
                                              |      --strategy=TestRunner=standalone \\
                                              |      ${env.BAZEL_FLAGS} \\

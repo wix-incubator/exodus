@@ -9,6 +9,7 @@ pipeline {
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
+        BAZEL = "bazel --host_javabase=$JAVA_HOME"
     }
     stages {
         stage('checkout') {
@@ -34,7 +35,7 @@ pipeline {
             }
             steps{
                 dir("${env.REPO_NAME}") {
-                    sh "bazel clean"
+                    sh "$BAZEL clean"
                 }
             }
         }
@@ -89,7 +90,7 @@ def build_and_fix() {
     status = sh(
             script: '''|#!/bin/bash
                        |# tee would output the stdout to file but will swallow the exit code
-                       |bazel build -k --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
+                       |$BAZEL build -k --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
                        |# retrieve the exit code
                        |exit ${PIPESTATUS[0]}
                        |'''.stripMargin(),
