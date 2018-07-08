@@ -110,7 +110,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
           target = a(moduleDepsTarget(
             name = "tests_dependencies",
             deps = contain(exactly("main_dependencies")),
-            data = contain(exactly(WorkspaceRule.mavenArchiveLabelBy(tarDependency))
+            data = contain(exactly(WorkspaceRule.mavenArchiveLabelBy(tarDependency, "unpacked"))
           )))))
     }
 
@@ -122,7 +122,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
         aPackage(
           target = a(moduleDepsTarget(
             name = "tests_dependencies",
-            data = contain(exactly(WorkspaceRule.mavenArchiveLabelBy(zipDependency)))
+            data = contain(exactly(WorkspaceRule.mavenArchiveLabelBy(zipDependency, "unpacked")))
           ))))
     }
 
@@ -175,12 +175,12 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
           )))))
     }
   }
-
   trait baseCtx extends Scope {
     val externalPackageLocator = new FakeExternalSourceModuleRegistry(Map.empty)
+    val emptyMavenArchiveTargetsOverrides = MavenArchiveTargetsOverrides(Set.empty)
 
     def transformerFor(modules: Set[SourceModule]) = {
-      new ModuleDependenciesTransformer(modules, externalPackageLocator)
+      new ModuleDependenciesTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides)
     }
   }
 

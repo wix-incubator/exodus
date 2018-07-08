@@ -1,12 +1,18 @@
 package com.wix.bazel.migrator.transform
 
 import com.wix.bazel.migrator.model.SourceModule
+import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
+import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, OverrideCoordinates}
+import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, WorkspaceRule}
 import com.wixpress.build.maven.{ArchivePackaging, Coordinates, Packaging}
 import com.wixpress.build.maven
 import ModuleDependenciesTransformer.ProductionDepsTargetName
+import com.wix.bazel.migrator.transform.MavenDependencyTransformer.DependencyExtensions
 
-class MavenDependencyTransformer(repoModules: Set[SourceModule], externalPackageLocator: ExternalSourceModuleRegistry) {
+class MavenDependencyTransformer(repoModules: Set[SourceModule],
+                                 externalPackageLocator: ExternalSourceModuleRegistry,
+                                 archiveOverrideCoordinates: MavenArchiveTargetsOverrides) {
 
   def toBazelDependency(dependency: maven.Dependency): Option[String] = {
     if (ignoredDependency(dependency.coordinates)) None else Some(
@@ -29,7 +35,6 @@ class MavenDependencyTransformer(repoModules: Set[SourceModule], externalPackage
 
   private def asRepoSourceDependency(sourceModule: SourceModule): String = {
     val packageName = sourceModule.relativePathFromMonoRepoRoot
-
     s"//$packageName:$ProductionDepsTargetName"
   }
 
@@ -51,6 +56,17 @@ class MavenDependencyTransformer(repoModules: Set[SourceModule], externalPackage
     LibraryRule.nonJarLabelBy(dependency.coordinates)
   }
 
-  private def asExternalRepoArchive(dependency: maven.Dependency): String =
-    WorkspaceRule.mavenArchiveLabelBy(dependency)
+  private def asExternalRepoArchive(dependency: maven.Dependency): String = {
+    val overrideCoordinates = archiveOverrideCoordinates.unpackedOverridesToArchive
+    val filegroupTarget = overrideCoordinates.find(dependency.isEqual).map(_ => "archive").getOrElse("unpacked")
+    WorkspaceRule.mavenArchiveLabelBy(dependency, filegroupTarget)
+  }
+}
+
+object MavenDependencyTransformer {
+  implicit class DependencyExtensions(dependency: maven.Dependency) {
+    def isEqual(coordinates: OverrideCoordinates): Boolean = {
+      coordinates.artifactId == dependency.coordinates.artifactId && coordinates.groupId == dependency.coordinates.groupId
+    }
+  }
 }

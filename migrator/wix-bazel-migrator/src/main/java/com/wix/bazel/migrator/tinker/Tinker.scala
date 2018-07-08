@@ -87,13 +87,19 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     new GitIgnoreCleaner(repoRoot).clean()
 
   private def bazelPackages = {
+    val rawPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
+    val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(rawPackages)
+    withModuleDepsPackages(withProtoPackages)
+  }
+
+  private def withModuleDepsPackages(withProtoPackages: Set[model.Package]) = {
     val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
       externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
       registry = new CodotaExternalSourceModuleRegistry(configuration.codotaToken))
-    val rawPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
-    val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(rawPackages)
-    val withModuleDepsPackages = new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry).transform(withProtoPackages)
-    withModuleDepsPackages
+
+    val mavenArchiveTargetsOverrides = MavenArchiveTargetsOverridesReader.from(repoRoot)
+
+    new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides).transform(withProtoPackages)
   }
 
   private def transform() = {

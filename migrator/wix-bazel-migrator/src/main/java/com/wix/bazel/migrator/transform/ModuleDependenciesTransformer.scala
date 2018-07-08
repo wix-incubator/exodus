@@ -6,8 +6,10 @@ import com.wix.bazel.migrator.model.Target.ModuleDeps
 import com.wixpress.build.maven.MavenScope
 import ModuleDependenciesTransformer._
 
-class ModuleDependenciesTransformer(repoModules: Set[SourceModule], externalPackageLocator: ExternalSourceModuleRegistry) {
-  private val dependencyTransformer = new MavenDependencyTransformer(repoModules, externalPackageLocator)
+class ModuleDependenciesTransformer(repoModules: Set[SourceModule],
+                                    externalPackageLocator: ExternalSourceModuleRegistry,
+                                    mavenArchiveTargetsOverrides: MavenArchiveTargetsOverrides) {
+  private val dependencyTransformer = new MavenDependencyTransformer(repoModules, externalPackageLocator, mavenArchiveTargetsOverrides)
 
   def transform(existingPackages: Set[model.Package] = Set.empty[model.Package]): Set[model.Package] =
     combinePackageSets(repoModules.map(extractModulePackage), existingPackages)

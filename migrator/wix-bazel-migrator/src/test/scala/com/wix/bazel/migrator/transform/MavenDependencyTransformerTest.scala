@@ -3,8 +3,9 @@ package com.wix.bazel.migrator.transform
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.makers.ModuleMaker.aModule
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
+import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, OverrideCoordinates}
+import com.wixpress.build.maven.{Coordinates, MavenMakers, MavenScope, Packaging}
 import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule}
-import com.wixpress.build.maven.{MavenMakers, MavenScope, Packaging}
 import com.wixpress.build.maven
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -51,9 +52,17 @@ class MavenDependencyTransformerTest extends SpecificationWithJUnit {
       translation must beEmpty
     }
 
-    testArchive("zip")
+    s"translate external tar.gz dependency to external repository archive label" in new Context {
+      val artifact = someCoordinates.copy(packaging = Packaging("tar.gz"))
+      val translation = translateToBazel(artifact)
+      translation must beSome(s"@${artifact.workspaceRuleName}//:unpacked")
+    }
 
-    testArchive("tar.gz")
+    s"translate external zip dependency to external repository archive label" in new Context {
+      val artifact = someCoordinates.copy(packaging = Packaging("zip"))
+      val translation = translateToBazel(artifact)
+      translation must beSome(s"@${artifact.workspaceRuleName}//:unpacked")
+    }
 
     "throw a runtime exception when depending on unsupported packaging" in new Context {
       val artifact = MavenMakers.someCoordinates("some-archive").copy(packaging = Packaging("random"))
@@ -70,23 +79,32 @@ class MavenDependencyTransformerTest extends SpecificationWithJUnit {
 
       translation must beSome(s"$externalLocation:main_dependencies")
     }
+
+    s"override external repository archive label from 'unpacked' to 'archive'" in new OverridesContext {
+      val artifact = MavenMakers.someCoordinates("some-archive").copy(packaging = Packaging("zip"))
+      override def archiveOverride = MavenArchiveTargetsOverrides(Set(OverrideCoordinates(artifact.groupId, artifact.artifactId)))
+
+      private val translation = translator.toBazelDependency(maven.Dependency(artifact, MavenScope.Compile))
+      translation must beSome(s"@${artifact.workspaceRuleName}//:archive")
+
+    }
   }
 
   trait Context extends Scope {
     def repoModules: Set[SourceModule] = Set.empty
-
     def externalPackageLocations: Map[(String, String), String] = Map.empty
+    def translator = new MavenDependencyTransformer(repoModules, new FakeExternalSourceModuleRegistry(externalPackageLocations), MavenArchiveTargetsOverrides(Set.empty))
+    val someCoordinates: Coordinates = MavenMakers.someCoordinates("some-archive")
 
-    def translator = new MavenDependencyTransformer(repoModules, new FakeExternalSourceModuleRegistry(externalPackageLocations))
+    def translateToBazel(artifact: Coordinates) = {
+      translator.toBazelDependency(maven.Dependency(artifact, MavenScope.Compile))
+    }
   }
 
-  private def testArchive(archiveType: String): Fragment = {
-    s"translate external $archiveType dependency to external repository archive label" in new Context {
-      val artifact = MavenMakers.someCoordinates("some-archive").copy(packaging = Packaging(archiveType))
-
-      private val translation = translator.toBazelDependency(maven.Dependency(artifact, MavenScope.Compile))
-
-      translation must beSome(s"@${artifact.workspaceRuleName}//:archive")
-    }
+  trait OverridesContext extends Scope {
+    def repoModules: Set[SourceModule] = Set.empty
+    def externalPackageLocations: Map[(String, String), String] = Map.empty
+    def archiveOverride: MavenArchiveTargetsOverrides
+    def translator = new MavenDependencyTransformer(repoModules, new FakeExternalSourceModuleRegistry(externalPackageLocations), archiveOverride)
   }
 }

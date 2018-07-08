@@ -35,7 +35,7 @@ object WorkspaceRule {
         )
   }
 
-  def mavenArchiveLabelBy(dependency: maven.Dependency): String = {
-    s"@${dependency.coordinates.workspaceRuleName}//:archive"
+  def mavenArchiveLabelBy(dependency: maven.Dependency, targetName: String): String = {
+    s"@${dependency.coordinates.workspaceRuleName}//:$targetName"
   }
 }
