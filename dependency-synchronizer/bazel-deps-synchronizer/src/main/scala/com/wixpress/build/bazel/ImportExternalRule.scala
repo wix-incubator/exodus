@@ -42,7 +42,7 @@ case class ImportExternalRule(name: String,
   private def toStringsList(elements: Iterable[String]) = {
     elements.toList.sorted
       .map(e => s""""$e"""")
-      .mkString(",\n              ")
+      .mkString(",\n          ")
   }
 
   private def serializedExclusions = if (exclusions.isEmpty) "" else
