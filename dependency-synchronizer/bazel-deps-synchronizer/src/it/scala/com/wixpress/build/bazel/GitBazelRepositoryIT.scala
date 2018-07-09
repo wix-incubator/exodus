@@ -16,7 +16,7 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
 
       new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath)
 
-      someLocalPath.list must contain(exactly(someLocalPath / thirdPartyReposFilePath, someLocalPath / ".git"))
+      someLocalPath.list.toList must contain(exactly(someLocalPath / thirdPartyReposFilePath, someLocalPath / ".git"))
     }
 
     "create local path (including parents) even if they did not exit beforehand" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
