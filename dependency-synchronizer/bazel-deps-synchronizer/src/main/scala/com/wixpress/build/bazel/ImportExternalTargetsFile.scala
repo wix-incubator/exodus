@@ -54,7 +54,13 @@ object ImportExternalTargetsFile {
         .toSet
     }
 
-    def allMavenCoordinates = {
+    def findCoordinatesByName(name: String): Option[Coordinates] = {
+      findTargetWithSameNameAs(name = name, within = content)
+        .map(extractFullMatchText)
+        .flatMap(parseCoordinates)
+    }
+
+    def allMavenCoordinates: Set[Coordinates] = {
       val strings = splitToStringsWithJarImportsInside(content)
       strings.flatMap(parseCoordinates).toSet
     }
@@ -118,7 +124,7 @@ object ImportExternalTargetsFile {
     }
 
     val fileHeader: String =
-      s"""load("@io_bazel_rules_scala//scala:scala_maven_import_external.bzl", "scala_maven_import_external")
+      s"""load("@core_server_build_tools//:import_external.bzl", import_external = "safe_wix_scala_maven_import_external")
           |
           |def dependencies():""".stripMargin
   }
@@ -136,8 +142,7 @@ object ImportExternalTargetsFile {
 
 
   private def regexOfImportExternalRuleWithNameMatching(pattern: String) = {
-    ("""(?s)if native\.existing_rule\("""" + pattern + """"\) == None:\s*?[^\s]+""" +
-      """\(\s*?name\s*?=\s*?"""" + pattern +"""".*?\)""").r
+    ("(?s)([^\\s]+)" + """\(\s*?name\s*?=\s*?"""" + pattern +"""",[\s#]*?artifact.*?\)""").r
   }
 
 }

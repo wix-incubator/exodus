@@ -32,6 +32,13 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
       retreivedRule.map(_.artifact) must beSome(mavenJarCoordinates.serialized)
     }
 
+    "find specific coordinates according to workspace rule name" in new ctx{
+      val mavenJarRuleName ="maven_jar_name"
+
+      val retrievedCoordinates = ImportExternalTargetsFile.Reader(fileWithJarWorkspaceRule).findCoordinatesByName(mavenJarRuleName)
+
+      retrievedCoordinates must beSome(mavenJarCoordinates)
+    }
   }
 
   "Import External Targets File builder" should {
@@ -60,7 +67,7 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
       val newJar = Coordinates("new.group", "new-artifact", "3.0")
 
       val expectedImportExternalTargetsFile =
-        s"""load("@io_bazel_rules_scala//scala:scala_maven_import_external.bzl", "scala_maven_import_external")
+        s"""load("@core_server_build_tools//:import_external.bzl", import_external = "safe_wix_scala_maven_import_external")
            |
            |def dependencies():
            |
@@ -81,7 +88,7 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
 
     val rest = restOfJars.map(jar => importExternalRuleWith(jar)).map(_.serialized).mkString("\n\n")
 
-    s"""load("@io_bazel_rules_scala//scala:scala_maven_import_external.bzl", "scala_maven_import_external")
+    s"""load("@core_server_build_tools//:import_external.bzl", import_external = "safe_wix_scala_maven_import_external")
        |
        |def dependencies():
        |

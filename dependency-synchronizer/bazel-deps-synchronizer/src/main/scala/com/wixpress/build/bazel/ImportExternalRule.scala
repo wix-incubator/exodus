@@ -12,13 +12,10 @@ case class ImportExternalRule(name: String,
                               exclusions: Set[Exclusion] = Set.empty,
                               testOnly: Boolean = false) extends RuleWithDeps {
   def serialized: String = {
-    s"""  if native.existing_rule("$name") == None:
-       |      $RuleType(
-       |          name = "$name",
-       |          $serializedArtifact
-       |          licenses = ["notice"],  # Apache 2.0$serializedTestOnly
-       |          server_urls = ["http://repo.dev.wixpress.com/artifactory/libs-snapshots"],$serializedAttributes$serializedExclusions
-       |      )""".stripMargin
+    s"""  $RuleType(
+       |      name = "$name",
+       |      $serializedArtifact$serializedTestOnly$serializedAttributes$serializedExclusions
+       |  )""".stripMargin
   }
 
   private def serializedArtifact =
@@ -26,7 +23,7 @@ case class ImportExternalRule(name: String,
 
   private def serializedTestOnly =
     if (testOnly) """
-                    |          testonly = 1,""".stripMargin else ""
+                    |      testonly = 1,""".stripMargin else ""
 
   private def serializedAttributes =
     toListEntry("exports", exports) +
@@ -36,9 +33,9 @@ case class ImportExternalRule(name: String,
   private def toListEntry(keyName: String, elements: Iterable[String]): String = {
     if (elements.isEmpty) "" else {
       s"""
-         |          $keyName = [
-         |              ${toStringsList(elements)}
-         |          ],""".stripMargin
+         |      $keyName = [
+         |          ${toStringsList(elements)}
+         |      ],""".stripMargin
     }
   }
 
@@ -59,7 +56,7 @@ case class ImportExternalRule(name: String,
 }
 
 object ImportExternalRule {
-  val RuleType = "scala_maven_import_external"
+  val RuleType = "import_external"
 
   def of(artifact: Coordinates,
          runtimeDependencies: Set[Coordinates] = Set.empty,

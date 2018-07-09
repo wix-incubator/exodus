@@ -72,12 +72,6 @@ object ThirdPartyReposFile {
         .toSet
     }
 
-    def findCoordinatesByName(name: String): Option[Coordinates] =
-      findMavenArtifactByName(name = name, within = content)
-        .map(extractFullMatchText)
-        .flatMap(parseCoordinates)
-
-
     private def parseCoordinates(jar: String) = {
       ArtifactFilter.findFirstMatchIn(jar)
         .map(_.group("artifact"))

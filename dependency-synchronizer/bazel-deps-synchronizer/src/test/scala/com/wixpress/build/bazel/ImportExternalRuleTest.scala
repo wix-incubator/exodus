@@ -13,12 +13,9 @@ class ImportExternalRuleTest extends SpecificationWithJUnit {
       val rule = ImportExternalRule(name = "name", artifact = "artifact")
 
       rule.serialized must beEqualIgnoringSpaces(
-        """if native.existing_rule("name") == None:
-          |  scala_maven_import_external(
-          |    name = "name",
-          |    artifact = "artifact",
-          |    licenses = ["notice"], # Apache 2.0
-          |    server_urls = ["http://repo.dev.wixpress.com/artifactory/libs-snapshots"],
+        """import_external(
+          |  name = "name",
+          |  artifact = "artifact",
           |)""".stripMargin)
     }
 

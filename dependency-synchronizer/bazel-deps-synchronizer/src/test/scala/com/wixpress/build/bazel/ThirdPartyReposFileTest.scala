@@ -49,15 +49,6 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
       val rules = ThirdPartyReposFile.Parser(combinedThirdPartyRepos).allMavenCoordinates
       rules must containTheSameElementsAs(Seq(protoCoordinates,mavenJarCoordinates))
     }
-
-    "find specific coordinates according to workspace rule name" in new ctx{
-      val mavenJarRuleName ="maven_jar_name"
-
-      val retrievedCoordinates = ThirdPartyReposFile.Parser(combinedThirdPartyRepos).findCoordinatesByName(mavenJarRuleName)
-
-      retrievedCoordinates must beSome(mavenJarCoordinates)
-    }
-
   }
 
   "third party repos file builder" should {
@@ -108,9 +99,6 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
   }
 
   val jars = List(artifactA, artifactB, artifactC)
-
-  private def toMavenJarRule(coordinates: Coordinates) =
-    WorkspaceRule.of(coordinates)
 
   private def createThirdPartyReposWith(coordinates: List[Coordinates]) = {
     val firstJar: Coordinates = coordinates.head

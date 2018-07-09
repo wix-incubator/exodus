@@ -1,14 +1,14 @@
 package com.wixpress.build.bazel
 
-import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{compileTimeOverrides, overrideCoordinatesFrom, runtimeOverrides}
-import com.wixpress.build.maven.MavenMakers._
-import com.wixpress.build.maven._
-import org.specs2.matcher.{Matcher, SomeCheckedMatcher}
-import org.specs2.mutable.SpecificationWithJUnit
-import org.specs2.specification.Scope
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.LibraryRule.packageNameBy
+import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{compileTimeOverrides, overrideCoordinatesFrom, runtimeOverrides}
 import com.wixpress.build.bazel.ThirdPartyReposFile.thirdPartyReposFilePath
+import com.wixpress.build.maven.MavenMakers._
+import com.wixpress.build.maven._
+import org.specs2.matcher.Matcher
+import org.specs2.mutable.SpecificationWithJUnit
+import org.specs2.specification.Scope
 
 import scala.util.matching.Regex
 
@@ -52,7 +52,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val matchingGroupId = baseDependency.coordinates.groupIdForBazel
       }
 
-      "write scala_maven_import_external rule to third party repos file" in new newRootDependencyNodeCtx {
+      "write import_external rule to third party repos file" in new newRootDependencyNodeCtx {
         writer.writeDependencies(aRootDependencyNode(baseDependency))
 
         localWorkspace.thirdPartyReposFileContent() must containLoadStatementFor(baseDependency.coordinates)
@@ -246,7 +246,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val dependencyGroupId = originalBaseDependency.coordinates.groupIdForBazel
       }
 
-      "update version of scala_maven_import_external rule" in new updateDependencyNodeCtx {
+      "update version of import_external rule" in new updateDependencyNodeCtx {
         val newDependency = originalBaseDependency.withVersion("other-version")
 
         writer.writeDependencies(aRootDependencyNode(newDependency))
@@ -352,13 +352,10 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
   private def containRootScalaImportExternalRuleFor(coordinates: Coordinates) = {
     beSome(
       containsIgnoringSpaces(
-        s"""| if native.existing_rule("${coordinates.workspaceRuleName}") == None:
-            |   scala_maven_import_external(
-            |       name = "${coordinates.workspaceRuleName}",
-            |       artifact = "${coordinates.serialized}",
-            |       licenses = ["notice"],  # Apache 2.0
-            |       server_urls = ["http://repo.dev.wixpress.com/artifactory/libs-snapshots"],
-            |   )""".stripMargin
+        s"""|import_external(
+            |  name = "${coordinates.workspaceRuleName}",
+            |  artifact = "${coordinates.serialized}",
+            |)""".stripMargin
       )
     )
   }
@@ -366,13 +363,10 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
   private def containScalaImportExternalRuleFor(coordinates: Coordinates, withExtraParams: String) = {
     beSome(
       containsIgnoringSpaces(
-        s"""|if native.existing_rule("${coordinates.workspaceRuleName}") == None:
-            |    scala_maven_import_external(
-            |        name = "${coordinates.workspaceRuleName}",
-            |        artifact = "${coordinates.serialized}",
-            |        licenses = ["notice"],  # Apache 2.0
-            |        server_urls = ["http://repo.dev.wixpress.com/artifactory/libs-snapshots"],
-            |        $withExtraParams
+        s"""|import_external(
+            |  name = "${coordinates.workspaceRuleName}",
+            |  artifact = "${coordinates.serialized}",
+            |  $withExtraParams
             |)""".stripMargin
       )
     )

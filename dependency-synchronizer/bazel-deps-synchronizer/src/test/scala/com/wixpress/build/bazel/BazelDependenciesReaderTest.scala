@@ -32,11 +32,10 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
     "a dependency for third party repos with 1 dependency without exclusion" in new emptyThirdPartyReposCtx {
       localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,
         s"""
-          |if native.existing_rule("$ruleName") == None:
-          |  scala_maven_import_external(
-          |      name = "$ruleName",
-          |      artifact = "${dep.groupId}:some-dep:some-version",
-          |  )""".stripMargin)
+          |import_external(
+          |  name = "$ruleName",
+          |  artifact = "${dep.groupId}:some-dep:some-version",
+          |)""".stripMargin)
 
       reader.allDependenciesAsMavenDependencies() must contain(defaultDependency(dep.groupId, "some-dep", "some-version"))
     }
@@ -60,15 +59,14 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
     "a dependency for third party repos with 1 dependency that has an exclusion" in new emptyThirdPartyReposCtx {
       localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,
         s"""
-          |if native.existing_rule("$ruleName") == None:
-          |   scala_maven_import_external(
-          |       name = "$ruleName",
-          |       artifact = "${dep.groupId}:some-dep:some-version",
-          |       runtime_deps = [
+          |import_external(
+          |  name = "$ruleName",
+          |  artifact = "${dep.groupId}:some-dep:some-version",
+          |  runtime_deps = [
           |
-          |       ]
-          |       # EXCLUDES ${dep.groupId}:some-exclude
-          |   )""".stripMargin)
+          |  ]
+          |  # EXCLUDES ${dep.groupId}:some-exclude
+          |)""".stripMargin)
 
       reader.allDependenciesAsMavenDependencies() must contain(defaultDependency(dep.groupId, "some-dep", "some-version", Set(Exclusion("some.group", "some-exclude"))))
     }
@@ -79,17 +77,15 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
 
       localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,
         s"""
-           |if native.existing_rule("$rule1") == None:
-           |   scala_maven_import_external(
-           |       name = "$rule1",
-           |       artifact = "${dep.groupId}:some-dep1:some-version",
-           |   )
+           |import_external(
+           |  name = "$rule1",
+           |  artifact = "${dep.groupId}:some-dep1:some-version",
+           |)
            |
-           |if native.existing_rule("$rule2") == None:
-           |   scala_maven_import_external(
-           |       name = "$rule2",
-           |       artifact = "${dep.groupId}:some-dep2:some-version",
-           |   )""".stripMargin)
+           |import_external(
+           |  name = "$rule2",
+           |  artifact = "${dep.groupId}:some-dep2:some-version",
+           |)""".stripMargin)
 
       private val dependencies: Set[Dependency] = reader.allDependenciesAsMavenDependencies()
       dependencies must containTheSameElementsAs(

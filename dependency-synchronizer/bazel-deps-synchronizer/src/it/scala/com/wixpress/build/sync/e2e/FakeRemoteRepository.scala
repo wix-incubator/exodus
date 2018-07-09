@@ -89,8 +89,8 @@ class FakeRemoteRepository {
   def hasWorkspaceRuleFor(coordinates: Coordinates): Try[String] = {
     val importExternalRuleName = coordinates.workspaceRuleName
     val groupId = coordinates.groupIdForBazel
-    updatedContentOfFileIn(BazelMavenSynchronizer.BranchName, s"$thirdPartyImportFilesPathRoot/$groupId.bzl").map((thirdPartyReposContent) => {
-      val maybeRule: Option[Coordinates] = Parser(thirdPartyReposContent).findCoordinatesByName(importExternalRuleName)
+    updatedContentOfFileIn(BazelMavenSynchronizer.BranchName, s"$thirdPartyImportFilesPathRoot/$groupId.bzl").map((importExternalTargetsContent) => {
+      val maybeRule: Option[Coordinates] = Reader(importExternalTargetsContent).findCoordinatesByName(importExternalRuleName)
       maybeRule match {
         case Some(c) if c == coordinates => "success"
         case _ => throw new RuntimeException(s"Could not find workspace rule for $coordinates in bazel remote repository")
