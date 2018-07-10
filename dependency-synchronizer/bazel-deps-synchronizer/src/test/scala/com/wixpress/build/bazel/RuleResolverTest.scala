@@ -13,7 +13,7 @@ class RuleResolverTest extends SpecificationWithJUnit {
 
     "return import external rule in case given regular jar coordinates" in {
 
-      ruleResolver.`for`(artifact, runtimeDependencies, compileDependencies) mustEqual ImportExternalRule(
+      ruleResolver.`for`(artifact, runtimeDependencies, compileDependencies).rule mustEqual ImportExternalRule(
         name = artifact.workspaceRuleName,
         artifact = artifact.serialized,
         runtimeDeps = runtimeDependencies.map(ImportExternalRule.jarLabelBy),
@@ -22,7 +22,7 @@ class RuleResolverTest extends SpecificationWithJUnit {
     }
 
     "return import external rule with pom artifact dependencies" in {
-      ruleResolver.`for`(artifact, pomRuntimeDependencies, pomCompileDependencies) mustEqual ImportExternalRule(
+      ruleResolver.`for`(artifact, pomRuntimeDependencies, pomCompileDependencies).rule  mustEqual ImportExternalRule(
         name = artifact.workspaceRuleName,
         artifact = artifact.serialized,
         runtimeDeps = pomRuntimeDependencies.map(ruleResolver.nonJarLabelBy),
@@ -31,7 +31,7 @@ class RuleResolverTest extends SpecificationWithJUnit {
     }
 
     "return scala_import rule with empty jars attribute in case of pom artifact" in {
-      ruleResolver.`for`(pomArtifact, runtimeDependencies, compileDependencies) mustEqual LibraryRule(
+      ruleResolver.`for`(pomArtifact, runtimeDependencies, compileDependencies).rule  mustEqual LibraryRule(
         name = artifact.libraryRuleName,
         jars = Set.empty,
         runtimeDeps = runtimeDependencies.map(ImportExternalRule.jarLabelBy),
@@ -40,7 +40,7 @@ class RuleResolverTest extends SpecificationWithJUnit {
     }
 
     "return scala_import rule with pom artifact dependencies" in {
-      ruleResolver.`for`(pomArtifact, pomRuntimeDependencies, pomCompileDependencies) mustEqual LibraryRule(
+      ruleResolver.`for`(pomArtifact, pomRuntimeDependencies, pomCompileDependencies).rule  mustEqual LibraryRule(
         name = artifact.libraryRuleName,
         jars = Set.empty,
         runtimeDeps = pomRuntimeDependencies.map(ruleResolver.nonJarLabelBy),
@@ -51,6 +51,16 @@ class RuleResolverTest extends SpecificationWithJUnit {
     "throw runtime exception rule in case of packaging that is not pom or jar" in {
       val coordinates = Coordinates("g", "a", "v", Packaging("zip"), Some("proto"))
       ruleResolver.`for`(coordinates) must throwA[RuntimeException]
+    }
+
+    "return group name as target locator for jar coordiantes" in {
+      ruleResolver.`for`(artifact, runtimeDependencies, compileDependencies)
+        .ruleTargetLocator mustEqual ImportExternalRule.ruleLocatorFrom(artifact)
+    }
+
+    "return package path as target locator for pom coordiantes" in {
+      ruleResolver.`for`(pomArtifact, runtimeDependencies, compileDependencies)
+        .ruleTargetLocator mustEqual LibraryRule.packageNameBy(artifact)
     }
 
   }

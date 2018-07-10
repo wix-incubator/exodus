@@ -26,26 +26,17 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
     localWorkspace.overwriteThirdPartyReposFile(nonEmptyContent)
   }
 
-  private def writeThirdPartyFolderContent(dependencyNodes: Set[DependencyNode]): Unit =
-    dependencyNodes.foreach(overwriteThirdPartyFolderFiles)
-
-  private def overwriteThirdPartyFolderFiles(dependencyNode: DependencyNode): Unit = {
-    maybeRuleBy(dependencyNode).foreach {
-      // still needed for support of scala_import originating from pom aggregators
-      case libraryRule: LibraryRule =>
-        val packageName = LibraryRule.packageNameBy(dependencyNode.baseDependency.coordinates)
-        val buildFileContent =
-          localWorkspace.buildFileContent(packageName).getOrElse(BazelBuildFile.DefaultHeader)
-        val buildFileBuilder = BazelBuildFile(buildFileContent).withTarget(libraryRule)
-        localWorkspace.overwriteBuildFile(packageName, buildFileBuilder.content)
-
-      case importExternalRule: ImportExternalRule =>
-        val thirdPartyGroup = dependencyNode.baseDependency.coordinates.groupIdForBazel
-        val importTargetsFileContent =
-          localWorkspace.thirdPartyImportTargetsFileContent(thirdPartyGroup).getOrElse("")
-        val importTargetsFileWriter = ImportExternalTargetsFile.Writer(importTargetsFileContent).withTarget(importExternalRule)
-        localWorkspace.overwriteThirdPartyImportTargetsFile(thirdPartyGroup, importTargetsFileWriter.content)
+  private def writeThirdPartyFolderContent(dependencyNodes: Set[DependencyNode]): Unit = {
+    val groupedTargets = dependencyNodes.flatMap(maybeRuleBy).groupBy(_.ruleTargetLocator).values
+    groupedTargets.foreach { targetsGroup =>
+      val sortedTargets = targetsGroup.toSeq.sortBy(_.rule.name)
+      sortedTargets.foreach(overwriteThirdPartyFolderFiles)
     }
+  }
+
+  private def overwriteThirdPartyFolderFiles(ruleToPersist: RuleToPersist): Unit = {
+    BazelBuildFile.persistTarget(ruleToPersist, localWorkspace)
+    ImportExternalTargetsFile.persistTarget(ruleToPersist, localWorkspace)
   }
 
   private def maybeRuleBy(dependencyNode: DependencyNode) =
@@ -63,14 +54,13 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
       OverrideCoordinates(dependencyNode.baseDependency.coordinates.groupId,
         dependencyNode.baseDependency.coordinates.artifactId)
     )
-    val rule = ruleResolver.`for`(
+    val ruleToPersist = ruleResolver.`for`(
       artifact = dependencyNode.baseDependency.coordinates,
       runtimeDependencies = dependencyNode.runtimeDependencies.filterNot(_.isProtoArtifact),
       compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(_.isProtoArtifact),
       exclusions = dependencyNode.baseDependency.exclusions
     )
-    rule.updateDeps(runtimeDeps = rule.runtimeDeps ++ runtimeDependenciesOverrides,
-      compileTimeDeps = rule.compileTimeDeps ++ compileTimeDependenciesOverrides)
+    ruleToPersist.withUpdateDeps(runtimeDependenciesOverrides, compileTimeDependenciesOverrides)
   }
 
   private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) = {

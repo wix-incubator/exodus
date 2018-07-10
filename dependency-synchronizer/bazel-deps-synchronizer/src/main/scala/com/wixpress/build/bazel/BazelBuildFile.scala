@@ -87,4 +87,14 @@ object BazelBuildFile {
     """licenses(["reciprocal"])
       |package(default_visibility = ["//visibility:public"])
       |""".stripMargin
+
+  def persistTarget(ruleToPersist: RuleToPersist, localWorkspace: BazelLocalWorkspace) = {
+    ruleToPersist.rule match {
+      case rule: LibraryRule =>
+        val buildFileContent = localWorkspace.buildFileContent(ruleToPersist.ruleTargetLocator).getOrElse(BazelBuildFile.DefaultHeader)
+        val buildFileBuilder = BazelBuildFile(buildFileContent).withTarget(rule)
+        localWorkspace.overwriteBuildFile(ruleToPersist.ruleTargetLocator, buildFileBuilder.content)
+      case _ =>
+    }
+  }
 }

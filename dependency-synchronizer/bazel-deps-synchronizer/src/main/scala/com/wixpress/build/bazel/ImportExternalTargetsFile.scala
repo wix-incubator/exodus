@@ -136,7 +136,7 @@ object ImportExternalTargetsFile {
     }
   }
 
-  def findTargetWithSameNameAs(name: String, within: String) = {
+  def findTargetWithSameNameAs(name: String, within: String): Option[Match] = {
     regexOfImportExternalRuleWithNameMatching(name).findFirstMatchIn(within)
   }
 
@@ -145,4 +145,15 @@ object ImportExternalTargetsFile {
     ("(?s)([^\\s]+)" + """\(\s*?name\s*?=\s*?"""" + pattern +"""",[\s#]*?artifact.*?\)""").r
   }
 
+  def persistTarget(ruleToPersist: RuleToPersist, localWorkspace: BazelLocalWorkspace): Unit = {
+    ruleToPersist.rule match {
+      case rule: ImportExternalRule =>
+        val thirdPartyGroup = ruleToPersist.ruleTargetLocator
+        val importTargetsFileContent =
+          localWorkspace.thirdPartyImportTargetsFileContent(thirdPartyGroup).getOrElse("")
+        val importTargetsFileWriter = ImportExternalTargetsFile.Writer(importTargetsFileContent).withTarget(rule)
+        localWorkspace.overwriteThirdPartyImportTargetsFile(thirdPartyGroup, importTargetsFileWriter.content)
+      case _ =>
+    }
+  }
 }

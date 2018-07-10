@@ -315,6 +315,18 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         importExternalFile must containRootScalaImportExternalRuleFor(otherArtifactWithSameGroupId)
       }
 
+      "write multiple targets, sorted according to target name, to the same bzl file, in case same groupId" in new multipleDependenciesCtx {
+        val artifactA = Coordinates("some.group", "artifact-a", "some-version")
+        val artifactB = artifactA.copy(artifactId = "artifact-b")
+        val artifactC = artifactA.copy(artifactId = "artifact-c")
+        val artifactD = artifactA.copy(artifactId = "artifact-d")
+
+        writeArtifactsAsRootDependencies(artifactB, artifactA, artifactD, artifactC)
+
+        val importExternalFile = localWorkspace.thirdPartyImportTargetsFileContent(artifactA.groupIdForBazel)
+        importExternalFile must containSortedTargets
+      }
+
       "write multiple load statements to third party repos file" in new multipleDependenciesCtx {
         writeArtifactsAsRootDependencies(someArtifact, otherArtifact)
 
@@ -357,6 +369,22 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
             |  artifact = "${coordinates.serialized}",
             |)""".stripMargin
       )
+    )
+  }
+
+  private def containSortedTargets: Matcher[Option[String]] = {
+    val pattern = """name\s*?=\s*?"(.*)".*""".r
+
+    def extractName(target: String) = {
+      val firstLine = target.trim.split('\n')(0)
+      val pattern(name) = firstLine
+      name
+    }
+
+    beSome(
+      beSorted[String] ^^ {
+        (_: String).split("""scala_maven_import_external\(""").toSeq.drop(1).map(extractName)
+      }
     )
   }
 

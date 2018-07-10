@@ -76,9 +76,11 @@ object ImportExternalRule {
 
   def importExternalFilePathBy(coordinates: Coordinates): Option[String] = {
     coordinates.packaging match {
-      case Packaging("jar") => Some("third_party/" + coordinates.groupIdForBazel + ".bzl")
+      case Packaging("jar") => Some("third_party/" + ruleLocatorFrom(coordinates) + ".bzl")
       case _ => None
     }
   }
+
+  def ruleLocatorFrom(coordinates: Coordinates): String = coordinates.groupIdForBazel
 }
 
