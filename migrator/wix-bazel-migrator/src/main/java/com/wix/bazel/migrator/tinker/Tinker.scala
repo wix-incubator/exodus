@@ -123,7 +123,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
         new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot))
   }
 
-  private def wixFrameworkMigration = configuration.repoUrl.contains("wix-framework")
+  private def wixFrameworkMigration = configuration.repoUrl.contains("/wix-framework.git")
 
   private def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {
     if (conflicts.fail.nonEmpty) {
