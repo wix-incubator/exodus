@@ -11,13 +11,13 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
       s"""
          |workspace(name = "$workspaceName")
          |rules_scala_version="74a91254f7e2335496813407e210ac00542cd44e" # update this as needed
-         |
+         |rules_scala_version_sha256="ed022fbee43ab9bcafab76b4054bcc92267519f78d7d9e0521be95761e279aaa"
          |http_archive(
          |             name = "io_bazel_rules_scala",
          |             url = "https://github.com/wix/rules_scala/archive/%s.zip"%rules_scala_version,
          |             type = "zip",
          |             strip_prefix= "rules_scala-%s" % rules_scala_version,
-         |             sha256 = "ed022fbee43ab9bcafab76b4054bcc92267519f78d7d9e0521be95761e279aaa",
+         |             sha256 = rules_scala_version_sha256,
          |)
          |
          |# Required configuration for remote build execution
@@ -83,18 +83,22 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |load("@core_server_build_tools//:third_party.bzl", "managed_third_party_dependencies")
          |
          |managed_third_party_dependencies()
-         |${workspaceSuffixOverride()}
-         |
+
+         |rules_docker_version = "4d49182a85c745065e621c145238c5e9420ed91b"
+         |rules_docker_version_sha256 = "34c67584a6dedb18c232ceccab822c1ee358b10c04f35588cd2c108c4b3af007"
          |http_archive(
          |    name = "io_bazel_rules_docker",
-         |    sha256 = "6dede2c65ce86289969b907f343a1382d33c14fbce5e30dd17bb59bb55bb6593",
-         |    strip_prefix = "rules_docker-0.4.0",
-         |    urls = ["https://github.com/bazelbuild/rules_docker/archive/v0.4.0.tar.gz"],
+         |    sha256 = rules_docker_version_sha256,
+         |    strip_prefix= "rules_docker-%s" % rules_docker_version,
+         |    urls = ["https://github.com/bazelbuild/rules_docker/archive/%s.zip"%rules_docker_version],
          |)
          |
          |load("//third_party/docker_images:docker_images.bzl", "docker_images")
          |
          |docker_images()
+         |
+         |${workspaceSuffixOverride()}
+         |
          |""".stripMargin
 
     writeToDisk(workspaceFileContents)
@@ -134,9 +138,5 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
 }
 
 object WorkspaceWriter {
-  // TODO: temp solution until the next framework merge
-  private val oldFrameworkWSName = "wix_framework"
-  private val newFrameworkWSName = "wix_platform_wix_framework"
-
   val serverInfraWSName = "server_infra"
 }
