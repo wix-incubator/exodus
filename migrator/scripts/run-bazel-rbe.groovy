@@ -12,7 +12,7 @@ pipeline {
                          |--config=remote \\
                          |--config=results \\
                          |--project_id=gcb-with-custom-workers \\
-                         |--remote_instance_name=projects/gcb-with-custom-workers/instances/default_instance \\
+                         |--remote_instance_name=projects/gcb-with-custom-workers \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
