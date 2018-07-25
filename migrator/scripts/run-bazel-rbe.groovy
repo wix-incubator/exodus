@@ -37,15 +37,16 @@ pipeline {
                         'maxLogSize': 3000,
                         'failBuild': true,
                         'setOwn': true]) {
-                            tee('bazel-log.output') {
+
                             unstable_by_exit_code("UNIT", """|#!/bin/bash
                                                     |bazel ${env.BAZEL_STARTUP_OPTS} \\
                                                     |test \\
                                                     |      --test_tag_filters=-docker \\
+                                                    |      --build_event_json_file=build.bep \\
                                                     |      ${env.BAZEL_FLAGS} \\
                                                     |      //...
                                                     |""".stripMargin())
-                            }
+
                         }
                 }
             }
@@ -54,12 +55,11 @@ pipeline {
     post {
         always {
             script {
-                println(findInvocations())
-                findInvocations().each{invocation_id->
-                    link = "https://source.cloud.google.com/results/invocations/${invocation_id}/targets"
-                    println "See results here: ${link}"
-                    currentBuild.description = """<a href="$link" target="_blank">$invocation_id</a>"""
-                }
+                def invocation_id = findInvocations()
+                link = "https://source.cloud.google.com/results/invocations/${invocation_id}/targets"
+                println "See results here: ${link}"
+                currentBuild.description = """<a href="$link" target="_blank">$invocation_id</a>"""
+
                 if (env.FOUND_TEST == "true") {
                     junit allowEmptyResults: true, testResults: "bazel-testlogs/**/test.xml"
                     archiveArtifacts 'bazel-out/**/testlogs/**/*.log,bazel-testlogs/**/test.xml,bazel-out/**/test.outputs/outputs.zip'
@@ -101,16 +101,10 @@ def unstable_by_exit_code(phase, some_script) {
 }
 
 def findInvocations(){
-    log = readFile('bazel-log.output')
-    def match = log =~ /.+invocation_id: (.+)/
-    if (match.size() > 0) {
-        def id = match[0][1]
-        println ("id = $id")
-        return [id]
-    } else {
-        println ("[WARN] could not find remote invocation id")
-        return []
-    }
+    bepLine = sh(script:"head -n 1 build.bep", returnStdout:true)
+    bep = readJSON text: bepLine
+    id = bep["started"]["uuid"]
+    return id
 }
 
 def sendNotification(good) {
