@@ -53,12 +53,11 @@ pipeline {
                         'failBuild': true,
                         'setOwn': true]) {
                         unstable_by_exit_code("IT/E2E", """|#!/bin/bash
-                                                |export DOCKER_HOST=$env.TEST_DOCKER_HOST
                                                 |$BAZEL test \\
                                                 |      --test_tag_filters=IT \\
                                                 |      --strategy=TestRunner=standalone \\
                                                 |      ${env.BAZEL_FLAGS} \\
-                                                |      --test_env=DOCKER_HOST \\
+                                                |      --test_env=HOST_CONTAINER_NAME=bazel00 \\
                                                 |      --jobs=1 \\
                                                 |      //...
                                                 |""".stripMargin())

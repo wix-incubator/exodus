@@ -12,7 +12,6 @@ pipeline {
                          |--test_filter=${TEST_CLASS} \\
                          |--test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
-        DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
@@ -34,11 +33,10 @@ pipeline {
                                              |""".stripMargin())
                     } else {
                         unstable_by_exit_code("""|#!/bin/bash
-                                             |export DOCKER_HOST=$env.TEST_DOCKER_HOST
                                              |bazel test \\
                                              |--strategy=TestRunner=standalone \\
                                              |${env.BAZEL_FLAGS} \\
-                                             |--test_env=DOCKER_HOST \\
+                                             |--test_env=HOST_CONTAINER_NAME=bazel00 \\
                                              |--jobs=1 \\
                                              |${TEST_TARGET_NAME}
                                              |""".stripMargin())
