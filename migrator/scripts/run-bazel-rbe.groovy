@@ -14,7 +14,6 @@ pipeline {
                          |--project_id=gcb-with-custom-workers \\
                          |--remote_instance_name=projects/gcb-with-custom-workers \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
-        DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
