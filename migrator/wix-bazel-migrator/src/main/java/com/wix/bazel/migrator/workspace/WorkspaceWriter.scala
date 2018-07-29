@@ -97,6 +97,16 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |
          |docker_images()
          |
+         |git_repository(
+         |    name="com_github_johnynek_bazel_jar_jar",
+         |    remote = "git@github.com:johnynek/bazel_jar_jar.git",
+         |    commit = "4005d99473e86120c55c878309456c644202ebec"
+         |)
+         |
+         |load("@com_github_johnynek_bazel_jar_jar//:jar_jar.bzl", "jar_jar_repositories")
+         |
+         |jar_jar_repositories()
+         |
          |${workspaceSuffixOverride()}
          |
          |""".stripMargin

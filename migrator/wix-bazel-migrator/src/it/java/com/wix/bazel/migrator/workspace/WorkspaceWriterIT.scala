@@ -32,6 +32,13 @@ import better.files.File
 
       File(repoRoot.resolve("WORKSPACE")).contentAsString must contain("git@github.com:wix-platform/bazel_proto_poc.git")
     }
+
+    "load jar_jar repositories from github" in new ctx {
+      val writer = new WorkspaceWriter(repoRoot, workspaceName)
+      writer.write()
+
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must contain("git@github.com:johnynek/bazel_jar_jar.git")
+    }
   }
 
   abstract class ctx extends baseCtx {
