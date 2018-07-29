@@ -32,13 +32,31 @@ case class DockerImage(registry: String, repository: String, tag: String) {
 }
 
 object DockerImage {
+
+
+  def apply(registry: Option[String], repository: String, tag: String): DockerImage = {
+
+    val defaultRegistry = "index.docker.io"
+    registry match {
+      case Some(givenRegistry) => DockerImage(givenRegistry, repository, tag)
+      case None => DockerImage(defaultRegistry, fullRepo(repository), tag)
+    }
+  }
+
   def apply(imageNameFromUser: String): DockerImage = {
-    val fullDockerImage = """(.*?)\/(.*):(.*)""".r
-    val shortDockerImage = """(.*):(.*)""".r
+
+    val dockerImage = """((.+?\..+?)\/)?(.+):(.+)""".r
 
     imageNameFromUser match {
-      case fullDockerImage(registry, repository, tag) => DockerImage(registry, repository, tag)
-      case shortDockerImage(name, tag) => DockerImage("index.docker.io", s"library/$name", tag)
+      case dockerImage(_, registry, repository, tag) => DockerImage(Option(registry),repository,tag)
+      case _ => throw new RuntimeException(s"Invalid docker image: [$imageNameFromUser]. See the docs for more info: https://github.com/wix-private/bazel-tooling/blob/master/migrator/docs/docker.md")
     }
+  }
+  
+  private def fullRepo(repository: String): String = {
+    if (repository.contains('/'))
+      repository
+    else
+      s"library/$repository"
   }
 }
