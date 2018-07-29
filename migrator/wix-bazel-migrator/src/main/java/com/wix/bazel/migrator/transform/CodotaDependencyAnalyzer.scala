@@ -135,7 +135,12 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
 
   private def validateInternalDepsExtendedFor(dependencyInfos: List[DependencyInfo]):
   Either[AnalyzeFailure, Seq[iterableDependencies]] =
-    EitherSequence.sequence(dependencyInfos.map(validateInternalDepsExtendedFor))
+    EitherSequence.sequence({
+      val dependencyInfosOrFailures = dependencyInfos.map(validateInternalDepsExtendedFor)
+      val validDependencyInfos = dependencyInfosOrFailures.filter(_.isRight)
+      // must have at least one successful dependencyInfo
+      if (validDependencyInfos.isEmpty) dependencyInfosOrFailures else validDependencyInfos
+    })
 
   private def validateInternalDepsExtendedFor(maybeDependencyInfo: DependencyInfo): Either[AnalyzeFailure, iterableDependencies] =
     maybeDependencyInfo match {
