@@ -1,20 +1,19 @@
 pipeline {
     agent any
     options {
-        timeout(time: 90, unit: 'MINUTES')
+        timeout(time: 80, unit: 'MINUTES')
         timestamps()
     }
     environment {
-        BAZEL_FLAGS = '''|--strategy=Scalac=worker \\
+        BAZEL_FLAGS = '''|-k \\
                          |--experimental_sandbox_base=/dev/shm \\
-                         |--sandbox_tmpfs_path=/tmp \\
-                         |--test_output=errors \\
-                         |--test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false \\
-                         |--test_env=LC_ALL="en_US.UTF-8" \\
-                         |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
+                         |--test_arg=--jvm_flags=-Dwix.environment=CI \\
+                         |--action_env=HOST_CONTAINER_NAME'''.stripMargin()
+        HOST_CONTAINER_NAME = 'bazel00'
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
+        BAZEL = "bazel --host_javabase=$JAVA_HOME"
     }
     stages {
         stage('checkout') {
@@ -22,25 +21,20 @@ pipeline {
                 git branch: "${env.BRANCH_NAME}", url: "${env.repo_url}"
             }
         }
-        stage('Test') {
+        stage('pre-build') {
+            steps {
+                sh "touch tools/ci.environment"
+            }
+        }
+        stage('test') {
             steps {
                 script {
-                    if (env.IT == "false") {
-                        unstable_by_exit_code("""|#!/bin/bash
-                                             |bazel test \\
+                    unstable_by_exit_code("UNIT", """|#!/bin/bash
+                                             |$BAZEL ${env.BAZEL_COMMAND} \\
+                                             |      --flaky_test_attempts=3 \\
                                              |      ${env.BAZEL_FLAGS} \\
-                                             |      ${TEST_TARGET_LABEL}
+                                             |      ${env.TEST_TARGET_LABEL}
                                              |""".stripMargin())
-                    } else {
-                        unstable_by_exit_code("""|#!/bin/bash
-                                             |bazel test \\
-                                             |      --strategy=TestRunner=standalone \\
-                                             |      ${env.BAZEL_FLAGS} \\
-                                             |      --test_env=HOST_CONTAINER_NANE=bazel00 \\
-                                             |      --jobs=1 \\
-                                             |      ${TEST_TARGET_LABEL}
-                                             |""".stripMargin())
-                    }
                 }
             }
         }
@@ -48,9 +42,9 @@ pipeline {
     post {
         always {
             script {
-                if (env.FOUND_TEST == "true") {
-                    archiveArtifacts 'bazel-out/**/test.log'
+                if (env.BAZEL_COMMAND == "test" && env.FOUND_TEST == "true") {
                     junit "bazel-testlogs/**/test.xml"
+                    archiveArtifacts 'bazel-out/**/testlogs/**/*.log,bazel-testlogs/**/test.xml,bazel-out/**/test.outputs/outputs.zip'
                 }
             }
         }
@@ -58,7 +52,8 @@ pipeline {
 }
 
 @SuppressWarnings("GroovyUnusedDeclaration")
-def unstable_by_exit_code(some_script) {
+def unstable_by_exit_code(phase, some_script) {
+    echo "Running " + some_script
     return_code = a = sh(script: some_script, returnStatus: true)
     switch (a) {
         case 0:
@@ -70,7 +65,7 @@ def unstable_by_exit_code(some_script) {
             currentBuild.result = 'UNSTABLE'
             break
         case 4:
-        echo "***NO TESTS WERE FOUND! IF YOU HAVE SUCH TESTS PLEASE DEBUG THIS WITH THE BAZEL PEOPLE***"
+            echo "***NO ${phase} TESTS WERE FOUND! IF YOU HAVE SUCH TESTS PLEASE DEBUG THIS WITH THE BAZEL PEOPLE***"
             break
         default:
             currentBuild.result = 'FAILURE'
