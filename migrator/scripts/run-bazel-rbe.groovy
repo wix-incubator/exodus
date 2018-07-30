@@ -61,7 +61,7 @@ pipeline {
 
                 if (env.FOUND_TEST == "true") {
                     junit allowEmptyResults: true, testResults: "bazel-testlogs/**/test.xml"
-                    archiveArtifacts 'bazel-out/**/testlogs/**/*.log,bazel-testlogs/**/test.xml,bazel-out/**/test.outputs/outputs.zip'
+                    archiveArtifacts 'bazel-testlogs/**,bazel-out/**/test.outputs/outputs.zip'
                 }
             }
         }

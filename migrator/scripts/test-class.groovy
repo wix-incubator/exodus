@@ -49,7 +49,7 @@ pipeline {
         always {
             script {
                 if (env.FOUND_TEST == "true") {
-                    archiveArtifacts 'bazel-out/**/test.log'
+                    archiveArtifacts 'bazel-testlogs/**,bazel-out/**/test.outputs/outputs.zip'
                     junit "bazel-testlogs/**/test.xml"
                 }
             }
