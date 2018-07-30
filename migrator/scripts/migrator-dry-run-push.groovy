@@ -3,7 +3,10 @@ pipeline {
     options {
         timeout(time: 160, unit: 'MINUTES')
         timestamps()
-        throttle(categories: ['migrate'])
+        ansiColor('xterm')
+    }
+    tools{
+        jdk 'jdk8'
     }
     environment {
         CODOTA_TOKEN = credentials("codota-token")

@@ -4,12 +4,14 @@ pipeline {
         timeout(time: 90, unit: 'MINUTES')
         timestamps()
     }
+    tools {
+        jdk 'jdk8'
+    }
     environment {
         BAZEL_FLAGS = '''|--strategy=Scalac=worker \\
                          |--experimental_sandbox_base=/dev/shm \\
                          |--sandbox_tmpfs_path=/tmp'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
-        JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
     stages {

@@ -3,14 +3,15 @@ pipeline {
     options {
         timestamps()
         timeout(time: 180, unit: 'MINUTES')
+        ansiColor('xterm')
     }
     tools {
+        jdk 'jdk8u152'
         maven 'M3'
     }
     environment {
         MAVEN_OPTS = "-Xmx10G -XX:MaxMetaspaceSize=1G -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
-        MAVEN_INSTALL = "mvn clean install -B -Dwix.environment=CI -Dmaven.test.failure.ignore=true -DshouldSkipAssembly=true"
-        JAVA_HOME = tool name: 'jdk8u152'
+        MAVEN_INSTALL = "mvn clean install -B -Djansi.force=true -Dwix.environment=CI -Dmaven.test.failure.ignore=true -DshouldSkipAssembly=true"
         PATH = "$JAVA_HOME/bin:$PATH"
         REPO_NAME = find_repo_name()
         COMMIT_HASH = "${env.COMMIT_HASH}"

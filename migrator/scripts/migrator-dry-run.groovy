@@ -2,6 +2,10 @@ pipeline {
     agent any
     options {
         timestamps()
+        ansiColor('xterm')
+    }
+    tools{
+        jdk 'jdk8'
     }
     environment {
         CODOTA_TOKEN = credentials("codota-token")
@@ -13,7 +17,6 @@ pipeline {
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
-        JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
         BAZEL = "bazel --host_javabase=$JAVA_HOME"
     }

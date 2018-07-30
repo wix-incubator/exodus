@@ -3,6 +3,10 @@ pipeline {
     options {
         timeout(time: 80, unit: 'MINUTES')
         timestamps()
+        ansiColor('xterm')
+    }
+    tools{
+        jdk 'jdk8'
     }
     environment {
         BAZEL_FLAGS = '''|-k \\
@@ -11,7 +15,6 @@ pipeline {
                          |--action_env=HOST_CONTAINER_NAME'''.stripMargin()
         HOST_CONTAINER_NAME = 'bazel00'
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
-        JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
         BAZEL = "bazel --host_javabase=$JAVA_HOME"
     }

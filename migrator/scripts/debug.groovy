@@ -2,6 +2,10 @@ pipeline {
     agent any
     options {
         timestamps()
+        ansiColor('xterm')
+    }
+    tools{
+        jdk 'jdk8'
     }
     environment {
         CODOTA_TOKEN = credentials("codota-token")
@@ -9,6 +13,7 @@ pipeline {
         MANAGED_DEPS_REPO_URL = "git@github.com:wix-private/core-server-build-tools.git"
         MANAGED_DEPS_REPO_NAME = "core-server-build-tools"
         BRANCH_NAME = "bazel-mig-${env.BUILD_ID}"
+        PATH = "${JAVA_HOME}/bin:$PATH"
     }
     stages {
         stage('checkout') {
