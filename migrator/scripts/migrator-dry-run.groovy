@@ -9,6 +9,7 @@ pipeline {
     }
     environment {
         CODOTA_TOKEN = credentials("codota-token")
+        ARTIFACTORY_TOKEN = credentials("artifactory-token")
         REPO_NAME = find_repo_name()
         MANAGED_DEPS_REPO_NAME = "core-server-build-tools"
         MANAGED_DEPS_REPO_URL = "git@github.com:wix-private/core-server-build-tools.git"
@@ -50,6 +51,7 @@ pipeline {
                 dir("migrator") {
                     sh """|java -Xmx12G \\
                       |   -Dcodota.token=${env.CODOTA_TOKEN} \\
+                      |   -Dartifactory.token=${env.ARTIFACTORY_TOKEN} \\
                       |   -Dskip.classpath=false \\
                       |   -Dskip.transformation=false \\
                       |   -Dmanaged.deps.repo=../${env.MANAGED_DEPS_REPO_NAME} \\

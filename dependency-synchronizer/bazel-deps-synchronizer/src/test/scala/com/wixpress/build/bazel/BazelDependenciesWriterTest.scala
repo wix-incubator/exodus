@@ -60,6 +60,14 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
           containRootScalaImportExternalRuleFor(baseDependency.coordinates)
       }
+
+      "write import_external rule with checksum to third party repos file " in new newRootDependencyNodeCtx {
+        writer.writeDependencies(aRootDependencyNode(baseDependency).copy(checksum = Some("checksum")))
+
+        localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
+          containScalaImportExternalRuleFor(baseDependency.coordinates,
+            s"""|jar_sha256 = "checksum",""".stripMargin)
+      }
     }
 
     "given one new proto dependency" should {

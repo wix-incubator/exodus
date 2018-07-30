@@ -34,12 +34,18 @@ object ImportExternalTargetsFile {
         exports = extractListByAttribute(ExportsFilter, ruleText),
         runtimeDeps = extractListByAttribute(RunTimeDepsFilter, ruleText),
         compileTimeDeps = extractListByAttribute(CompileTimeDepsFilter, ruleText),
-        exclusions = extractExclusions(ruleText)))
+        exclusions = extractExclusions(ruleText),
+        checksum = extractChecksum(ruleText)))
     }
 
     private def extractArtifact(ruleText: String) = {
       val maybeMatch = ArtifactFilter.findFirstMatchIn(ruleText)
       maybeMatch.map(_.group("artifact")).getOrElse("")
+    }
+
+    private def extractChecksum(ruleText: String) = {
+      val maybeMatch = Sha256Filter.findFirstMatchIn(ruleText)
+      maybeMatch.map(_.group("checksum"))
     }
 
     private def extractListByAttribute(filter: Regex, ruleText: String) = {
@@ -87,6 +93,7 @@ object ImportExternalTargetsFile {
 
     private val StringsGroup = "Strings"
     private val listOfStringsFilter = """"(.+?)"""".r(StringsGroup)
+    private val Sha256Filter = """(?s)jar_sha256\s*?=\s*?"(.+?)"""".r("checksum")
   }
 
   case class Writer(content: String) {

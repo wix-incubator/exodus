@@ -58,7 +58,8 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
       artifact = dependencyNode.baseDependency.coordinates,
       runtimeDependencies = dependencyNode.runtimeDependencies.filterNot(_.isProtoArtifact),
       compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(_.isProtoArtifact),
-      exclusions = dependencyNode.baseDependency.exclusions
+      exclusions = dependencyNode.baseDependency.exclusions,
+      checksum = dependencyNode.checksum
     )
     ruleToPersist.withUpdateDeps(runtimeDependenciesOverrides, compileTimeDependenciesOverrides)
   }

@@ -12,7 +12,7 @@ import com.wix.build.maven.analysis.{SourceModules, ThirdPartyConflict, ThirdPar
 import com.wixpress.build.bazel.repositories.WorkspaceName
 import com.wixpress.build.maven
 import com.wixpress.build.maven._
-import com.wixpress.build.sync.HighestVersionConflictResolution
+import com.wixpress.build.sync.{ArtifactoryRemoteStorage, HighestVersionConflictResolution, StaticDependenciesRemoteStorage}
 
 class AppTinker(configuration: RunConfiguration) {
   val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
@@ -20,6 +20,7 @@ class AppTinker(configuration: RunConfiguration) {
   val managedDepsRepoRoot: io.File = configuration.managedDepsRepo
   val codotaToken: String = configuration.codotaToken
   val localWorkspaceName: String = WorkspaceName.by(configuration.repoUrl)
+  val artifactoryRemoteStorage = newRemoteStorage
 
   lazy val sourceModules: SourceModules = readSourceModules()
   lazy val codeModules: Set[SourceModule] = sourceModules.codeModules
@@ -34,6 +35,10 @@ class AppTinker(configuration: RunConfiguration) {
       "http://repo.dev.wixpress.com:80/artifactory/libs-releases",
       "http://repo.dev.wixpress.com:80/artifactory/libs-snapshots"),
       resolverRepo)
+  }
+
+  private def newRemoteStorage = {
+    new StaticDependenciesRemoteStorage(new ArtifactoryRemoteStorage("repo.dev.wixpress.com:80", configuration.artifactoryToken))
   }
 
   private def readSourceModules() = {

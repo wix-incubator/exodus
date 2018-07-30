@@ -10,11 +10,12 @@ case class ImportExternalRule(name: String,
                               runtimeDeps: Set[String] = Set.empty,
                               compileTimeDeps: Set[String] = Set.empty,
                               exclusions: Set[Exclusion] = Set.empty,
-                              testOnly: Boolean = false) extends RuleWithDeps {
+                              testOnly: Boolean = false,
+                              checksum: Option[String] = None) extends RuleWithDeps {
   def serialized: String = {
     s"""  $RuleType(
        |      name = "$name",
-       |      $serializedArtifact$serializedTestOnly$serializedAttributes$serializedExclusions
+       |      $serializedArtifact$serializedTestOnly$serializedChecksum$serializedAttributes$serializedExclusions
        |  )""".stripMargin
   }
 
@@ -24,6 +25,10 @@ case class ImportExternalRule(name: String,
   private def serializedTestOnly =
     if (testOnly) """
                     |      testonly = 1,""".stripMargin else ""
+
+  private def serializedChecksum =
+    checksum.fold("")(sha256 => s"""
+                    |      jar_sha256 = "$sha256",""".stripMargin)
 
   private def serializedAttributes =
     toListEntry("exports", exports) +
@@ -62,13 +67,15 @@ object ImportExternalRule {
          runtimeDependencies: Set[Coordinates] = Set.empty,
          compileTimeDependencies: Set[Coordinates] = Set.empty,
          exclusions: Set[Exclusion] = Set.empty,
-         coordinatesToLabel: Coordinates => String): ImportExternalRule = {
+         coordinatesToLabel: Coordinates => String,
+         checksum: Option[String] = None): ImportExternalRule = {
     ImportExternalRule(
       name = artifact.workspaceRuleName,
       artifact = artifact.serialized,
       compileTimeDeps = compileTimeDependencies.map(coordinatesToLabel),
       runtimeDeps = runtimeDependencies.map(coordinatesToLabel),
-      exclusions = exclusions
+      exclusions = exclusions,
+      checksum = checksum
     )
   }
 

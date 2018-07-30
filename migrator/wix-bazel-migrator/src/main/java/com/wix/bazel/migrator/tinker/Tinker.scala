@@ -77,7 +77,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven)
 
     val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
-    val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver)
+    val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver, artifactoryRemoteStorage)
     diffSynchronizer.sync(localNodes)
 
     new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)

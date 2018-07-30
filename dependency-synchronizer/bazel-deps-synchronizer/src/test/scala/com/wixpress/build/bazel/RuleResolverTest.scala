@@ -13,11 +13,12 @@ class RuleResolverTest extends SpecificationWithJUnit {
 
     "return import external rule in case given regular jar coordinates" in {
 
-      ruleResolver.`for`(artifact, runtimeDependencies, compileDependencies).rule mustEqual ImportExternalRule(
+      ruleResolver.`for`(artifact, runtimeDependencies, compileDependencies, checksum = someChecksum).rule mustEqual ImportExternalRule(
         name = artifact.workspaceRuleName,
         artifact = artifact.serialized,
         runtimeDeps = runtimeDependencies.map(ImportExternalRule.jarLabelBy),
-        compileTimeDeps = compileDependencies.map(ImportExternalRule.jarLabelBy)
+        compileTimeDeps = compileDependencies.map(ImportExternalRule.jarLabelBy),
+        checksum = someChecksum
       )
     }
 
@@ -71,4 +72,5 @@ class RuleResolverTest extends SpecificationWithJUnit {
   val compileDependencies = Set(someCoordinates("compile-dep"))
   val pomRuntimeDependencies = runtimeDependencies.map(_.copy(packaging = Packaging("pom")))
   val pomCompileDependencies = compileDependencies.map(_.copy(packaging = Packaging("pom")))
+  val someChecksum = Some("checksum")
 }

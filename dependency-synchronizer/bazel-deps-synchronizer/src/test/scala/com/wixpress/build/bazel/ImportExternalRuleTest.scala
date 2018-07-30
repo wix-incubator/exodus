@@ -104,6 +104,18 @@ class ImportExternalRuleTest extends SpecificationWithJUnit {
       rule.serialized must not(containIgnoringSpaces(
         """testonly = 1,""".stripMargin))
     }
+
+    "serialize rule with checksum" in {
+      val rule = ImportExternalRule(
+        name = "name",
+        artifact = "artifact",
+        checksum = Some("checksum")
+      )
+
+      val serialized = rule.serialized
+      serialized must containIgnoringSpaces(
+        """jar_sha256 = "checksum",""".stripMargin)
+    }
   }
   private def containIgnoringSpaces(target:String) = ((_: String).trimSpaces) ^^ contain(target.trimSpaces)
   private def beEqualIgnoringSpaces(target: String) = ((_: String).trimSpaces) ^^ beEqualTo(target.trimSpaces)

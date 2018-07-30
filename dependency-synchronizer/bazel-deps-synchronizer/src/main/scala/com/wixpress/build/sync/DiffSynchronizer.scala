@@ -3,9 +3,13 @@ package com.wixpress.build.sync
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.{DependencyNode, MavenDependencyResolver}
 import com.wixpress.build.sync.BazelMavenSynchronizer.{BranchName, PersistMessageHeader}
+import org.slf4j.LoggerFactory
 
-case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelRepository, targetRepository: BazelRepository, resolver: MavenDependencyResolver) {
+case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelRepository,
+                            targetRepository: BazelRepository, resolver: MavenDependencyResolver,
+                            dependenciesRemoteStorage: DependenciesRemoteStorage) {
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, BranchName, targetRepository)
+  private val log = LoggerFactory.getLogger(getClass)
 
   def sync(localNodes: Set[DependencyNode]) = {
     val reader = new BazelDependenciesReader(bazelRepositoryWithManagedDependencies.localWorkspace("master"))
@@ -15,7 +19,19 @@ case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelReposit
 
     val divergentLocalDependencies = localNodes.forceCompileScope diff managedNodes
 
-    persistResolvedDependencies(divergentLocalDependencies, localNodes)
+    val divergentLocalDependenciesWithChecksums = decorateNodesWithChecksum(divergentLocalDependencies)
+
+    persistResolvedDependencies(divergentLocalDependenciesWithChecksums, localNodes)
+  }
+
+  private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
+    log.info("started fetching sha256 checksums for 3rd party dependencies from artifactory...")
+    val nodes = divergentLocalDependencies.map(node => {
+      val maybeChecksum = dependenciesRemoteStorage.checksumFor(node)
+      node.copy(checksum = maybeChecksum)
+    })
+    log.info("completed fetching sha256 checksums.")
+    nodes
   }
 
   private def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]) = {

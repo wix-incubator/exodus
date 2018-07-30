@@ -219,6 +219,31 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
           artifact = aManagedDependency.coordinates, Set.empty, Set.empty, Set.empty, ruleResolver.labelBy
         )))
     }
+
+    "persist jar import with sha256" in new resolvedCtx {
+      val someChecksum = "checksum"
+      val synchronizer = givenSynchornizerFor(resolver, remoteStorageWillReturn(someChecksum))
+
+      synchronizer.sync(Set(aRootDependencyNode(divergentDependency)))
+
+      bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
+        importExternalRule = Some(importExternalRuleWith(
+          artifact = divergentDependency.coordinates,
+          checksum = Some(someChecksum))))
+    }
+
+    "persist SNAPSHOT jar import without sha256" in new resolvedCtx {
+      val divergentSnapshotDependency = managedDependency.withVersion("2.1193.0-SNAPSHOT")
+
+      val synchronizer = givenSynchornizerFor(resolver, remoteStorageWillReturn("checksum"))
+
+      synchronizer.sync(Set(aRootDependencyNode(divergentSnapshotDependency)))
+
+      bazelDriver.bazelExternalDependencyFor(divergentSnapshotDependency.coordinates) mustEqual BazelExternalDependency(
+        importExternalRule = Some(importExternalRuleWith(
+          artifact = divergentSnapshotDependency.coordinates,
+          checksum = None)))
+    }
   }
 
   trait baseCtx extends Scope {
@@ -227,6 +252,15 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     val externalFakeBazelRepository = new InMemoryBazelRepository(externalFakeLocalWorkspace)
     private val targetFakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = "some_local_workspace_name")
     val targetFakeBazelRepository = new InMemoryBazelRepository(targetFakeLocalWorkspace)
+
+    val remoteStorageWillReturn: String => DependenciesRemoteStorage = {
+      checksum => {
+        val storage = new DependenciesRemoteStorage {
+          override def checksumFor(node: DependencyNode): Option[String] = Some(checksum)
+        }
+        new StaticDependenciesRemoteStorage(storage)
+      }
+    }
 
     val bazelDriver = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
     val ruleResolver = bazelDriver.ruleResolver
@@ -251,21 +285,30 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
       new FakeMavenDependencyResolver(dependantDescriptors ++ dependencyDescriptors ++ artifactDescriptors)
     }
 
-    def givenSynchornizerFor(resolver: FakeMavenDependencyResolver) = {
-      new DiffSynchronizer(externalFakeBazelRepository, targetFakeBazelRepository, resolver)
+    def givenSynchornizerFor(resolver: FakeMavenDependencyResolver, storage: DependenciesRemoteStorage = _ => None) = {
+      new DiffSynchronizer(externalFakeBazelRepository, targetFakeBazelRepository, resolver, storage)
     }
 
     def importExternalRuleWith(artifact: Coordinates,
                                runtimeDependencies: Set[Coordinates] = Set.empty,
                                compileTimeDependencies: Set[Coordinates] = Set.empty,
-                               exclusions: Set[Exclusion] = Set.empty) = {
+                               exclusions: Set[Exclusion] = Set.empty,
+                               checksum: Option[String] = None) = {
       ImportExternalRule.of(artifact,
         runtimeDependencies,
         compileTimeDependencies,
         exclusions,
-        coordinatesToLabel = ruleResolver.labelBy)
+        coordinatesToLabel = ruleResolver.labelBy,
+        checksum)
     }
   }
 
+  trait resolvedCtx extends baseCtx {
+    givenBazelWorkspaceWithManagedDependencies(aRootDependencyNode(managedDependency))
+
+    val divergentDependency = managedDependency.withVersion("new-version")
+
+    val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency))
+  }
 }
 

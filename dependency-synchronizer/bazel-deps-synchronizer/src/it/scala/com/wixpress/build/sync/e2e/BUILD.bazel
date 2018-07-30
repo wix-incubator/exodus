@@ -18,6 +18,7 @@ scala_library(
         "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
         "@junit_junit//:junit_junit",
         "@org_eclipse_jgit_org_eclipse_jgit//:org_eclipse_jgit_org_eclipse_jgit",
+        "@com_github_tomakehurst_wiremock"
     ],
 )
 

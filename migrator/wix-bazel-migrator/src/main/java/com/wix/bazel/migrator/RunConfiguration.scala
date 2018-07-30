@@ -10,7 +10,8 @@ case class RunConfiguration(repoRoot: File,
                             performMavenClasspathResolution: Boolean = true,
                             performTransformation: Boolean = true,
                             failOnSevereConflicts: Boolean = false,
-                            interRepoSourceDependency: Boolean = false)
+                            interRepoSourceDependency: Boolean = false,
+                            artifactoryToken: String = "")
 
 object RunConfiguration {
   private val Empty = RunConfiguration(null, null, null, null)
@@ -63,6 +64,12 @@ object RunConfiguration {
     opt[Boolean]("inter-repo-source-dependency")
       .withFallback(() => booleanProperty("inter.repo.source.dependency"))
       .action { case (interRepoSourceDependency, cfg) => cfg.copy(interRepoSourceDependency = interRepoSourceDependency) }
+
+    opt[String]("artifactory-token")
+      .required()
+      .withFallback(() => sys.props.get("artifactory.token")
+        .getOrElse(throw new IllegalArgumentException("no artifactory token defined")))
+      .action { case (token, cfg) => cfg.copy(artifactoryToken = token) }
   }
 
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)

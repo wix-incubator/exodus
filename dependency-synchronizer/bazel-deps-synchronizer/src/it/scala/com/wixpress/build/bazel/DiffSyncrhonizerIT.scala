@@ -66,7 +66,7 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
     }
 
     def givenSynchornizerFor(resolver: MavenDependencyResolver) = {
-      new DiffSynchronizer(externalFakeBazelRepository, targetFakeBazelRepository, resolver)
+      new DiffSynchronizer(externalFakeBazelRepository, targetFakeBazelRepository, resolver, _ => None)
     }
 
     def importExternalRuleWith(artifact: Coordinates,

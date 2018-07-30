@@ -6,10 +6,11 @@ class RuleResolver(localWorkspaceName: String) {
   def `for`( artifact: Coordinates,
              runtimeDependencies: Set[Coordinates] = Set.empty,
              compileTimeDependencies: Set[Coordinates] = Set.empty,
-             exclusions: Set[Exclusion] = Set.empty): RuleToPersist =
+             exclusions: Set[Exclusion] = Set.empty,
+             checksum: Option[String] = None): RuleToPersist =
     artifact.packaging match {
       case Packaging("jar") => RuleToPersist(
-        ImportExternalRule.of(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy),
+        ImportExternalRule.of(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy, checksum),
         ImportExternalRule.ruleLocatorFrom(artifact))
       case Packaging("pom") => RuleToPersist(
         LibraryRule.pomLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy),
