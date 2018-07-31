@@ -29,7 +29,6 @@ pipeline {
         }
         stage('Test') {
             steps {
-                sh "bazel info"
                 echo "Running all tests excluding tests with tag 'docker'"
                 script {
                     bazelrc = readFile(".bazelrc").replaceAll("build --disk_cache","# build --disk_cache")
@@ -63,6 +62,7 @@ pipeline {
                 currentBuild.description = """<a href="$link" target="_blank">$invocation_id</a>"""
 
                 if (env.FOUND_TEST == "true") {
+                    touchTests()
                     junit allowEmptyResults: true, testResults: "bazel-testlogs/**/test.xml"
                     archiveArtifacts 'bazel-testlogs/**,bazel-out/**/test.outputs/outputs.zip'
                 }
@@ -79,6 +79,12 @@ pipeline {
             }
         }
     }
+}
+
+@SuppressWarnings("GroovyUnusedDeclaration")
+def touchTests(){
+    def testResults = findFiles(glob: 'bazel-testlogs/**/test.xml').join(" ")
+    touch testResults
 }
 
 @SuppressWarnings("GroovyUnusedDeclaration")
