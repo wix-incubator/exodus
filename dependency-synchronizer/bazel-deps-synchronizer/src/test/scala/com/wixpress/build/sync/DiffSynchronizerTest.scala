@@ -4,6 +4,7 @@ import com.wixpress.build.{BazelExternalDependency, BazelWorkspaceDriver}
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
+import com.wixpress.build.sync.DependenciesRemoteStorageTestSupport.remoteStorageWillReturn
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -252,15 +253,6 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     val externalFakeBazelRepository = new InMemoryBazelRepository(externalFakeLocalWorkspace)
     private val targetFakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = "some_local_workspace_name")
     val targetFakeBazelRepository = new InMemoryBazelRepository(targetFakeLocalWorkspace)
-
-    val remoteStorageWillReturn: String => DependenciesRemoteStorage = {
-      checksum => {
-        val storage = new DependenciesRemoteStorage {
-          override def checksumFor(node: DependencyNode): Option[String] = Some(checksum)
-        }
-        new StaticDependenciesRemoteStorage(storage)
-      }
-    }
 
     val bazelDriver = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
     val ruleResolver = bazelDriver.ruleResolver

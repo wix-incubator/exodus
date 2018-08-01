@@ -26,7 +26,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
 
     checksumResult match {
       case Success(Some(checksum)) => Some(checksum)
-      case Failure(ex: ArtifactNotFoundException) => None
+      case Failure(_: ArtifactNotFoundException) => None
       case _ =>
         val response = setArtifactChecksum(node)
         maybeGetChecksum(node, response)
@@ -134,6 +134,13 @@ object ArtifactoryRemoteStorage {
       val packaging = coordinates.packaging.value
       val classifier = coordinates.classifier.fold("")("-".concat)
       s"""$groupId/$artifactId/$version/$artifactId-$version$classifier.$packaging"""
+    }
+  }
+
+  implicit class DependencyNodeExtensions(node: DependencyNode) {
+    def updateChecksumFrom(dependenciesRemoteStorage: DependenciesRemoteStorage) ={
+      val maybeChecksum = dependenciesRemoteStorage.checksumFor(node)
+      node.copy(checksum = maybeChecksum)
     }
   }
 }

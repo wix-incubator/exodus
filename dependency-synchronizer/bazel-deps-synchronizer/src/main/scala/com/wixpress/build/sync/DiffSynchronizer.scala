@@ -4,6 +4,7 @@ import com.wixpress.build.bazel._
 import com.wixpress.build.maven.{DependencyNode, MavenDependencyResolver}
 import com.wixpress.build.sync.BazelMavenSynchronizer.{BranchName, PersistMessageHeader}
 import org.slf4j.LoggerFactory
+import ArtifactoryRemoteStorage._
 
 case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelRepository,
                             targetRepository: BazelRepository, resolver: MavenDependencyResolver,
@@ -26,10 +27,7 @@ case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelReposit
 
   private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
     log.info("started fetching sha256 checksums for 3rd party dependencies from artifactory...")
-    val nodes = divergentLocalDependencies.map(node => {
-      val maybeChecksum = dependenciesRemoteStorage.checksumFor(node)
-      node.copy(checksum = maybeChecksum)
-    })
+    val nodes = divergentLocalDependencies.map(_.updateChecksumFrom(dependenciesRemoteStorage))
     log.info("completed fetching sha256 checksums.")
     nodes
   }

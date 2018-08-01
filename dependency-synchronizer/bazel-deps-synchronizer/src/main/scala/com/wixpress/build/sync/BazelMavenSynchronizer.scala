@@ -3,10 +3,12 @@ package com.wixpress.build.sync
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven._
 import BazelMavenSynchronizer._
+import com.wixpress.build.sync.ArtifactoryRemoteStorage.DependencyNodeExtensions
 import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
 
-class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, targetRepository: BazelRepository) {
+class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, targetRepository: BazelRepository,
+                             dependenciesRemoteStorage: DependenciesRemoteStorage) {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, BranchName, targetRepository)
@@ -24,8 +26,10 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     if (dependenciesToUpdate.isEmpty)
       return
 
-    val modifiedFiles = new BazelDependenciesWriter(localCopy).writeDependencies(dependenciesToUpdate)
-    persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates))
+    val dependenciesToUpdateWithChecksums = decorateNodesWithChecksum(dependenciesToUpdate)
+
+    val modifiedFiles = new BazelDependenciesWriter(localCopy).writeDependencies(dependenciesToUpdateWithChecksums)
+    persister.persistWithMessage(modifiedFiles, dependenciesToUpdateWithChecksums.map(_.baseDependency.coordinates))
   }
   private def newDependencyNodes(dependencyManagementSource: Coordinates,
                                  dependencies: Set[Dependency],
@@ -49,6 +53,13 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
   private def uniqueDependenciesFrom(possiblyConflictedDependencySet: Set[Dependency]) = {
     conflictResolution.resolve(possiblyConflictedDependencySet).forceCompileScope
+  }
+
+  private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
+    logger.info("started fetching sha256 checksums for 3rd party dependencies from artifactory...")
+    val nodes = divergentLocalDependencies.map(_.updateChecksumFrom(dependenciesRemoteStorage))
+    logger.info("completed fetching sha256 checksums.")
+    nodes
   }
 }
 
