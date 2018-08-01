@@ -12,8 +12,7 @@ pipeline {
         BAZEL_FLAGS = '''|-k \\
                          |--experimental_sandbox_base=/dev/shm \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI \\
-                         |--action_env=HOST_CONTAINER_NAME'''.stripMargin()
-        HOST_CONTAINER_NAME = 'bazel00'
+                         |--action_env=HOST_NETWORK_NAME'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
         BAZEL = "bazel --host_javabase=$JAVA_HOME"

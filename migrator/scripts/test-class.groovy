@@ -39,7 +39,7 @@ pipeline {
                                              |bazel test \\
                                              |--strategy=TestRunner=standalone \\
                                              |${env.BAZEL_FLAGS} \\
-                                             |--test_env=HOST_CONTAINER_NAME=bazel00 \\
+                                             |--test_env=HOST_NETWORK_NAME \\
                                              |--jobs=1 \\
                                              |${TEST_TARGET_NAME}
                                              |""".stripMargin())

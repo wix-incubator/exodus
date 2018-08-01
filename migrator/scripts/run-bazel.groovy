@@ -12,7 +12,6 @@ pipeline {
         BAZEL_FLAGS = '''|-k \\
                          |--experimental_sandbox_base=/dev/shm \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
-        HOST_CONTAINER_NAME = "bazel00"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
         BAZEL = "bazel --host_javabase=$JAVA_HOME"
@@ -60,7 +59,7 @@ pipeline {
                                                 |      --test_tag_filters=IT \\
                                                 |      --strategy=TestRunner=standalone \\
                                                 |      ${env.BAZEL_FLAGS} \\
-                                                |      --test_env=HOST_CONTAINER_NAME=bazel00 \\
+                                                |      --test_env=HOST_NETWORK_NAME \\
                                                 |      --jobs=1 \\
                                                 |      //...
                                                 |""".stripMargin())
