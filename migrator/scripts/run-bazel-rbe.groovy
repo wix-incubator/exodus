@@ -83,8 +83,8 @@ pipeline {
 
 @SuppressWarnings("GroovyUnusedDeclaration")
 def touchTests(){
-    def testResults = findFiles(glob: 'bazel-testlogs/**/test.xml').join(" ")
-    touch testResults
+    def testResults = findFiles(glob: 'bazel-testlogs/**/test.xml')
+    touch testResults[0]
 }
 
 @SuppressWarnings("GroovyUnusedDeclaration")
