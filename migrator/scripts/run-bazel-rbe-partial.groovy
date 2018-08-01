@@ -62,8 +62,6 @@ pipeline {
                 currentBuild.description = """<a href="$link" target="_blank">$invocation_id</a>"""
 
                 if (env.FOUND_TEST == "true") {
-                    touchTests()
-                    junit allowEmptyResults: true, testResults: "bazel-testlogs/**/test.xml"
                     archiveArtifacts 'bazel-testlogs/**,bazel-out/**/test.outputs/outputs.zip'
                 }
             }
@@ -71,11 +69,6 @@ pipeline {
     }
 }
 
-@SuppressWarnings("GroovyUnusedDeclaration")
-def touchTests(){
-    def testResults = findFiles(glob: 'bazel-testlogs/**/test.xml')
-    touch "${testResults[0].path}"
-}
 
 @SuppressWarnings("GroovyUnusedDeclaration")
 def unstable_by_exit_code(phase, some_script) {
