@@ -50,7 +50,8 @@ pipeline {
                     sh 'find . -path "*/*BUILD.bazel" -exec rm -f {} \\;'
                 }
                 dir("wix-bazel-migrator") {
-                    sh """|java -Xmx12G \\
+                    sh """|stdbuf -i0 -o0 -e0 \\
+                          |   java -Xmx12G \\
                           |   -Dcodota.token=${env.CODOTA_TOKEN} \\
                           |   -Dartifactory.token=${env.ARTIFACTORY_TOKEN} \\
                           |   -Dskip.classpath=false \\
