@@ -7,6 +7,7 @@ case class InternalTargetOverride(label: String,
                                   testType: Option[String] = None, //testtype
                                   testSize: Option[String] = None,
                                   tags: Option[String] = None, //testtype
+                                  testTypeOnlyForTags: Option[String] = None, //testtype
                                   additionalJvmFlags: Option[List[String]] = None,
                                   additionalDataDeps: Option[List[String]] = None,
                                   dockerImagesDeps: Option[List[String]] = None,

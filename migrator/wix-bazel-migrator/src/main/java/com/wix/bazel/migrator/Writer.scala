@@ -274,7 +274,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
         (prodHeader(ForceTestOnly(unAliasedLabelOf(target))), "")
       case CodePurpose.Test(testType) =>
         val maybeOverriddenTestType = ForceTestType.getOrElse(unAliasedLabelOf(target), testType)
-        val maybeOverriddenTagsTestType = ForceTagsTestType.getOrElse(unAliasedLabelOf(target), maybeOverriddenTestType)
+        val maybeOverriddenTagsTestType = ForceTagsTestType.getOrElse(unAliasedLabelOf(target), ForceTagsTestTypeDeprecated.getOrElse(unAliasedLabelOf(target), maybeOverriddenTestType))
         val additionalJvmFlags = AdditionalJvmFlags(unAliasedLabelOf(target))
         val additionalDataDeps = AdditionalDataDeps(unAliasedLabelOf(target))
         val dockerImagesDeps = DockerImagesDeps(unAliasedLabelOf(target))
@@ -443,8 +443,11 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   private val ForceTestType: Map[String, TestType] =
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.testType.map(testType => encodePluses(targetOverride.label) -> Writer.testTypeFromOverride(testType))).toMap
 
-  private val ForceTagsTestType: Map[String, TestType] =
+  private val ForceTagsTestTypeDeprecated: Map[String, TestType] =
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.tags.map(tags => encodePluses(targetOverride.label) -> Writer.testTypeFromOverride(tags))).toMap
+
+  private val ForceTagsTestType: Map[String, TestType] =
+    overrides.targetOverrides.flatMap(targetOverride => targetOverride.testTypeOnlyForTags.map(testTypeOnlyForTags => encodePluses(targetOverride.label) -> Writer.testTypeFromOverride(testTypeOnlyForTags))).toMap
 
   private val AdditionalJvmFlags: Map[String, String] =
     overrides.targetOverrides.flatMap(targetOverride => targetOverride.additionalJvmFlags.map(flags => encodePluses(targetOverride.label) -> concat(flags.filterNot(_.startsWith("-Djava.io.tmpdir="))))).toMap.withDefaultValue("")
