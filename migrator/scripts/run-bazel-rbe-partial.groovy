@@ -61,7 +61,7 @@ pipeline {
                 println "See results here: ${link}"
                 currentBuild.description = """<a href="$link" target="_blank">$invocation_id</a>"""
 
-                if (env.FOUND_TEST == "true") {
+                if (env.BAZEL_COMMAND == "build" && env.FOUND_TEST == "true") {
                     archiveArtifacts 'bazel-testlogs/**,bazel-out/**/test.outputs/outputs.zip'
                 }
             }
