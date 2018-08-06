@@ -6,10 +6,11 @@ import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wixpress.build.maven.{Coordinates, DependencyNode}
 import com.wixpress.build.sync.ArtifactoryRemoteStorage._
+import com.wixpress.build.sync.Utils.retry
 import org.slf4j.LoggerFactory
 import scalaj.http.{Http, HttpResponse}
 
-import scala.util.{Failure, Success, Try}
+import scala.util._
 
 trait DependenciesRemoteStorage {
   def checksumFor(node: DependencyNode): Option[String]
@@ -24,7 +25,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
   private val log = LoggerFactory.getLogger(getClass)
 
   override def checksumFor(node: DependencyNode): Option[String] = {
-    val checksumResult = getChecksumIO(node)
+    val checksumResult = retry()(getChecksumIO(node))
 
     checksumResult match {
       case Success(Some(checksum)) => Some(checksum)
@@ -47,7 +48,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
   }
 
   private def checksumOf(node: DependencyNode) = {
-    val checksumResult = getChecksumIO(node)
+    val checksumResult = retry()(getChecksumIO(node))
     checksumResult.toOption.flatten
   }
 
@@ -158,3 +159,13 @@ case class Artifact(checksums: Checksums)
 case class Checksums(sha1: Option[String], md5: Option[String], sha256: Option[String])
 
 class ArtifactNotFoundException(message: String) extends RuntimeException(message)
+
+object Utils {
+  def retry[A](n: Int = 3)(fn: => Try[A]): Try[A] = {
+    fn match {
+      case x: Success[A] => x
+      case _ if n > 1 => retry[A](n - 1)(fn)
+      case failure => failure
+    }
+  }
+}
