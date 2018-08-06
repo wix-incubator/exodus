@@ -13,8 +13,10 @@ scala_library(
         "@com_fasterxml_jackson_module_jackson_module_scala_2_12//jar",
         "@com_github_pathikrit_better_files_2_12//jar",
         "@org_apache_maven_maven_artifact//jar",
+        "@org_codehaus_plexus_plexus_container_default//jar",
         "@org_eclipse_jgit_org_eclipse_jgit//jar",
         "@org_scala_lang_scala_library//jar",
+        "@org_scalaj_scalaj_http_2_12//jar",
     ],
 )
 
@@ -28,6 +30,7 @@ scala_library(
         "main_dependencies",
         "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
         "@com_gitblit_gitblit//jar",
+        "@com_github_tomakehurst_wiremock//jar",
     ],
 )
 

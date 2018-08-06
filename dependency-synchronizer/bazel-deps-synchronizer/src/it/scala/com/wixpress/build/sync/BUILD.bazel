@@ -10,18 +10,13 @@ specs2_ite2e_test(
     runtime_deps = [
     ],
     deps = [
-        "@com_fasterxml_jackson_core_jackson_annotations//:com_fasterxml_jackson_core_jackson_annotations",
-        "@com_github_tomakehurst_wiremock//:com_github_tomakehurst_wiremock",
         "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
         "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
-        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
         "//dependency-synchronizer/bazel-deps-synchronizer:tests_dependencies",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/it/scala/com/wixpress/build/sync/e2e",
-        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/sync",
-        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build",
-        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/bazel",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "@com_github_tomakehurst_wiremock//:com_github_tomakehurst_wiremock",
     ],
 )
 

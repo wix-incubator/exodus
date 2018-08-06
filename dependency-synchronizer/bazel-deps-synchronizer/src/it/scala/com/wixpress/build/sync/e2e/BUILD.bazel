@@ -18,7 +18,7 @@ scala_library(
         "@com_fasterxml_jackson_core_jackson_annotations//:com_fasterxml_jackson_core_jackson_annotations",
         "@com_gitblit_gitblit//:com_gitblit_gitblit",
         "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
-        "@com_github_tomakehurst_wiremock",
+        "@com_github_tomakehurst_wiremock//:com_github_tomakehurst_wiremock",
         "@junit_junit//:junit_junit",
         "@org_eclipse_jgit_org_eclipse_jgit//:org_eclipse_jgit_org_eclipse_jgit",
     ],
