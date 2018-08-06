@@ -31,9 +31,19 @@ class ArtifactoryRemoteStorageIT extends SpecificationWithJUnit  with BeforeAll 
       storage.checksumFor(aRootDependencyNode(asCompileDependency(someArtifact))) must beSome(sha256Checksum)
     }
 
-    "return none as item is not found on artifactory" in {
-      givenArtifactNotFoundInArtifactory(someArtifact,
-        inScenario = "artifact is missing", stateIs = Scenario.STARTED)
+    "fallback to repo2 when repo1 is missing this checksum" in new ctx {
+      givenArtifactNotFoundInArtifactory(someArtifact, repo = "repo1",
+        inScenario = "artifact is missing from default repo", stateIs = Scenario.STARTED)
+
+      givenArtifactoryReturnsSha256(sha256Checksum, forArtifact = someArtifact, repoName = "repo2",
+        inScenario = "artifact is missing from default repo", stateIs = "fallback repo has it")
+
+      storage.checksumFor(aRootDependencyNode(asCompileDependency(someArtifact))) must beSome(sha256Checksum)
+    }
+
+    "return none as item is not found on artifactory in either repo" in {
+      givenArtifactNotFoundInArtifactory(someArtifact, repo = "repo1")
+      givenArtifactNotFoundInArtifactory(someArtifact, repo = "repo2")
 
       storage.checksumFor(aRootDependencyNode(asCompileDependency(someArtifact))) must beNone
 
@@ -50,9 +60,7 @@ class ArtifactoryRemoteStorageIT extends SpecificationWithJUnit  with BeforeAll 
   val artifact = Coordinates("org.specs2", "specs2-analysis_2.12", "4.3.1")
   val someArtifact = Coordinates("org.apache.maven", "maven-plugin-api", "3.0")
 
-
-
-  val storage = new ArtifactoryRemoteStorage(s"localhost:$wireMockPort", artifactoryToken)
+  val storage = new ArtifactoryRemoteStorage(s"localhost:$wireMockPort", artifactoryToken, repoName1, repoName2)
 
   override protected def before: Any = {
     wireMockServer.resetAll()

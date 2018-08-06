@@ -16,7 +16,7 @@ trait DependenciesRemoteStorage {
   def checksumFor(node: DependencyNode): Option[String]
 }
 
-class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends DependenciesRemoteStorage {
+class ArtifactoryRemoteStorage(baseUrl: String, token: String, defaultRepoName: String = "repo1-cache", fallbackRepoName: String = "libs-snapshots") extends DependenciesRemoteStorage {
   private val mapper = new ObjectMapper()
     .registerModule(DefaultScalaModule)
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -25,7 +25,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
   private val log = LoggerFactory.getLogger(getClass)
 
   override def checksumFor(node: DependencyNode): Option[String] = {
-    val checksumResult = retry()(getChecksumIO(node))
+    val checksumResult = checksumOf(node)
 
     checksumResult match {
       case Success(Some(checksum)) => Some(checksum)
@@ -39,7 +39,8 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
   private def maybeGetChecksum(node: DependencyNode, response: HttpResponse[String]) = {
     val code = response.code
     if (code == 200) {
-      checksumOf(node)
+      val checksumResult = checksumOf(node)
+      checksumResult.toOption.flatten
     }
     else {
       log.error(s"error setting artifact checksum: code: ${response.code}, body: ${response.body}")
@@ -48,14 +49,17 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
   }
 
   private def checksumOf(node: DependencyNode) = {
-    val checksumResult = retry()(getChecksumIO(node))
-    checksumResult.toOption.flatten
+    val checksumResult = retry()(getChecksumIO(node, repoName = defaultRepoName))
+    checksumResult match {
+      case Failure(_: ArtifactNotFoundException) => getChecksumIO(node, repoName = fallbackRepoName)
+      case _ => checksumResult
+    }
   }
 
-  private def getChecksumIO(node: DependencyNode) = {
+  private def getChecksumIO(node: DependencyNode, repoName: String) = {
     val coordinates = node.baseDependency.coordinates
     for {
-      response <- getArtifactIOFor(coordinates)
+      response <- getArtifactIOFor(coordinates, repoName)
       res <- processResponseCode(response, coordinates)
       responseBody <- getBody(res)
       artifact <- getArtifact(responseBody)
@@ -79,7 +83,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
       .header("X-JFrog-Art-Api", token)
       .postData(
         s"""|{
-            |   "repoKey":"repo1-cache",
+            |   "repoKey":"$defaultRepoName",
             |   "path":"$artifactPath"
             |}""".stripMargin)
       .asString
@@ -117,9 +121,9 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
     Failure(ex)
   }
 
-  private def getArtifactIOFor(artifact: Coordinates) = {
+  private def getArtifactIOFor(artifact: Coordinates, repoName: String) = {
     Try {
-      val url = s"http://$baseUrl/artifactory/api/storage/repo1-cache/${artifact.toArtifactoryPath}"
+      val url = s"http://$baseUrl/artifactory/api/storage/$repoName/${artifact.toArtifactoryPath}"
       Http(url).asString
     } match {
       case Success(response) => Success(response)
