@@ -1,5 +1,7 @@
 package com.wixpress.build.sync
 
+import java.io.{PrintWriter, StringWriter}
+
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wixpress.build.maven.{Coordinates, DependencyNode}
@@ -101,9 +103,15 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
   }
 
   private def printAndFail(ex: Throwable) = {
+    def stackTraceOf(ex: Throwable) = {
+      val exceptionStackTrace = new StringWriter()
+      ex.printStackTrace(new PrintWriter(exceptionStackTrace))
+      exceptionStackTrace.toString
+    }
+
     log.error(
       s"""~~~~${ex.getMessage}
-         |${ex.getStackTrace}
+         |${stackTraceOf(ex)}
          |""".stripMargin)
     Failure(ex)
   }

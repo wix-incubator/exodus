@@ -6,7 +6,6 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.Scenario
 import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.maven.MavenMakers._
-import com.wixpress.build.sync.e2e.ArtifactoryTestSupport
 import com.wixpress.build.sync.e2e.ArtifactoryTestSupport._
 import com.wixpress.build.sync.e2e.WireMockTestSupport.{wireMockPort, wireMockServer, _}
 import org.specs2.mutable.SpecificationWithJUnit
