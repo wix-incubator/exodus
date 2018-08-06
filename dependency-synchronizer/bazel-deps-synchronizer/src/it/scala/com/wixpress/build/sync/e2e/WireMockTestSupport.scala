@@ -13,9 +13,6 @@ object WireMockTestSupport {
   val wireMockPort = 11876
   val wireMockServer = new WireMockServer(wireMockPort)
 
-  val repoName1 = "repo1"
-  val repoName2 = "repo2"
-
   def givenArtifactoryAllowsSettingSha256(forArtifact: Coordinates) = {
     val artifactPath = forArtifact.toArtifactoryPath
 
@@ -25,7 +22,7 @@ object WireMockTestSupport {
       .withHeader("X-JFrog-Art-Api", equalToString(artifactoryToken))
       .withRequestBody(equalToJson(
         s"""|{
-            |   "repoKey":"$repoName1",
+            |   "repoKey":"repo1-cache",
             |   "path":"$artifactPath"
             |}
         """.stripMargin))
@@ -34,9 +31,9 @@ object WireMockTestSupport {
   }
 
   def givenArtifactoryReturnsArtifactThatIsMissingSha256(forArtifact: Coordinates) = {
-    val relativeArtifactoryPath = toRelativeArtifactoryPath(forArtifact, repoName1)
+    val relativeArtifactoryPath = toRelativeArtifactoryPath(forArtifact)
     val artifactPath = forArtifact.toArtifactoryPath
-    val relativeArtifactoryDownloadPath = toRelativeArtifactoryDownloadPath(forArtifact, repoName1)
+    val relativeArtifactoryDownloadPath = toRelativeArtifactoryDownloadPath(forArtifact)
 
     wireMockServer.givenThat(get(urlEqualTo(relativeArtifactoryPath))
       .inScenario("sha256 is missing").whenScenarioStateIs(Scenario.STARTED)
@@ -46,7 +43,7 @@ object WireMockTestSupport {
         .withBody(
           s"""
              |{
-             |    "repo": "$repoName1",
+             |    "repo": "repo1-cache",
              |    "path": "/$artifactPath",
              |    "created": "2016-12-13T09:27:43.961Z",
              |    "createdBy": "anonymous",
@@ -71,12 +68,11 @@ object WireMockTestSupport {
   }
 
   def givenArtifactoryReturnsSha256(sha256Checksum: String, forArtifact: Coordinates,
-                                    repoName: String = "repo1",
                                     inScenario: String = "sha256 is already set",
                                     stateIs: String = Scenario.STARTED) = {
-    val relativeArtifactoryPath = toRelativeArtifactoryPath(forArtifact, repoName)
+    val relativeArtifactoryPath = toRelativeArtifactoryPath(forArtifact)
     val artifactPath = forArtifact.toArtifactoryPath
-    val relativeArtifactoryDownloadPath = toRelativeArtifactoryDownloadPath(forArtifact, repoName)
+    val relativeArtifactoryDownloadPath = toRelativeArtifactoryDownloadPath(forArtifact)
 
     wireMockServer.givenThat(get(urlEqualTo(relativeArtifactoryPath))
       .inScenario(inScenario).whenScenarioStateIs(stateIs)
@@ -86,7 +82,7 @@ object WireMockTestSupport {
         .withBody(
           s"""
              |{
-             |    "repo": "$repoName",
+             |    "repo": "repo1-cache",
              |    "path": "/$artifactPath",
              |    "created": "2018-07-09T05:50:45.383Z",
              |    "createdBy": "anonymous",
@@ -116,9 +112,9 @@ object WireMockTestSupport {
   def alwaysReturnSha256Checksums(sha256Checksum: String = "somechecksum", forArtifact: Coordinates = someCoordinates("someArtifact"),
                                     inScenario: String = "sha256 is already set",
                                     stateIs: String = Scenario.STARTED) = {
-    val relativeArtifactoryPath = toRelativeArtifactoryPath(forArtifact, repoName1)
+    val relativeArtifactoryPath = toRelativeArtifactoryPath(forArtifact)
     val artifactPath = forArtifact.toArtifactoryPath
-    val relativeArtifactoryDownloadPath = toRelativeArtifactoryDownloadPath(forArtifact, repoName1)
+    val relativeArtifactoryDownloadPath = toRelativeArtifactoryDownloadPath(forArtifact)
 
     wireMockServer.givenThat(get(anyUrl())
       .inScenario(inScenario).whenScenarioStateIs(stateIs)
@@ -129,7 +125,7 @@ object WireMockTestSupport {
           s"""
              |{
              |     {{request.path.[2]}}
-             |    "repo": "$repoName1",
+             |    "repo": "repo1-cache",
              |    "path": "/$artifactPath",
              |    "created": "2018-07-09T05:50:45.383Z",
              |    "createdBy": "anonymous",
@@ -155,10 +151,8 @@ object WireMockTestSupport {
              |""".stripMargin)))
   }
 
-  def givenArtifactNotFoundInArtifactory(forArtifact: Coordinates, repo: String,
-                                         inScenario: String = "artifact is missing",
-                                         stateIs: String = Scenario.STARTED): Any = {
-    val relativeArtifactoryPath = toRelativeArtifactoryPath(forArtifact, repo)
+  def givenArtifactNotFoundInArtifactory(forArtifact: Coordinates, inScenario: String, stateIs: String): Any = {
+    val relativeArtifactoryPath = toRelativeArtifactoryPath(forArtifact)
 
     wireMockServer.givenThat(get(urlEqualTo(relativeArtifactoryPath))
       .inScenario(inScenario).whenScenarioStateIs(stateIs)
@@ -175,8 +169,7 @@ object WireMockTestSupport {
              |        }
              |    ]
              |}
-             |""".stripMargin))
-      .willSetStateTo("fallback repo has it"))
+             |""".stripMargin)))
   }
 }
 
@@ -184,13 +177,13 @@ object WireMockTestSupport {
 object ArtifactoryTestSupport {
   val artifactoryToken = "EXPECTED_TOKEN"
 
-  def toRelativeArtifactoryPath(forArtifact: Coordinates, repo: String) = {
+  def toRelativeArtifactoryPath(forArtifact: Coordinates) = {
     val artifactPath = forArtifact.toArtifactoryPath
-    s"/artifactory/api/storage/$repo/$artifactPath"
+    "/artifactory/api/storage/repo1-cache/" + artifactPath
   }
 
-  def toRelativeArtifactoryDownloadPath(forArtifact: Coordinates, repo: String) = {
+  def toRelativeArtifactoryDownloadPath(forArtifact: Coordinates) = {
     val artifactPath = forArtifact.toArtifactoryPath
-    s"/artifactory/$repo/" + artifactPath
+    "/artifactory/repo1-cache/" + artifactPath
   }
 }
