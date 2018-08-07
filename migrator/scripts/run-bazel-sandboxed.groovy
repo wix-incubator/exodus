@@ -74,6 +74,7 @@ def unstable_by_exit_code(phase, some_script) {
         case 1:
             echo "Build failed"
             env.FOUND_TEST = "true"
+            currentBuild.result = 'FAILURE'
             break
         case 3:
             echo "There were test failures"
