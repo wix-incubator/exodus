@@ -42,7 +42,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
       checksumOf(node)
     }
     else {
-      log.error(s"error setting artifact checksum: code: ${response.code}, body: ${response.body}")
+      log.warn(s"error setting artifact checksum: code: ${response.code}, body: ${response.body}")
       None
     }
   }
@@ -110,7 +110,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
       exceptionStackTrace.toString
     }
 
-    log.error(
+    log.warn(
       s"""~~~~${ex.getMessage}
          |${stackTraceOf(ex)}
          |""".stripMargin)
