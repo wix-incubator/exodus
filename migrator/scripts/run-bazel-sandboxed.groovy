@@ -28,12 +28,27 @@ pipeline {
                 sh "touch tools/ci.environment"
             }
         }
-        stage('test') {
+        stage('ut') {
             steps {
                 script {
                     unstable_by_exit_code("UNIT", """|#!/bin/bash
                                              |$BAZEL test \\
                                              |      --flaky_test_attempts=3 \\
+                                             |      --test_tag_filters=UT,-IT \\
+                                             |      ${env.BAZEL_FLAGS} \\
+                                             |      //...
+                                             |""".stripMargin())
+                }
+            }
+        }
+        stage('it') {
+            steps {
+                script {
+                    unstable_by_exit_code("UNIT", """|#!/bin/bash
+                                             |$BAZEL test \\
+                                             |      --flaky_test_attempts=3 \\
+                                             |      --test_tag_filters=IT \\
+                                             |      --jobs=4 \\
                                              |      ${env.BAZEL_FLAGS} \\
                                              |      //...
                                              |""".stripMargin())
