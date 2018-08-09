@@ -31,7 +31,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        copyArtifacts projectName: '02-run-bazel', target: 'bazel-output', selector: specific("${BAZEL_RUN_NUMBER}")
+                        copyArtifacts projectName: '02-run-bazel', filter: '**/*.xml', target: 'bazel-output', selector: specific("${BAZEL_RUN_NUMBER}")
                     } catch (err) {
                         echo "[WARN] unable to copy bazel artifacts, perhaps none exist?"
                     }
