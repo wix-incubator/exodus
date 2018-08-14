@@ -3,7 +3,7 @@ package com.wix.bazel.migrator.workspace
 import java.nio.file.{Files, Path}
 import WorkspaceWriter._
 
-class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
+class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDependency: Boolean = false) {
   private val frameworkWSName = "wix_platform_wix_framework"
 
   def write(): Unit = {
@@ -83,7 +83,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |load("@core_server_build_tools//:third_party.bzl", "managed_third_party_dependencies")
          |
          |managed_third_party_dependencies()
-
+         |${externalWixReposThirdParties(interRepoSourceDependency)}
          |rules_docker_version = "4d49182a85c745065e621c145238c5e9420ed91b"
          |rules_docker_version_sha256 = "34c67584a6dedb18c232ceccab822c1ee358b10c04f35588cd2c108c4b3af007"
          |http_archive(
@@ -113,6 +113,18 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
 
     writeToDisk(workspaceFileContents)
   }
+
+  private def externalWixReposThirdParties(interRepoSourceDependency: Boolean) = {
+    if (interRepoSourceDependency)
+      s"""load("//:tools/third_party_deps_of_external_wix_repositories.bzl", "third_party_deps_of_external_wix_repositories")
+          |
+          |third_party_deps_of_external_wix_repositories()
+          |
+       """.stripMargin
+    else
+      ""
+  }
+
 
   private def workspaceSuffixOverride(): String = {
     WorkspaceOverridesReader.from(repoRoot).suffix

@@ -5,14 +5,19 @@ import java.nio.file.{Files, Path}
 
 import com.wix.bazel.migrator.BazelCustomRunnerWriter._
 
-class BazelCustomRunnerWriter(repoRoot: Path) {
+class BazelCustomRunnerWriter(repoRoot: Path, interRepoSourceDependency: Boolean = false) {
 
   def write() = {
     val path = repoRoot.resolve("tools/")
     Files.createDirectories(path)
 
     writeToDisk(path, WorkspaceResolveScriptFileName, getResourceContents(WorkspaceResolveScriptFileName))
-    writeExecutableCustomBazelScript(path, getResourceContents(CustomBazelScriptName))
+    if (interRepoSourceDependency) {
+      writeToDisk(path, ExternalThirdPartyLoadingScriptFileName, getResourceContents(ExternalThirdPartyLoadingScriptFileName))
+      writeExecutableCustomBazelScript(path, getResourceContents(CrossRepoCustomBazelScriptName))
+    } else {
+      writeExecutableCustomBazelScript(path, getResourceContents(CustomBazelScriptName))
+    }
   }
 
   private def writeToDisk(dest: Path, filename: String, content: String): Path = {
@@ -36,4 +41,7 @@ class BazelCustomRunnerWriter(repoRoot: Path) {
 object BazelCustomRunnerWriter {
   val WorkspaceResolveScriptFileName = "resolve_external_wix_repositories.py"
   val CustomBazelScriptName = "custom-bazel-script"
+
+  val ExternalThirdPartyLoadingScriptFileName = "load_third_parties_of_external_wix_repositories.py"
+  val CrossRepoCustomBazelScriptName = "cross-repo-custom-bazel-script"
 }

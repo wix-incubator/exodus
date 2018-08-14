@@ -39,6 +39,13 @@ import better.files.File
 
       File(repoRoot.resolve("WORKSPACE")).contentAsString must contain("git@github.com:johnynek/bazel_jar_jar.git")
     }
+
+    "load third parties of external repos when cross-repo flag is true" in new ctx {
+      val writer = new WorkspaceWriter(repoRoot, "workspace_name", interRepoSourceDependency = true)
+      writer.write()
+
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must contain(s"""third_party_deps_of_external_wix_repositories""")
+    }
   }
 
   abstract class ctx extends baseCtx {
