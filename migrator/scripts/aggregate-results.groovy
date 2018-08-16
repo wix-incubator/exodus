@@ -9,6 +9,7 @@ node {
     def bazel_run_job_name = "/02-run-bazel"
     def compare_job_name = "/03-compare"
     def remote_job_name = "/05-run-bazel-rbe"
+    def sandbox_job_name = "/run-bazel-sandboxed"
 
     def compare_success = 0
     def compare_fail = 0
@@ -43,6 +44,11 @@ node {
     def compare_ignored = 0
     def compare_failed = 0
 
+    def sandbox_run_success = 0
+    def sandbox_run_fail = 0
+    def sandbox_run_unstable = 0
+    def sandbox_run_never_run = 0
+
     def latest_uber_job = last_ubered_build().getLastBuild().number
     echo "Latest Uber build#: $latest_uber_job"
 
@@ -53,6 +59,7 @@ node {
         def bazel_run_run    = get_latest_run(it + bazel_run_job_name, latest_uber_job)
         def migrate_run      = get_latest_run(it + migrate_job_name, latest_uber_job)
         def bazel_remote_run = get_latest_run(it + remote_job_name, latest_uber_job)
+        def bazel_sandbox_run = get_latest_run(it + sandbox_job_name, latest_uber_job)
 
         def migrated = false
         def compiled = false
@@ -121,6 +128,16 @@ node {
         } else
             remote_run_never_run += 1
 
+        if (bazel_sandbox_run != null) {
+            if (bazel_sandbox_run.result == Result.SUCCESS)
+                sandbox_run_success += 1
+            else if (bazel_sandbox_run.result == Result.UNSTABLE)
+                sandbox_run_unstable += 1
+            else
+                sandbox_run_fail += 1
+        } else
+            sandbox_run_never_run += 1
+
         total_maven += maven_tests
         migrated_tests += migrated ? maven_tests : 0
         compiled_tests += compiled ? maven_tests : 0
@@ -161,6 +178,12 @@ node {
     | - unstable = ${remote_run_unstable}
     | - failure = ${remote_run_fail}
     | - not-run = ${remote_run_never_run}
+    |--
+    |SANDBOX
+    | - success = ${sandbox_run_success}
+    | - unstable = ${sandbox_run_unstable}
+    | - failure = ${sandbox_run_fail}
+    | - not-run = ${sandbox_run_never_run}
     |```""".stripMargin()
 
     echo res
