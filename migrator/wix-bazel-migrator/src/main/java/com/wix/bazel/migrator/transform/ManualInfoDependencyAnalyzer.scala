@@ -87,12 +87,6 @@ class ManualInfoDependencyAnalyzer(sourceModules: SourceModules) extends Depende
         )
       ),
       Code(
-        codePathFrom("wix-framework/src/main/resources/wix-framework-feature-toggle-config.xml"),
-        List(
-          dependencyOn("feature-toggle-modules/wix-feature-toggle-core/src/main/java/com/wixpress/framework/featuretoggle/FeatureToggleSpringConfig.scala")
-        )
-      ),
-      Code(
         codePathFrom("wix-framework/src/main/resources/wix-framework-monitoring-config.xml"),
         List(
           dependencyOn("monitoring-modules/wix-newrelic-reporting/src/main/java/com/wixpress/framework/spring/NewRelicReportingConfig.scala")
@@ -274,7 +268,6 @@ class ManualInfoDependencyAnalyzer(sourceModules: SourceModules) extends Depende
           dependencyOn("app-info-modules/wix-app-info-web/src/main/scala/com/wixpress/framework/appInfo/web/AppInfoBuiltinConfig.scala"),
           dependencyOn("configuration-modules/wix-configuration-app-info/src/main/scala/com/wixpress/framework/configuration/appInfo/web/ConfigurationAppInfoConfig.scala"),
           dependencyOn("rpc-modules/wix-rpc/src/main/scala/com/wixpress/framework/rpc/appInfo/web/RpcAppInfoConfig.java"),
-          dependencyOn("feature-toggle-modules/wix-feature-toggle-core/src/main/java/com/wixpress/framework/featuretoggle/appInfo/web/FeatureToggleAppInfoConfig.java"),
           dependencyOn("logging-modules/wix-log-app-info/src/main/java/com/wixpress/framework/logging/appInfo/web/LoggingAppInfoConfig.java"),
           dependencyOn("management-modules/hoopoe-management-framework/hoopoe-management-spring/src/main/java/com/wixpress/framework/health/appInfo/web/HealthAppInfoConfig.java"),
           dependencyOn("resource-pools-modules/wix-resources-app-info/src/main/scala/com/wixpress/framework/resources/statistics/AppInfoResourcesStatisticsSpringConfig.scala"),
