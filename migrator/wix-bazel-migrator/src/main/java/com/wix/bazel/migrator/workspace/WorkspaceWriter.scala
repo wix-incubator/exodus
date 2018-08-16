@@ -10,6 +10,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
     val workspaceFileContents =
       s"""
          |workspace(name = "$workspaceName")
+         |load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
          |rules_scala_version="74a91254f7e2335496813407e210ac00542cd44e" # update this as needed
          |rules_scala_version_sha256="ed022fbee43ab9bcafab76b4054bcc92267519f78d7d9e0521be95761e279aaa"
          |http_archive(
