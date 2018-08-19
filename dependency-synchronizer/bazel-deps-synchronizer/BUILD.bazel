@@ -25,6 +25,7 @@ scala_library(
     testonly = 1,
     runtime_deps = [
         "//dependency-synchronizer/bazel-deps-synchronizer/src/test/resources",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/it/resources",
     ],
     deps = [
         "main_dependencies",

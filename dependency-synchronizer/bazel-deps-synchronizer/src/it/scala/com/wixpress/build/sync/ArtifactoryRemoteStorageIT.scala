@@ -3,11 +3,11 @@ package com.wixpress.build.sync
 import java.util.UUID
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.stubbing.Scenario
 import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.sync.e2e.ArtifactoryTestSupport._
 import com.wixpress.build.sync.e2e.WireMockTestSupport.{wireMockPort, wireMockServer, _}
+import org.apache.commons.io.IOUtils.toByteArray
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.{AfterAll, BeforeAll, BeforeEach, Scope}
 
@@ -31,17 +31,29 @@ class ArtifactoryRemoteStorageIT extends SpecificationWithJUnit  with BeforeAll 
       storage.checksumFor(aRootDependencyNode(asCompileDependency(someArtifact))) must beSome(sha256Checksum)
     }
 
-    "return none as item is not found on artifactory" in {
-      givenArtifactNotFoundInArtifactory(someArtifact,
-        inScenario = "artifact is missing", stateIs = Scenario.STARTED)
+    "download jar and calculate sha256 when meta-data is not found on artifactory" in {
+      givenMetaArtifactNotFoundInArtifactoryRestApi(someArtifact)
 
-      storage.checksumFor(aRootDependencyNode(asCompileDependency(someArtifact))) must beNone
+      val binaryJar = byteArrayOf("/some-dep.binaryjar")
+      givenArtifactoryReturnsBinaryJarOf(someArtifact, binaryJar)
+
+      storage.checksumFor(aRootDependencyNode(asCompileDependency(someArtifact))) must beSome("bbce144202d10db79e2609423251310cc68a5060cd1689b8665fec394afe7873")
 
       wireMockServer.verify(0, postRequestedFor(urlEqualTo("/artifactory/api/checksum/sha256") )) must not throwA[Throwable]()
+    }
+
+    "return None as both artifact's meta data and artifact's jar are not found in artifactory" in {
+      givenMetaArtifactNotFoundInArtifactoryRestApi(someArtifact)
+      givenJarArtifactNotFoundInArtifactory(someArtifact)
+
+      storage.checksumFor(aRootDependencyNode(asCompileDependency(someArtifact))) must beNone
     }
   }
 
 
+  private def byteArrayOf(resourcePath: String) = {
+    toByteArray(getClass.getResourceAsStream(resourcePath))
+  }
 
   trait ctx extends Scope {
     val sha256Checksum = UUID.randomUUID().toString

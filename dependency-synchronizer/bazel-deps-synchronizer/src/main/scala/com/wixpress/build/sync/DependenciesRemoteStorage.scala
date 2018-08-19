@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wixpress.build.maven.{Coordinates, DependencyNode}
 import com.wixpress.build.sync.ArtifactoryRemoteStorage._
 import com.wixpress.build.sync.Utils.retry
+import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
 import scalaj.http.{Http, HttpResponse}
 
@@ -25,21 +26,26 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
   private val log = LoggerFactory.getLogger(getClass)
 
   override def checksumFor(node: DependencyNode): Option[String] = {
-    val checksumResult = retry()(getChecksumIO(node))
+    val artifact = node.baseDependency.coordinates
+    checksumFor(artifact)
+  }
+
+  private def checksumFor(artifact: Coordinates): Option[String] = {
+    val checksumResult = retry()(getChecksumIO(artifact))
 
     checksumResult match {
       case Success(Some(checksum)) => Some(checksum)
-      case Failure(_: ArtifactNotFoundException) => None
+      case Failure(_: ArtifactNotFoundException) => calculateChecksum(artifact)
       case _ =>
-        val response = setArtifactChecksum(node)
-        maybeGetChecksum(node, response)
+        val response = setArtifactChecksum(artifact)
+        maybeGetChecksum(artifact, response)
     }
   }
 
-  private def maybeGetChecksum(node: DependencyNode, response: HttpResponse[String]) = {
+  private def maybeGetChecksum(coordinates: Coordinates, response: HttpResponse[String]) = {
     val code = response.code
     if (code == 200) {
-      checksumOf(node)
+      checksumOf(coordinates)
     }
     else {
       log.warn(s"error setting artifact checksum: code: ${response.code}, body: ${response.body}")
@@ -47,22 +53,21 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
     }
   }
 
-  private def checksumOf(node: DependencyNode) = {
-    val checksumResult = retry()(getChecksumIO(node))
+  private def checksumOf(coordinates: Coordinates) = {
+    val checksumResult = retry()(getChecksumIO(coordinates))
     checksumResult.toOption.flatten
   }
 
-  private def getChecksumIO(node: DependencyNode) = {
-    val coordinates = node.baseDependency.coordinates
+  private def getChecksumIO(coordinates: Coordinates) = {
     for {
-      response <- getArtifactIOFor(coordinates)
+      response <- getMetaArtifactIOFor(coordinates)
       res <- processResponseCode(response, coordinates)
       responseBody <- getBody(res)
       artifact <- getArtifact(responseBody)
     } yield artifact.checksums.sha256
   }
 
-  private def processResponseCode(response: HttpResponse[String], artifact: Coordinates) = {
+  private def processResponseCode[T](response: HttpResponse[T], artifact: Coordinates) = {
     if (response.code != 404) {
       Success(response)
     } else {
@@ -70,8 +75,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
     }
   }
 
-  private def setArtifactChecksum(node: DependencyNode) = {
-    val coordinates = node.baseDependency.coordinates
+  private def setArtifactChecksum(coordinates: Coordinates) = {
     val artifactPath: String = coordinates.toArtifactoryPath
 
     Http(s"http://$baseUrl/artifactory/api/checksum/sha256")
@@ -94,7 +98,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
     }
   }
 
-  private def getBody(response: HttpResponse[String]) = {
+  private def getBody[T](response: HttpResponse[T]) = {
     Try {
       response.body
     } match {
@@ -117,7 +121,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
     Failure(ex)
   }
 
-  private def getArtifactIOFor(artifact: Coordinates) = {
+  private def getMetaArtifactIOFor(artifact: Coordinates) = {
     Try {
       val url = s"http://$baseUrl/artifactory/api/storage/repo1-cache/${artifact.toArtifactoryPath}"
       Http(url).asString
@@ -126,9 +130,39 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
       case Failure(ex) => printAndFail(ex)
     }
   }
+
+  private def getJarArtifactIOFor(artifact: Coordinates) = {
+    Try {
+      val url = s"http://$baseUrl/artifactory/libs-snapshots/${artifact.toArtifactoryPath}"
+      Http(url).asBytes
+    } match {
+      case Success(response) => Success(response)
+      case Failure(ex) => printAndFail(ex)
+    }
+  }
+
+  private def calculateChecksum(coordinates: Coordinates): Option[Sha256] = {
+    val sha256 = for {
+      response <- getJarArtifactIOFor(coordinates)
+      res <- processResponseCode(response, coordinates)
+      jar <- getBody(res)
+      sha256 <- calculateSha256(jar)
+
+    } yield sha256
+
+    sha256.toOption
+  }
+
+  private def calculateSha256(jar: Array[Byte]) = {
+    Try {
+      DigestUtils.sha256Hex(jar)
+    }
+  }
 }
 
 object ArtifactoryRemoteStorage {
+  type Sha256 = String
+
   implicit class GroupIdConvertors(groupId: String) {
     def toPath: String = {
       groupId.replace(".", "/")

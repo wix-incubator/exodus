@@ -17,6 +17,7 @@ specs2_ite2e_test(
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/sync",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "@com_github_tomakehurst_wiremock//:com_github_tomakehurst_wiremock",
+        "@commons_io_commons_io//:commons_io_commons_io",
     ],
 )
 
