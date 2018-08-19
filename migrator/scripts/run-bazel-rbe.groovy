@@ -17,6 +17,7 @@ pipeline {
                          |--config=results \\
                          |--project_id=gcb-with-custom-workers \\
                          |--remote_instance_name=projects/gcb-with-custom-workers \\
+                         |--test_timeout=120,300,900,3600 \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
