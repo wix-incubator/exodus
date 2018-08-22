@@ -9,11 +9,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.transform.AnalyzeFailure.Composite
+import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer._
 import com.wix.bazel.migrator.transform._
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
-import CodotaDependencyAnalyzer._
 
 object FindMisAnalyzedInternalDependencies extends DebuggingMigratorApp {
   val codotaArtifacts = tinker.codeModules.map(artifact => artifact.coordinates.groupId + "." + artifact.coordinates.artifactId)
@@ -132,4 +132,8 @@ object CheckThirdPartyConflicts extends DebuggingMigratorApp {
   if (conflicts.fail.nonEmpty || conflicts.warn.nonEmpty) {
     throw new RuntimeException("Conflicts is not empty")
   }
+}
+
+object DebugThirdPartySync extends DebuggingMigratorApp {
+  tinker.syncLocalThirdPartyDeps()
 }

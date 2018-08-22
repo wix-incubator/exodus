@@ -4,15 +4,16 @@ import java.io
 import java.nio.file.{Files, Path}
 import java.time.temporal.ChronoUnit
 
-import better.files.File
+import better.files.{File, FileOps}
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.bazel.migrator.{Persister, RunConfiguration}
+import com.wix.bazel.migrator.{DependencyCollectionCollisionsReport, Persister, RunConfiguration}
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.build.maven.analysis.{SourceModules, ThirdPartyConflict, ThirdPartyConflicts, ThirdPartyValidator}
+import com.wixpress.build.bazel.NoPersistenceBazelRepository
 import com.wixpress.build.bazel.repositories.WorkspaceName
 import com.wixpress.build.maven
 import com.wixpress.build.maven._
-import com.wixpress.build.sync.{ArtifactoryRemoteStorage, HighestVersionConflictResolution, StaticDependenciesRemoteStorage}
+import com.wixpress.build.sync.{ArtifactoryRemoteStorage, DiffSynchronizer, HighestVersionConflictResolution, StaticDependenciesRemoteStorage}
 
 class AppTinker(configuration: RunConfiguration) {
   val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
@@ -117,6 +118,27 @@ class AppTinker(configuration: RunConfiguration) {
     def filterExternalDeps(repoCoordinates: Set[Coordinates]): Set[Dependency] = {
       dependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
     }
+  }
+
+  def syncLocalThirdPartyDeps(): Unit = {
+    val bazelRepo = new NoPersistenceBazelRepository(repoRoot)
+    val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies.map(_.coordinates)
+    val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
+      resolver = aetherResolver,
+      globalExcludes = internalCoordinates
+    )
+
+    val managedDependenciesFromMaven = aetherResolver
+      .managedDependenciesOf(AppTinker.ManagedDependenciesArtifact)
+      .forceCompileScope
+
+    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven)
+
+    val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
+    val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver, artifactoryRemoteStorage)
+    diffSynchronizer.sync(localNodes)
+
+    new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)
   }
 }
 

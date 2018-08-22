@@ -1,15 +1,11 @@
 package com.wix.bazel.migrator.tinker
 
-import better.files.FileOps
 import com.wix.bazel.migrator._
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
 import com.wix.bazel.migrator.transform._
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
 import com.wix.build.maven.analysis.ThirdPartyConflicts
-import com.wixpress.build.bazel.NoPersistenceBazelRepository
-import com.wixpress.build.maven.FilteringGlobalExclusionDependencyResolver
-import com.wixpress.build.sync.DiffSynchronizer
 
 class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   def migrate(): Unit = {
@@ -62,27 +58,6 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
 
   private def writeDefaultJavaToolchain(): Unit =
     new DefaultJavaToolchainWriter(repoRoot).write()
-
-  private def syncLocalThirdPartyDeps(): Unit = {
-    val bazelRepo = new NoPersistenceBazelRepository(repoRoot)
-    val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies.map(_.coordinates)
-    val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
-      resolver = aetherResolver,
-      globalExcludes = internalCoordinates
-    )
-
-    val managedDependenciesFromMaven = aetherResolver
-      .managedDependenciesOf(AppTinker.ManagedDependenciesArtifact)
-      .forceCompileScope
-
-    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven)
-
-    val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
-    val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver, artifactoryRemoteStorage)
-    diffSynchronizer.sync(localNodes)
-
-    new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)
-  }
 
   private def cleanGitIgnore(): Unit =
     new GitIgnoreCleaner(repoRoot).clean()
