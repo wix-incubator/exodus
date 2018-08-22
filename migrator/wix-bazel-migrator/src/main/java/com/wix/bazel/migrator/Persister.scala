@@ -7,12 +7,12 @@ import java.time.Instant
 import java.time.temporal.TemporalUnit
 import java.util
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonTypeInfo}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Target, TestType}
 import com.wix.build.maven.analysis.SourceModules
-import com.wixpress.build.maven.MavenScope
+import com.wixpress.build.maven.{Coordinates, MavenScope, Packaging}
 
 import scala.collection.JavaConverters._
 
@@ -25,6 +25,8 @@ object Persister {
     .addMixIn(classOf[CodePurpose], classOf[TypeAddingMixin])
     .addMixIn(classOf[TestType], classOf[TypeAddingMixin])
     .addMixIn(classOf[MavenScope], classOf[TypeAddingMixin])
+    .addMixIn(classOf[Packaging], classOf[IgnoringIsArchiveDefMixin])
+    .addMixIn(classOf[Coordinates], classOf[IgnoringIsProtoArtifactDefMixin])
 
   def persistTransformationResults(bazelPackages: Set[Package]): Unit = {
     println("Persisting transformation")
@@ -58,3 +60,9 @@ object Persister {
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "__class")
 trait TypeAddingMixin
+
+@JsonIgnoreProperties(Array("archive"))
+trait IgnoringIsArchiveDefMixin
+
+@JsonIgnoreProperties(Array("protoArtifact"))
+trait IgnoringIsProtoArtifactDefMixin
