@@ -1,15 +1,14 @@
 package com.wix.bazel.migrator.transform
 
+import com.wix.bazel.migrator.external.registry.FakeExternalSourceModuleRegistry
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.makers.ModuleMaker.aModule
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
 import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, OverrideCoordinates}
-import com.wixpress.build.maven.{Coordinates, MavenMakers, MavenScope, Packaging}
-import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule}
 import com.wixpress.build.maven
+import com.wixpress.build.maven.{Coordinates, MavenMakers, MavenScope, Packaging}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
-import org.specs2.specification.core.Fragment
 
 //noinspection TypeAnnotation
 class MavenDependencyTransformerTest extends SpecificationWithJUnit {

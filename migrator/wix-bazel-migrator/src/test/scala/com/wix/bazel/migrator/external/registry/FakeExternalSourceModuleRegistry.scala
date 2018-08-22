@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.external.registry
 
 class FakeExternalSourceModuleRegistry(
                                         locations: Map[(String, String), String],

@@ -1,6 +1,7 @@
 package com.wix.bazel.migrator.transform
 
 
+import com.wix.bazel.migrator.external.registry.FakeExternalSourceModuleRegistry
 import com.wix.bazel.migrator.model
 import com.wix.bazel.migrator.model.Matchers._
 import com.wix.bazel.migrator.model.makers.ModuleMaker._

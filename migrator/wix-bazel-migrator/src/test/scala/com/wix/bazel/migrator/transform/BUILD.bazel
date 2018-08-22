@@ -13,6 +13,8 @@ specs2_unit_test(
         "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
         "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
+        "//migrator/wix-bazel-migrator/src/test/scala/com/wix/bazel/migrator/external/registry:registry",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/external/registry:registry",
         "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model",
         "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",

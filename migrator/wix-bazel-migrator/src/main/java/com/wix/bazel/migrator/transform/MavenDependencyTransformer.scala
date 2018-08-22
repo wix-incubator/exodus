@@ -8,6 +8,7 @@ import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, WorkspaceRule}
 import com.wixpress.build.maven.{ArchivePackaging, Coordinates, Packaging}
 import com.wixpress.build.maven
 import ModuleDependenciesTransformer.ProductionDepsTargetName
+import com.wix.bazel.migrator.external.registry.ExternalSourceModuleRegistry
 import com.wix.bazel.migrator.transform.MavenDependencyTransformer.DependencyExtensions
 
 class MavenDependencyTransformer(repoModules: Set[SourceModule],

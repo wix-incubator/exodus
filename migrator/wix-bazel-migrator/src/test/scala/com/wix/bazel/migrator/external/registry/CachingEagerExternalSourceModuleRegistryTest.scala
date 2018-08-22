@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.external.registry
 
 import com.wixpress.build.maven.MavenMakers.someCoordinates
 import org.specs2.mutable.SpecificationWithJUnit

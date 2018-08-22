@@ -1,0 +1,22 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "registry",
+    srcs = [
+        ":sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/wix-bazel-migrator:main_dependencies",
+        "//migrator/codota-thin-client/src/main/scala/com/wixpress/build/codota:codota",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven:maven",
+        "@junit_junit//:junit_junit",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/external/registry:__pkg__"],
+)

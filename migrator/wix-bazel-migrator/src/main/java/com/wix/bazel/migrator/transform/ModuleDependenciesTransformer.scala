@@ -5,6 +5,7 @@ import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.Target.ModuleDeps
 import com.wixpress.build.maven.MavenScope
 import ModuleDependenciesTransformer._
+import com.wix.bazel.migrator.external.registry.ExternalSourceModuleRegistry
 
 class ModuleDependenciesTransformer(repoModules: Set[SourceModule],
                                     externalPackageLocator: ExternalSourceModuleRegistry,
