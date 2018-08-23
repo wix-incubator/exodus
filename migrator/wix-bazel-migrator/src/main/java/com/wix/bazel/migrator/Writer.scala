@@ -410,6 +410,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
       case jvmDependency: Jvm => writeDependency(scopeOfCurrentDependency)(jvmDependency)
       case proto: Proto => writeDependency(proto.belongingPackageRelativePath, proto.name + "_scala")
       case resources: Resources => writeDependency(resources.belongingPackageRelativePath, resources.name)
+      case external : External => writeExternalWorkspaceDependency(external)
     }
     Set(scopeOfCurrentDependency -> Set(serializedDependency))
   }
