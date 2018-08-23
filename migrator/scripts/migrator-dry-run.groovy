@@ -61,7 +61,7 @@ pipeline {
                       |   -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar""".stripMargin()
                 }
                 dir("${env.REPO_NAME}") {
-                    sh "buildozer 'add tags manual' //third_party/...:%scala_import", returnStatus: true
+                    sh script: "buildozer 'add tags manual' //third_party/...:%scala_import", returnStatus: true
                     script {
                         if (fileExists('bazel_migration/post-migration.sh')) {
                             sh "sh bazel_migration/post-migration.sh"

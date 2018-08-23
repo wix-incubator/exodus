@@ -64,7 +64,7 @@ pipeline {
         stage('post-migrate') {
             steps {
                 dir("${env.REPO_NAME}") {
-                    sh "buildozer 'add tags manual' //third_party/...:%scala_import", returnStatus: true
+                    sh script: "buildozer 'add tags manual' //third_party/...:%scala_import", returnStatus: true
                     sh 'buildifier $(find . -iname BUILD.bazel -type f)'
                     sh 'touch .gitignore'
                     sh 'grep -q -F "/bazel-*" .gitignore || echo "\n/bazel-*" >> .gitignore'
