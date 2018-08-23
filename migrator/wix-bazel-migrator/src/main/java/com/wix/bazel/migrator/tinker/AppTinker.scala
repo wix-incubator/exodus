@@ -27,7 +27,7 @@ class AppTinker(configuration: RunConfiguration) {
   lazy val codeModules: Set[SourceModule] = sourceModules.codeModules
   lazy val directDependencies: Set[Dependency] = collectExternalDependenciesUsedByRepoModules()
   lazy val externalDependencies: Set[Dependency] = dependencyCollector.dependencySet()
-  lazy val codotaDependencyAnalyzer = new CodotaDependencyAnalyzer(repoRoot, codeModules, codotaToken)
+  lazy val codotaDependencyAnalyzer = new CodotaDependencyAnalyzer(repoRoot, codeModules, codotaToken, configuration.interRepoSourceDependency)
   lazy val externalSourceDependencies: Set[Dependency] = sourceDependencies
   lazy val externalBinaryDependencies: Set[Dependency] = binaryDependencies
 
