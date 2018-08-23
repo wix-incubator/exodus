@@ -4,7 +4,6 @@ import java.nio.file.{Files, Path}
 
 import com.wix.bazel.migrator.model._
 import com.wix.build.maven.analysis.MavenBuildSystem.SourcesDirectories
-import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.maven._
 import org.apache.maven.model.Model
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
@@ -59,7 +58,7 @@ class MavenBuildSystem(repoRoot: Path,
   private def readAggregatedModules(modulePath: Path, model: Model) =
     model.getModules.asScala.map(modulePath.resolve).flatMap(readModule).toSet
 
-  private def isAggregator(model: Model) = model.getPackaging == "pom"
+  private def isAggregator(model: Model) = model.getPackaging == "pom" && Option(model.getModules).exists(!_.isEmpty)
 
   private def readCurrentModule(modulePath: Path) = {
     val pomPath = pathToPomFrom(modulePath)
@@ -94,8 +93,13 @@ class MavenBuildSystem(repoRoot: Path,
   private def toResourcesRelativePath(folderName: String): String =
     folderName + "/resources"
 
-  private def coordinatesOf(model: Model) =
-    Coordinates(getGroupIdOrParentGroupId(model), model.getArtifactId, getVersionOrParentVersion(model))
+  private def coordinatesOf(model: Model) = {
+    val packaging = Option(model.getPackaging) match {
+      case Some("pom") => Packaging("pom")
+      case _ => Packaging("jar")
+    }
+    Coordinates(getGroupIdOrParentGroupId(model), model.getArtifactId, getVersionOrParentVersion(model), packaging)
+  }
 
   private def relativePathFromRoot(modulePath: Path) =
     repoRoot.relativize(modulePath).toString

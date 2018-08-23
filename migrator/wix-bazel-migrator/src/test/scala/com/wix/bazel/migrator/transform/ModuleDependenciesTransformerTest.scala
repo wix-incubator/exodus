@@ -9,7 +9,7 @@ import com.wix.bazel.migrator.model.{CodePurpose, ModuleDependencies, SourceModu
 import com.wixpress.build.bazel.{ImportExternalRule, WorkspaceRule}
 import com.wixpress.build.maven
 import com.wixpress.build.maven.MavenMakers._
-import com.wixpress.build.maven.MavenScope
+import com.wixpress.build.maven.{Coordinates, MavenScope, Packaging}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -112,7 +112,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
             name = "tests_dependencies",
             deps = contain(exactly("main_dependencies")),
             data = contain(exactly(WorkspaceRule.mavenArchiveLabelBy(tarDependency, "unpacked"))
-          )))))
+            )))))
     }
 
     "return package with module deps target with data attribute for zip archive tarDependency" in new ctx {
@@ -125,6 +125,22 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
             name = "tests_dependencies",
             data = contain(exactly(WorkspaceRule.mavenArchiveLabelBy(zipDependency, "unpacked")))
           ))))
+    }
+
+    "create a package with target with with artifact_id name for pom deps aggregator module" in new ctx {
+      val artifactId = "aggs-module"
+      val coordinates = someCoordinates(artifactId, Packaging("pom"))
+      val pomDepsAggsModule = aModule("", coordinates)
+        .withDirectDependency(compileThirdPartyDependency, compileInternalDependency)
+      val transformer = transformerFor(Set(pomDepsAggsModule, dependentModule))
+
+      val packages = transformer.transform(Set.empty)
+
+      packages must contain(
+        aPackage(target = a(
+          moduleDepsTarget(name = "main_dependencies", exports = contain(exactly(compileThirdPartyDependency.asThirdPartyDependency, dependentModule.asModuleDeps)))
+        ))
+      )
     }
 
   }
@@ -175,7 +191,10 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
             runtimeDeps = equalTo(Set("//src/main/resources:resources"))
           )))))
     }
+
+
   }
+
   trait baseCtx extends Scope {
     val externalPackageLocator = new FakeExternalSourceModuleRegistry(Map.empty)
     val emptyMavenArchiveTargetsOverrides = MavenArchiveTargetsOverrides(Set.empty)
@@ -183,6 +202,17 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
     def transformerFor(modules: Set[SourceModule]) = {
       new ModuleDependenciesTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides)
     }
+
+    implicit class DependencyExtended(dependency: maven.Dependency) {
+      private val coordinates = dependency.coordinates
+
+      def asThirdPartyDependency: String = s"${ImportExternalRule.jarLabelBy(coordinates)}"
+    }
+
+    implicit class SourceModuleExtended(module: SourceModule) {
+      def asModuleDeps: String = s"//${module.relativePathFromMonoRepoRoot}:main_dependencies"
+    }
+
   }
 
   trait ctx extends baseCtx {
@@ -208,7 +238,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
       codePurpose = CodePurpose.Prod(),
       originatingSourceModule = forModule)
 
-    def packageWith(existingTarget: Target.Jvm, withRelativePath:String) = {
+    def packageWith(existingTarget: Target.Jvm, withRelativePath: String) = {
       val leafModule = existingTarget.originatingSourceModule
       model.Package(
         relativePathFromMonoRepoRoot = leafModule.relativePathFromMonoRepoRoot,
@@ -235,16 +265,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
 
     val modules = Set(interestingModule, dependentModule, dependencyRuntimeModule, dependencyProvidedModule, dependentTestModule)
 
-    implicit class DependencyExtended(dependency: maven.Dependency) {
-      private val coordinates = dependency.coordinates
 
-      def asThirdPartyDependency: String = s"${ImportExternalRule.jarLabelBy(coordinates)}"
-    }
-
-    implicit class SourceModuleExtended(module: SourceModule) {
-
-      def asModuleDeps: String = s"//${module.relativePathFromMonoRepoRoot}:main_dependencies"
-    }
 
     def leafModuleFrom(dependency: maven.Dependency): SourceModule = aModule(dependency.coordinates, ModuleDependencies())
 
@@ -252,5 +273,6 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
 
     def leafModuleWithDirectDependencies(dependency: maven.Dependency) = aModule("some-module").withDirectDependency(dependency)
   }
+
 }
 

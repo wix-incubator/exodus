@@ -67,7 +67,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(sourceModule(relativePathFromMonoRepoRoot = "",
-        externalModule = be_===(Coordinates("group-id", "artifact-id", "some-version")))))
+        coordinates = be_===(Coordinates("group-id", "artifact-id", "some-version")))))
     }
 
     "SourceModules for the non pom modules in a multi module repository" in new ctx {
@@ -77,8 +77,20 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(
-        sourceModule(relativePathFromMonoRepoRoot = "child1", externalModule = moduleGavStartsWith("child1")),
-        sourceModule(relativePathFromMonoRepoRoot = "child2", externalModule = moduleGavStartsWith("child2"))
+        sourceModule(relativePathFromMonoRepoRoot = "child1", coordinates = moduleGavStartsWith("child1")),
+        sourceModule(relativePathFromMonoRepoRoot = "child2", coordinates = moduleGavStartsWith("child2"))
+      ))
+    }
+
+    "SourceModules for the pom modules that are not module aggregators" in new ctx {
+      def pomCoordinates = Coordinates("group", "child1", "version", packaging = Packaging("pom"))
+      lazy val repo = Repo(MavenModule(gavPrefix = "parent").withModules(
+        modules = Map("child1" -> MavenModule(pomCoordinates))))
+
+      val sourceModules = buildSystem.modules()
+
+      sourceModules must contain(exactly(
+        sourceModule(relativePathFromMonoRepoRoot = "child1", coordinates = equalTo(pomCoordinates))
       ))
     }
 
@@ -92,7 +104,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(
-        sourceModule(relativePathFromMonoRepoRoot = "parent/child", externalModule = moduleGavStartsWith("child"))))
+        sourceModule(relativePathFromMonoRepoRoot = "parent/child", coordinates = moduleGavStartsWith("child"))))
     }
 
     "SourceModule in the repo for an artifact which gets its version from its parent" in new ctx {
@@ -225,9 +237,9 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(
-        sourceModule(relativePathFromMonoRepoRoot = "sibling1/child1", externalModule = moduleGavStartsWith("sibling1-child1")),
-        sourceModule(relativePathFromMonoRepoRoot = "sibling1/child2", externalModule = moduleGavStartsWith("sibling1-child2")),
-        sourceModule(relativePathFromMonoRepoRoot = "sibling2", externalModule = moduleGavStartsWith("sibling2"))
+        sourceModule(relativePathFromMonoRepoRoot = "sibling1/child1", coordinates = moduleGavStartsWith("sibling1-child1")),
+        sourceModule(relativePathFromMonoRepoRoot = "sibling1/child2", coordinates = moduleGavStartsWith("sibling1-child2")),
+        sourceModule(relativePathFromMonoRepoRoot = "sibling2", coordinates = moduleGavStartsWith("sibling2"))
       ))
     }
 
@@ -240,7 +252,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
 
       val sourceModules = buildSystem.modules()
       sourceModules must contain(exactly(
-        sourceModule(relativePathFromMonoRepoRoot = "sibling1", externalModule = moduleGavStartsWith("sibling1"))
+        sourceModule(relativePathFromMonoRepoRoot = "sibling1", coordinates = moduleGavStartsWith("sibling1"))
       ))
     }
 
@@ -270,7 +282,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(
-        sourceModule(relativePathFromMonoRepoRoot = "child1", externalModule = moduleGavStartsWith("child1"))
+        sourceModule(relativePathFromMonoRepoRoot = "child1", coordinates = moduleGavStartsWith("child1"))
       ))
     }
 
@@ -286,14 +298,14 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(
-        sourceModule(relativePathFromMonoRepoRoot = "sibling2", externalModule = moduleGavStartsWith("sibling2"))
+        sourceModule(relativePathFromMonoRepoRoot = "sibling2", coordinates = moduleGavStartsWith("sibling2"))
       ))
     }
   }
 
   def sourceModule(relativePathFromMonoRepoRoot: String,
-                   externalModule: Matcher[Coordinates]): Matcher[SourceModule] =
-    sourceModule(be_===(relativePathFromMonoRepoRoot), externalModule)
+                   coordinates: Matcher[Coordinates]): Matcher[SourceModule] =
+    sourceModule(be_===(relativePathFromMonoRepoRoot), coordinates)
 
   def sourceModule(
                     relativePathFromMonoRepoRoot: Matcher[String] = AlwaysMatcher[String](),
@@ -422,6 +434,7 @@ case class Repo(rootAggregatorModule: Option[MavenModule] = None, siblingModules
     model.setArtifactId(module.artifactId)
     module.version.foreach(model.setVersion)
     module.parent.map(moduleToParent).foreach(model.setParent)
+    module.packaging.foreach(p => model.setPackaging(p))
     module.dependencies.foreach { d =>
       val dep = new MavenDependency
       dep.setArtifactId(d.coordinates.artifactId)
@@ -452,6 +465,7 @@ case class Repo(rootAggregatorModule: Option[MavenModule] = None, siblingModules
 case class MavenModule(groupId: Option[String] = None,
                        artifactId: String,
                        version: Option[String] = None,
+                       packaging: Option[String] = None,
                        modules: Map[String, MavenModule] = Map.empty,
                        parent: Option[MavenModule] = None,
                        resourceFolders: Set[String] = Set.empty,
@@ -467,6 +481,8 @@ case class MavenModule(groupId: Option[String] = None,
   def withResourceFolders(resourceFolders: Set[String]): MavenModule = copy(resourceFolders = resourceFolders)
 
   def withModules(modules: Map[String, MavenModule]): MavenModule = copy(modules = modules)
+
+  def withPackaging(packaging: String) = copy(packaging = Option(packaging))
 }
 
 object MavenModule {
@@ -476,7 +492,10 @@ object MavenModule {
   def apply(groupId: String, artifactId: String, version: String): MavenModule =
     MavenModule(Option(groupId), artifactId, Option(version))
 
-  def apply(coordinates: Coordinates): MavenModule = MavenModule(coordinates.groupId, coordinates.artifactId, coordinates.version)
+  def apply(coordinates: Coordinates): MavenModule = {
+    println(coordinates)
+    MavenModule(Some(coordinates.groupId), coordinates.artifactId, Some(coordinates.version), Some(coordinates.packaging.value))
+  }
 
   val SomeCodeModule = MavenModule(gavPrefix = "some")
   val SomeAggregatorModule = MavenModule(gavPrefix = "aggregator")

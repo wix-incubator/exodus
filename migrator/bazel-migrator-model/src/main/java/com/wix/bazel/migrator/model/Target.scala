@@ -26,7 +26,8 @@ object Target {
                          deps: Set[String],
                          runtimeDeps: Set[String],
                          testOnly: Boolean,
-                         data: Set[String] = Set.empty
+                         data: Set[String] = Set.empty,
+                         exports: Set[String] = Set.empty
                        ) extends Target
 
 

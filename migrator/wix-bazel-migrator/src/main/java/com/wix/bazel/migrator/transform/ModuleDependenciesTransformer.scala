@@ -1,9 +1,9 @@
 package com.wix.bazel.migrator.transform
 
 import com.wix.bazel.migrator.model
-import com.wix.bazel.migrator.model.SourceModule
+import com.wix.bazel.migrator.model.{SourceModule, Target}
 import com.wix.bazel.migrator.model.Target.ModuleDeps
-import com.wixpress.build.maven.MavenScope
+import com.wixpress.build.maven.{MavenScope, Packaging}
 import ModuleDependenciesTransformer._
 import com.wix.bazel.migrator.external.registry.ExternalSourceModuleRegistry
 
@@ -16,18 +16,22 @@ class ModuleDependenciesTransformer(repoModules: Set[SourceModule],
     combinePackageSets(repoModules.map(extractModulePackage), existingPackages)
 
   private def extractModulePackage(module: SourceModule) = {
-    val productionDepsTarget = ModuleDeps(
-      name = ProductionDepsTargetName,
-      belongingPackageRelativePath = module.relativePathFromMonoRepoRoot,
-      deps = extractDependenciesOfScope(module, MavenScope.Compile, MavenScope.Provided)
-        .flatMap(dependencyTransformer.toBazelDependency),
-      runtimeDeps =
-        extractDependenciesOfScope(module, MavenScope.Runtime)
-          .flatMap(dependencyTransformer.toBazelDependency) ++
-          extractProdResourcesDependencies(module),
-      testOnly = false
-    )
+    val productionDepsTarget = mainDependenciesTarget(module)
+    val testDepsTarget: ModuleDeps = testDependenciesTarget(module)
 
+    val targets:Set[Target] = module.coordinates.packaging match {
+      case Packaging("pom") => Set(productionDepsTarget.asDepsAggs)
+      case _ =>  Set(productionDepsTarget, testDepsTarget)
+    }
+
+    model.Package(
+      relativePathFromMonoRepoRoot = module.relativePathFromMonoRepoRoot,
+      targets = targets,
+      originatingSourceModule = module
+    )
+  }
+
+  private def testDependenciesTarget(module: SourceModule) = {
     val testDependencies = extractDependenciesOfScope(module, MavenScope.Test)
     val (data, deps) = testDependencies.partition(dep => dep.coordinates.packaging.isArchive)
     val testDepsTarget = ModuleDeps(
@@ -38,11 +42,20 @@ class ModuleDependenciesTransformer(repoModules: Set[SourceModule],
       runtimeDeps = extractTestResourcesDependencies(module),
       testOnly = true
     )
+    testDepsTarget
+  }
 
-    model.Package(
-      relativePathFromMonoRepoRoot = module.relativePathFromMonoRepoRoot,
-      targets = Set(productionDepsTarget, testDepsTarget),
-      originatingSourceModule = module
+  private def mainDependenciesTarget(module: SourceModule) = {
+    ModuleDeps(
+      name = ProductionDepsTargetName,
+      belongingPackageRelativePath = module.relativePathFromMonoRepoRoot,
+      deps = extractDependenciesOfScope(module, MavenScope.Compile, MavenScope.Provided)
+        .flatMap(dependencyTransformer.toBazelDependency),
+      runtimeDeps =
+        extractDependenciesOfScope(module, MavenScope.Runtime)
+          .flatMap(dependencyTransformer.toBazelDependency) ++
+          extractProdResourcesDependencies(module),
+      testOnly = false
     )
   }
 
@@ -74,6 +87,13 @@ class ModuleDependenciesTransformer(repoModules: Set[SourceModule],
     packages.head.copy(targets = packages.flatMap(_.targets).toSet)
 
 
+  private implicit class ModuleDepsExtended(moduleDeps:ModuleDeps) {
+    def asDepsAggs: ModuleDeps = moduleDeps.copy(
+      name = ProductionDepsTargetName,
+      deps = Set.empty,
+      exports = moduleDeps.deps
+    )
+  }
 }
 
 object ModuleDependenciesTransformer {

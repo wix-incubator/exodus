@@ -6,11 +6,9 @@ import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target._
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Scope, SourceModule, Target, TestType}
 import com.wix.bazel.migrator.transform.InternalTargetOverridesReader
-import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.LibraryRule
 import com.wixpress.build.bazel.LibraryRule.ScalaLibraryRuleType
-import com.wixpress.build.bazel.repositories.WorkspaceName
 import com.wixpress.build.maven.Coordinates
 
 object PrintJvmTargetsSources {
@@ -164,6 +162,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
   def writeModuleDeps(moduleDeps: ModuleDeps): String = {
     val libraryRule = new LibraryRule(
       name = moduleDeps.name,
+      exports = moduleDeps.exports,
       compileTimeDeps = moduleDeps.deps,
       runtimeDeps = moduleDeps.runtimeDeps,
       data = moduleDeps.data,

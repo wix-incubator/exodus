@@ -1,15 +1,12 @@
 package com.wix.bazel.migrator.transform
 
-import com.wix.bazel.migrator.model.SourceModule
-import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
-import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, OverrideCoordinates}
-import com.wixpress.build.maven.Coordinates
-import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, WorkspaceRule}
-import com.wixpress.build.maven.{ArchivePackaging, Coordinates, Packaging}
-import com.wixpress.build.maven
-import ModuleDependenciesTransformer.ProductionDepsTargetName
 import com.wix.bazel.migrator.external.registry.ExternalSourceModuleRegistry
+import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.transform.MavenDependencyTransformer.DependencyExtensions
+import com.wix.bazel.migrator.transform.ModuleDependenciesTransformer.ProductionDepsTargetName
+import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, OverrideCoordinates, WorkspaceRule}
+import com.wixpress.build.maven
+import com.wixpress.build.maven.{ArchivePackaging, Coordinates, Packaging}
 
 class MavenDependencyTransformer(repoModules: Set[SourceModule],
                                  externalPackageLocator: ExternalSourceModuleRegistry,

@@ -62,6 +62,7 @@ object Matchers {
                        deps: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
                        runtimeDeps: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
                        data: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
+                       exports: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
                        testOnly: Matcher[Boolean] = AlwaysMatcher[Boolean]()
                       ): Matcher[Target.ModuleDeps] = {
     be_===(name) ^^ {
@@ -76,6 +77,8 @@ object Matchers {
       (_: ModuleDeps).testOnly aka "testOnly"
     } and data ^^ {
       (_: ModuleDeps).data aka "data"
+    } and exports ^^ {
+      (_: ModuleDeps).exports aka "exports"
     }
   }
 
