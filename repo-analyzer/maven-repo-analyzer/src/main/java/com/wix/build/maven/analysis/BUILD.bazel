@@ -11,7 +11,6 @@ scala_library(
         "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
         "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
-        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "//repo-analyzer/maven-repo-analyzer:main_dependencies",
         "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
