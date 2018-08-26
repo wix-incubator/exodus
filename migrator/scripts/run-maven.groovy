@@ -10,7 +10,7 @@ pipeline {
         maven 'M3'
     }
     environment {
-        MAVEN_OPTS = "-Xmx10G -XX:MaxMetaspaceSize=1G -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
+        MAVEN_OPTS = "-Xmx16G -XX:+UseG1GC"
         MAVEN_INSTALL = "mvn clean install -B -Djansi.force=true -Dwix.environment=CI -Dmaven.test.failure.ignore=true -DshouldSkipAssembly=true"
         PATH = "$JAVA_HOME/bin:$PATH"
         REPO_NAME = find_repo_name()
