@@ -11,8 +11,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
       s"""
          |workspace(name = "$workspaceName")
          |load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-         |rules_scala_version="74a91254f7e2335496813407e210ac00542cd44e" # update this as needed
-         |rules_scala_version_sha256="ed022fbee43ab9bcafab76b4054bcc92267519f78d7d9e0521be95761e279aaa"
+         |rules_scala_version="4e59e5aee66b0fe486f22b19a6b84352bfa58233" # update this as needed
+         |rules_scala_version_sha256="e543b5edec6ed9cee549ff476b6c53e8777120433df5dd8f0b853e11db470d88"
          |http_archive(
          |             name = "io_bazel_rules_scala",
          |             url = "https://github.com/wix/rules_scala/archive/%s.zip"%rules_scala_version,
