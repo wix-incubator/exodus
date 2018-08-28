@@ -2,7 +2,7 @@ pipeline {
     agent any
     options {
         timestamps()
-        timeout(time: 180, unit: 'MINUTES')
+        timeout(time: 240, unit: 'MINUTES')
         ansiColor('xterm')
     }
     tools {
