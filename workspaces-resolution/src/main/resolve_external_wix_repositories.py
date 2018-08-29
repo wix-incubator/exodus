@@ -17,14 +17,15 @@ else:
 CI_ENV_FLAG_FILE = "/tools/ci.environment"
 external_wix_repositories_relative_path = "/tools/external_wix_repositories.bzl"
 
-repositories_url = os.environ.get(
-    "REPOSITORIES_URL",
-    "https://bo.wix.com/bazel-repositories-server/repositories"
-)
+repo_list = os.environ.get("REPO_LIST", "default")
+tracking_branch = os.environ.get("TRACKING_BRANCH", "master")
+
+repositories_url = os.environ.get("REPOSITORIES_URL", "https://bo.wix.com/bazel-repositories-server/repositories")
+url_with_list = repositories_url + ("?list=%s" % repo_list)
 
 
 def fetch_repositories():
-    response = urlopen(repositories_url).read()
+    response = urlopen(url_with_list).read()
     repos = json.loads(response)["repositories"]
     return repos
 
@@ -81,8 +82,16 @@ def parse_workspace_dir():
 
 
 def last_commit(repo_url):
-    commits_output = subprocess.check_output(['git', 'ls-remote', '--heads', repo_url, 'refs/heads/master'])
-    return commits_output.decode("utf-8").splitlines()[0].split('\t')[0]
+    try:
+        commits_output = subprocess.check_output(
+            ['git', 'ls-remote', '--heads', repo_url, 'refs/heads/%s' % tracking_branch])
+        commits = commits_output.decode("utf-8").splitlines()
+        return commits[0].split('\t')[0]
+    except Exception:
+        msg = 'Cannot find latest commit of branch "{branch}" for {url}'.format(branch=tracking_branch, url=repo_url)
+        print ("[ERROR]\t%s" % msg)
+        raise Exception(
+            msg)
 
 
 def main():
