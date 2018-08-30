@@ -43,6 +43,33 @@ pipeline {
                 }
             }
         }
+        stage('check for 0-byte bazel test.xml') {
+            steps {
+                script {
+                    def compare_job = '02-run-bazel'
+                    def emptyTests = []
+                    try {
+                        def compare_job_file = 'bazel_migration/compare_job'
+                        if (fileExists(compare_job_file)) {
+                            compare_job = readFile(compare_job_file).trim()
+                        }
+                        findFiles(glob: 'bazel-output/**/test.xml').each { file ->
+                            if (file.length == 0) {
+                                print("[WARN] ${file.path}/test.xml has length 0.")
+                                emptyTests << file.path
+                            }
+                        }
+                        if (emptyTests != []) {
+                            msg = compose(":thumbsdown: task '${env.JOB_NAME}' has 0-byte `test.xml` files :thumbsdown:", emptyTests.join("\n"))
+                            sendToSlack(["bazel-mig-alerts"], msg)
+                        }
+                    } catch (err) {
+                        print(err)
+                        print("[WARN] unable to copy bazel artifacts from ${compare_job}, perhaps none exist?")
+                    }
+                }
+            }
+        }
         stage('compare') {
             steps {
                 script {
@@ -133,17 +160,24 @@ def sendNotification(good) {
         color = "warning"
     }
     def msg = compose(header)
+    sendToSlack(channels, msg)
+}
+
+def sendToSlack(channels, msg) {
     channels.each { channel ->
         slackSend channel: "#$channel", color: color, message: msg
     }
 }
 
-
 def compose(String header) {
+    compose(header, changesMessage())
+}
+
+def compose(String header, String contents) {
     """*${header}*
     |===================================
     | *URL*: ${env.BUILD_URL}
-    |${changesMessage()}
+    |${contents}
     |""".stripMargin()
 }
 
