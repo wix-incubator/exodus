@@ -15,6 +15,7 @@ pipeline {
         PATH = "$JAVA_HOME/bin:$PATH"
         REPO_NAME = find_repo_name()
         COMMIT_HASH = "${env.COMMIT_HASH}"
+        AUTOMATION_MASTER_KEY = credentials("AUTOMATION_MASTER_KEY")
     }
     stages {
         stage('checkout') {

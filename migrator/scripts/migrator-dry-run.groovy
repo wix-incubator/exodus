@@ -10,12 +10,14 @@ pipeline {
     environment {
         CODOTA_TOKEN = credentials("codota-token")
         ARTIFACTORY_TOKEN = credentials("artifactory-token")
+        AUTOMATION_MASTER_KEY = credentials("AUTOMATION_MASTER_KEY")
         REPO_NAME = find_repo_name()
         MANAGED_DEPS_REPO_NAME = "core-server-build-tools"
         MANAGED_DEPS_REPO_URL = "git@github.com:wix-private/core-server-build-tools.git"
         BAZEL_FLAGS = '''|-k \\
                          |--experimental_sandbox_base=/dev/shm \\
-                         |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
+                         |--test_arg=--jvm_flags=-Dwix.environment=CI \\
+                         |--test_env=AUTOMATION_MASTER_KEY'''.stripMargin()
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"

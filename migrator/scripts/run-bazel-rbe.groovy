@@ -10,6 +10,7 @@ pipeline {
     }
     environment {
         GOOGLE_APPLICATION_CREDENTIALS = credentials("rbe_credentials")
+        AUTOMATION_MASTER_KEY = credentials("AUTOMATION_MASTER_KEY")
         BAZEL_STARTUP_OPTS = '''|--bazelrc=.bazelrc.remote \\
                                 |'''.stripMargin()
         BAZEL_FLAGS = '''|-k \\
@@ -18,7 +19,8 @@ pipeline {
                          |--project_id=gcb-with-custom-workers \\
                          |--remote_instance_name=projects/gcb-with-custom-workers/instances/default_instance \\
                          |--test_timeout=120,300,900,3600 \\
-                         |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
+                         |--test_arg=--jvm_flags=-Dwix.environment=CI  \\
+                         |--test_env=AUTOMATION_MASTER_KEY'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }

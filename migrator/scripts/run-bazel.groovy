@@ -9,9 +9,11 @@ pipeline {
         jdk 'jdk8'
     }
     environment {
+        AUTOMATION_MASTER_KEY = credentials("AUTOMATION_MASTER_KEY")
         BAZEL_FLAGS = '''|-k \\
                          |--experimental_sandbox_base=/dev/shm \\
-                         |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
+                         |--test_arg=--jvm_flags=-Dwix.environment=CI \\
+                         |--test_env=AUTOMATION_MASTER_KEY'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
         BAZEL = "bazel --host_javabase=$JAVA_HOME"

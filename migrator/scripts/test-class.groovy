@@ -9,13 +9,15 @@ pipeline {
         jdk 'jdk8'
     }
     environment {
+        AUTOMATION_MASTER_KEY = credentials("AUTOMATION_MASTER_KEY")
         BAZEL_FLAGS = '''|--strategy=Scalac=worker \\
                          |--experimental_sandbox_base=/dev/shm \\
                          |--sandbox_tmpfs_path=/tmp \\
                          |--test_output=errors \\
                          |--test_filter=${TEST_CLASS} \\
                          |--test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false \\
-                         |--test_arg=--jvm_flags=-Dwix.environment=CI'''.stripMargin()
+                         |--test_arg=--jvm_flags=-Dwix.environment=CI \\
+                         |--test_env=AUTOMATION_MASTER_KEY'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
