@@ -30,10 +30,15 @@ pipeline {
         stage('bazel artifacts') {
             steps {
                 script {
+                    def compare_job = '02-run-bazel'
                     try {
-                        copyArtifacts projectName: '02-run-bazel', filter: '**/*.xml', target: 'bazel-output', selector: specific("${BAZEL_RUN_NUMBER}")
+                        def compare_job_file = 'bazel_migration/compare_job'
+                        if (fileExists(compare_job_file)) {
+                            compare_job = readFile(compare_job_file).trim()
+                        }
+                        copyArtifacts projectName: compare_job, filter: '**/*.xml', target: 'bazel-output', selector: specific("${BAZEL_RUN_NUMBER}")
                     } catch (err) {
-                        echo "[WARN] unable to copy bazel artifacts, perhaps none exist?"
+                        print("[WARN] unable to copy bazel artifacts from ${compare_job}, perhaps none exist?")
                     }
                 }
             }
