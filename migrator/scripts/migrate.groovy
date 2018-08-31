@@ -85,7 +85,7 @@ pipeline {
                    sh """|git checkout -b ${env.BRANCH_NAME}
                          |git add .
                          |git reset -- bazel-build.log
-                         |git commit -m "bazel migrator created by ${env.BUILD_URL}"
+                         |git commit --allow-empty -m "bazel migrator created by ${env.BUILD_URL}"
                          |git push origin ${env.BRANCH_NAME}
                          |""".stripMargin()
                     // WARNING: carefully test any change you make to the following line. mistakes here can be fatal!!
