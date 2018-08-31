@@ -12,14 +12,6 @@ scala_library(
         "//dependency-synchronizer/bazel-deps-synchronizer:main_dependencies",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "@com_fasterxml_jackson_core_jackson_annotations//:com_fasterxml_jackson_core_jackson_annotations",
-        "@com_fasterxml_jackson_core_jackson_core//:com_fasterxml_jackson_core_jackson_core",
-        "@com_fasterxml_jackson_core_jackson_databind//:com_fasterxml_jackson_core_jackson_databind",
-        "@com_fasterxml_jackson_module_jackson_module_scala_2_12//:com_fasterxml_jackson_module_jackson_module_scala_2_12",
-        "@commons_codec_commons_codec//:commons_codec_commons_codec",
-        "@org_apache_maven_maven_artifact//:org_apache_maven_maven_artifact",
-        "@org_scalaj_scalaj_http_2_12//:org_scalaj_scalaj_http_2_12",
-        "@org_slf4j_slf4j_api//:org_slf4j_slf4j_api",
     ],
 )
 

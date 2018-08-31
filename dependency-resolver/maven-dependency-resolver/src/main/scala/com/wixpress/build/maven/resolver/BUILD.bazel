@@ -9,13 +9,6 @@ scala_library(
     ],
     deps = [
         "//dependency-resolver/maven-dependency-resolver:main_dependencies",
-        "@org_apache_maven_maven_resolver_provider//:org_apache_maven_maven_resolver_provider",
-        "@org_apache_maven_resolver_maven_resolver_api//:org_apache_maven_resolver_maven_resolver_api",
-        "@org_apache_maven_resolver_maven_resolver_connector_basic//:org_apache_maven_resolver_maven_resolver_connector_basic",
-        "@org_apache_maven_resolver_maven_resolver_impl//:org_apache_maven_resolver_maven_resolver_impl",
-        "@org_apache_maven_resolver_maven_resolver_spi//:org_apache_maven_resolver_maven_resolver_spi",
-        "@org_apache_maven_resolver_maven_resolver_transport_file//:org_apache_maven_resolver_maven_resolver_transport_file",
-        "@org_apache_maven_resolver_maven_resolver_transport_http//:org_apache_maven_resolver_maven_resolver_transport_http",
     ],
 )
 
