@@ -1,70 +1,49 @@
 package com.wixpress.build.codota
 
-
 import java.net.SocketTimeoutException
 
-import org.specs2.mutable.{BeforeAfter, SpecificationWithJUnit}
+import org.specs2.specification.BeforeAfterAll
+import org.specs2.specification.core.Fragments
 
 
-class CodotaThinClientIT extends SpecificationWithJUnit {
+class CodotaThinClientIT extends CodotaThinClientContract with BeforeAfterAll {
+  val codePack = "some_code_pack"
+  val validToken = "someValidToken"
+  val artifactName = "some.group.artifact-name"
+  val validArtifactWithoutMetaData = "some.group.artifact-without-metadata"
+  val matchingPath = "some/path/to/artifact"
 
-  "client" should {
-    "return path for given artifact name" in new Ctx {
-      client.pathFor(artifactName) must beSome(path)
-    }
+  override def testData: CodotaThinClientTestData = {
+    CodotaThinClientTestData(
+      codotaUrl = codotaFakeServer.url,
+      codePack = codePack,
+      validToken = validToken,
+      validArtifact = artifactName,
+      matchingPath = matchingPath,
+      validArtifactWithoutMetaData = validArtifactWithoutMetaData
+    )
+  }
 
-    "throw ArtifactNotFoundException in case given artifact that was not found" in new Ctx {
-      client.pathFor("some.bad.artifact") must throwA[ArtifactNotFoundException]
-    }
+  val artifactsToPaths = Map(artifactName -> Some(matchingPath), validArtifactWithoutMetaData -> None)
+  val codotaFakeServer = new CodotaFakeServer(codePack, validToken, artifactsToPaths)
 
-    "retry in case of timeouts" in new Ctx {
+  override protected def stressTests: Fragments = {
+    "retry in case of timeouts" in {
       codotaFakeServer.delayTheNextNCalls(n = 1)
-      client.pathFor(artifactName) must beSome(path)
+
+      client.pathFor(artifactName) must beSome(testData.matchingPath)
     }
 
-
-    "throw TimeoutException in case still getting timeout after given max retries" in new Ctx {
-      override def client = new CodotaThinClient(validToken, serverCodePack, codotaFakeServer.url, maxRetries = 2)
+    "throw TimeoutException in case still getting timeout after given max retries" in {
+      val fastToGiveUpClient = new CodotaThinClient(validToken, codePack, codotaFakeServer.url, maxRetries = 2)
 
       codotaFakeServer.delayTheNextNCalls(n = 3)
-      client.pathFor(artifactName) must throwA[SocketTimeoutException]
-    }
-
-    "throw NotAuthorizedException in case given invalid token" in new Ctx {
-      override def client = new CodotaThinClient("someInvalidToken", serverCodePack, codotaFakeServer.url)
-
-      client.pathFor(artifactName) must throwA[NotAuthorizedException]
-    }
-
-    "throw CodePackNotFoundException in case given unknown codePack" in new Ctx {
-      override def client = new CodotaThinClient(validToken, codePack = "invalid", codotaFakeServer.url)
-
-      client.pathFor(artifactName) must throwA[CodePackNotFoundException]
-    }
-
-    "throw NotAuthorizedException in case given empty codePack" in new Ctx {
-      override def client = new CodotaThinClient(validToken, codePack = "", baseURL = codotaFakeServer.url)
-
-      client.pathFor(artifactName) must throwA[NotAuthorizedException]
+      fastToGiveUpClient.pathFor(artifactName) must throwA[SocketTimeoutException]
     }
   }
 
-  trait Ctx extends BeforeAfter {
-    val artifactName = "some.group.artifact-name"
+  override def beforeAll(): Unit = codotaFakeServer.start()
 
-    val path = "some/path/to/artifact"
-    val serverCodePack = "some_code_pack"
-
-
-    def client: CodotaThinClient = new CodotaThinClient(validToken, serverCodePack, codotaFakeServer.url)
-
-    val validToken = "validToken"
-    val codotaFakeServer = new CodotaFakeServer(serverCodePack, artifactName, path, validToken)
-
-    override def before(): Unit = codotaFakeServer.start()
-
-    override def after(): Unit = codotaFakeServer.stop()
-  }
-
+  override def afterAll(): Unit = codotaFakeServer.stop()
 }
 

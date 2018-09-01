@@ -1,14 +1,14 @@
 package com.wixpress.build.codota
 
-import akka.http.scaladsl.model.{HttpEntity, HttpMethods, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model._
 import com.wix.e2e.http.server.WebServerFactory
 import com.wix.e2e.http.{HttpRequest, RequestHandler}
 
 import scala.compat.java8.OptionConverters.toScala
 
-class CodotaFakeServer(codePack: String, artifactName: String, path: String, token: String) {
-  private val response = s"""{"metadata":"{\\"path\\":\\"$path\\"}"}"""
-  private val repositoriesAPIPath = "/api/codenav/artifact"
+class CodotaFakeServer(codePack: String, token: String, artifactNamesToPaths: Map[String, Option[String]]) {
+
+  private val artifactPath = "/api/codenav/artifact/(.*)/metadata".r
   private val probe = WebServerFactory.aMockWebServerWith(handler).build
   var delayCount = 0
 
@@ -22,30 +22,39 @@ class CodotaFakeServer(codePack: String, artifactName: String, path: String, tok
 
   private def handler: RequestHandler = {
     case r: HttpRequest if !authorized(r) => HttpResponse(status = StatusCodes.Unauthorized)
+    case r: HttpRequest if codePackOf(r).exists(_.isEmpty) =>
+      HttpResponse(status = StatusCodes.Forbidden).withEntity(HttpEntity(s"Missing codepack"))
     case r: HttpRequest if !codePackOf(r).contains(codePack) =>
       HttpResponse(status = StatusCodes.NotFound).withEntity(HttpEntity(s"No such project ${codePackOf(r).get}"))
-    case r: HttpRequest if matches(r) =>
+    case HttpRequest(HttpMethods.GET, UriWithArtifactName(artifactName), _, _, _) if existsWithPath(artifactName) =>
+      val path = artifactNamesToPaths(artifactName).get
       if (delayCount > 0) {
-        Thread.sleep(1500)
+        Thread.sleep(2500)
         delayCount -= 1
       }
       HttpResponse()
         .withEntity(
-          HttpEntity(response))
+          HttpEntity(response(path)))
 
     case _ => HttpResponse(status = StatusCodes.NotFound).withEntity(HttpEntity("Not Found"))
   }
 
+  private def response(path: String) = s"""{"path": "$path"}"""
+
   private def codePackOf(httpRequest: HttpRequest): Option[String] = toScala(httpRequest.getUri().query().get("codePack"))
 
   private def authorized(httpRequest: HttpRequest): Boolean = {
-    codePackOf(httpRequest).exists(_.nonEmpty) &&
-      httpRequest.headers.exists(h => h.name() == "Authorization" && h.value() == s"Bearer $token")
+    httpRequest.headers.exists(h => h.name() == "Authorization" && h.value() == s"Bearer $token")
   }
 
-  private def matches(httpRequest: HttpRequest): Boolean =
-    (httpRequest.method == HttpMethods.GET) &&
-      httpRequest.getUri.path() == repositoriesAPIPath &&
-      toScala(httpRequest.getUri().query().get("artifactName")).contains(artifactName)
+  private def existsWithPath(artifactName: String) = artifactNamesToPaths.get(artifactName).exists(_.isDefined)
+
+
+  object UriWithArtifactName {
+    def unapply(uri: Uri): Option[String] = uri.path.toString() match {
+      case artifactPath(artifactName) => Some(artifactName)
+      case _ => None
+    }
+  }
 
 }

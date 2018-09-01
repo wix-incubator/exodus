@@ -59,9 +59,8 @@ class CodotaThinClient(token: String,
 
   private def requestFor(artifactName: String) = {
     Try {
-      Http(requestURLTemplate)
+      Http(s"$requestURLTemplate/$artifactName/metadata")
         .param("codePack", codePack)
-        .param("artifactName", artifactName)
         .header("Authorization", s"bearer $token")
         .option(HttpOptions.readTimeout(timeout))
         .asString
@@ -77,18 +76,16 @@ class CodotaThinClient(token: String,
         case 200 => body
         case 401 => throw NotAuthorizedException(body)
         case 404 if body.contains(codePack) => throw CodePackNotFoundException(body)
-        case 404 => throw ArtifactNotFoundException(body)
+        case 403 => throw MissingCodePackException()
+        case 404 => throw MetaDataOrArtifactNotFound(body)
       }
     }
   }
 
   private def extractPath(body: String, artifactName: String) = {
     Try {
-      val artifact = mapper.readValue(body, classOf[Artifact])
-      Option(artifact.metadata) match {
-        case Some(metadata) => Option(mapper.readValue(metadata, classOf[ArtifactMetadata])).map(_.path)
-        case None => throw NoMetadataException(artifactName)
-      }
+      val metaData = mapper.readValue(body, classOf[ArtifactMetadata])
+      Option(metaData.path)
     }
   }
 }
@@ -98,7 +95,5 @@ object CodotaThinClient {
   type PathAttemptResult = Try[Option[String]]
   type RetriesLoop = Stream[PathAttemptResult]
 }
-
-case class Artifact(metadata: String)
 
 case class ArtifactMetadata(path: String)
