@@ -52,7 +52,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     new DockerImagesWriter(repoRoot, InternalTargetOverridesReader.from(repoRoot)).write()
 
   private def writeBazelCustomRunnerScript(): Unit = {
-    new BazelCustomRunnerWriter(repoRoot).write()
+    new BazelCustomRunnerWriter(repoRoot, configuration.interRepoSourceDependency).write()
     new GitIgnoreAppender(repoRoot).append("tools/external_wix_repositories.bzl")
   }
 
