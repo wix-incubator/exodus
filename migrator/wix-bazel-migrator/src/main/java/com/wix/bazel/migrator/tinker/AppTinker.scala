@@ -22,7 +22,7 @@ class AppTinker(configuration: RunConfiguration) {
   val codotaToken: String = configuration.codotaToken
   val localWorkspaceName: String = WorkspaceName.by(configuration.repoUrl)
   val artifactoryRemoteStorage = newRemoteStorage
-
+  val dependenciesDifferentiator = new DependenciesDifferentiator(configuration.repoRoot.toPath)
   lazy val sourceModules: SourceModules = readSourceModules()
   lazy val codeModules: Set[SourceModule] = sourceModules.codeModules
   lazy val directDependencies: Set[Dependency] = collectExternalDependenciesUsedByRepoModules()
@@ -66,7 +66,7 @@ class AppTinker(configuration: RunConfiguration) {
 
   private def sourceDependencies: Set[Dependency] =
     if (configuration.interRepoSourceDependency)
-      externalDependencies.filter(d => hasSourceDependencyProperties(d.coordinates))
+      externalDependencies.filter(d => dependenciesDifferentiator.shouldBeSourceDependency(d.coordinates))
     else
      Set.empty
 
@@ -78,7 +78,6 @@ class AppTinker(configuration: RunConfiguration) {
     f
   }
 
-  private def hasSourceDependencyProperties(artifact: Coordinates) = artifact.version.endsWith("-SNAPSHOT")
 
   private def staleFactorInHours = sys.props.getOrElse("num.hours.classpath.cache.is.fresh", "24").toInt
 
