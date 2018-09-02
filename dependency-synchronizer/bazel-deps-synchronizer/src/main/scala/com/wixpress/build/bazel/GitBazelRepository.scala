@@ -1,16 +1,17 @@
 package com.wixpress.build.bazel
 
 import better.files.File
+import com.jcraft.jsch.Session
 import org.eclipse.jgit.api.ResetCommand.ResetType
 import org.eclipse.jgit.api.{Git, TransportCommand}
-import org.eclipse.jgit.transport._
+import org.eclipse.jgit.transport.{JschConfigSessionFactory, SshTransport, _}
 
 class GitBazelRepository(
                           gitURL: String,
                           checkoutDir: File,
                           username: String = "builduser",
-                          email: String = "builduser@ci.com",
-                          tokenApi: Option[String] = None) extends BazelRepository {
+                          email: String = "builduser@ci.com")
+                          (implicit authentication: GitAuthentication) extends BazelRepository {
 
   private val DefaultRemote = "origin"
   private val DefaultBranch = "master"
@@ -19,7 +20,7 @@ class GitBazelRepository(
 
   private def init(): Unit = {
     checkoutDir.delete(swallowIOExceptions = true).createDirectories()
-    val git = withTokenIfNeeded(Git.cloneRepository())
+    val git = authentication.set(Git.cloneRepository())
       .setURI(gitURL)
       .setDirectory(checkoutDir.toJava)
       .call()
@@ -41,7 +42,7 @@ class GitBazelRepository(
 
   private def cleanAndUpdateLocalRepo(branchName: String) = {
     withLocalGit(git => {
-      withTokenIfNeeded(git.fetch())
+      authentication.set(git.fetch())
         .call()
 
       git.clean()
@@ -55,7 +56,6 @@ class GitBazelRepository(
         .call()
     })
   }
-
 
   private def checkoutNewBranch(git: Git, branchName: String) = {
     git.checkout()
@@ -87,7 +87,7 @@ class GitBazelRepository(
   }
 
   private def pushToRemote(git: Git, branchName: String) = {
-    withTokenIfNeeded(git.push())
+    authentication.set(git.push())
       .setRemote(DefaultRemote)
       .setRefSpecs(new RefSpec(branchName))
       .setForce(true)
@@ -103,11 +103,29 @@ class GitBazelRepository(
       git.close()
     }
   }
+}
 
-  private def withTokenIfNeeded[T <: TransportCommand[T, _]](command: T): T = {
+trait GitAuthentication {
+  def set[T <: TransportCommand[T, _]](command: T): T
+}
+
+class GitAuthenticationWithToken(tokenApi: Option[String] = None) extends GitAuthentication {
+  override def set[T <: TransportCommand[T, _]](command: T): T = {
     tokenApi.foreach(token => command.setCredentialsProvider(credentialsProviderFor(token)))
     command
   }
-
   private def credentialsProviderFor(token: String) = new UsernamePasswordCredentialsProvider(token, "")
+}
+
+object GitAuthenticationWithSsh extends GitAuthentication {
+  override def set[T <: TransportCommand[T, _]](command: T): T = {
+    val sshSessionFactory = new JschConfigSessionFactory() {
+      override protected def configure(host: OpenSshConfig.Host, session: Session): Unit = {}
+    }
+
+    command.setTransportConfigCallback((transport: Transport) => {
+      val sshTransport = transport.asInstanceOf[SshTransport]
+      sshTransport.setSshSessionFactory(sshSessionFactory)
+    })
+  }
 }

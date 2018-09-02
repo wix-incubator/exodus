@@ -8,6 +8,8 @@ import org.specs2.specification.Scope
 
 //noinspection TypeAnnotation
 class GitBazelRepositoryIT extends SpecificationWithJUnit {
+  implicit val gitAuthnetication = new GitAuthenticationWithToken(tokenApi = None)
+
   "GitBazelRepository" should {
 
     "reset whatever was in given path to clone of given git URL" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
