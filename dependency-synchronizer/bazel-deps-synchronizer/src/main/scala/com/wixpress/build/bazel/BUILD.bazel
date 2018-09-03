@@ -18,6 +18,7 @@ scala_library(
         "@com_fasterxml_jackson_module_jackson_module_scala_2_12//:com_fasterxml_jackson_module_jackson_module_scala_2_12",
         "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
         "@com_jcraft_jsch//:com_jcraft_jsch",
+        "@junit_junit//:junit_junit",
         "@org_eclipse_jgit_org_eclipse_jgit//:org_eclipse_jgit_org_eclipse_jgit",
     ],
 )
