@@ -62,11 +62,9 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   private def cleanGitIgnore(): Unit =
     new GitIgnoreCleaner(repoRoot).clean()
 
-  private def bazelPackages = {
-    val rawPackages = if (configuration.performTransformation) transform() else Persister.readTransformationResults()
-    val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(rawPackages)
-    withModuleDepsPackages(withProtoPackages)
-  }
+  private def bazelPackages =
+    if (configuration.performTransformation) transform() else Persister.readTransformationResults()
+
 
   private def withModuleDepsPackages(withProtoPackages: Set[model.Package]) = {
     val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
@@ -83,8 +81,10 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   private def transform() = {
     val transformer = new BazelTransformer(dependencyAnalyzer)
     val bazelPackages = transformer.transform(codeModules)
-    Persister.persistTransformationResults(bazelPackages)
-    bazelPackages
+    val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(bazelPackages)
+    val packageWithModuleDeps = withModuleDepsPackages(withProtoPackages)
+    Persister.persistTransformationResults(packageWithModuleDeps)
+    packageWithModuleDeps
   }
 
   private def dependencyAnalyzer = {
