@@ -26,8 +26,7 @@ class BazelRcWriter(repoRoot: Path) {
 }
 
 object BazelRcWriter {
-  val defaultOptions: List[String] = List("startup --host_jvm_args=-Dbazel.DigestFunction=SHA256",
-    "build --strategy=Scalac=worker",
+  val defaultOptions: List[String] = List("build --strategy=Scalac=worker",
     "build --strict_proto_deps=off",
     "build --strict_java_deps=warn",
     "test --strategy=Scalac=worker",

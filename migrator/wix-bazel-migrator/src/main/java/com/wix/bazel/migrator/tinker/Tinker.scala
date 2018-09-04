@@ -14,6 +14,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     writeBazelRc()
     writePrelude()
     writeBazelRemoteRc()
+    writeBazelRemoteSettingsRc()
     writeWorkspace()
     writeInternal()
     writeExternal()
@@ -38,6 +39,9 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
 
   private def writeBazelRemoteRc(): Unit =
     new BazelRcRemoteWriter(repoRoot).write()
+
+  private def writeBazelRemoteSettingsRc(): Unit =
+    new BazelRcRemoteSettingsWriter(repoRoot).write()
 
   private def writeWorkspace(): Unit =
     new WorkspaceWriter(repoRoot, localWorkspaceName).write()
