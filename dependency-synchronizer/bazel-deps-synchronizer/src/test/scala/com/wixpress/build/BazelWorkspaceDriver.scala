@@ -1,10 +1,12 @@
 package com.wixpress.build
 
-import com.wixpress.build.bazel._
-import com.wixpress.build.maven.{Coordinates, Exclusion}
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
+import com.wixpress.build.bazel._
 import com.wixpress.build.maven.Coordinates._
+import com.wixpress.build.maven.{Coordinates, DependencyNode, Exclusion, Packaging}
+import org.specs2.matcher.{AlwaysMatcher, Matcher}
+import org.specs2.matcher.Matchers._
 
 class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
   val ruleResolver = new RuleResolver(bazelRepo.localWorkspaceName)
@@ -64,6 +66,91 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
        |""".stripMargin
   }
 
+  def importExternalRuleWith(artifact: Coordinates,
+                             runtimeDependencies: Set[Coordinates] = Set.empty,
+                             compileTimeDependencies: Set[Coordinates] = Set.empty,
+                             exclusions: Set[Exclusion] = Set.empty,
+                             checksum: Option[String] = None) = {
+    ImportExternalRule.of(artifact,
+      runtimeDependencies,
+      compileTimeDependencies,
+      exclusions,
+      coordinatesToLabel = ruleResolver.labelBy,
+      checksum)
+  }
+}
+
+object BazelWorkspaceDriver {
+  val localWorkspaceName = "some_local_workspace_name"
+
+  implicit class BazelWorkspaceDriverExtensions(w: BazelLocalWorkspace) {
+    def hasDependencies(dependencyNodes: DependencyNode*) = {
+      new BazelDependenciesWriter(w).writeDependencies(dependencyNodes.toSet)
+    }
+  }
+
+  def includeLibraryRuleTarget(artifact: Coordinates, expectedlibraryRule: LibraryRule): Matcher[BazelWorkspaceDriver] = { driver: BazelWorkspaceDriver =>
+    driver.bazelExternalDependencyFor(artifact).equals(BazelExternalDependency(importExternalRule = None,
+      libraryRule = Some(expectedlibraryRule)))
+  }
+
+  private def labelBy(coordinates: Coordinates): String = {
+    coordinates.packaging match {
+      case Packaging("jar") => ImportExternalRule.jarLabelBy(coordinates)
+      case _ => nonJarLabelBy(coordinates)
+    }
+  }
+
+  private def nonJarLabelBy(coordinates: Coordinates): String = {
+    s"@$localWorkspaceName${LibraryRule.nonJarLabelBy(coordinates)}"
+  }
+
+  private def importExternalRuleWith(artifact: Coordinates,
+                             runtimeDependencies: Set[Coordinates] = Set.empty,
+                             compileTimeDependencies: Set[Coordinates] = Set.empty,
+                             exclusions: Set[Exclusion] = Set.empty,
+                             checksum: Option[String] = None,
+                             coordinatesToLabel: Coordinates => String) = {
+    ImportExternalRule.of(artifact,
+      runtimeDependencies,
+      compileTimeDependencies,
+      exclusions,
+      coordinatesToLabel = coordinatesToLabel,
+      checksum)
+  }
+
+  def includeImportExternalTargetWith(artifact: Coordinates,
+                                      runtimeDependencies: Set[Coordinates] = Set.empty,
+                                      compileTimeDependencies: Set[Coordinates] = Set.empty,
+                                      exclusions: Set[Exclusion] = Set.empty,
+                                      checksum: Option[String] = None,
+                                      coordinatesToLabel: Coordinates => String = labelBy): Matcher[BazelWorkspaceDriver] =
+
+    be_===(BazelExternalDependency(
+      importExternalRule = Some(importExternalRuleWith(
+        artifact = artifact,
+        runtimeDependencies = runtimeDependencies,
+        compileTimeDependencies = compileTimeDependencies,
+        exclusions = exclusions,
+        checksum = checksum,
+        coordinatesToLabel)))) ^^ {
+      (_:BazelWorkspaceDriver).bazelExternalDependencyFor(artifact) aka s"bazel workspace does not include import external rule target for $artifact"
+    }
+
+  def includeImportExternalRulesInWorkspace(coordinatesSet: Set[Coordinates]): Matcher[BazelWorkspaceDriver] = coordinatesSet.map(includeJarInWorkspace).reduce(_.and(_))
+  private def includeJarInWorkspace(coordinates: Coordinates): Matcher[BazelWorkspaceDriver] = { driver:BazelWorkspaceDriver =>
+    (driver.bazelExternalDependencyFor(coordinates).importExternalRule.isDefined, s"$coordinates could not be found in project ")
+  }
+
+  def notIncludeImportExternalRulesInWorkspace(coordinatesSet: Coordinates*): Matcher[BazelWorkspaceDriver] = notIncludeImportExternalRulesInWorkspace(coordinatesSet.toSet)
+
+  def notIncludeImportExternalRulesInWorkspace(coordinatesSet: Set[Coordinates]): Matcher[BazelWorkspaceDriver] = coordinatesSet.map(notIncludeJarInWorkspace).reduce(_.and(_))
+
+  private def notIncludeJarInWorkspace(coordinates: Coordinates): Matcher[BazelWorkspaceDriver] = { driver:BazelWorkspaceDriver =>
+    (driver.bazelExternalDependencyFor(coordinates).importExternalRule.isEmpty, s"unexpected $coordinates were found in project")
+  }
+
+  def of[T](x:T) : T = x
 }
 
 case class MavenJarInBazel(artifact: Coordinates, runtimeDependencies: Set[Coordinates], compileTimeDependencies: Set[Coordinates], exclusions: Set[Exclusion])

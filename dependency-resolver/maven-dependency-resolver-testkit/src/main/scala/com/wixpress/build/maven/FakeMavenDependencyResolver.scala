@@ -90,3 +90,14 @@ class FakeMavenDependencyResolver(artifacts: Set[ArtifactDescriptor]) extends Ma
     })
 
 }
+
+object FakeMavenDependencyResolver {
+  def givenFakeResolverForDependencies(singleDependencies: Set[SingleDependency] = Set.empty, rootDependencies: Set[Dependency] = Set.empty) = {
+    val artifactDescriptors = rootDependencies.map { dep: Dependency => ArtifactDescriptor.rootFor(dep.coordinates) }
+
+    val dependantDescriptors = singleDependencies.map { node => ArtifactDescriptor.withSingleDependency(node.dependant.coordinates, node.dependency) }
+    val dependencyDescriptors = singleDependencies.map { node => ArtifactDescriptor.rootFor(node.dependency.coordinates) }
+
+    new FakeMavenDependencyResolver(dependantDescriptors ++ dependencyDescriptors ++ artifactDescriptors)
+  }
+}

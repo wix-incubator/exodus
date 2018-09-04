@@ -1,9 +1,10 @@
 package com.wixpress.build.bazel
 
+import com.wixpress.build.BazelWorkspaceDriver
+import com.wixpress.build.BazelWorkspaceDriver._
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.DiffSynchronizer
-import com.wixpress.build.{BazelExternalDependency, BazelWorkspaceDriver}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -30,13 +31,10 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
 
       synchronizer.sync(resolvedNodes)
 
-      bazelDriver.bazelExternalDependencyFor(managedDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = managedDependency.coordinates,
-          runtimeDependencies = Set(transitiveDependency.coordinates))))
+      bazelWorkspace must includeImportExternalTargetWith(artifact = managedDependency.coordinates,
+          runtimeDependencies = Set(transitiveDependency.coordinates))
 
-      bazelDriver.bazelExternalDependencyFor(transitiveDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = None)
+      bazelWorkspace must notIncludeImportExternalRulesInWorkspace((transitiveDependency.coordinates))
     }
   }
 
@@ -46,8 +44,7 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
     private val targetFakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = "some_local_workspace_name")
     val targetFakeBazelRepository = new InMemoryBazelRepository(targetFakeLocalWorkspace)
 
-    val bazelDriver = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
-    val ruleResolver = bazelDriver.ruleResolver
+    val bazelWorkspace = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
 
     val managedDependency = aDependency("base")
     val transitiveDependency = aDependency("transitive")
@@ -69,15 +66,5 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
       new DiffSynchronizer(externalFakeBazelRepository, targetFakeBazelRepository, resolver, _ => None)
     }
 
-    def importExternalRuleWith(artifact: Coordinates,
-                               runtimeDependencies: Set[Coordinates] = Set.empty,
-                               compileTimeDependencies: Set[Coordinates] = Set.empty,
-                               exclusions: Set[Exclusion] = Set.empty) = {
-      ImportExternalRule.of(artifact,
-        runtimeDependencies,
-        compileTimeDependencies,
-        exclusions,
-        coordinatesToLabel = ruleResolver.labelBy)
-    }
   }
 }

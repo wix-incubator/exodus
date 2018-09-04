@@ -58,3 +58,4 @@ object MavenMakers {
 }
 
 case class SingleDependency(dependant: Dependency, dependency: Dependency)
+case class SingleTransitiveDependency(dependant: Dependency, dependency: Dependency, transitiveDependency: Dependency)

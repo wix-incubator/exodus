@@ -1,13 +1,16 @@
 package com.wixpress.build.sync
 
-import com.wixpress.build.{BazelExternalDependency, BazelWorkspaceDriver}
+import com.wixpress.build.BazelWorkspaceDriver
+import com.wixpress.build.BazelWorkspaceDriver.{includeImportExternalTargetWith, _}
 import com.wixpress.build.bazel._
+import com.wixpress.build.maven.FakeMavenDependencyResolver._
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.DependenciesRemoteStorageTestSupport.remoteStorageWillReturn
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
+//noinspection TypeAnnotation
 class DiffSynchronizerTest extends SpecificationWithJUnit {
 
   "Diff Synchronizer" should {
@@ -21,8 +24,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(localNodes = Set(aRootDependencyNode(aManagedDependency)))
 
-      bazelDriver.bazelExternalDependencyFor(aManagedDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = None)
+      localWorkspace must notIncludeImportExternalRulesInWorkspace(aManagedDependency.coordinates)
     }
 
     "persist jar import with local divergent version" in new baseCtx {
@@ -35,9 +37,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(Set(aRootDependencyNode(divergentDependency)))
 
-      bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = divergentDependency.coordinates)))
+      localWorkspace must includeImportExternalTargetWith(divergentDependency.coordinates)
     }
 
     "persist dependency with its dependencies (managed has no dependency)" in new baseCtx {
@@ -51,14 +51,12 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(dependencyNodesFrom(singleDependency))
 
-      bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = divergentDependency.coordinates,
-          runtimeDependencies = Set(transitiveDependency.coordinates))))
+      localWorkspace must includeImportExternalTargetWith(
+        artifact = divergentDependency.coordinates,
+        runtimeDependencies = Set(transitiveDependency.coordinates))
 
-      bazelDriver.bazelExternalDependencyFor(transitiveDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = transitiveDependency.coordinates)))
+      localWorkspace must includeImportExternalTargetWith(
+          artifact = transitiveDependency.coordinates)
     }
 
     "persist dependency's jar import without its dependency because managed has the dependency as well" in new baseCtx {
@@ -74,13 +72,10 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(dependencyNodesFrom(divergentSingleDependency))
 
-      bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = divergentDependency.coordinates,
-          runtimeDependencies = Set(transitiveDependency.coordinates))))
+      localWorkspace must includeImportExternalTargetWith(artifact = divergentDependency.coordinates,
+        runtimeDependencies = Set(transitiveDependency.coordinates))
 
-      bazelDriver.bazelExternalDependencyFor(transitiveDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = None)
+      localWorkspace must notIncludeImportExternalRulesInWorkspace(transitiveDependency.coordinates)
     }
 
     "persist jar import with local divergent version and divergent dependency" in new baseCtx {
@@ -98,14 +93,11 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(dependencyNodesFrom(divergentSingleDependency))
 
-      bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = divergentDependency.coordinates,
-          compileTimeDependencies = Set(divergentTransitiveDependency.coordinates))))
+      localWorkspace must includeImportExternalTargetWith(
+        artifact = divergentDependency.coordinates,
+        compileTimeDependencies = Set(divergentTransitiveDependency.coordinates))
 
-      bazelDriver.bazelExternalDependencyFor(divergentTransitiveDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = divergentTransitiveDependency.coordinates)))
+      localWorkspace must includeImportExternalTargetWith(divergentTransitiveDependency.coordinates)
     }
 
     "persist dependency with divergent dependency" in new baseCtx {
@@ -122,14 +114,11 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(dependencyNodesFrom(divergentSingleDependency))
 
-      bazelDriver.bazelExternalDependencyFor(managedDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = managedDependency.coordinates,
-          compileTimeDependencies = Set(divergentTransitiveDependency.coordinates))))
+      localWorkspace must includeImportExternalTargetWith(
+        artifact = managedDependency.coordinates,
+        compileTimeDependencies = Set(divergentTransitiveDependency.coordinates))
 
-      bazelDriver.bazelExternalDependencyFor(divergentTransitiveDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = divergentTransitiveDependency.coordinates)))
+      localWorkspace must includeImportExternalTargetWith(divergentTransitiveDependency.coordinates)
     }
 
     "not persist jar import of dependency nor of transitive dependency, because managed has the same depednecies " +
@@ -146,11 +135,8 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(dependencyNodesFrom(originalSingleDependency))
 
-      bazelDriver.bazelExternalDependencyFor(managedDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = None)
-
-      bazelDriver.bazelExternalDependencyFor(transitiveDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = None)
+      localWorkspace must notIncludeImportExternalRulesInWorkspace(managedDependency.coordinates)
+      localWorkspace must notIncludeImportExternalRulesInWorkspace(transitiveDependency.coordinates)
     }
 
     "not persist managed dependencies not found in local deps" in new baseCtx {
@@ -163,8 +149,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(Set(aRootDependencyNode(localDependency)))
 
-      bazelDriver.bazelExternalDependencyFor(managedDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = None)
+      localWorkspace must notIncludeImportExternalRulesInWorkspace(managedDependency.coordinates)
     }
 
     "not persist jar import even if has different scope" in new baseCtx {
@@ -177,8 +162,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(Set(aRootDependencyNode(divergentDependency)))
 
-      bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = None)
+      localWorkspace must notIncludeImportExternalRulesInWorkspace(divergentDependency.coordinates)
     }
 
     "persist dependency's jar import without its exclusion. do not persist java import exclusion" in new baseCtx {
@@ -194,13 +178,11 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(Set(aRootDependencyNode(divergentDependency), aRootDependencyNode(transitiveDependency)))
 
-      bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = divergentDependency.coordinates,
-          exclusions = Set(someExclusion))))
+      localWorkspace must includeImportExternalTargetWith(
+        artifact = divergentDependency.coordinates,
+        exclusions = Set(someExclusion))
 
-      bazelDriver.bazelExternalDependencyFor(transitiveDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = None)
+      localWorkspace must notIncludeImportExternalRulesInWorkspace(transitiveDependency.coordinates)
     }
 
     // this is needed only for "phase 1" - once all internal wix dependencies will be source dependencies these pom scala_import targets will be redundant
@@ -214,11 +196,11 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(localNodes = Set(aRootDependencyNode(aManagedDependency)))
 
-      bazelDriver.bazelExternalDependencyFor(aManagedDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = None,
-        libraryRule = Some(LibraryRule.pomLibraryRule(
-          artifact = aManagedDependency.coordinates, Set.empty, Set.empty, Set.empty, ruleResolver.labelBy
-        )))
+      localWorkspace must includeLibraryRuleTarget(
+        aManagedDependency.coordinates,
+        LibraryRule.pomLibraryRule(
+          artifact = aManagedDependency.coordinates, Set.empty, Set.empty, Set.empty, _ => ""
+        ))
     }
 
     "persist jar import with sha256" in new resolvedCtx {
@@ -227,10 +209,8 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(Set(aRootDependencyNode(divergentDependency)))
 
-      bazelDriver.bazelExternalDependencyFor(divergentDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = divergentDependency.coordinates,
-          checksum = Some(someChecksum))))
+      localWorkspace must includeImportExternalTargetWith(artifact = divergentDependency.coordinates,
+        checksum = Some(someChecksum))
     }
 
     "persist SNAPSHOT jar import without sha256" in new resolvedCtx {
@@ -240,10 +220,9 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       synchronizer.sync(Set(aRootDependencyNode(divergentSnapshotDependency)))
 
-      bazelDriver.bazelExternalDependencyFor(divergentSnapshotDependency.coordinates) mustEqual BazelExternalDependency(
-        importExternalRule = Some(importExternalRuleWith(
-          artifact = divergentSnapshotDependency.coordinates,
-          checksum = None)))
+      localWorkspace must includeImportExternalTargetWith(
+        artifact = divergentSnapshotDependency.coordinates,
+        checksum = None)
     }
   }
 
@@ -251,11 +230,10 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     private val externalWorkspaceName = "some_external_workspace_name"
     private val externalFakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = externalWorkspaceName)
     val externalFakeBazelRepository = new InMemoryBazelRepository(externalFakeLocalWorkspace)
-    private val targetFakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = "some_local_workspace_name")
+    private val targetFakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = localWorkspaceName)
     val targetFakeBazelRepository = new InMemoryBazelRepository(targetFakeLocalWorkspace)
 
-    val bazelDriver = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
-    val ruleResolver = bazelDriver.ruleResolver
+    val localWorkspace = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
 
     val managedDependency = aDependency("base")
     val transitiveDependency = aDependency("transitive").withScope(MavenScope.Runtime)
@@ -268,30 +246,8 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
       givenBazelWorkspaceWithManagedDependencies(managedDeps.toSeq:_*)
     }
 
-    def givenFakeResolverForDependencies(singleDependencies: Set[SingleDependency] = Set.empty, rootDependencies: Set[Dependency] = Set.empty) = {
-      val artifactDescriptors = rootDependencies.map { dep: Dependency => ArtifactDescriptor.rootFor(dep.coordinates) }
-
-      val dependantDescriptors = singleDependencies.map { node => ArtifactDescriptor.withSingleDependency(node.dependant.coordinates, node.dependency) }
-      val dependencyDescriptors = singleDependencies.map { node => ArtifactDescriptor.rootFor(node.dependency.coordinates) }
-
-      new FakeMavenDependencyResolver(dependantDescriptors ++ dependencyDescriptors ++ artifactDescriptors)
-    }
-
     def givenSynchornizerFor(resolver: FakeMavenDependencyResolver, storage: DependenciesRemoteStorage = _ => None) = {
       new DiffSynchronizer(externalFakeBazelRepository, targetFakeBazelRepository, resolver, storage)
-    }
-
-    def importExternalRuleWith(artifact: Coordinates,
-                               runtimeDependencies: Set[Coordinates] = Set.empty,
-                               compileTimeDependencies: Set[Coordinates] = Set.empty,
-                               exclusions: Set[Exclusion] = Set.empty,
-                               checksum: Option[String] = None) = {
-      ImportExternalRule.of(artifact,
-        runtimeDependencies,
-        compileTimeDependencies,
-        exclusions,
-        coordinatesToLabel = ruleResolver.labelBy,
-        checksum)
     }
   }
 
