@@ -151,9 +151,10 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
   private def externalSourceDependencyLabelOf(simplifiedDependencies: List[SimplifiedCodotaDependency]): Either[AnalyzeFailure, Set[String]] = {
     if (interRepoSourceDependency) {
       EitherSequence.sequence {
-        val deps: Set[Either[AnalyzeFailure, String]] = simplifiedDependencies.filterNot(_.partOfProject).collect {
-          case a if a.label.isDefined => Right(a.label.get)
-          case b => Left(AnalyzeFailure.ExternalBazelLabelMissing(b.simplifiedCoordinates.serialized, b.filepath))
+        val dependencies = simplifiedDependencies.filterNot(_.partOfProject)
+        val deps: Set[Either[AnalyzeFailure, String]] = dependencies.collect {
+          case SimplifiedCodotaDependency(_, _, Some(label),_) => Right(label)
+          case SimplifiedCodotaDependency(filepath, coordinates, None,_) => Left(AnalyzeFailure.ExternalBazelLabelMissing(coordinates.serialized, filepath))
         }.toSet
         deps
       }
