@@ -8,6 +8,7 @@ import better.files.{File, FileOps}
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.{DependencyCollectionCollisionsReport, Persister, RunConfiguration}
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
+import com.wix.bazel.migrator.utils.{DependenciesDifferentiator, MavenCoordinatesListReader}
 import com.wix.build.maven.analysis.{SourceModules, ThirdPartyConflict, ThirdPartyConflicts, ThirdPartyValidator}
 import com.wixpress.build.bazel.NoPersistenceBazelRepository
 import com.wixpress.build.bazel.repositories.WorkspaceName
@@ -22,14 +23,21 @@ class AppTinker(configuration: RunConfiguration) {
   val codotaToken: String = configuration.codotaToken
   val localWorkspaceName: String = WorkspaceName.by(configuration.repoUrl)
   val artifactoryRemoteStorage = newRemoteStorage
-  val dependenciesDifferentiator = new DependenciesDifferentiator(configuration.repoRoot.toPath)
+  val sourceDependenciesWhitelist = readSourceDependenciesWhitelist()
+  val dependenciesDifferentiator = new DependenciesDifferentiator(sourceDependenciesWhitelist)
   lazy val sourceModules: SourceModules = readSourceModules()
   lazy val codeModules: Set[SourceModule] = sourceModules.codeModules
   lazy val directDependencies: Set[Dependency] = collectExternalDependenciesUsedByRepoModules()
   lazy val externalDependencies: Set[Dependency] = dependencyCollector.dependencySet()
-  lazy val codotaDependencyAnalyzer = new CodotaDependencyAnalyzer(repoRoot, codeModules, codotaToken, configuration.interRepoSourceDependency)
+  lazy val codotaDependencyAnalyzer = new CodotaDependencyAnalyzer(repoRoot, codeModules, codotaToken, configuration.interRepoSourceDependency, dependenciesDifferentiator)
   lazy val externalSourceDependencies: Set[Dependency] = sourceDependencies
   lazy val externalBinaryDependencies: Set[Dependency] = binaryDependencies
+
+  private def readSourceDependenciesWhitelist() =
+    (configuration.interRepoSourceDependency, configuration.sourceDependenciesWhitelist) match {
+      case (true, Some(path)) => MavenCoordinatesListReader.coordinatesIn(path)
+      case _ => Set.empty[Coordinates]
+    }
 
   private def aetherMavenDependencyResolver = {
     new AetherMavenDependencyResolver(List(
@@ -124,7 +132,7 @@ class AppTinker(configuration: RunConfiguration) {
     val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies.map(_.coordinates)
     val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
       resolver = aetherResolver,
-      globalExcludes = internalCoordinates
+      globalExcludes = internalCoordinates.union(sourceDependenciesWhitelist)
     )
 
     val managedDependenciesFromMaven = aetherResolver

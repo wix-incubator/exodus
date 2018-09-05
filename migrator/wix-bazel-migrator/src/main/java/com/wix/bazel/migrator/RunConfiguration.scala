@@ -1,7 +1,8 @@
 package com.wix.bazel.migrator
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path, Paths}
+
 
 case class RunConfiguration(repoRoot: File,
                             repoUrl: String,
@@ -11,7 +12,8 @@ case class RunConfiguration(repoRoot: File,
                             performTransformation: Boolean = true,
                             failOnSevereConflicts: Boolean = false,
                             interRepoSourceDependency: Boolean = false,
-                            artifactoryToken: String = "")
+                            artifactoryToken: String = "",
+                            sourceDependenciesWhitelist: Option[Path] = None)
 
 object RunConfiguration {
   private val Empty = RunConfiguration(null, null, null, null)
@@ -38,7 +40,7 @@ object RunConfiguration {
       .withFallback(() => sys.props.get("repo.url").orElse(sys.env.get("repo_url"))
         .getOrElse(throw new IllegalArgumentException("no repository git url defined")))
       .validate(url => if (url.startsWith("git@") && url.endsWith(".git")) success else failure(s"$url must be valid git url"))
-      .action { case (url, cfg) => cfg.copy(repoUrl = url)}
+      .action { case (url, cfg) => cfg.copy(repoUrl = url) }
 
     opt[String]("codota-token")
       .required()
@@ -70,11 +72,16 @@ object RunConfiguration {
       .withFallback(() => sys.props.get("artifactory.token")
         .getOrElse(throw new IllegalArgumentException("no artifactory token defined")))
       .action { case (token, cfg) => cfg.copy(artifactoryToken = token) }
+
+    opt[String]("source-dependencies-whitelist")
+      .withFallback(() => sys.props.getOrElse("source.dependencies.whitelist", ""))
+      .action { case (path, cfg) if path != "N/A" => cfg.copy(sourceDependenciesWhitelist = Some(Paths.get(path)))
+                case ("", cfg) =>  cfg.copy(sourceDependenciesWhitelist = None)}
   }
 
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)
 
   def from(cliArgs: Array[String]): RunConfiguration = {
-   parser.parse(cliArgs, Empty).getOrElse(sys.exit(-1))
+    parser.parse(cliArgs, Empty).getOrElse(sys.exit(-1))
   }
 }

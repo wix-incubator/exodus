@@ -14,7 +14,7 @@ object DependencyCollectorReport extends MigratorApp {
 
   val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
     resolver = tinker.aetherResolver,
-    globalExcludes = repoCoordinates
+    globalExcludes = repoCoordinates.union(tinker.sourceDependenciesWhitelist)
   )
 
   val directClosureCollector =  new CollectClosureFromDirectDeps(filteringResolver,

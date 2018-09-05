@@ -13,6 +13,7 @@ import com.wix.bazel.migrator.model._
 import com.wix.bazel.migrator.transform.AnalyzeFailure.MissingAnalysisInCodota
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer._
 import com.wix.bazel.migrator.transform.FailureMetadata.InternalDepMissingExtended
+import com.wix.bazel.migrator.utils.DependenciesDifferentiator
 import com.wixpress.build.maven
 import com.wixpress.build.maven.{Coordinates, MavenScope}
 import org.slf4j.LoggerFactory
@@ -26,7 +27,8 @@ import scala.util.{Failure, Success, Try}
 class CodotaDependencyAnalyzer(repoRoot: Path,
                                modules: Set[SourceModule],
                                codotaToken: String,
-                               interRepoSourceDependency: Boolean = false) extends DependencyAnalyzer {
+                               interRepoSourceDependency: Boolean = false,
+                               dependenciesDifferentiator: DependenciesDifferentiator = new DependenciesDifferentiator(Set.empty)) extends DependencyAnalyzer {
 
 
   private val generatedCodeRegistry = new GeneratedCodeRegistry(GeneratedCodeOverridesReader.from(repoRoot))
@@ -144,17 +146,18 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
 
   private def validateInternalDepsExtendedFor(maybeDependencyInfo: DependencyInfo): Either[AnalyzeFailure, iterableDependencies] =
     maybeDependencyInfo match {
-    case null => Left(MissingAnalysisInCodota())
-    case d: DependencyInfo => validateAnalysisExistsFor(d.getInternalDepsExtended).map(_.asScala)
-  }
+      case null => Left(MissingAnalysisInCodota())
+      case d: DependencyInfo => validateAnalysisExistsFor(d.getInternalDepsExtended).map(_.asScala)
+    }
 
   private def externalSourceDependencyLabelOf(simplifiedDependencies: List[SimplifiedCodotaDependency]): Either[AnalyzeFailure, Set[String]] = {
     if (interRepoSourceDependency) {
       EitherSequence.sequence {
         val dependencies = simplifiedDependencies.filterNot(_.partOfProject)
+          .filter(d => dependenciesDifferentiator.shouldBeSourceDependency(d.simplifiedCoordinates.groupId, d.simplifiedCoordinates.artifactId))
         val deps: Set[Either[AnalyzeFailure, String]] = dependencies.collect {
-          case SimplifiedCodotaDependency(_, _, Some(label),_) => Right(label)
-          case SimplifiedCodotaDependency(filepath, coordinates, None,_) => Left(AnalyzeFailure.ExternalBazelLabelMissing(coordinates.serialized, filepath))
+          case SimplifiedCodotaDependency(_, _, Some(label), _) => Right(label)
+          case SimplifiedCodotaDependency(filepath, coordinates, None, _) => Left(AnalyzeFailure.ExternalBazelLabelMissing(coordinates.serialized, filepath))
         }.toSet
         deps
       }
