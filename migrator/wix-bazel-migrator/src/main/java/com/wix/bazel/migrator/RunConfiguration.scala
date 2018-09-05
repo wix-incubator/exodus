@@ -75,8 +75,8 @@ object RunConfiguration {
 
     opt[String]("source-dependencies-whitelist")
       .withFallback(() => sys.props.getOrElse("source.dependencies.whitelist", ""))
-      .action { case (path, cfg) if path != "N/A" => cfg.copy(sourceDependenciesWhitelist = Some(Paths.get(path)))
-                case ("", cfg) =>  cfg.copy(sourceDependenciesWhitelist = None)}
+      .action { case (path, cfg) if path != "" => cfg.copy(sourceDependenciesWhitelist = Some(Paths.get(path)))
+                case (_, cfg) =>  cfg.copy(sourceDependenciesWhitelist = None)}
   }
 
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)
