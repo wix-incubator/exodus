@@ -41,3 +41,9 @@ filegroup(
     name = "coordinates",
     srcs = ["MANIFEST.MF"],
 )
+
+java_binary(
+    name = "migrator_cli",
+    main_class = "com.wix.bazel.migrator.Migrator",
+    runtime_deps = ["//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/tinker_bazel/migrator/transform_build/maven/analysis"]
+)

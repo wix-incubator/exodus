@@ -1,43 +1,44 @@
 pipeline {
     agent any
     options {
+        timeout(time: 15, unit: 'MINUTES')
         timestamps()
+        ansiColor('xterm')
     }
-    tools {
-        maven 'M3'
+    tools{
         jdk 'jdk8'
     }
-    triggers{
-        pollSCM('H/5 * * * *')
-    }
     environment {
-        MAVEN_INSTALL = "mvn clean install -B"
+        GOOGLE_APPLICATION_CREDENTIALS = credentials("rbe_credentials")
+        BAZEL_STARTUP_OPTS = '''|--bazelrc=.bazelrc.remote \\
+                                |'''.stripMargin()
+        BAZEL_FLAGS = '''|-k \\
+                         |--config=remote \\
+                         |--config=results \\
+                         |--project_id=gcb-with-custom-workers \\
+                         |--remote_instance_name=projects/gcb-with-custom-workers/instances/default_instance'''.stripMargin()
+        BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
+        PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
     stages {
-        stage('checkout') {
-            steps {
-                dir("bazel-migrator") {
-                    git 'git@github.com:wix-private/bazel-migrator.git'
-                }
-                dir("wix-bazel-migrator") {
-                    git branch: 'jenkins', url: 'git@github.com:wix-private/wix-bazel-migrator.git'
-                }
-            }
-        }
         stage('build-migrator') {
             steps {
-                dir("bazel-migrator") {
-                    sh "${env.MAVEN_INSTALL}"
-                }
-                dir("wix-bazel-migrator") {
-                    sh "${env.MAVEN_INSTALL}"
+                script{
+                    sh  """|#!/bin/bash
+                           |bazel ${env.BAZEL_STARTUP_OPTS} \\
+                           |build \\
+                           |      ${env.BAZEL_FLAGS} \\
+                           |      //migrator/wix-bazel-migrator:migrator_cli_deploy.jar
+                           |""".stripMargin()
+
+                    sh "mkdir -p wix-bazel-migrator/target/"
+                    sh "mv bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar wix-bazel-migrator/target/wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
                 }
             }
         }
     }
     post {
         always {
-            junit "**/target/**/TEST-*.xml"
             archiveArtifacts "wix-bazel-migrator/target/wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
         }
     }
