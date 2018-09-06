@@ -1,0 +1,20 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "utils",
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/utils:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/wix-bazel-migrator:main_dependencies",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/utils:__pkg__"],
+)
