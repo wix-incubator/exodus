@@ -6,8 +6,7 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
 
   def write(): Unit = {
     val contents =
-      """
-        # Remote Build Execution requires a strong hash function, such as SHA256.
+      """# Remote Build Execution requires a strong hash function, such as SHA256.
         |startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
         |
         |# Set several flags related to specifying the toolchain and java properties.
@@ -47,7 +46,9 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
   }
 
   private def writeToDisk(contents: String): Unit =
-    Files.write(repoRoot.resolve(".bazelrc.remotesettings"), contents.getBytes)
+  //writing to the wazel location so that the file can be ADDed into the wazel container
+  //the workspace .bazelrc.remotesettings remains as a symlink
+    Files.write(repoRoot.resolve("wazel/wix-bazel-dev-container/.bazelrc.remotesettings"), contents.getBytes)
 
 
 }
