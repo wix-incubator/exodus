@@ -46,9 +46,5 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
   }
 
   private def writeToDisk(contents: String): Unit =
-  //writing to the wazel location so that the file can be ADDed into the wazel container
-  //the workspace .bazelrc.remotesettings remains as a symlink
-    Files.write(repoRoot.resolve("wazel/wix-bazel-dev-container/.bazelrc.remotesettings"), contents.getBytes)
-
-
+    Files.write(repoRoot.resolve(".bazelrc.remotesettings"), contents.getBytes)
 }
