@@ -1,6 +1,5 @@
-package com.wix.bazel.migrator.workspace
+package com.wix.bazel.migrator.overrides
 
-import com.wix.bazel.migrator.transform.OverridesReaderITSupport
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 

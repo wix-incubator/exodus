@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path}
 
 import better.files.File
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
-import com.wix.bazel.migrator.transform.{InternalTargetOverride, InternalTargetsOverrides}
+import com.wix.bazel.migrator.overrides.{InternalTargetOverride, InternalTargetsOverrides}
 import org.specs2.matcher.{Matcher, Scope}
 import org.specs2.mutable.SpecificationWithJUnit
 

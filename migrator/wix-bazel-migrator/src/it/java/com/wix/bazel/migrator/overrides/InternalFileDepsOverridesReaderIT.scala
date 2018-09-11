@@ -1,6 +1,7 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.overrides
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.wix.bazel.migrator.overrides.{InternalFileDepsOverrides, InternalFileDepsOverridesReader}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 

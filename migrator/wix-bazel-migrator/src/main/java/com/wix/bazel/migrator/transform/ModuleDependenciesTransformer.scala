@@ -1,18 +1,20 @@
 package com.wix.bazel.migrator.transform
 
 import com.wix.bazel.migrator.model
-import com.wix.bazel.migrator.model.{SourceModule, Target}
+import com.wix.bazel.migrator.model.{PackagesTransformer, SourceModule, Target}
 import com.wix.bazel.migrator.model.Target.ModuleDeps
 import com.wixpress.build.maven.{MavenScope, Packaging}
 import ModuleDependenciesTransformer._
 import com.wix.bazel.migrator.external.registry.ExternalSourceModuleRegistry
+import com.wix.bazel.migrator.overrides.MavenArchiveTargetsOverrides
 
 class ModuleDependenciesTransformer(repoModules: Set[SourceModule],
                                     externalPackageLocator: ExternalSourceModuleRegistry,
-                                    mavenArchiveTargetsOverrides: MavenArchiveTargetsOverrides) {
+                                    mavenArchiveTargetsOverrides: MavenArchiveTargetsOverrides) extends PackagesTransformer{
+
   private val dependencyTransformer = new MavenDependencyTransformer(repoModules, externalPackageLocator, mavenArchiveTargetsOverrides)
 
-  def transform(existingPackages: Set[model.Package] = Set.empty[model.Package]): Set[model.Package] =
+  override def transform(existingPackages: Set[model.Package] = Set.empty[model.Package]): Set[model.Package] =
     combinePackageSets(repoModules.map(extractModulePackage), existingPackages)
 
   private def extractModulePackage(module: SourceModule) = {

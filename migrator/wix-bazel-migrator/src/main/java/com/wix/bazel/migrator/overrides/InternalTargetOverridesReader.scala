@@ -1,10 +1,11 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.overrides
 
 import java.nio.file.{Files, Path}
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.TestType
+import com.wix.bazel.migrator.utils.TypeAddingMixin
 
 object InternalTargetOverridesReader {
   private val objectMapper = new ObjectMapper()

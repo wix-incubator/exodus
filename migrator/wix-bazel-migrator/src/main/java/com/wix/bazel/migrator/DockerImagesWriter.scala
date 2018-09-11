@@ -2,7 +2,7 @@ package com.wix.bazel.migrator
 
 import java.nio.file.{Files, Path}
 
-import com.wix.bazel.migrator.transform.InternalTargetsOverrides
+import com.wix.bazel.migrator.overrides.InternalTargetsOverrides
 
 class DockerImagesWriter(repoRoot: Path, overrides: InternalTargetsOverrides) {
 

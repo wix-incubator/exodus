@@ -4,6 +4,7 @@ import java.nio.file.Path
 
 import com.wix.bazel.migrator.WixMavenBuildSystem
 import com.wix.bazel.migrator.model.SourceModule
+import com.wix.bazel.migrator.overrides.SourceModulesOverridesReader
 
 case class SourceModules(codeModules: Set[SourceModule]) {
   def findByRelativePath(relativePath: String): Option[SourceModule] =

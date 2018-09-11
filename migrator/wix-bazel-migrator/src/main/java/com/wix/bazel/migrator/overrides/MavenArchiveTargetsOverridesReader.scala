@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.overrides
 
 import java.nio.file.{Files, Path}
 

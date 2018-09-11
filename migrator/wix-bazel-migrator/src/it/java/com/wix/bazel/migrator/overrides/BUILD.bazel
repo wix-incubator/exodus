@@ -1,21 +1,21 @@
 package(default_visibility = ["//visibility:public"])
 
 specs2_mixed_test(
-    name = "transform",
+    name = "overrides",
     srcs = [
-        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/transform:sources",
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/overrides:sources",
     ],
     data = ["//migrator/wix-bazel-migrator:coordinates"],
     jvm_flags = ["-Dexisting.manifest=$(location //migrator/wix-bazel-migrator:coordinates)"],
     runtime_deps = [
     ],
     deps = [
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
         "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
         "//migrator/wix-bazel-migrator:tests_dependencies",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/tinker_bazel/migrator/transform_build/maven/analysis",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides:overrides",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
         "@com_fasterxml_jackson_core_jackson_annotations//:com_fasterxml_jackson_core_jackson_annotations",
         "@com_fasterxml_jackson_core_jackson_core//:com_fasterxml_jackson_core_jackson_core",
         "@com_fasterxml_jackson_core_jackson_databind//:com_fasterxml_jackson_core_jackson_databind",
@@ -27,5 +27,5 @@ specs2_mixed_test(
 filegroup(
     name = "sources",
     srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/transform:__pkg__"],
+    visibility = ["//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/overrides:__pkg__"],
 )

@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path, StandardOpenOption}
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target._
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Scope, SourceModule, Target, TestType}
-import com.wix.bazel.migrator.transform.InternalTargetOverridesReader
+import com.wix.bazel.migrator.overrides.InternalTargetOverridesReader
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.LibraryRule
 import com.wixpress.build.bazel.LibraryRule.ScalaLibraryRuleType

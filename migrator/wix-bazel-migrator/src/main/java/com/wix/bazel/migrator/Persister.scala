@@ -7,10 +7,10 @@ import java.time.Instant
 import java.time.temporal.TemporalUnit
 import java.util
 
-import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonTypeInfo}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Target, TestType}
+import com.wix.bazel.migrator.utils.{IgnoringIsArchiveDefMixin, IgnoringIsProtoArtifactDefMixin, TypeAddingMixin}
 import com.wix.build.maven.analysis.SourceModules
 import com.wixpress.build.maven.{Coordinates, MavenScope, Packaging}
 
@@ -57,12 +57,3 @@ object Persister {
     Files.readAttributes(mavenCache, classOf[BasicFileAttributes]).lastModifiedTime()
 
 }
-
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "__class")
-trait TypeAddingMixin
-
-@JsonIgnoreProperties(Array("archive"))
-trait IgnoringIsArchiveDefMixin
-
-@JsonIgnoreProperties(Array("protoArtifact"))
-trait IgnoringIsProtoArtifactDefMixin

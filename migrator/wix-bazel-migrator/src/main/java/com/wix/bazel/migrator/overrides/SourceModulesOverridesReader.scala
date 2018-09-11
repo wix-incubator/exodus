@@ -1,9 +1,10 @@
-package com.wix.build.maven.analysis
+package com.wix.bazel.migrator.overrides
 
 import java.nio.file.{Files, Path}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.wix.build.maven.analysis.SourceModulesOverrides
 
 object SourceModulesOverridesReader {
 

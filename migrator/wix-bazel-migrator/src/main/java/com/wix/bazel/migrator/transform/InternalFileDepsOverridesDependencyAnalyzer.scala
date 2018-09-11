@@ -3,6 +3,7 @@ package com.wix.bazel.migrator.transform
 import java.nio.file.Path
 
 import com.wix.bazel.migrator.model.SourceModule
+import com.wix.bazel.migrator.overrides.InternalFileDepsOverridesReader
 import com.wix.build.maven.analysis.SourceModules
 
 class InternalFileDepsOverridesDependencyAnalyzer(sourceModules: SourceModules, repoRoot: Path) extends DependencyAnalyzer {

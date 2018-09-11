@@ -1,5 +1,7 @@
 package com.wix.bazel.migrator.transform
 
+import com.wix.bazel.migrator.overrides.{GeneratedCodeLink, GeneratedCodeLinksOverrides}
+
 class GeneratedCodeRegistry(generatedCodeLinks: GeneratedCodeLinksOverrides) {
 
   private val generatedToSourceFileMap = buildMap()

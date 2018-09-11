@@ -1,7 +1,9 @@
 package com.wix.bazel.migrator.workspace
 
 import java.nio.file.{Files, Path}
+
 import WorkspaceWriter._
+import com.wix.bazel.migrator.overrides.WorkspaceOverridesReader
 
 class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDependency: Boolean = false) {
   private val frameworkWSName = "wix_platform_wix_framework"

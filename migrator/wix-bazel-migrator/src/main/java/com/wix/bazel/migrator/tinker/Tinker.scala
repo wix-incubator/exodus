@@ -2,6 +2,7 @@ package com.wix.bazel.migrator.tinker
 
 import com.wix.bazel.migrator._
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
+import com.wix.bazel.migrator.overrides.{InternalTargetOverridesReader, MavenArchiveTargetsOverridesReader}
 import com.wix.bazel.migrator.transform._
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender

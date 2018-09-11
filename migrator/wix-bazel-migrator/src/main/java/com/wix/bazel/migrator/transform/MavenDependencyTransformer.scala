@@ -2,6 +2,7 @@ package com.wix.bazel.migrator.transform
 
 import com.wix.bazel.migrator.external.registry.ExternalSourceModuleRegistry
 import com.wix.bazel.migrator.model.SourceModule
+import com.wix.bazel.migrator.overrides.MavenArchiveTargetsOverrides
 import com.wix.bazel.migrator.transform.MavenDependencyTransformer.DependencyExtensions
 import com.wix.bazel.migrator.transform.ModuleDependenciesTransformer.ProductionDepsTargetName
 import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, OverrideCoordinates, WorkspaceRule}

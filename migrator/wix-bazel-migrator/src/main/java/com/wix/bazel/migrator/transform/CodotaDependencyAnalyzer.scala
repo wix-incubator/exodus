@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.Retry._
 import com.wix.bazel.migrator.model._
+import com.wix.bazel.migrator.overrides.GeneratedCodeOverridesReader
 import com.wix.bazel.migrator.transform.AnalyzeFailure.MissingAnalysisInCodota
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer._
 import com.wix.bazel.migrator.transform.FailureMetadata.InternalDepMissingExtended

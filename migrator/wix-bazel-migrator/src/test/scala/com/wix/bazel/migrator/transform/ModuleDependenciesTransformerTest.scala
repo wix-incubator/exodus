@@ -6,6 +6,7 @@ import com.wix.bazel.migrator.model
 import com.wix.bazel.migrator.model.Matchers._
 import com.wix.bazel.migrator.model.makers.ModuleMaker._
 import com.wix.bazel.migrator.model.{CodePurpose, ModuleDependencies, SourceModule, Target}
+import com.wix.bazel.migrator.overrides.MavenArchiveTargetsOverrides
 import com.wixpress.build.bazel.{ImportExternalRule, WorkspaceRule}
 import com.wixpress.build.maven
 import com.wixpress.build.maven.MavenMakers._

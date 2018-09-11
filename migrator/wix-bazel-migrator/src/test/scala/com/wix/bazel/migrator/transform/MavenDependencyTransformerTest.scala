@@ -3,6 +3,7 @@ package com.wix.bazel.migrator.transform
 import com.wix.bazel.migrator.external.registry.FakeExternalSourceModuleRegistry
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.makers.ModuleMaker.aModule
+import com.wix.bazel.migrator.overrides.MavenArchiveTargetsOverrides
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
 import com.wixpress.build.bazel.{ImportExternalRule, LibraryRule, OverrideCoordinates}
 import com.wixpress.build.maven

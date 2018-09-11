@@ -1,8 +1,9 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.overrides
 
 import java.nio.file.Path
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.wix.bazel.migrator
 import com.wixpress.build.maven.{Coordinates, MavenMakers}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -59,7 +60,7 @@ class GeneratedCodeLinksOverridesReaderIT extends SpecificationWithJUnit {
           sourceFile = s"com/wixpress/foo$index.proto"
         )
       }
-      GeneratedCodeLinksOverrides(overrides)
+      migrator.overrides.GeneratedCodeLinksOverrides(overrides)
     }
   }
 
