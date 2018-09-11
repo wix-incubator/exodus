@@ -10,7 +10,7 @@ import org.specs2.specification.Scope
 class GitIgnoreAppenderIT extends SpecificationWithJUnit {
   "GitIgnoreAppender" should {
 
-    "add commits.bzl to pre-existing .gitignore" in new ctx {
+    "add content to pre-existing .gitignore" in new ctx {
       localWorkspaceRepo.initWithGitIgnore(initialGitIgnoreContent)
 
       appendToGitIgnore(contentToBeIgnored)
@@ -22,7 +22,7 @@ class GitIgnoreAppenderIT extends SpecificationWithJUnit {
       verifyIsNotTracked(contentToBeIgnored)
     }
 
-    "create .gitignore file with 'commits.bzl' in contents when does not exist" in new ctx {
+    "create .gitignore file with new content when file does not exist" in new ctx {
       appendToGitIgnore(contentToBeIgnored)
 
       mimicWorkspaceResolutionByWriting(contentToBeIgnored)
@@ -32,7 +32,7 @@ class GitIgnoreAppenderIT extends SpecificationWithJUnit {
       verifyIsNotTracked(contentToBeIgnored)
     }
 
-    "do nothing when .gitignore already has 'commits.bzl'" in new ctx {
+    "do nothing when .gitignore already has requested content" in new ctx {
       localWorkspaceRepo.initWithGitIgnore(contentToBeIgnored)
 
       appendToGitIgnore(contentToBeIgnored)
