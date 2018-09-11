@@ -76,7 +76,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
   }
 
   private def setArtifactChecksum(coordinates: Coordinates) = {
-    val artifactPath: String = coordinates.toArtifactoryPath
+    val artifactPath: String = coordinates.toArtifactPath
 
     Http(s"http://$baseUrl/artifactory/api/checksum/sha256")
       .header("Content-Type", "application/json")
@@ -123,7 +123,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
 
   private def getMetaArtifactIOFor(artifact: Coordinates) = {
     Try {
-      val url = s"http://$baseUrl/artifactory/api/storage/repo1-cache/${artifact.toArtifactoryPath}"
+      val url = s"http://$baseUrl/artifactory/api/storage/repo1-cache/${artifact.toArtifactPath}"
       Http(url).asString
     } match {
       case Success(response) => Success(response)
@@ -133,7 +133,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
 
   private def getJarArtifactIOFor(artifact: Coordinates) = {
     Try {
-      val url = s"http://$baseUrl/artifactory/libs-snapshots/${artifact.toArtifactoryPath}"
+      val url = s"http://$baseUrl/artifactory/libs-snapshots/${artifact.toArtifactPath}"
       Http(url).asBytes
     } match {
       case Success(response) => Success(response)
@@ -170,7 +170,7 @@ object ArtifactoryRemoteStorage {
   }
 
   implicit class CoordinatesConverters(coordinates: Coordinates) {
-    def toArtifactoryPath: String = {
+    def toArtifactPath: String = {
       val groupId = coordinates.groupId.toPath
       val artifactId = coordinates.artifactId
       val version = coordinates.version

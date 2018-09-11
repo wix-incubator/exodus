@@ -95,6 +95,18 @@
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.wixpress.framework</groupId>
+            <artifactId>wix-http-test-commons</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wix</groupId>
+            <artifactId>http-testkit_${scala.dependencies.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
             
 </project>

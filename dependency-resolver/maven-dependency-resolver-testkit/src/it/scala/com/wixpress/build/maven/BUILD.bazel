@@ -1,0 +1,32 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_ite2e_test(
+    name = "maven",
+    srcs = [
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/it/scala/com/wixpress/build/maven:sources",
+    ],
+    data = ["//dependency-resolver/maven-dependency-resolver-testkit:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //dependency-resolver/maven-dependency-resolver-testkit:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit:tests_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "@com_typesafe_akka_akka_actor_2_12//:com_typesafe_akka_akka_actor_2_12",
+        "@com_typesafe_akka_akka_http_core_2_12//:com_typesafe_akka_akka_http_core_2_12",
+        "@com_wix_http_testkit_2_12//:com_wix_http_testkit_2_12",
+        "@com_wix_http_testkit_client_2_12//:com_wix_http_testkit_client_2_12",
+        "@com_wix_http_testkit_core_2_12//:com_wix_http_testkit_core_2_12",
+        "@com_wix_http_testkit_specs2_2_12//:com_wix_http_testkit_specs2_2_12",
+        "@com_wixpress_framework_http_test_kit//:com_wixpress_framework_http_test_kit",
+        "@org_scala_lang_modules_scala_xml_2_12//:org_scala_lang_modules_scala_xml_2_12",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//dependency-resolver/maven-dependency-resolver-testkit/src/it/scala/com/wixpress/build/maven:__pkg__"],
+)

@@ -11,13 +11,13 @@ class CoordinatesToArtifactoryPathTest extends SpecWithJUnit {
     "take all parts into account" in  {
       val fullCoordiantes = Coordinates("group.id","artifactId","1.0.0",Packaging("somePackage"),Some("classifier"))
 
-      fullCoordiantes.toArtifactoryPath mustEqual "group/id/artifactId/1.0.0/artifactId-1.0.0-classifier.somePackage"
+      fullCoordiantes.toArtifactPath mustEqual "group/id/artifactId/1.0.0/artifactId-1.0.0-classifier.somePackage"
     }
 
     "convert correctly when no classifer" in  {
       val fullCoordiantes = Coordinates("group.id","artifactId","1.0.0",Packaging("somePackage"),classifier = None)
 
-      fullCoordiantes.toArtifactoryPath mustEqual "group/id/artifactId/1.0.0/artifactId-1.0.0.somePackage"
+      fullCoordiantes.toArtifactPath mustEqual "group/id/artifactId/1.0.0/artifactId-1.0.0.somePackage"
     }
   }
 }

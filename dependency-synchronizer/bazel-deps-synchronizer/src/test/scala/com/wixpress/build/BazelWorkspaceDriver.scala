@@ -137,11 +137,6 @@ object BazelWorkspaceDriver {
       (_:BazelWorkspaceDriver).bazelExternalDependencyFor(artifact) aka s"bazel workspace does not include import external rule target for $artifact"
     }
 
-  def includeImportExternalRulesInWorkspace(coordinatesSet: Set[Coordinates]): Matcher[BazelWorkspaceDriver] = coordinatesSet.map(includeJarInWorkspace).reduce(_.and(_))
-  private def includeJarInWorkspace(coordinates: Coordinates): Matcher[BazelWorkspaceDriver] = { driver:BazelWorkspaceDriver =>
-    (driver.bazelExternalDependencyFor(coordinates).importExternalRule.isDefined, s"$coordinates could not be found in project ")
-  }
-
   def notIncludeImportExternalRulesInWorkspace(coordinatesSet: Coordinates*): Matcher[BazelWorkspaceDriver] = notIncludeImportExternalRulesInWorkspace(coordinatesSet.toSet)
 
   def notIncludeImportExternalRulesInWorkspace(coordinatesSet: Set[Coordinates]): Matcher[BazelWorkspaceDriver] = coordinatesSet.map(notIncludeJarInWorkspace).reduce(_.and(_))

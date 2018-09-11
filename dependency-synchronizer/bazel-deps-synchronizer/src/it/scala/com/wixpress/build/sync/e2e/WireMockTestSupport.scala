@@ -23,7 +23,7 @@ object WireMockTestSupport {
   }
 
   def givenArtifactoryAllowsSettingSha256(forArtifact: Coordinates) = {
-    val artifactPath = forArtifact.toArtifactoryPath
+    val artifactPath = forArtifact.toArtifactPath
 
     wireMockServer.givenThat(post(urlEqualTo("/artifactory/api/checksum/sha256"))
       .inScenario("sha256 is missing").whenScenarioStateIs(Scenario.STARTED)
@@ -41,7 +41,7 @@ object WireMockTestSupport {
 
   def givenArtifactoryReturnsArtifactThatIsMissingSha256(forArtifact: Coordinates) = {
     val relativeArtifactoryPath = toRelativeArtifactoryApiPath(forArtifact)
-    val artifactPath = forArtifact.toArtifactoryPath
+    val artifactPath = forArtifact.toArtifactPath
     val relativeArtifactoryDownloadPath = toRelativeArtifactoryDownloadPath(forArtifact)
 
     wireMockServer.givenThat(get(urlEqualTo(relativeArtifactoryPath))
@@ -80,7 +80,7 @@ object WireMockTestSupport {
                                     inScenario: String = "sha256 is already set",
                                     stateIs: String = Scenario.STARTED) = {
     val relativeArtifactoryPath = toRelativeArtifactoryApiPath(forArtifact)
-    val artifactPath = forArtifact.toArtifactoryPath
+    val artifactPath = forArtifact.toArtifactPath
     val relativeArtifactoryDownloadPath = toRelativeArtifactoryDownloadPath(forArtifact)
 
     wireMockServer.givenThat(get(urlEqualTo(relativeArtifactoryPath))
@@ -122,7 +122,7 @@ object WireMockTestSupport {
                                     inScenario: String = "sha256 is already set",
                                     stateIs: String = Scenario.STARTED) = {
     val relativeArtifactoryPath = toRelativeArtifactoryApiPath(forArtifact)
-    val artifactPath = forArtifact.toArtifactoryPath
+    val artifactPath = forArtifact.toArtifactPath
     val relativeArtifactoryDownloadPath = toRelativeArtifactoryDownloadPath(forArtifact)
 
     wireMockServer.givenThat(get(anyUrl())
@@ -196,12 +196,12 @@ object ArtifactoryTestSupport {
   val artifactoryToken = "EXPECTED_TOKEN"
 
   def toRelativeArtifactoryApiPath(forArtifact: Coordinates, repo: String = "repo1-cache") = {
-    val artifactPath = forArtifact.toArtifactoryPath
+    val artifactPath = forArtifact.toArtifactPath
     s"/artifactory/api/storage/$repo/$artifactPath"
   }
 
   def toRelativeArtifactoryDownloadPath(forArtifact: Coordinates, repo: String = "libs-snapshots") = {
-    val artifactPath = forArtifact.toArtifactoryPath
+    val artifactPath = forArtifact.toArtifactPath
     s"/artifactory/$repo/" + artifactPath
   }
 }
