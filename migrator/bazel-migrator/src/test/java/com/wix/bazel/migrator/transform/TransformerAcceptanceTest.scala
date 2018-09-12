@@ -12,13 +12,14 @@ import org.specs2.matcher.{AlwaysMatcher, Matcher}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
+//noinspection TypeAnnotation
 class TransformerAcceptanceTest extends SpecificationWithJUnit {
 
   abstract class Context extends Scope {
     def repo: Repo
 
     val dependencyAnalyzer = new FakeDependencyAnalyzer(repo)
-    val transformer = new BazelTransformer(dependencyAnalyzer)
+    val transformer = new CodeAnalysisTransformer(dependencyAnalyzer)
   }
 
   "bazel transformer" should {

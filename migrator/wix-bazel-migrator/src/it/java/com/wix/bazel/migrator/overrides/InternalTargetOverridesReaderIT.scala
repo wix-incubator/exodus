@@ -3,7 +3,6 @@ package com.wix.bazel.migrator.overrides
 import java.nio.file.Path
 
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.wix.bazel.migrator.overrides.{InternalTargetOverride, InternalTargetOverridesReader, InternalTargetsOverrides}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 

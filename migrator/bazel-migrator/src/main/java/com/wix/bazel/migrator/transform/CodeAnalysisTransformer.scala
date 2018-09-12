@@ -10,7 +10,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 
-class BazelTransformer(dependencyAnalyzer: DependencyAnalyzer) {
+class CodeAnalysisTransformer(dependencyAnalyzer: DependencyAnalyzer) {
 
   def transform(modules: Set[SourceModule]): Set[model.Package] = {
     val cyclicGraphAndCodes = buildDirectedGraph(modules)

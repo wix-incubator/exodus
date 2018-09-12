@@ -4,18 +4,17 @@ package com.wix.bazel.migrator.transform
 import com.wix.bazel.migrator.external.registry.FakeExternalSourceModuleRegistry
 import com.wix.bazel.migrator.model
 import com.wix.bazel.migrator.model.Matchers._
+import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.makers.ModuleMaker._
-import com.wix.bazel.migrator.model.{CodePurpose, ModuleDependencies, SourceModule, Target}
 import com.wix.bazel.migrator.overrides.MavenArchiveTargetsOverrides
-import com.wixpress.build.bazel.{ImportExternalRule, WorkspaceRule}
-import com.wixpress.build.maven
+import com.wixpress.build.bazel.WorkspaceRule
 import com.wixpress.build.maven.MavenMakers._
-import com.wixpress.build.maven.{Coordinates, MavenScope, Packaging}
+import com.wixpress.build.maven.Packaging
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
 //noinspection TypeAnnotation
-class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
+class ModuleDependenciesTransformerTest extends SpecificationWithJUnit with PackagesTransformerTestSupport {
 
   "module-deps transformer," should {
     "return a modules deps package with main_dependencies and test_dependencies targets" in new ctx {
@@ -42,7 +41,8 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
               runtimeThirdPartyDependency.asThirdPartyDependency,
               dependencyRuntimeModule.asModuleDeps,
               "//" + interestingModule.relativePathFromMonoRepoRoot + "/src/main/resources:resources")),
-            testOnly = beFalse
+            testOnly = beFalse,
+            originatingSourceModule = beEqualTo(interestingModule)
           ))))
     }
 
@@ -60,7 +60,8 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
               "//" + interestingModule.relativePathFromMonoRepoRoot + "/src/it/resources:resources",
               "//" + interestingModule.relativePathFromMonoRepoRoot + "/src/e2e/resources:resources"
             )),
-            testOnly = beTrue
+            testOnly = beTrue,
+            originatingSourceModule = beEqualTo(interestingModule)
           ))))
     }
 
@@ -73,7 +74,8 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
             name = "main_dependencies",
             deps = beEmpty,
             runtimeDeps = beEmpty,
-            testOnly = beFalse
+            testOnly = beFalse,
+            originatingSourceModule = beEqualTo(leafModule)
           ))))
     }
 
@@ -87,7 +89,8 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
             name = "tests_dependencies",
             deps = contain(exactly("main_dependencies")),
             runtimeDeps = beEmpty,
-            testOnly = beTrue
+            testOnly = beTrue,
+            originatingSourceModule = beEqualTo(leafModule)
           ))))
     }
 
@@ -149,8 +152,8 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
   "When provided with already transformed packages, module-deps transformer," should {
     "add module_deps targets to matching existing package" in new ctx {
       val leafModule = aModule("some-module")
-      val leafModuleTarget = dummyTarget(forModule = leafModule)
-      val matchingPackage = packageWith(leafModuleTarget, withRelativePath = leafModule.relativePathFromMonoRepoRoot)
+      val leafModuleTarget = dummyJvmTarget(forModule = leafModule)
+      val matchingPackage = packageWith(leafModuleTarget, withRelativePath = leafModule.relativePathFromMonoRepoRoot, leafModule)
       val inputPackage = Set(matchingPackage)
 
       val outputPackages = transformerFor(Set(leafModule)).transform(inputPackage)
@@ -168,8 +171,8 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
     "create a new package for module_deps targets when no existing package matches" in new ctx {
       val leafModule = aModule("some-module")
       val anotherModule = aModule()
-      val anotherTarget = dummyTarget(forModule = anotherModule)
-      val somePackage = packageWith(anotherTarget, withRelativePath = anotherModule.relativePathFromMonoRepoRoot)
+      val anotherTarget = dummyJvmTarget(forModule = anotherModule)
+      val somePackage = packageWith(anotherTarget, withRelativePath = anotherModule.relativePathFromMonoRepoRoot,anotherModule)
       val inputPackage = Set(somePackage)
 
       val outputPackages = transformerFor(Set(leafModule)).transform(inputPackage)
@@ -179,7 +182,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
           targets = contain(exactly(aTarget(name = anotherTarget.name)))))
     }
 
-    "if given package in the root of the repo should serialize resources paths without extra slash" in new baseCtx {
+    "if given package in the root of the repo should serialize resources paths without extra slash" in new ctx {
       val interestingModule = aModule("", someCoordinates("dontcare"))
         .withResourcesFolder("src/main/resources")
       val transformer = transformerFor(Set(interestingModule))
@@ -196,7 +199,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
 
   }
 
-  trait baseCtx extends Scope {
+  trait ctx extends Scope {
     val externalPackageLocator = new FakeExternalSourceModuleRegistry(Map.empty)
     val emptyMavenArchiveTargetsOverrides = MavenArchiveTargetsOverrides(Set.empty)
 
@@ -204,76 +207,8 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit {
       new ModuleDependenciesTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides)
     }
 
-    implicit class DependencyExtended(dependency: maven.Dependency) {
-      private val coordinates = dependency.coordinates
-
-      def asThirdPartyDependency: String = s"${ImportExternalRule.jarLabelBy(coordinates)}"
-    }
-
-    implicit class SourceModuleExtended(module: SourceModule) {
-      def asModuleDeps: String = s"//${module.relativePathFromMonoRepoRoot}:main_dependencies"
-    }
-
   }
 
-  trait ctx extends baseCtx {
-    val compileThirdPartyDependency = aDependency("ext-compile-dep", MavenScope.Compile)
-    val compileInternalDependency = aDependency("some-internal-lib", MavenScope.Compile)
-
-    val runtimeThirdPartyDependency = aDependency("ext-runtime-dep", MavenScope.Runtime)
-    val runtimeInternalDependency = aDependency("some-runtime-module", MavenScope.Runtime)
-    val testThirdPartyDependency = aDependency("ext-test-dep", MavenScope.Test)
-    val testInternalDependency = aDependency("some-test-kit", MavenScope.Test)
-
-    // TODO: provided deps should be coded as direct deps of jvm targets on never_link third_party
-    val providedInternalDependency = aDependency("some-provided-module", MavenScope.Provided)
-    val providedThirdPartyDependency = aDependency("ext-provided-dep", MavenScope.Provided)
-
-    val systemThirdPartyDependency = aDependency("ext-system-dep", MavenScope.System)
-
-    def dummyTarget(forModule: SourceModule) = Target.Jvm(
-      name = "dont-care",
-      sources = Set.empty,
-      belongingPackageRelativePath = "dont-care",
-      dependencies = Set.empty,
-      codePurpose = CodePurpose.Prod(),
-      originatingSourceModule = forModule)
-
-    def packageWith(existingTarget: Target.Jvm, withRelativePath: String) = {
-      val leafModule = existingTarget.originatingSourceModule
-      model.Package(
-        relativePathFromMonoRepoRoot = leafModule.relativePathFromMonoRepoRoot,
-        targets = Set(existingTarget),
-        originatingSourceModule = leafModule)
-    }
-
-    val interestingModule = aModule("some-module")
-      .withDirectDependency(
-        compileThirdPartyDependency,
-        compileInternalDependency,
-        runtimeThirdPartyDependency,
-        runtimeInternalDependency,
-        providedThirdPartyDependency,
-        providedInternalDependency,
-        testThirdPartyDependency,
-        testInternalDependency)
-
-      .withResourcesFolder("src/main/resources", "src/test/resources", "src/it/resources", "src/e2e/resources")
-    val dependentModule: SourceModule = leafModuleFrom(compileInternalDependency)
-    val dependencyRuntimeModule: SourceModule = leafModuleFrom(runtimeInternalDependency)
-    val dependencyProvidedModule: SourceModule = leafModuleFrom(providedInternalDependency)
-    val dependentTestModule: SourceModule = leafModuleFrom(testInternalDependency)
-
-    val modules = Set(interestingModule, dependentModule, dependencyRuntimeModule, dependencyProvidedModule, dependentTestModule)
-
-
-
-    def leafModuleFrom(dependency: maven.Dependency): SourceModule = aModule(dependency.coordinates, ModuleDependencies())
-
-    def emptyPackagesSet = Set.empty[model.Package]
-
-    def leafModuleWithDirectDependencies(dependency: maven.Dependency) = aModule("some-module").withDirectDependency(dependency)
-  }
 
 }
 

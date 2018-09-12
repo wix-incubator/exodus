@@ -2,7 +2,7 @@ package com.wix.bazel.migrator.tinker
 
 import com.wix.bazel.migrator._
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
-import com.wix.bazel.migrator.overrides.{InternalTargetOverridesReader, MavenArchiveTargetsOverridesReader}
+import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, InternalTargetOverridesReader, MavenArchiveTargetsOverridesReader}
 import com.wix.bazel.migrator.transform._
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
@@ -87,8 +87,25 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   private def bazelPackages =
     if (configuration.performTransformation) transform() else Persister.readTransformationResults()
 
+  private def transform() = {
+    val transformer = new CodeAnalysisTransformer(dependencyAnalyzer)
+    val packagesTransformers = Seq(
+      externalProtoTransformer(),
+      moduleDepsTransformer(),
+      additionalDepsByMavenDepsTransformer()
+    )
 
-  private def withModuleDepsPackages(withProtoPackages: Set[model.Package]) = {
+    val packagesFromCodeAnalysis = transformer.transform(codeModules)
+    val transformedPackages = packagesTransformers.foldLeft(packagesFromCodeAnalysis){
+      (packages, packageTransformer) => packageTransformer.transform(packages)
+    }
+    Persister.persistTransformationResults(transformedPackages)
+    transformedPackages
+  }
+
+  private def externalProtoTransformer() = new ExternalProtoTransformer(codeModules)
+
+  private def moduleDepsTransformer() = {
     val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
       externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
       registry = new CompositeExternalSourceModuleRegistry(
@@ -97,16 +114,16 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
 
     val mavenArchiveTargetsOverrides = MavenArchiveTargetsOverridesReader.from(repoRoot)
 
-    new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides).transform(withProtoPackages)
+    val transformer = new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides)
+    transformer
   }
 
-  private def transform() = {
-    val transformer = new BazelTransformer(dependencyAnalyzer)
-    val bazelPackages = transformer.transform(codeModules)
-    val withProtoPackages = new ExternalProtoTransformer(codeModules).transform(bazelPackages)
-    val packageWithModuleDeps = withModuleDepsPackages(withProtoPackages)
-    Persister.persistTransformationResults(packageWithModuleDeps)
-    packageWithModuleDeps
+  private def additionalDepsByMavenDepsTransformer() = {
+    val overrides = configuration.additionalDepsByMavenDeps match {
+      case Some(path) => AdditionalDepsByMavenDepsOverridesReader.from(path)
+      case None => AdditionalDepsByMavenDepsOverrides.empty
+    }
+    new AdditionalDepsByMavenOverridesTransformer(overrides,configuration.interRepoSourceDependency)
   }
 
   private def dependencyAnalyzer = {

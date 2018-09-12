@@ -13,7 +13,8 @@ case class RunConfiguration(repoRoot: File,
                             failOnSevereConflicts: Boolean = false,
                             interRepoSourceDependency: Boolean = false,
                             artifactoryToken: String = "",
-                            sourceDependenciesWhitelist: Option[Path] = None)
+                            sourceDependenciesWhitelist: Option[Path] = None,
+                            additionalDepsByMavenDeps: Option[Path] = None)
 
 object RunConfiguration {
   private val Empty = RunConfiguration(null, null, null, null)
@@ -77,6 +78,11 @@ object RunConfiguration {
       .withFallback(() => sys.props.getOrElse("source.dependencies.whitelist", ""))
       .action { case (path, cfg) if path != "" => cfg.copy(sourceDependenciesWhitelist = Some(Paths.get(path)))
                 case (_, cfg) =>  cfg.copy(sourceDependenciesWhitelist = None)}
+
+    opt[String]("additional-deps-by-maven-deps")
+      .withFallback(() => sys.props.getOrElse("additional.deps.by.maven.deps", ""))
+      .action { case (path, cfg) if path != "" => cfg.copy(additionalDepsByMavenDeps = Some(Paths.get(path)))
+      case (_, cfg) =>  cfg.copy(additionalDepsByMavenDeps = None)}
   }
 
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)

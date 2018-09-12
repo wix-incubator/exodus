@@ -27,7 +27,8 @@ object Target {
                          runtimeDeps: Set[String],
                          testOnly: Boolean,
                          data: Set[String] = Set.empty,
-                         exports: Set[String] = Set.empty
+                         exports: Set[String] = Set.empty,
+                         originatingSourceModule: SourceModule
                        ) extends Target
 
 

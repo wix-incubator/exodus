@@ -42,7 +42,8 @@ class ModuleDependenciesTransformer(repoModules: Set[SourceModule],
       deps = deps.flatMap(dependencyTransformer.toBazelDependency) + ProductionDepsTargetName,
       data = data.flatMap(dependencyTransformer.toBazelDependency),
       runtimeDeps = extractTestResourcesDependencies(module),
-      testOnly = true
+      testOnly = true,
+      originatingSourceModule = module
     )
     testDepsTarget
   }
@@ -57,7 +58,8 @@ class ModuleDependenciesTransformer(repoModules: Set[SourceModule],
         extractDependenciesOfScope(module, MavenScope.Runtime)
           .flatMap(dependencyTransformer.toBazelDependency) ++
           extractProdResourcesDependencies(module),
-      testOnly = false
+      testOnly = false,
+      originatingSourceModule = module
     )
   }
 
