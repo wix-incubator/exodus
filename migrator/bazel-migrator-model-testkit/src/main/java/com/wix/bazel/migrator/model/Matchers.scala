@@ -15,11 +15,15 @@ object Matchers {
 
   def protoTarget(name: String,
                   belongsToPackage: Matcher[String] = AlwaysMatcher[String](),
-                  dependencies: Matcher[Set[Target]] = AlwaysMatcher[Set[Target]]()
+                  dependencies: Matcher[Set[Target]] = AlwaysMatcher[Set[Target]](),
+                  originatingSourceModule: Matcher[SourceModule] = AlwaysMatcher[SourceModule]()
                  ): Matcher[Target.Proto] =
     aTarget(name, belongsToPackage) and
       dependencies ^^ {
         (_: Target.Proto).dependencies aka "dependencies"
+      } and
+      originatingSourceModule ^^ {
+        (_: Target.Proto).originatingSourceModule aka "originating source module"
       }
 
   def externalTarget(name: String,

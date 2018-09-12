@@ -121,6 +121,8 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
        |    name = "${proto.name}",
        |    srcs = glob(["**/*.proto"]),
        |    deps = [${writeDependencies(protoDeps.map(writeSourceDependency))}],
+       |    group_id = "${proto.originatingSourceModule.coordinates.groupId}",
+       |    artifact_id = "${proto.originatingSourceModule.coordinates.artifactId}",
        |    visibility = ["//visibility:public"],
        |)
        |

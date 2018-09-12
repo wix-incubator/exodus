@@ -56,7 +56,8 @@ object Target {
 
   case class Proto(name: String,
                    belongingPackageRelativePath: String,
-                   dependencies: Set[Target]) extends Target
+                   dependencies: Set[Target],
+                   originatingSourceModule: SourceModule) extends Target
 
   case class External(name: String,
                       belongingPackageRelativePath: String,

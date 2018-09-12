@@ -594,6 +594,19 @@ class TransformerAcceptanceTest extends SpecificationWithJUnit {
     }
 
 
+    "externalize originating source module for proto targets to allow encoding of groupId/artifactId" in new Context {
+      def repo = Repo().withCode(
+        code(relativeSourceDirPathFromModuleRoot = "src/main/proto", filePath = "com/wix/lib/Model.proto",
+          module = aModule("some-rel-path", anExternalModule("someGroupId", "someArtifactId", "someVersion")))
+      )
+
+      val packages = transformer.transform(repo.modules)
+
+      packages.flatMap(_.targets) must contain(
+        a(protoTarget(name = "proto", originatingSourceModule = be_===(aModule("some-rel-path", anExternalModule("someGroupId", "someArtifactId", "someVersion"))))
+        ))
+    }
+
     //two different types, compile wins?
     //cycles?
   }

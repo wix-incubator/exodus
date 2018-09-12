@@ -43,7 +43,7 @@ private[transform] case class ResourceKey(codeDirPath: SourceCodeDirPath, resour
     if (Target.Resources.applicablePackage(packageRelativePath)) {
       Target.Resources("resources", packageRelativePath, targetDependencies.map(_.target))
     } else if (codeDirPath.relativeSourceDirPathFromModuleRoot.endsWith("proto")) {
-      Target.Proto(name = "proto", packageRelativePath, dependencies = targetDependencies.map(_.target))
+      Target.Proto(name = "proto", packageRelativePath, dependencies = targetDependencies.map(_.target), codeDirPath.module)
     } else {
       val codes = keyToCodes.getOrElse(this, Set.empty).view
       val codePurpose = CodePurpose(packageRelativePath, codes.map(_.testType))

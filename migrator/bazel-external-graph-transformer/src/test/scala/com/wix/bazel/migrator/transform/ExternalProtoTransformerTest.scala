@@ -19,7 +19,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
       val externalProtoArtifact = asCompileDependency(someProtoCoordinates("external_proto_lib"))
       val repoModule = aModuleWith(externalProtoArtifact)
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
-        Set(Target.Proto("internal-proto-lib", "module-path", Set.empty)),
+        Set(someProto("internal-proto-lib", "module-path", Set.empty)),
         repoModule
       )
       )
@@ -59,7 +59,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
         asCompileDependency(someCoordinates("external_proto_jar").copy(packaging = Packaging("not-zip"))),
         asCompileDependency(someProtoCoordinates("external_proto_zip")))
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
-        Set(Target.Proto("internal-proto-lib", "module-path", Set.empty)),
+        Set(someProto("internal-proto-lib", "module-path", Set.empty)),
         repoModule
       ))
 
@@ -78,7 +78,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
     "not fail when no external proto dependencies exist" in {
       val repoModule = aModule("some-module")
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
-        Set(Target.Proto("internal-proto-lib", "module-path", Set.empty)),
+        Set(someProto("internal-proto-lib", "module-path", Set.empty)),
         repoModule
       ))
       val transformer = new ExternalProtoTransformer(Set(repoModule))
@@ -96,7 +96,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
       val otherProtoArtifact = asCompileDependency(someProtoCoordinates("external_proto2"))
       val repoModule = aModuleWith(someProtoArtifact, otherProtoArtifact)
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
-        Set(Target.Proto("internal-proto-lib", "module-path", Set.empty)),
+        Set(someProto("internal-proto-lib", "module-path", Set.empty)),
         repoModule)
       )
       val transformer = new ExternalProtoTransformer(Set(repoModule))
@@ -115,7 +115,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
     "preserve existing internal proto dependencies when adding external proto modules to proto targets" in {
       val repoModule = aModuleWith(asCompileDependency(someProtoCoordinates("external_proto")))
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
-        Set(Target.Proto("internal-proto-lib", "module-path", Set(Target.Proto("internal-proto-dep", "internal-path", Set.empty)))),
+        Set(someProto("internal-proto-lib", "module-path", Set(someProto("internal-proto-dep", "internal-path", Set.empty)))),
         repoModule)
       )
       val transformer = new ExternalProtoTransformer(Set(repoModule))
@@ -135,7 +135,7 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
       val repoModule = aModule(internalProtoArtifact, ModuleDependencies())
       val repoModuleThatDependsOnProto = aModuleWith(asCompileDependency(internalProtoArtifact))
       val packages = Set(Package(relativePathFromMonoRepoRoot = "module-path",
-        Set(Target.Proto("internal-proto-lib", "module-path", Set.empty)),
+        Set(someProto("internal-proto-lib", "module-path", Set.empty)),
         repoModuleThatDependsOnProto
       )
       )
@@ -154,6 +154,13 @@ class ExternalProtoTransformerTest extends SpecificationWithJUnit {
       ))
     }
 
+  }
+
+  private def someProto(name: String,
+                        belongingPackageRelativePath: String,
+                        dependencies: Set[Target]) = {
+    Target.Proto(name, belongingPackageRelativePath, dependencies,
+      originatingSourceModule = aModule("irrelevant"))
   }
 
   private def aModuleWith(directDependency: maven.Dependency*) = aModule("no-care").withDirectDependency(directDependency)
