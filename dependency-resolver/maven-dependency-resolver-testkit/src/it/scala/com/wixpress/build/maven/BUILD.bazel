@@ -10,7 +10,6 @@ specs2_ite2e_test(
     runtime_deps = [
     ],
     deps = [
-        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
         "//dependency-resolver/maven-dependency-resolver-testkit:tests_dependencies",
         "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
@@ -20,8 +19,6 @@ specs2_ite2e_test(
         "@com_wix_http_testkit_client_2_12//:com_wix_http_testkit_client_2_12",
         "@com_wix_http_testkit_core_2_12//:com_wix_http_testkit_core_2_12",
         "@com_wix_http_testkit_specs2_2_12//:com_wix_http_testkit_specs2_2_12",
-        "@com_wixpress_framework_http_test_kit//:com_wixpress_framework_http_test_kit",
-        "@org_scala_lang_modules_scala_xml_2_12//:org_scala_lang_modules_scala_xml_2_12",
     ],
 )
 
