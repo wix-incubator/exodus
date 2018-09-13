@@ -12,7 +12,7 @@ class PreludeWriterIT extends BaseWriterIT {
     "write prelude_bazel file with default content" in new ctx {
       writer.write()
 
-      path(withName = "prelude_bazel") must beRegularFile(withContent =
+      path(withName = "prelude_bazel") must beRegularFile(withContentContaining =
         Seq(PreludeWriter.ScalaLibraryImport, PreludeWriter.ScalaImport, PreludeWriter.TestImport))
     }
 
@@ -23,7 +23,7 @@ class PreludeWriterIT extends BaseWriterIT {
 
       writer.write()
 
-      path(withName = "prelude_bazel") must beRegularFile(withContent = randomContent)
+      path(withName = "prelude_bazel") must beRegularFile(withContentContaining = randomContent)
     }
   }
 

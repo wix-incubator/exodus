@@ -15,16 +15,16 @@ trait InMemoryFilesMatchers {
 
   private def beEmpty: Matcher[Path] = equalTo(0) ^^ { (p: Path) => Files.readAllBytes(p).length }
 
-  def beRegularFile(withContent: Seq[String]): Matcher[Path] = beRegularFile and contain(withContent)
+  def beRegularFile(withContentContaining: Seq[String]): Matcher[Path] = beRegularFile and pathContaining(withContentContaining)
 
   def beRegularFile(withContentMatching: Matcher[String]): Matcher[Path] = beRegularFile and {pathContent(_:Path)} ^^ withContentMatching
 
-  def beRegularFile(withContentFromResource: String): Matcher[Path] = beRegularFile and contain(withContentFromResource)
+  def beRegularFile(withContentFromResource: String): Matcher[Path] = beRegularFile and withEqualContentsOf(withContentFromResource)
 
-  private def contain(lines: Seq[String]): Matcher[Path] = equalTo(lines.mkString(System.lineSeparator)) ^^ { (p: Path) => pathContent(p) }
+  private def pathContaining(lines: Seq[String]): Matcher[Path] = contain(lines.mkString(System.lineSeparator)) ^^ { (p: Path) => pathContent(p) }
 
-  private def contain(resourceName: String): Matcher[Path] =
-    equalTo(fromInputStream(getClass.getResourceAsStream(s"/$resourceName")).mkString) ^^ { (p: Path) => pathContent(p) }
+  private def withEqualContentsOf(resourceName: String): Matcher[Path] =
+    contain(fromInputStream(getClass.getResourceAsStream(s"/$resourceName")).mkString) ^^ { (p: Path) => pathContent(p) }
 }
 
 object InMemoryFilesHelpers {
