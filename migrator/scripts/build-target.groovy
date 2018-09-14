@@ -10,6 +10,7 @@ pipeline {
     environment {
         BAZEL_FLAGS = '''|--strategy=Scalac=worker \\
                          |--experimental_sandbox_base=/dev/shm \\
+                         |${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                          |--sandbox_tmpfs_path=/tmp'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
@@ -23,7 +24,7 @@ pipeline {
         }
         stage('build') {
             steps {
-                sh "bazel build ${TARGET_LABEL}"
+                sh "bazel build ${env.BAZEL_FLAGS} ${TARGET_LABEL}"
             }
         }
     }

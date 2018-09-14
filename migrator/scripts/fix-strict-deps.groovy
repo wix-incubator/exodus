@@ -12,7 +12,7 @@ pipeline {
         bazel_log_file = "bazel-build.log"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
-        BAZEL = "bazel --host_javabase=$JAVA_HOME"
+        BAZEL = "bazel ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} --host_javabase=$JAVA_HOME"
     }
     stages {
         stage('checkout') {
