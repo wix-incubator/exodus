@@ -12,7 +12,6 @@ pipeline {
         BAZEL_FLAGS = '''|-k \\
                          |--experimental_sandbox_base=/dev/shm \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI \\
-                         |${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                          |--action_env=HOST_NETWORK_NAME'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
@@ -37,6 +36,7 @@ pipeline {
                                              |$BAZEL ${env.BAZEL_COMMAND} \\
                                              |      --flaky_test_attempts=3 \\
                                              |      ${env.BAZEL_FLAGS} \\
+                                             |      ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                                              |      ${env.TEST_TARGET_LABEL}
                                              |""".stripMargin())
                 }

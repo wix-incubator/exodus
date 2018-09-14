@@ -14,7 +14,6 @@ pipeline {
                          |--experimental_sandbox_base=/dev/shm \\
                          |--sandbox_tmpfs_path=/tmp \\
                          |--test_output=errors \\
-                         |${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                          |--test_filter=${TEST_CLASS} \\
                          |--test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI \\
@@ -36,6 +35,7 @@ pipeline {
                         unstable_by_exit_code("""|#!/bin/bash
                                              |bazel test \\
                                              |${env.BAZEL_FLAGS} \\
+                                             |${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                                              |${TEST_TARGET_NAME}
                                              |""".stripMargin())
                     } else {
@@ -43,6 +43,7 @@ pipeline {
                                              |bazel test \\
                                              |--strategy=TestRunner=standalone \\
                                              |${env.BAZEL_FLAGS} \\
+                                             |${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                                              |--test_env=HOST_NETWORK_NAME \\
                                              |--jobs=1 \\
                                              |${TEST_TARGET_NAME}

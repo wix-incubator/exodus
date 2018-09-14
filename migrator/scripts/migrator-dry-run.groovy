@@ -21,7 +21,7 @@ pipeline {
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
-        BAZEL = "bazel ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} --host_javabase=$JAVA_HOME"
+        BAZEL = "bazel --host_javabase=$JAVA_HOME"
     }
     stages {
         stage('checkout') {
@@ -83,7 +83,7 @@ pipeline {
         stage('build') {
             steps {
                 dir("${env.REPO_NAME}") {
-                    sh "$BAZEL build -k --strategy=Scalac=worker //..."
+                    sh "$BAZEL build ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} -k --strategy=Scalac=worker //..."
                 }
             }
         }
@@ -96,6 +96,7 @@ pipeline {
                                              |      --test_tag_filters=UT,-IT \\
                                              |      --flaky_test_attempts=3 \\
                                              |      ${env.BAZEL_FLAGS} \\
+                                             |      ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                                              |      //...
                                              |""".stripMargin())
                     }
@@ -112,6 +113,7 @@ pipeline {
                                              |      --test_tag_filters=IT \\
                                              |      --strategy=TestRunner=standalone \\
                                              |      ${env.BAZEL_FLAGS} \\
+                                             |      ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                                              |      --test_env=DOCKER_HOST \\
                                              |      --jobs=1 \\
                                              |      //...
