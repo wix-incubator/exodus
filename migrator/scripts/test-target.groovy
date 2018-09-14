@@ -15,7 +15,6 @@ pipeline {
                          |--action_env=HOST_NETWORK_NAME'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
-        BAZEL = "bazel --host_javabase=$JAVA_HOME"
     }
     stages {
         stage('checkout') {
@@ -33,7 +32,7 @@ pipeline {
             steps {
                 script {
                     unstable_by_exit_code("UNIT", """|#!/bin/bash
-                                             |$BAZEL ${env.BAZEL_COMMAND} \\
+                                             |bazel ${env.BAZEL_COMMAND} \\
                                              |      --flaky_test_attempts=3 \\
                                              |      ${env.BAZEL_FLAGS} \\
                                              |      ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\

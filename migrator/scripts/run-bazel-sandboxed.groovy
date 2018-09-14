@@ -16,7 +16,6 @@ pipeline {
                          |--test_env=AUTOMATION_MASTER_KEY'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
-        BAZEL = "bazel --host_javabase=$JAVA_HOME"
         AUTOMATION_MASTER_KEY = credentials("AUTOMATION_MASTER_KEY")
     }
     stages {
@@ -35,7 +34,7 @@ pipeline {
             steps {
                 script {
                     unstable_by_exit_code("UNIT", """|#!/bin/bash
-                                             |$BAZEL test \\
+                                             |bazel test \\
                                              |      --flaky_test_attempts=3 \\
                                              |      --test_tag_filters=UT,-IT \\
                                              |      ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
@@ -49,7 +48,7 @@ pipeline {
             steps {
                 script {
                     unstable_by_exit_code("UNIT", """|#!/bin/bash
-                                             |$BAZEL test \\
+                                             |bazel test \\
                                              |      --flaky_test_attempts=3 \\
                                              |      --test_tag_filters=IT \\
                                              |      --jobs=4 \\

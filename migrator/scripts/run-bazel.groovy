@@ -16,7 +16,6 @@ pipeline {
                          |--test_env=AUTOMATION_MASTER_KEY'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
-        BAZEL = "bazel --host_javabase=$JAVA_HOME"
     }
     stages {
         stage('checkout') {
@@ -32,15 +31,15 @@ pipeline {
         }
         stage('build') {
             steps {
-                sh "$BAZEL info"
-                sh "$BAZEL build -k ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} --strategy=Scalac=worker //..."
+                sh "bazel info"
+                sh "bazel build -k ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} --strategy=Scalac=worker //..."
             }
         }
         stage('UT') {
             steps {
                 script {
                     unstable_by_exit_code("UNIT", """|#!/bin/bash
-                                             |$BAZEL test \\
+                                             |bazel test \\
                                              |      --test_tag_filters=UT,-IT \\
                                              |      --flaky_test_attempts=3 \\
                                              |      ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
@@ -58,7 +57,7 @@ pipeline {
                         'failBuild': true,
                         'setOwn': true]) {
                         unstable_by_exit_code("IT/E2E", """|#!/bin/bash
-                                                |$BAZEL test \\
+                                                |bazel test \\
                                                 |      --test_tag_filters=IT \\
                                                 |      --strategy=TestRunner=standalone \\
                                                 |      ${env.BAZEL_FLAGS} \\
