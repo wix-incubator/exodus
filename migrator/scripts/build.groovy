@@ -21,21 +21,6 @@ pipeline {
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
     stages {
-        stage('test') {
-            steps {
-                script{
-                    sh  """|#!/bin/bash
-                           |echo ${env.FOO} \\
-                           |if [ "${env.FOO}" != "bar" ]; then
-                           |  echo "fail"
-                           |  exit 1
-                           |fi
-                           |echo "success"
-                           |exit 0
-                           |""".stripMargin()
-                }
-            }
-        }
         stage('build-migrator') {
             steps {
                 script{
