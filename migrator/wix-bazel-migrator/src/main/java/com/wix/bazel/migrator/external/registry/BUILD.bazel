@@ -11,7 +11,6 @@ scala_library(
         "//migrator/codota-thin-client/src/main/scala/com/wixpress/build/codota",
         "//migrator/wix-bazel-migrator:main_dependencies",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "@junit_junit//:junit_junit",
     ],
 )
 

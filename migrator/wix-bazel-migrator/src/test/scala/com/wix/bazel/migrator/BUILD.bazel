@@ -13,8 +13,6 @@ specs2_unit_test(
         "//migrator/wix-bazel-migrator:tests_dependencies",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/tinker_bazel/migrator/transform_build/maven/analysis",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
-        "@com_github_marschall_memoryfilesystem//:com_github_marschall_memoryfilesystem",
-        "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
     ],
 )
 

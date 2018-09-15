@@ -16,11 +16,6 @@ specs2_ite2e_test(
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
-        "@com_fasterxml_jackson_core_jackson_annotations//:com_fasterxml_jackson_core_jackson_annotations",
-        "@com_fasterxml_jackson_core_jackson_core//:com_fasterxml_jackson_core_jackson_core",
-        "@com_fasterxml_jackson_core_jackson_databind//:com_fasterxml_jackson_core_jackson_databind",
-        "@com_fasterxml_jackson_module_jackson_module_scala_2_12//:com_fasterxml_jackson_module_jackson_module_scala_2_12",
-        "@com_github_marschall_memoryfilesystem//:com_github_marschall_memoryfilesystem",
     ],
 )
 
