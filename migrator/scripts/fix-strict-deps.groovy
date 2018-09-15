@@ -46,7 +46,7 @@ pipeline {
                 dir("${env.REPO_NAME}") {
                     script {
                         env.PUSH_TO_GIT = "false"
-                        build_and_fix()
+                        build_and_fix(${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL})
                     }
                 }
             }
@@ -89,11 +89,11 @@ def find_repo_name() {
     return name
 }
 
-def build_and_fix() {
+def build_and_fix(ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL) {
     status = sh(
             script: '''|#!/bin/bash
                        |# tee would output the stdout to file but will swallow the exit code
-                       |bazel build ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} -k --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
+                       |bazel build ${ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} -k --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
                        |# retrieve the exit code
                        |exit ${PIPESTATUS[0]}
                        |'''.stripMargin(),
@@ -108,7 +108,7 @@ def build_and_fix() {
         buildozerStatusCode = sh script: "buildozer -f bazel-buildozer-commands.txt", returnStatus: true
         if (buildozerStatusCode == 0) { // buildozer returns 3 when no action was needed
             env.PUSH_TO_GIT = "true"
-            build_and_fix()
+            build_and_fix(ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL)
         } else {
             echo "[WARN] produced buildozer commands were not required!"
             currentBuild.result = 'UNSTABLE'
