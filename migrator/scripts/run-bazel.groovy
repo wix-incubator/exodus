@@ -61,6 +61,7 @@ pipeline {
                                                 |      --test_tag_filters=IT \\
                                                 |      --strategy=TestRunner=standalone \\
                                                 |      ${env.BAZEL_FLAGS} \\
+                                                |      ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                                                 |      --test_env=HOST_NETWORK_NAME \\
                                                 |      --jobs=1 \\
                                                 |      //...
