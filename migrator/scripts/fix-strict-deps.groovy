@@ -46,7 +46,7 @@ pipeline {
                 dir("${env.REPO_NAME}") {
                     script {
                         env.PUSH_TO_GIT = "false"
-                        build_and_fix(${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL})
+                        build_and_fix(env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL)
                     }
                 }
             }
