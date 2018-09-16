@@ -13,6 +13,12 @@ specs2_ite2e_test(
         "//dependency-resolver/maven-dependency-resolver-testkit:tests_dependencies",
         "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "@com_typesafe_akka_akka_actor_2_12//:com_typesafe_akka_akka_actor_2_12",
+        "@com_typesafe_akka_akka_http_core_2_12//:com_typesafe_akka_akka_http_core_2_12",
+        "@com_wix_http_testkit_2_12//:com_wix_http_testkit_2_12",
+        "@com_wix_http_testkit_client_2_12//:com_wix_http_testkit_client_2_12",
+        "@com_wix_http_testkit_core_2_12//:com_wix_http_testkit_core_2_12",
+        "@com_wix_http_testkit_specs2_2_12//:com_wix_http_testkit_specs2_2_12",
     ],
 )
 
