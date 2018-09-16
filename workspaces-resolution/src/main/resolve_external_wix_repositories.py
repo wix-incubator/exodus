@@ -44,6 +44,26 @@ def read_current_repo_name(workspace_dir):
     raise Exception("Could not locate workspace name in %s" % workspace_file_path)
 
 
+def read_current_repo_url():
+    try:
+        repo_url_output = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'])
+        return repo_url_output.decode("utf-8")
+    except Exception:
+        msg = 'Cannot read the current repository remote origin url'
+        print ("[ERROR]\t%s" % msg)
+        raise Exception(msg)
+
+
+def read_current_branch():
+    try:
+        repo_url_output = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+        return repo_url_output.decode("utf-8")
+    except Exception:
+        msg = 'Cannot read the current branch. Possible reason: detached HEAD mode'
+        print ("[ERROR]\t%s" % msg)
+        raise Exception(msg)
+
+
 def write_repositories(workspace_dir):
     current_repo_name = read_current_repo_name(workspace_dir)
     wix_external_repositories_file = workspace_dir + external_wix_repositories_relative_path
