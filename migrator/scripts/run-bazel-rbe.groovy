@@ -14,6 +14,7 @@ pipeline {
         BAZEL_STARTUP_OPTS = '''|--bazelrc=.bazelrc.remote \\
                                 |'''.stripMargin()
         BAZEL_FLAGS = '''|-k \\
+                         |--experimental_remap_main_repo=true \\
                          |--config=remote \\
                          |--config=results \\
                          |--project_id=gcb-with-custom-workers \\
