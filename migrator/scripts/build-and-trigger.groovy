@@ -21,6 +21,11 @@ pipeline {
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
     stages {
+        stage('checkout-branch') {
+            steps {
+                git branch: "${env.SCM_BRANCH}", url : "git@github.com:wix-private/bazel-tooling.git"
+            }
+        }
         stage('build-migrator') {
             steps {
                 script{
