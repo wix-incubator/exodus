@@ -1,7 +1,7 @@
 pipeline {
     agent any
     options {
-        timeout(time: 160, unit: 'MINUTES')
+        timeout(time: 240, unit: 'MINUTES')
         timestamps()
         ansiColor('xterm')
     }
@@ -10,13 +10,13 @@ pipeline {
     }
     environment {
         CODOTA_TOKEN = credentials("codota-token")
+        ARTIFACTORY_TOKEN = credentials("artifactory-token")
         REPO_NAME = find_repo_name()
         MANAGED_DEPS_REPO_NAME = "core-server-build-tools"
         MANAGED_DEPS_REPO_URL = "git@github.com:wix-private/core-server-build-tools.git"
         BRANCH_NAME = "bazel-dry-mig-${env.BUILD_ID}"
         bazel_log_file = "bazel-build.log"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
-        JAVA_HOME = tool name: 'jdk8u152'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
         COMMIT_HASH = "${env.COMMIT_HASH}"
     }
@@ -50,15 +50,18 @@ pipeline {
                     sh 'find . -path "*/*BUILD.bazel" -exec rm -f {} \\;'
                 }
                 dir("wix-bazel-migrator") {
-                    sh """|java -Xmx12G \\
+                    sh """|stdbuf -i0 -o0 -e0 \\
+                          |   java -Xmx12G \\
                           |   -Dcodota.token=${env.CODOTA_TOKEN} \\
+                          |   -Dartifactory.token=${env.ARTIFACTORY_TOKEN} \\
                           |   -Dskip.classpath=false \\
                           |   -Dskip.transformation=false \\
                           |   -Dmanaged.deps.repo=../${env.MANAGED_DEPS_REPO_NAME} \\
                           |   -Dfail.on.severe.conflicts=true \\
                           |   -Drepo.root=../${repo_name}  \\
                           |   -Drepo.url=${env.repo_url} \\
-                          |   -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar""".stripMargin()                }
+                          |   -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar""".stripMargin()
+                }
             }
         }
         stage('post-migrate') {
