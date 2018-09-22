@@ -87,8 +87,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |
          |managed_third_party_dependencies()
          |${externalWixReposThirdParties(interRepoSourceDependency)}
-         |rules_docker_version = "4d49182a85c745065e621c145238c5e9420ed91b"
-         |rules_docker_version_sha256 = "34c67584a6dedb18c232ceccab822c1ee358b10c04f35588cd2c108c4b3af007"
+         |rules_docker_version = "9fd09b30ab07f224ff3a7455c44b58154c0e2e5b"
+         |rules_docker_version_sha256 = "29e2e6ed627a1b462aeeac2b9464d8a3dea42dddb7e440dab551aedeafb77db2"
          |http_archive(
          |    name = "io_bazel_rules_docker",
          |    sha256 = rules_docker_version_sha256,
