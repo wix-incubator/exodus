@@ -16,6 +16,7 @@ pipeline {
         BAZEL_FLAGS = '''|-k \\
                          |--experimental_remap_main_repo=true \\
                          |--config=remote \\
+                         |--config=rbe_based \\
                          |--config=results \\
                          |--project_id=gcb-with-custom-workers \\
                          |--remote_instance_name=projects/gcb-with-custom-workers/instances/default_instance \\

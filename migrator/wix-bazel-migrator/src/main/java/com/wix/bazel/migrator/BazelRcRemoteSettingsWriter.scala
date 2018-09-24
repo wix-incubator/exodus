@@ -15,8 +15,8 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
         |# These flags are duplicated rather than imported from (for example)
         |# %workspace%/configs/debian8_clang/0.2.0/toolchain.bazelrc to make this
         |# bazelrc a standalone file that can be copied more easily.
-        |build --host_javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
-        |build --javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
+        |build:rbe_based --host_javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
+        |build:rbe_based --javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
         |build --crosstool_top=@bazel_toolchains//configs/ubuntu16_04_clang/1.1/bazel_0.16.1/default:toolchain
         |build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
         |build --extra_toolchains=@bazel_toolchains//configs/ubuntu16_04_clang/1.1/bazel_0.16.1/cpp:cc-toolchain-clang-x86_64-default
