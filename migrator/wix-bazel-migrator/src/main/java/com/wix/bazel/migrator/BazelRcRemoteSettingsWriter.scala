@@ -17,11 +17,12 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
         |# bazelrc a standalone file that can be copied more easily.
         |build --host_javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
         |build --javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
-        |build --crosstool_top=@bazel_toolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/default:toolchain
-        |build --experimental_remote_platform_override='properties:{ name:"container-image" value:"docker://gcr.io/gcb-with-custom-workers/rbe-toolchain-container@sha256:98888ab9d86e0c46a591a47d05f49ef92e4c6306186f9c58130ae2efe43fbfc8" }'
+        |build --crosstool_top=@bazel_toolchains//configs/ubuntu16_04_clang/1.1/bazel_0.16.1/default:toolchain
         |build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
-        |build --extra_toolchains=@bazel_toolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/cpp:cc-toolchain-clang-x86_64-default
-        |build --extra_execution_platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604
+        |build --extra_toolchains=@bazel_toolchains//configs/ubuntu16_04_clang/1.1/bazel_0.16.1/cpp:cc-toolchain-clang-x86_64-default
+        |build --extra_execution_platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
+        |build --host_platform=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
+        |build --platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
         |
         |
         |# Enable encryption.
