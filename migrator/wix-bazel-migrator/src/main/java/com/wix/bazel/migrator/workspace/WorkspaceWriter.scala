@@ -134,7 +134,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
   }
 
   private def loadGrpcRepos(workspaceName: String) = {
-      val loadRepoStatement = if (workspaceName != serverInfraWSName)
+      val loadRepoStatement = if (workspaceName != serverInfraWSName && !interRepoSourceDependency)
         s"""|wix_grpc_version="aae67318df6960acfdca86efaea5391fdffe0db0" # update this as needed
             |
             |git_repository(
