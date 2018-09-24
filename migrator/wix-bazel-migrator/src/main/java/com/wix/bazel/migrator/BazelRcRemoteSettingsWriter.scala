@@ -23,7 +23,7 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
         |build --extra_execution_platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
         |build --host_platform=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
         |build --platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
-        |
+        |test:rbe_based --test_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_BW_CMPTBL
         |
         |# Enable encryption.
         |build --tls_enabled=true
