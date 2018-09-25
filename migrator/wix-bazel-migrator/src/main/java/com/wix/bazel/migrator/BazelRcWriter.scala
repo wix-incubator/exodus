@@ -38,6 +38,7 @@ object BazelRcWriter {
     "test --experimental_ui",
     "test --test_tmpdir=/tmp",
     "test --action_env=BUILD_TOOL=BAZEL",
-    "test --action_env=DISPLAY"
+    "test --action_env=DISPLAY",
+    "build:bazel16uplocal --action_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_BW_CMPTBL"
   )
 }
