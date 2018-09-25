@@ -1,0 +1,1 @@
+../../../../../workspaces-resolution/src/main/load_external_wix_repositories.bzl
