@@ -53,8 +53,6 @@ class BazelRcRemoteWriter(repoRoot: Path) {
        |build:results --bes_backend="buildeventservice.googleapis.com"
        |build:results --bes_timeout=10s
        |
-       |# If the upload to BES fails, the build will fail.
-       |build:results --bes_best_effort=false
       """.stripMargin
     writeToDisk(contents)
   }
