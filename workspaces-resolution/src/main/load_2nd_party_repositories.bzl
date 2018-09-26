@@ -1,7 +1,7 @@
-load("//:tools/current_branch_repositories.bzl", "resolved")
+load("//:tools/current_2nd_party_repositories.bzl", "resolved")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
-def load_external_wix_repositories():
+def load_2nd_party_repositories():
     for repo in resolved:
         if repo["rule_class"] == "@bazel_tools//tools/build_defs/repo:git.bzl%git_repository":
             git_repository(**(repo["attributes"]))

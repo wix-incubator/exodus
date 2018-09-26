@@ -1,5 +1,5 @@
 filegroup(name = "tools_bazel_scripts",
           srcs = ["custom-bazel-script",
-                  "resolve_external_wix_repositories.py",
-                  "load_external_wix_repositories.bzl"],
+                  "resolve_2nd_party_repositories.py",
+                  "load_2nd_party_repositories.bzl"],
           visibility = ["//visibility:public"],)

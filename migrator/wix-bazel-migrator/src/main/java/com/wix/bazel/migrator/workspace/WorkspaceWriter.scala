@@ -44,9 +44,9 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
          |
-         |load("//:tools/load_external_wix_repositories.bzl", "load_external_wix_repositories")
+         |load("//:tools/load_2nd_party_repositories.bzl", "load_2nd_party_repositories")
          |
-         |load_external_wix_repositories()
+         |load_2nd_party_repositories()
          |
          |load("@core_server_build_tools//:repositories.bzl", "scala_repositories")
          |scala_repositories()

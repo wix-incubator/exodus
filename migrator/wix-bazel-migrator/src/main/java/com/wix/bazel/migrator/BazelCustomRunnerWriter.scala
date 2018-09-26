@@ -40,9 +40,9 @@ class BazelCustomRunnerWriter(repoRoot: Path, interRepoSourceDependency: Boolean
 }
 
 object BazelCustomRunnerWriter {
-  val WorkspaceResolveScriptFileName = "resolve_external_wix_repositories.py"
+  val WorkspaceResolveScriptFileName = "resolve_2nd_party_repositories.py"
   val CustomBazelScriptName = "custom-bazel-script"
-  val LoadExternalRepositoriesScriptFileName = "load_external_wix_repositories.bzl"
+  val LoadExternalRepositoriesScriptFileName = "load_2nd_party_repositories.bzl"
 
   val ExternalThirdPartyLoadingScriptFileName = "load_third_parties_of_external_wix_repositories.py"
   val CrossRepoCustomBazelScriptName = "cross-repo-custom-bazel-script"

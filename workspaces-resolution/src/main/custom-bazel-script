@@ -8,6 +8,6 @@ while [[ "${WORKSPACE_DIR}" != / ]]; do
     WORKSPACE_DIR="$(dirname "${WORKSPACE_DIR}")"
 done
 
-python ${WORKSPACE_DIR}/tools/resolve_external_wix_repositories.py ${WORKSPACE_DIR}
+python ${WORKSPACE_DIR}/tools/resolve_2nd_party_repositories.py ${WORKSPACE_DIR}
 
 exec -a "bazel-after-workspace-resolve" "${BAZEL_REAL}" "$@"
