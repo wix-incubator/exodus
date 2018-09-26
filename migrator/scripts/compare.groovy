@@ -30,7 +30,8 @@ pipeline {
         stage('bazel artifacts') {
             steps {
                 script {
-                    def compare_job = '02-run-bazel'
+                    def compare_job = "${BAZEL_COMPARE_JOB}"
+
                     try {
                         def compare_job_file = 'bazel_migration/compare_job'
                         if (fileExists(compare_job_file)) {
@@ -46,7 +47,7 @@ pipeline {
         stage('check for 0-byte bazel test.xml') {
             steps {
                 script {
-                    def compare_job = '02-run-bazel'
+                    def compare_job = "${BAZEL_COMPARE_JOB}"
                     def emptyTests = []
                     try {
                         def compare_job_file = 'bazel_migration/compare_job'
@@ -61,7 +62,7 @@ pipeline {
                         }
                         if (emptyTests != []) {
                             msg = compose(":thumbsdown: task '${env.JOB_NAME}' has 0-byte `test.xml` files :thumbsdown:", emptyTests.join("\n"))
-                            sendToSlack(["bazel-mig-alerts"], msg)
+                            sendToSlack(["build_system_internal"], msg)
                         }
                     } catch (err) {
                         print(err)
