@@ -6,6 +6,8 @@ import org.specs2.specification.core.Fragments
 
 //noinspection TypeAnnotation
 abstract class CodotaThinClientContract extends SpecificationWithJUnit {
+  sequential
+
   def testData: CodotaThinClientTestData
 
   def client: CodotaThinClient = {
