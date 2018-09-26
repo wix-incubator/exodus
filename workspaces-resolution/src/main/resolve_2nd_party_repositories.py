@@ -18,7 +18,7 @@ tools_relative_path = "/tools/"
 CI_ENV_FLAG_FILE = tools_relative_path + "ci.environment"
 starlark_file_name_postfix = "_2nd_party_resolved_dependencies.bzl"
 json_file_name_postfix = "_2nd_party_resolved_dependencies.json"
-symlink_relative_path = tools_relative_path + "current_2nd_party_repositories.bzl"
+symlink_relative_path = tools_relative_path + "2nd_party_resolved_dependencies_current_branch.bzl"
 
 repo_list = os.environ.get("REPO_LIST", "default")
 tracking_branch = os.environ.get("TRACKING_BRANCH", "master")
