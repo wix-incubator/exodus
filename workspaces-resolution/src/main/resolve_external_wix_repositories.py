@@ -73,17 +73,17 @@ def write_content_to_path(content, path):
 
 
 def write_repositories(workspace_dir):
-    symlink_path = workspace_dir + symlink_relative_path
-    if (os.path.isfile(symlink_path) and file_is_not_empty(symlink_path)) and (
+    current_branch = read_current_branch()
+    starlark_file_path = (workspace_dir + tools_relative_path + current_branch + starlark_file_name_postfix).replace("\n", "")
+    if (os.path.isfile(starlark_file_path) and file_is_not_empty(starlark_file_path)) and (
             not os.path.isfile(workspace_dir + CI_ENV_FLAG_FILE)):
         sys.exit(0)
 
     print("[INFO]\tFetching repositories from %s" % url_with_list)
     json_file_repos, starlark_file_repos = fetch_repositories()
 
-    current_branch = read_current_branch()
-    starlark_file_path = (workspace_dir + tools_relative_path + current_branch + starlark_file_name_postfix).replace("\n", "")
     json_file_path = (workspace_dir + tools_relative_path + current_branch + json_file_name_postfix).replace("\n", "")
+    symlink_path = workspace_dir + symlink_relative_path
     write_content_to_path(json_file_repos, json_file_path)
     write_content_to_path(starlark_file_repos, starlark_file_path)
     write_symlink_to_path(symlink_path, starlark_file_path)
