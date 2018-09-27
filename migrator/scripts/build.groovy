@@ -15,6 +15,7 @@ pipeline {
         BAZEL_FLAGS = '''|-k \\
                          |--config=remote \\
                          |--config=results \\
+                         |--config=rbe_based \\
                          |--project_id=gcb-with-custom-workers \\
                          |--remote_instance_name=projects/gcb-with-custom-workers/instances/default_instance'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
