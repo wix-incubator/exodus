@@ -4,6 +4,12 @@ import os
 import os.path
 import subprocess
 import sys
+import logging
+
+logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
+
+logging.basicConfig(level=logging_level, format='%(asctime)s  %(levelname)s: %(message)s')
+
 from StringIO import StringIO
 
 if sys.version_info[0] == 3:
@@ -54,32 +60,33 @@ def write_symlink_to_path(symlink_path, path):
 
 
 def run_process(splitted_command, fail_msg):
-    print ("[INFO]\tRunning:\t%s" % ' '.join(splitted_command))
+    logging.debug("Running:\t%s" % ' '.join(splitted_command))
     process = subprocess.Popen(splitted_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     if err:
         msg = "%s. stderr = %s" % (fail_msg, err)
-        print ("[ERROR]\t%s" % msg)
+        logging.error(msg)
         raise Exception(msg)
-    print ("[INFO]\tOutput:\t%s" % out)
+    logging.debug("Output:\t%s" % out)
     return out
 
 
 def write_content_to_path(content, path):
     with open(path, "w+") as openedfile:
-        print("[INFO]\tGenerating %s with content:\n%s" % (path, content))
+        logging.debug("Generating %s with content:\n%s" % (path, content))
         openedfile.write(content)
         openedfile.close()
 
 
 def write_repositories(workspace_dir):
     current_branch = read_current_branch()
-    starlark_file_path = (workspace_dir + tools_relative_path + current_branch + starlark_file_name_postfix).replace("\n", "")
+    starlark_file_path = (workspace_dir + tools_relative_path + current_branch + starlark_file_name_postfix).replace(
+        "\n", "")
     if (os.path.isfile(starlark_file_path) and file_is_not_empty(starlark_file_path)) and (
             not os.path.isfile(workspace_dir + CI_ENV_FLAG_FILE)):
         sys.exit(0)
 
-    print("[INFO]\tFetching repositories from %s" % url_with_list)
+    logging.debug("Fetching repositories from %s" % url_with_list)
     json_file_repos, starlark_file_repos = fetch_repositories()
 
     json_file_path = (workspace_dir + tools_relative_path + current_branch + json_file_name_postfix).replace("\n", "")
@@ -88,9 +95,9 @@ def write_repositories(workspace_dir):
     write_content_to_path(starlark_file_repos, starlark_file_path)
     write_symlink_to_path(symlink_path, starlark_file_path)
 
-    print("[INFO]\tGenerating %s" % workspace_dir + "/BUILD.bazel")
+    logging.debug("Generating %s" % workspace_dir + "/BUILD.bazel")
     open(workspace_dir + "/BUILD.bazel", 'a').close()
-    print("[INFO]\tGenerating %s" % workspace_dir + "/tools/BUILD.bazel")
+    logging.debug("Generating %s" % workspace_dir + "/tools/BUILD.bazel")
     open(workspace_dir + "/tools/BUILD.bazel", 'a').close()
 
 
