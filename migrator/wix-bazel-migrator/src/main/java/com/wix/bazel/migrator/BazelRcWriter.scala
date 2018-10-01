@@ -27,7 +27,6 @@ class BazelRcWriter(repoRoot: Path) {
 
 object BazelRcWriter {
   val defaultOptions: List[String] = List("build --strategy=Scalac=worker",
-    "build --strict_proto_deps=off",
     "build --strict_java_deps=warn",
     "build --experimental_remap_main_repo=true",
     "test --strategy=Scalac=worker",
