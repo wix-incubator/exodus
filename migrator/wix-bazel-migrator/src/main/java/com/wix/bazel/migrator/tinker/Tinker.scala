@@ -67,6 +67,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     gitIgnoreAppender.append("tools/2nd_party_resolved_dependencies_current_branch.bzl")
     gitIgnoreAppender.append("tools/master_2nd_party_resolved_dependencies.bzl")
     gitIgnoreAppender.append("tools/third_party_deps_of_external_wix_repositories.bzl")
+    gitIgnoreAppender.append("tools/*_2nd_party_resolved_dependencies.json")
   }
 
   private def writeDefaultJavaToolchain(): Unit =
