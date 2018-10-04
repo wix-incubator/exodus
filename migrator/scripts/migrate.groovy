@@ -19,6 +19,7 @@ pipeline {
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
         COMMIT_HASH = "${env.COMMIT_HASH}"
+        commons = "${WORKSPACE}/${env.MANAGED_DEPS_REPO_NAME}/scripts/post-migration-commons"
     }
     stages {
         stage('checkout') {
