@@ -42,6 +42,7 @@ pipeline {
                                              |bazel test \\
                                              |      --test_tag_filters=UT,-IT \\
                                              |      --flaky_test_attempts=3 \\
+                                             |      ${env.BAZEL_FLAGS} \\
                                              |      ${env.ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} \\
                                              |      //...
                                              |""".stripMargin())
