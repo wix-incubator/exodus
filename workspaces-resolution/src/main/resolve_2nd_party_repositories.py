@@ -30,11 +30,12 @@ repo_list = os.environ.get("REPO_LIST", "default")
 tracking_branch = os.environ.get("TRACKING_BRANCH", "master")
 
 repositories_url = os.environ.get("REPOSITORIES_URL", "https://bo.wix.com/bazel-repositories-server/repositories")
-url_with_list = repositories_url + ("?list=%s" % repo_list)
+url_with_params = repositories_url + (
+    "?list={repo_list}&branch={tracking_branch}".format(repo_list=repo_list, tracking_branch=tracking_branch))
 
 
 def fetch_repositories():
-    response = urlopen(url_with_list).read()
+    response = urlopen(url_with_params).read()
     io = StringIO()
     json.dump(json.loads(response)["repositories"], io, sort_keys=True, indent=4, separators=(',', ': '))
     json_file_repos = io.getvalue()
@@ -86,7 +87,7 @@ def write_repositories(workspace_dir):
             not os.path.isfile(workspace_dir + CI_ENV_FLAG_FILE)):
         sys.exit(0)
 
-    logging.debug("Fetching repositories from %s" % url_with_list)
+    logging.debug("Fetching repositories from %s" % url_with_params)
     json_file_repos, starlark_file_repos = fetch_repositories()
 
     json_file_path = (workspace_dir + tools_relative_path + current_branch + json_file_name_postfix).replace("\n", "")
