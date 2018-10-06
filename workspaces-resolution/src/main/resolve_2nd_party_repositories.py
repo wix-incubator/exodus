@@ -5,6 +5,7 @@ import os.path
 import subprocess
 import sys
 import logging
+import base64
 
 logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
 
@@ -28,6 +29,7 @@ symlink_relative_path = tools_relative_path + "2nd_party_resolved_dependencies_c
 
 repo_list = os.environ.get("REPO_LIST", "default")
 tracking_branch = os.environ.get("TRACKING_BRANCH", "master")
+second_party_resolved_dependencies = os.environ.get("SECOND_PARTY_RESOLVED_DEPENDENCIES")
 
 repositories_url = os.environ.get("REPOSITORIES_URL", "https://bo.wix.com/bazel-repositories-server/repositories")
 url_with_params = repositories_url + (
@@ -35,11 +37,16 @@ url_with_params = repositories_url + (
 
 
 def fetch_repositories():
-    response = urlopen(url_with_params).read()
+    if second_party_resolved_dependencies is None:
+        logging.debug("Fetching resolved dependencies from url:\t%s" % url_with_params)
+        dependencies_raw_string = urlopen(url_with_params).read()
+    else:
+        logging.debug("Overriding resolved dependencies from env var SECOND_PARTY_RESOLVED_DEPENDENCIES")
+        dependencies_raw_string = base64.b64decode(second_party_resolved_dependencies)
     io = StringIO()
-    json.dump(json.loads(response)["repositories"], io, sort_keys=True, indent=4, separators=(',', ': '))
+    json.dump(json.loads(dependencies_raw_string)["repositories"], io, sort_keys=True, indent=4, separators=(',', ': '))
     json_file_repos = io.getvalue()
-    starlark_file_repos = json.loads(response)["resolvedDependenciesFile"]
+    starlark_file_repos = json.loads(dependencies_raw_string)["resolvedDependenciesFile"]
     return json_file_repos, starlark_file_repos
 
 
