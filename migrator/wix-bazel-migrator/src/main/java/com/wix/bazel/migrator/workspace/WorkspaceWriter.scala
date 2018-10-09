@@ -75,8 +75,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |
          |http_archive(
          |    name = "com_google_protobuf",
-         |    urls = ["https://github.com/google/protobuf/archive/74bf45f379b35e1d103940f35d7a04545b0235d4.zip"],
-         |    strip_prefix = "protobuf-74bf45f379b35e1d103940f35d7a04545b0235d4",
+         |    urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-java-3.6.1.zip"],
+         |    strip_prefix = "protobuf-3.6.1",
          |)
          |
          |load("//:third_party.bzl", "third_party_dependencies")
