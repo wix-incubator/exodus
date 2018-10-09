@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.maven.{Coordinates, Exclusion}
+import com.wixpress.build.maven._
 
 import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
@@ -20,6 +20,23 @@ object ImportExternalTargetsFile {
   }
 
   case class Reader(content: String) {
+    def allBazelDependencyNodes(): Set[PartialDependencyNode] = {
+      val strings = splitToStringsWithJarImportsInside(content)
+      strings.flatMap(jarImport => parsePartialDepNode(jarImport)).toSet
+    }
+
+    private def parsePartialDepNode(jarImport: String) = {
+      parseCoordinates(jarImport).map(coords => {
+        val exclusions = extractExclusions(jarImport)
+        val compileDeps = extractListByAttribute(CompileTimeDepsFilter, jarImport)
+        val runtimeDeps = extractListByAttribute(RunTimeDepsFilter, jarImport)
+        PartialDependencyNode(Dependency(coords, MavenScope.Compile, exclusions),
+          compileDeps.map(d => PartialDependency(parseImportExternalDep(d).getOrElse(d), MavenScope.Compile)) ++
+            runtimeDeps.map(d => PartialDependency(parseImportExternalDep(d).getOrElse(d), MavenScope.Runtime))
+        )
+      })
+    }
+
     def ruleByName(name: String): Option[ImportExternalRule] =
       findTargetWithSameNameAs(name = name, within = content)
         .map(extractFullMatchText)
@@ -82,6 +99,10 @@ object ImportExternalTargetsFile {
         .map(Coordinates.deserialize)
     }
 
+    private def parseImportExternalDep(text: String) = {
+      ImportExternalDepFilter.findFirstMatchIn(text).map(_.group("ruleName"))
+    }
+
     private val ArtifactFilter = """(?s)artifact\s*?=\s*?"(.+?)"""".r("artifact")
 
     private val BracketsContentGroup = "bracketsContent"
@@ -94,6 +115,7 @@ object ImportExternalTargetsFile {
     private val StringsGroup = "Strings"
     private val listOfStringsFilter = """"(.+?)"""".r(StringsGroup)
     private val Sha256Filter = """(?s)jar_sha256\s*?=\s*?"(.+?)"""".r("checksum")
+    private val ImportExternalDepFilter = """@(.*?)//.*""".r("ruleName")
   }
 
   case class Writer(content: String) {
@@ -137,6 +159,19 @@ object ImportExternalTargetsFile {
   }
 
   case class AllFilesReader(filesContent: Set[String]) {
+    def allMavenDependencyNodes(): Set[DependencyNode] = {
+      val bazelDependencyNodes = filesContent.flatMap(c => Reader(c).allBazelDependencyNodes())
+      val baseDependencies = bazelDependencyNodes.map(_.baseDependency)
+      bazelDependencyNodes.map(d => mavenDependencyNodeFrom(d, baseDependencies))
+    }
+
+    private def mavenDependencyNodeFrom(partialNode: PartialDependencyNode, baseDependencies: Set[Dependency]):DependencyNode = {
+      DependencyNode(partialNode.baseDependency, partialNode.targetDependencies.flatMap(t => transitiveDepFrom(t, baseDependencies)))
+    }
+
+    private def transitiveDepFrom(partialDep: PartialDependency, baseDependencies: Set[Dependency]) = {
+      baseDependencies.find(_.coordinates.workspaceRuleName == partialDep.ruleName).map(_.copy(scope = partialDep.scope))
+    }
 
     def allMavenCoordinates: Set[Coordinates] = {
       filesContent.flatMap(c => Reader(c).allMavenCoordinates)
@@ -164,3 +199,7 @@ object ImportExternalTargetsFile {
     }
   }
 }
+
+case class PartialDependencyNode(baseDependency: Dependency, targetDependencies: Set[PartialDependency])
+
+case class PartialDependency(ruleName: String, scope: MavenScope)

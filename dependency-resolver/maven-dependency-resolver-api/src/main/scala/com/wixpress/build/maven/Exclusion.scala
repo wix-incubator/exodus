@@ -2,6 +2,10 @@ package com.wixpress.build.maven
 
 case class Exclusion(groupId: String, artifactId: String) {
   def serialized: String = s"$groupId:$artifactId"
+
+  def equalsCoordinates(coordinates: Coordinates): Boolean =
+    this.groupId == coordinates.groupId && this.artifactId == coordinates.artifactId
+
 }
 
 object Exclusion {

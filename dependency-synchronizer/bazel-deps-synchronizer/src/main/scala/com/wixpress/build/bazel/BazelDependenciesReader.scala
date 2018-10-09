@@ -1,9 +1,14 @@
 package com.wixpress.build.bazel
 
-import com.wixpress.build.maven.{Coordinates, Dependency, Exclusion, MavenScope}
+import com.wixpress.build.maven._
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class BazelDependenciesReader(localWorkspace: BazelLocalWorkspace) {
+  def allDependenciesAsMavenDependencyNodes(): Set[DependencyNode] = {
+    val importExternalTargetsFileParser = ImportExternalTargetsFile.AllFilesReader(localWorkspace.allThirdPartyImportTargetsFilesContent())
+    importExternalTargetsFileParser.allMavenDependencyNodes()
+  }
+
 
   def allDependenciesAsMavenDependencies(): Set[Dependency] = {
     val thirdPartyReposParser = ThirdPartyReposFile.Parser(localWorkspace.thirdPartyReposFileContent())

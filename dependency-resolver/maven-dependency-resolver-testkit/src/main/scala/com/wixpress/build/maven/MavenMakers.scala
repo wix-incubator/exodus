@@ -47,6 +47,9 @@ object MavenMakers {
   def asCompileDependency(artifact: Coordinates, exclusions: Set[Exclusion] = Set.empty): Dependency =
     Dependency(artifact, MavenScope.Compile, exclusions)
 
+  def asRuntimeDependency(artifact: Coordinates, exclusions: Set[Exclusion] = Set.empty): Dependency =
+    Dependency(artifact, MavenScope.Runtime, exclusions)
+
   def aTestArchiveTarDependency(artifactId: String): Dependency = Dependency(someCoordinates(artifactId).copy(packaging = Packaging("tar.gz")), MavenScope.Test)
 
   def aTestArchiveZipDependency(artifactId: String): Dependency = Dependency(someCoordinates(artifactId).copy(packaging = Packaging("zip")), MavenScope.Test)

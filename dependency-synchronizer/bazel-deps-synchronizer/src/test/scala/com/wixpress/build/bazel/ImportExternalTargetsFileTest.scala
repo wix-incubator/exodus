@@ -1,7 +1,8 @@
 package com.wixpress.build.bazel
 
 import com.wixpress.build.bazel.CoordinatesTestBuilders.{artifactA, artifactB, artifactC}
-import com.wixpress.build.maven.{Coordinates, Exclusion}
+import com.wixpress.build.maven.MavenMakers.asCompileDependency
+import com.wixpress.build.maven._
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -22,6 +23,62 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
       val coordinates = ImportExternalTargetsFile.Reader(fileWithJarWorkspaceRule).allMavenCoordinates
 
       coordinates must contain(mavenJarCoordinates)
+    }
+
+    "extract Bazel dependency without deps from file" in new ctx {
+      private val nodes: Set[PartialDependencyNode] = ImportExternalTargetsFile.Reader(fileWithJarWorkspaceRule).allBazelDependencyNodes()
+
+      nodes must contain(PartialDependencyNode(asCompileDependency(mavenJarCoordinates), Set()))
+    }
+
+    "extract Bazel dependency with exclusion from file" in new ctx {
+      val exclusion = Exclusion("some.excluded.group", "some-excluded-artifact")
+
+      private val nodes: Set[PartialDependencyNode] = ImportExternalTargetsFile.Reader(
+        s"""
+           |  if native.existing_rule("maven_jar_name") == None:
+           |    jar_workspace_rule(
+           |        name = "maven_jar_name",
+           |        artifact = "${mavenJarCoordinates.serialized}"
+           |      # EXCLUDES ${exclusion.serialized}
+           |    )""".stripMargin
+      ).allBazelDependencyNodes()
+
+      nodes must contain(PartialDependencyNode(asCompileDependency(mavenJarCoordinates, Set(exclusion)), Set()))
+    }
+
+    "extract Bazel dependency with compile dep from file" in new ctx {
+
+      private val nodes: Set[PartialDependencyNode] = ImportExternalTargetsFile.Reader(
+        s"""
+           |  if native.existing_rule("maven_jar_name") == None:
+           |    jar_workspace_rule(
+           |        name = "maven_jar_name",
+           |        artifact = "${mavenJarCoordinates.serialized}",
+           |        deps = [
+           |            "@some-runtime-dep//jar"
+           |        ]
+           |    )""".stripMargin
+      ).allBazelDependencyNodes()
+
+      nodes must contain(PartialDependencyNode(asCompileDependency(mavenJarCoordinates), Set(PartialDependency("some-runtime-dep", MavenScope.Compile))))
+    }
+
+    "extract Bazel dependency with runtime dep from file" in new ctx {
+
+      private val nodes: Set[PartialDependencyNode] = ImportExternalTargetsFile.Reader(
+        s"""
+           |  if native.existing_rule("maven_jar_name") == None:
+           |    jar_workspace_rule(
+           |        name = "maven_jar_name",
+           |        artifact = "${mavenJarCoordinates.serialized}",
+           |        runtime_deps = [
+           |            "@some-runtime-dep//jar"
+           |        ]
+           |    )""".stripMargin
+      ).allBazelDependencyNodes()
+
+      nodes must contain(PartialDependencyNode(asCompileDependency(mavenJarCoordinates), Set(PartialDependency("some-runtime-dep", MavenScope.Runtime))))
     }
 
     "find and deserialize artifact using workspace rule name" in new ctx{

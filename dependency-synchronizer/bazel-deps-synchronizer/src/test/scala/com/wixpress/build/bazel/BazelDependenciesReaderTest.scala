@@ -10,20 +10,6 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
 
   "BazelDependenciesReader should return" >> {
 
-    trait emptyThirdPartyReposCtx extends Scope {
-      val localWorkspace: BazelLocalWorkspace = new FakeLocalBazelWorkspace()
-      val reader = new BazelDependenciesReader(localWorkspace)
-
-      def defaultDependency(groupId: String, artifactId: String, version: String, exclusion: Set[Exclusion] = Set.empty) =
-        Dependency(Coordinates(groupId, artifactId, version), MavenScope.Compile, exclusion)
-
-      val dep = someCoordinates("some-dep")
-      val ruleName = s"${dep.groupIdForBazel}_some_dep"
-
-      localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,"")
-
-    }
-
     "empty set of dependencies in case given empty third party repos" in new emptyThirdPartyReposCtx {
 
       reader.allDependenciesAsMavenDependencies() must beEmpty
@@ -95,5 +81,45 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
         ))
 
     }
+
+    // TODO: abstaract away `@foo//jar`
+    "a dependency node with 1 transitive dependency" in new emptyThirdPartyReposCtx {
+      val artifact1 = someCoordinates("some-dep")
+      val artifact2 = someCoordinates("some-dep2")
+
+      localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,
+        s"""
+           |import_external(
+           |  name = "${artifact1.workspaceRuleName}",
+           |  artifact = "${artifact1.serialized}",
+           |  runtime_deps = ["@${artifact2.workspaceRuleName}//jar"],
+           |)
+           |
+           |import_external(
+           |  name = "${artifact2.workspaceRuleName}",
+           |  artifact = "${artifact2.serialized}",
+           |)""".stripMargin)
+
+      private val dependencyNodes: Set[DependencyNode] = reader.allDependenciesAsMavenDependencyNodes()
+      dependencyNodes must containTheSameElementsAs(
+        Seq(
+          DependencyNode(asCompileDependency(artifact1), Set(asRuntimeDependency(artifact2))),
+          aRootDependencyNode(asCompileDependency(artifact2))
+        ))
+    }
+  }
+
+  trait emptyThirdPartyReposCtx extends Scope {
+    val localWorkspace: BazelLocalWorkspace = new FakeLocalBazelWorkspace()
+    val reader = new BazelDependenciesReader(localWorkspace)
+
+    def defaultDependency(groupId: String, artifactId: String, version: String, exclusion: Set[Exclusion] = Set.empty) =
+      Dependency(Coordinates(groupId, artifactId, version), MavenScope.Compile, exclusion)
+
+    val dep = someCoordinates("some-dep")
+    val ruleName = s"${dep.groupIdForBazel}_some_dep"
+
+    localWorkspace.overwriteThirdPartyImportTargetsFile(dep.groupIdForBazel,"")
+
   }
 }
