@@ -13,8 +13,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
       s"""
          |workspace(name = "$workspaceName")
          |load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-         |rules_scala_version="d03fdbfc4a5b7bde736cc2a3376d0274a22d2d7f" # update this as needed
-         |rules_scala_version_sha256="fb25860e3e03938f73ae4ba6e2feb1dc422dd5b8b2abf21de87aade3450c1851"
+         |rules_scala_version="4cfa1bae27490d577a036a66d8de08085059cfa1" # update this as needed
+         |rules_scala_version_sha256="99097662c8e07cb452e865847a7ecae072bd6c4460121e5d82fd4cf6d2aba407"
          |http_archive(
          |             name = "io_bazel_rules_scala",
          |             url = "https://github.com/wix/rules_scala/archive/%s.zip"%rules_scala_version,
