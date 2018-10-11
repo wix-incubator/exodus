@@ -9,20 +9,34 @@ import ArtifactoryRemoteStorage._
 case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelRepository,
                             targetRepository: BazelRepository, resolver: MavenDependencyResolver,
                             dependenciesRemoteStorage: DependenciesRemoteStorage) {
-  private val persister = new BazelDependenciesPersister(PersistMessageHeader, BranchName, targetRepository)
-  private val log = LoggerFactory.getLogger(getClass)
+  private val diffCalculator = DiffCalculator(bazelRepositoryWithManagedDependencies, resolver, dependenciesRemoteStorage)
+  private val diffWriter = DiffWriter(targetRepository)
 
   def sync(localNodes: Set[DependencyNode]) = {
+    val updatedLocalNodes = diffCalculator.calculateDivergentDependencies(localNodes)
+
+    diffWriter.persistResolvedDependencies(updatedLocalNodes, localNodes)
+  }
+}
+
+case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepository,
+                     resolver: MavenDependencyResolver,
+                     dependenciesRemoteStorage: DependenciesRemoteStorage) {
+  private val log = LoggerFactory.getLogger(getClass)
+
+  def calculateDivergentDependencies(localNodes: Set[DependencyNode]): Set[DependencyNode] = {
     val reader = new BazelDependenciesReader(bazelRepositoryWithManagedDependencies.localWorkspace("master"))
     val managedDeps = reader.allDependenciesAsMavenDependencies()
 
     val managedNodes = resolver.dependencyClosureOf(managedDeps, withManagedDependencies = managedDeps)
 
+    calculateDivergentDependencies(localNodes, managedNodes)
+  }
+
+  def calculateDivergentDependencies(localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode]): Set[DependencyNode] = {
     val divergentLocalDependencies = localNodes.forceCompileScope diff managedNodes
 
-    val divergentLocalDependenciesWithChecksums = decorateNodesWithChecksum(divergentLocalDependencies)
-
-    persistResolvedDependencies(divergentLocalDependenciesWithChecksums, localNodes)
+    decorateNodesWithChecksum(divergentLocalDependencies)
   }
 
   private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
@@ -31,8 +45,12 @@ case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelReposit
     log.info("completed fetching sha256 checksums.")
     nodes
   }
+}
 
-  private def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]) = {
+case class DiffWriter(targetRepository: BazelRepository) {
+  private val persister = new BazelDependenciesPersister(PersistMessageHeader, BranchName, targetRepository)
+
+  def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit = {
     val localCopy = targetRepository.localWorkspace("master")
     val writer = new BazelDependenciesWriter(localCopy)
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom")
