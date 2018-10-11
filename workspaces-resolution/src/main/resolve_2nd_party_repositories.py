@@ -26,6 +26,7 @@ CI_ENV_FLAG_FILE = tools_relative_path + "ci.environment"
 starlark_file_name_postfix = "_2nd_party_resolved_dependencies.bzl"
 json_file_name_postfix = "_2nd_party_resolved_dependencies.json"
 symlink_relative_path = tools_relative_path + "2nd_party_resolved_dependencies_current_branch.bzl"
+second_party_resolved_dependencies_empty_placeholder = "EMPTY!"
 
 repo_list = os.environ.get("REPO_LIST", "default")
 tracking_branch = os.environ.get("TRACKING_BRANCH", "master")
@@ -37,7 +38,8 @@ url_with_params = repositories_url + (
 
 
 def fetch_repositories():
-    if second_party_resolved_dependencies is None:
+    logging.debug('second_party_resolved_dependencies env var = %s' % second_party_resolved_dependencies)
+    if (second_party_resolved_dependencies is None) or (second_party_resolved_dependencies == second_party_resolved_dependencies_empty_placeholder):
         logging.debug("Fetching resolved dependencies from url:\t%s" % url_with_params)
         dependencies_raw_string = urlopen(url_with_params).read()
     else:
@@ -94,7 +96,6 @@ def write_repositories(workspace_dir):
             not os.path.isfile(workspace_dir + CI_ENV_FLAG_FILE)):
         sys.exit(0)
 
-    logging.debug("Fetching repositories from %s" % url_with_params)
     json_file_repos, starlark_file_repos = fetch_repositories()
 
     json_file_path = (workspace_dir + tools_relative_path + current_branch + json_file_name_postfix).replace("\n", "")
