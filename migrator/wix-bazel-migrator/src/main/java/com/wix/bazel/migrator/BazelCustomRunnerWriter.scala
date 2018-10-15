@@ -9,15 +9,20 @@ class BazelCustomRunnerWriter(repoRoot: Path, interRepoSourceDependency: Boolean
 
   def write() = {
     val path = repoRoot.resolve("tools/")
+    val gitHooksPath = repoRoot.resolve(".git/hooks/")
+    val customBazelScriptWritingName = "bazel"
     Files.createDirectories(path)
+    Files.createDirectories(gitHooksPath)
 
     writeToDisk(path, WorkspaceResolveScriptFileName, getResourceContents(WorkspaceResolveScriptFileName))
     writeToDisk(path, LoadExternalRepositoriesScriptFileName, getResourceContents(LoadExternalRepositoriesScriptFileName))
+    writeExecutableScript(gitHooksPath, PostCheckoutScriptFileName, getResourceContents(PostCheckoutScriptFileName))
+
     if (interRepoSourceDependency) {
       writeToDisk(path, ExternalThirdPartyLoadingScriptFileName, getResourceContents(ExternalThirdPartyLoadingScriptFileName))
-      writeExecutableCustomBazelScript(path, getResourceContents(CrossRepoCustomBazelScriptName))
+      writeExecutableScript(path, customBazelScriptWritingName, getResourceContents(CrossRepoCustomBazelScriptName))
     } else {
-      writeExecutableCustomBazelScript(path, getResourceContents(CustomBazelScriptName))
+      writeExecutableScript(path, customBazelScriptWritingName, getResourceContents(CustomBazelScriptName))
     }
   }
 
@@ -31,8 +36,8 @@ class BazelCustomRunnerWriter(repoRoot: Path, interRepoSourceDependency: Boolean
     workspaceResolveScriptContents
   }
 
-  private def writeExecutableCustomBazelScript(path: Path, content: String) = {
-    val pathResult = writeToDisk(path, "bazel", content)
+  private def writeExecutableScript(path: Path, fileName: String, content: String) = {
+    val pathResult = writeToDisk(path, fileName, content)
 
     val file = new File(pathResult.toString)
     file.setExecutable(true, false)
@@ -43,6 +48,7 @@ object BazelCustomRunnerWriter {
   val WorkspaceResolveScriptFileName = "resolve_2nd_party_repositories.py"
   val CustomBazelScriptName = "custom-bazel-script"
   val LoadExternalRepositoriesScriptFileName = "load_2nd_party_repositories.bzl"
+  val PostCheckoutScriptFileName = "post-checkout"
 
   val ExternalThirdPartyLoadingScriptFileName = "load_third_parties_of_external_wix_repositories.py"
   val CrossRepoCustomBazelScriptName = "cross-repo-custom-bazel-script"

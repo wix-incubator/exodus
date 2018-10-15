@@ -8,6 +8,8 @@ class BazelCustomRunnerWriterIT extends BaseWriterIT {
       writer.write()
 
       path(s"tools/$WorkspaceResolveScriptFileName") must beRegularFile(withContentFromResource = WorkspaceResolveScriptFileName)
+      path(s"tools/$LoadExternalRepositoriesScriptFileName") must beRegularFile(withContentFromResource = LoadExternalRepositoriesScriptFileName)
+      path(s".git/hooks/$PostCheckoutScriptFileName") must beRegularFile(withContentFromResource = PostCheckoutScriptFileName)
       path("tools/bazel") must beRegularFile(withContentFromResource = CustomBazelScriptName)
     }
 
@@ -15,6 +17,8 @@ class BazelCustomRunnerWriterIT extends BaseWriterIT {
       writer.write()
 
       path(s"tools/$WorkspaceResolveScriptFileName") must beRegularFile(withContentFromResource = WorkspaceResolveScriptFileName)
+      path(s"tools/$LoadExternalRepositoriesScriptFileName") must beRegularFile(withContentFromResource = LoadExternalRepositoriesScriptFileName)
+      path(s".git/hooks/$PostCheckoutScriptFileName") must beRegularFile(withContentFromResource = PostCheckoutScriptFileName)
       path(s"tools/$ExternalThirdPartyLoadingScriptFileName") must beRegularFile(withContentFromResource = ExternalThirdPartyLoadingScriptFileName)
       path("tools/bazel") must beRegularFile(withContentFromResource = CrossRepoCustomBazelScriptName)
     }
