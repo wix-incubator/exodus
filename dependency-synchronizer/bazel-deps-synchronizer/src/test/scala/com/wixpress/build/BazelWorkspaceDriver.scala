@@ -5,7 +5,7 @@ import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExter
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.Coordinates._
 import com.wixpress.build.maven.{Coordinates, DependencyNode, Exclusion, Packaging}
-import org.specs2.matcher.{AlwaysMatcher, Matcher}
+import org.specs2.matcher.Matcher
 import org.specs2.matcher.Matchers._
 
 class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
@@ -106,17 +106,19 @@ object BazelWorkspaceDriver {
   }
 
   private def importExternalRuleWith(artifact: Coordinates,
-                             runtimeDependencies: Set[Coordinates] = Set.empty,
-                             compileTimeDependencies: Set[Coordinates] = Set.empty,
-                             exclusions: Set[Exclusion] = Set.empty,
-                             checksum: Option[String] = None,
-                             coordinatesToLabel: Coordinates => String) = {
+                                     runtimeDependencies: Set[Coordinates],
+                                     compileTimeDependencies: Set[Coordinates],
+                                     exclusions: Set[Exclusion],
+                                     checksum: Option[String],
+                                     coordinatesToLabel: Coordinates => String,
+                                     srcChecksum: Option[String]) = {
     ImportExternalRule.of(artifact,
       runtimeDependencies,
       compileTimeDependencies,
       exclusions,
       coordinatesToLabel = coordinatesToLabel,
-      checksum)
+      checksum,
+      srcChecksum)
   }
 
   def includeImportExternalTargetWith(artifact: Coordinates,
@@ -124,7 +126,8 @@ object BazelWorkspaceDriver {
                                       compileTimeDependencies: Set[Coordinates] = Set.empty,
                                       exclusions: Set[Exclusion] = Set.empty,
                                       checksum: Option[String] = None,
-                                      coordinatesToLabel: Coordinates => String = labelBy): Matcher[BazelWorkspaceDriver] =
+                                      coordinatesToLabel: Coordinates => String = labelBy,
+                                      srcChecksum: Option[String] = None): Matcher[BazelWorkspaceDriver] =
 
     be_===(BazelExternalDependency(
       importExternalRule = Some(importExternalRuleWith(
@@ -133,7 +136,8 @@ object BazelWorkspaceDriver {
         compileTimeDependencies = compileTimeDependencies,
         exclusions = exclusions,
         checksum = checksum,
-        coordinatesToLabel)))) ^^ {
+        coordinatesToLabel,
+        srcChecksum = srcChecksum)))) ^^ {
       (_:BazelWorkspaceDriver).bazelExternalDependencyFor(artifact) aka s"bazel workspace does not include import external rule target for $artifact"
     }
 

@@ -55,7 +55,6 @@ case class DiffWriter(targetRepository: BazelRepository) {
     val writer = new BazelDependenciesWriter(localCopy)
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom")
 
-
     val modifiedFiles = writer.writeDependencies(divergentLocalDependencies, divergentLocalDependencies ++ nodesWithPomPackaging)
 
     persister.persistWithMessage(modifiedFiles, divergentLocalDependencies.map(_.baseDependency.coordinates))

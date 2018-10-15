@@ -50,16 +50,19 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
       OverrideCoordinates(dependencyNode.baseDependency.coordinates.groupId,
         dependencyNode.baseDependency.coordinates.artifactId)
     )
+
     val compileTimeDependenciesOverrides = localWorkspace.thirdPartyOverrides().compileTimeDependenciesOverridesOf(
       OverrideCoordinates(dependencyNode.baseDependency.coordinates.groupId,
         dependencyNode.baseDependency.coordinates.artifactId)
     )
+
     val ruleToPersist = ruleResolver.`for`(
       artifact = dependencyNode.baseDependency.coordinates,
       runtimeDependencies = dependencyNode.runtimeDependencies.filterNot(_.isProtoArtifact),
       compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(_.isProtoArtifact),
       exclusions = dependencyNode.baseDependency.exclusions,
-      checksum = dependencyNode.checksum
+      checksum = dependencyNode.checksum,
+      srcChecksum = dependencyNode.srcChecksum
     )
     ruleToPersist.withUpdateDeps(runtimeDependenciesOverrides, compileTimeDependenciesOverrides)
   }

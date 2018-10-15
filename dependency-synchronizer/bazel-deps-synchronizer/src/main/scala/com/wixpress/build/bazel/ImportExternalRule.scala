@@ -11,11 +11,12 @@ case class ImportExternalRule(name: String,
                               compileTimeDeps: Set[String] = Set.empty,
                               exclusions: Set[Exclusion] = Set.empty,
                               testOnly: Boolean = false,
-                              checksum: Option[String] = None) extends RuleWithDeps {
+                              checksum: Option[String] = None,
+                              srcChecksum: Option[String] = None) extends RuleWithDeps {
   def serialized: String = {
     s"""  $RuleType(
        |      name = "$name",
-       |      $serializedArtifact$serializedTestOnly$serializedChecksum$serializedAttributes$serializedExclusions
+       |      $serializedArtifact$serializedTestOnly$serializedChecksum$serializedSrcChecksum$serializedAttributes$serializedExclusions
        |  )""".stripMargin
   }
 
@@ -29,6 +30,10 @@ case class ImportExternalRule(name: String,
   private def serializedChecksum =
     checksum.fold("")(sha256 => s"""
                     |      jar_sha256 = "$sha256",""".stripMargin)
+
+  private def serializedSrcChecksum =
+    srcChecksum.fold("")(sha256 => s"""
+                    |      srcjar_sha256 = "$sha256",""".stripMargin)
 
   private def serializedAttributes =
     toListEntry("exports", exports) +
@@ -68,14 +73,16 @@ object ImportExternalRule {
          compileTimeDependencies: Set[Coordinates] = Set.empty,
          exclusions: Set[Exclusion] = Set.empty,
          coordinatesToLabel: Coordinates => String,
-         checksum: Option[String] = None): ImportExternalRule = {
+         checksum: Option[String] = None,
+         srcChecksum: Option[String] = None): ImportExternalRule = {
     ImportExternalRule(
       name = artifact.workspaceRuleName,
       artifact = artifact.serialized,
       compileTimeDeps = compileTimeDependencies.map(coordinatesToLabel),
       runtimeDeps = runtimeDependencies.map(coordinatesToLabel),
       exclusions = exclusions,
-      checksum = checksum
+      checksum = checksum,
+      srcChecksum = srcChecksum
     )
   }
 

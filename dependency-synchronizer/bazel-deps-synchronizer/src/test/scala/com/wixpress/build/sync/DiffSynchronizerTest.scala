@@ -205,7 +205,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
     "persist jar import with sha256" in new resolvedCtx {
       val someChecksum = "checksum"
-      val synchronizer = givenSynchornizerFor(resolver, remoteStorageWillReturn(someChecksum))
+      val synchronizer = givenSynchornizerFor(resolver, remoteStorageWillReturn(Some(someChecksum)))
 
       synchronizer.sync(Set(aRootDependencyNode(divergentDependency)))
 
@@ -216,13 +216,25 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     "persist SNAPSHOT jar import without sha256" in new resolvedCtx {
       val divergentSnapshotDependency = managedDependency.withVersion("2.1193.0-SNAPSHOT")
 
-      val synchronizer = givenSynchornizerFor(resolver, remoteStorageWillReturn("checksum"))
+      val synchronizer = givenSynchornizerFor(resolver, remoteStorageWillReturn(Some("checksum")))
 
       synchronizer.sync(Set(aRootDependencyNode(divergentSnapshotDependency)))
 
       localWorkspace must includeImportExternalTargetWith(
         artifact = divergentSnapshotDependency.coordinates,
         checksum = None)
+    }
+
+    "persist jar import with source jar" in new resolvedCtx {
+      val synchronizer = givenSynchornizerFor(resolver,
+        remoteStorageWillReturn(checksum = Some("checksum"), srcChecksum = Some("src_checksum")))
+
+      synchronizer.sync(Set(aRootDependencyNode(divergentDependency)))
+
+      localWorkspace must includeImportExternalTargetWith(
+        artifact = divergentDependency.coordinates,
+        checksum = Some("checksum"),
+        srcChecksum = Some("src_checksum"))
     }
   }
 

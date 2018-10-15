@@ -1,6 +1,9 @@
 package com.wixpress.build.maven
 
-case class DependencyNode(baseDependency: Dependency, dependencies: Set[Dependency], checksum: Option[String] = None) {
+case class DependencyNode(baseDependency: Dependency,
+                          dependencies: Set[Dependency],
+                          checksum: Option[String] = None,
+                          srcChecksum: Option[String] = None) {
   val runtimeDependencies: Set[Coordinates] = coordinatesByScopeFromDependencies(MavenScope.Runtime)
   val compileTimeDependencies: Set[Coordinates] = coordinatesByScopeFromDependencies(MavenScope.Compile)
 

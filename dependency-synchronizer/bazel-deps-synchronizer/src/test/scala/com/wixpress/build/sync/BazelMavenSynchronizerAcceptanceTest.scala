@@ -70,7 +70,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
       "persist jar import with sha256" in new blankBazelWorkspaceAndNewManagedRootDependency {
         val someChecksum = "checksum"
-        syncBasedOn(updatedResolver, Set(newDependency), remoteStorageWillReturn(someChecksum))
+        syncBasedOn(updatedResolver, Set(newDependency), remoteStorageWillReturn(Some(someChecksum)))
 
         bazelWorkspace must includeImportExternalTargetWith(artifact = newDependency.coordinates, runtimeDependencies = Set.empty, checksum = Some(someChecksum))
       }

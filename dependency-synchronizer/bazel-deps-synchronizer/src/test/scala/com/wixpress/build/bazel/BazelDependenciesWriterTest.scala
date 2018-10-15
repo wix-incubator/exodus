@@ -68,6 +68,18 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
           containScalaImportExternalRuleFor(baseDependency.coordinates,
             s"""|jar_sha256 = "checksum",""".stripMargin)
       }
+
+      "write import_external rule with src jar sha256 to third party repos file " in new newRootDependencyNodeCtx {
+        val dependencyNodeWithSource =
+          aRootDependencyNode(baseDependency).copy(
+            srcChecksum = Some("src_checksum")
+          )
+
+        writer.writeDependencies(dependencyNodeWithSource)
+        localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
+          containScalaImportExternalRuleFor(baseDependency.coordinates,
+            s"""|srcjar_sha256 = "src_checksum",""".stripMargin)
+      }
     }
 
     "given one new proto dependency" should {

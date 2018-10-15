@@ -52,7 +52,8 @@ object ImportExternalTargetsFile {
         runtimeDeps = extractListByAttribute(RunTimeDepsFilter, ruleText),
         compileTimeDeps = extractListByAttribute(CompileTimeDepsFilter, ruleText),
         exclusions = extractExclusions(ruleText),
-        checksum = extractChecksum(ruleText)))
+        checksum = extractChecksum(ruleText),
+        srcChecksum = extractSrcChecksum(ruleText)))
     }
 
     private def extractArtifact(ruleText: String) = {
@@ -75,6 +76,11 @@ object ImportExternalTargetsFile {
         .findAllMatchIn(ruleText)
         .map(m => Exclusion(m.group("groupId"), m.group("artifactId")))
         .toSet
+    }
+
+    private def extractSrcChecksum(ruleText: String) = {
+      val maybeMatch = SrcSha256Filter.findFirstMatchIn(ruleText)
+      maybeMatch.map(_.group("src_checksum"))
     }
 
     def findCoordinatesByName(name: String): Option[Coordinates] = {
@@ -116,6 +122,8 @@ object ImportExternalTargetsFile {
     private val listOfStringsFilter = """"(.+?)"""".r(StringsGroup)
     private val Sha256Filter = """(?s)jar_sha256\s*?=\s*?"(.+?)"""".r("checksum")
     private val ImportExternalDepFilter = """@(.*?)//.*""".r("ruleName")
+
+    private val SrcSha256Filter = """(?s)srcjar_sha256\s*?=\s*?"(.+?)"""".r("src_checksum")
   }
 
   case class Writer(content: String) {

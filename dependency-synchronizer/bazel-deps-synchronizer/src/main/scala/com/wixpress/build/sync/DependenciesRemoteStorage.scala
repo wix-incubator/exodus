@@ -181,9 +181,21 @@ object ArtifactoryRemoteStorage {
   }
 
   implicit class DependencyNodeExtensions(node: DependencyNode) {
-    def updateChecksumFrom(dependenciesRemoteStorage: DependenciesRemoteStorage) ={
+    def updateChecksumFrom(dependenciesRemoteStorage: DependenciesRemoteStorage) = {
       val maybeChecksum = dependenciesRemoteStorage.checksumFor(node)
-      node.copy(checksum = maybeChecksum)
+      val maybeSrcChecksum = dependenciesRemoteStorage.checksumFor(node.asSourceNode)
+
+      node.copy(
+        checksum = maybeChecksum,
+        srcChecksum = maybeSrcChecksum
+      )
+    }
+
+    def asSourceNode = {
+      val srcCoordinates = node.baseDependency.coordinates.copy(classifier = Some("sources"))
+      val srcBaseDependency = node.baseDependency.copy(coordinates = srcCoordinates)
+
+      node.copy(baseDependency = srcBaseDependency, dependencies = Set.empty)
     }
   }
 }

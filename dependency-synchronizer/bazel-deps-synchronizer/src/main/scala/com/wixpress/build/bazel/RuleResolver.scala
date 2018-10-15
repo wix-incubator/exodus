@@ -7,10 +7,17 @@ class RuleResolver(localWorkspaceName: String) {
              runtimeDependencies: Set[Coordinates] = Set.empty,
              compileTimeDependencies: Set[Coordinates] = Set.empty,
              exclusions: Set[Exclusion] = Set.empty,
-             checksum: Option[String] = None): RuleToPersist =
+             checksum: Option[String] = None,
+             srcChecksum: Option[String] = None): RuleToPersist =
     artifact.packaging match {
       case Packaging("jar") => RuleToPersist(
-        ImportExternalRule.of(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy, checksum),
+        ImportExternalRule.of(artifact,
+          runtimeDependencies,
+          compileTimeDependencies,
+          exclusions,
+          labelBy,
+          checksum,
+          srcChecksum),
         ImportExternalRule.ruleLocatorFrom(artifact))
       case Packaging("pom") => RuleToPersist(
         LibraryRule.pomLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy),

@@ -55,8 +55,8 @@ class FakeMavenRepository(port: Int = 0) {
     new ByteArrayInputStream(input.getBytes("UTF-8"))
   }
 
-  def addJarArtifact(artifact: Coordinates, jar: Array[Byte]) = {
-    inMemoryArtifactStore.set(new Artifact(artifact.groupId, artifact.artifactId, artifact.version, "jar"), new ByteArrayInputStream(jar))
-  }
+  def addJarArtifact(artifact: Coordinates, jar: Array[Byte]) =
+    inMemoryArtifactStore.set(
+      new Artifact(artifact.groupId, artifact.artifactId, artifact.version, artifact.classifier.orNull, "jar"), new ByteArrayInputStream(jar))
 
 }
