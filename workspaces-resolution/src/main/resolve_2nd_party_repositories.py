@@ -6,12 +6,11 @@ import subprocess
 import sys
 import logging
 import base64
+from StringIO import StringIO
 
 logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
 
 logging.basicConfig(level=logging_level, format='%(asctime)s  %(levelname)s: %(message)s')
-
-from StringIO import StringIO
 
 if sys.version_info[0] == 3:
     from urllib.request import urlopen
@@ -92,14 +91,15 @@ def write_repositories(workspace_dir):
     current_branch = read_current_branch()
     starlark_file_path = (workspace_dir + tools_relative_path + current_branch + starlark_file_name_postfix).replace(
         "\n", "")
+    symlink_path = workspace_dir + symlink_relative_path
     if (os.path.isfile(starlark_file_path) and file_is_not_empty(starlark_file_path)) and (
             not os.path.isfile(workspace_dir + CI_ENV_FLAG_FILE)):
+        write_symlink_to_path(symlink_path, starlark_file_path)
         sys.exit(0)
 
     json_file_repos, starlark_file_repos = fetch_repositories()
 
     json_file_path = (workspace_dir + tools_relative_path + current_branch + json_file_name_postfix).replace("\n", "")
-    symlink_path = workspace_dir + symlink_relative_path
     write_content_to_path(json_file_repos, json_file_path)
     write_content_to_path(starlark_file_repos, starlark_file_path)
     write_symlink_to_path(symlink_path, starlark_file_path)
