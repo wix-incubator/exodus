@@ -95,8 +95,8 @@ def write_repositories(workspace_dir):
     if (os.path.isfile(starlark_file_path) and file_is_not_empty(starlark_file_path)) and (
             not os.path.isfile(workspace_dir + CI_ENV_FLAG_FILE)):
         write_symlink_to_path(symlink_path, starlark_file_path)
-        logging.info("2nd party dependencies resolved! "
-                     "(by using a local versions file or by existence of ci.environment file)")
+        print("2nd party dependencies resolved! "
+              "(by using a local versions file or by existence of ci.environment file)")
         sys.exit(0)
 
     json_file_repos, starlark_file_repos = fetch_repositories()
@@ -110,7 +110,7 @@ def write_repositories(workspace_dir):
     open(workspace_dir + "/BUILD.bazel", 'a').close()
     logging.debug("Generating %s" % workspace_dir + "/tools/BUILD.bazel")
     open(workspace_dir + "/tools/BUILD.bazel", 'a').close()
-    logging.info("2nd party dependencies resolved!")
+    print("2nd party dependencies resolved!")
 
 
 def parse_workspace_dir():
@@ -121,7 +121,7 @@ def parse_workspace_dir():
 
 
 def main():
-    logging.info("Resolving 2nd party dependencies")
+    print("Resolving 2nd party dependencies")
     write_repositories(parse_workspace_dir())
 
 
