@@ -110,6 +110,7 @@ def build_and_fix(ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL) {
             env.PUSH_TO_GIT = "true"
             build_and_fix(ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL)
         } else {
+            echo "buildozer exited with code ${buildozerStatusCode}"
             echo "[WARN] produced buildozer commands were not required!"
             currentBuild.result = 'UNSTABLE'
         }
