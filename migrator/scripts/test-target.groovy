@@ -23,11 +23,6 @@ pipeline {
                 git branch: "${env.BRANCH_NAME}", url: "${env.repo_url}"
             }
         }
-        stage('pre-build') {
-            steps {
-                sh "touch tools/ci.environment"
-            }
-        }
         stage('test') {
             steps {
                 script {

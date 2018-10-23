@@ -26,11 +26,6 @@ pipeline {
             }
 
         }
-        stage('pre-build') {
-            steps {
-                sh "touch tools/ci.environment"
-            }
-        }
         stage("bazel clean"){
             when{
                 expression{CLEAN == "true"}

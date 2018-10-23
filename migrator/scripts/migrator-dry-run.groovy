@@ -72,13 +72,6 @@ pipeline {
                 }
             }
         }
-        stage('pre-build') {
-            steps {
-                dir("${env.REPO_NAME}") {
-                    sh "touch tools/ci.environment"
-                }
-            }
-        }
         stage('build') {
             steps {
                 dir("${env.REPO_NAME}") {

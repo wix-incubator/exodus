@@ -27,22 +27,22 @@ else:
     from urllib2 import URLError
 
 tools_relative_path = "/tools/"
-CI_ENV_FLAG_FILE = tools_relative_path + "ci.environment"
 starlark_file_name_postfix = "_2nd_party_resolved_dependencies.bzl"
 json_file_name_postfix = "_2nd_party_resolved_dependencies.json"
 symlink_relative_path = tools_relative_path + "2nd_party_resolved_dependencies_current_branch.bzl"
 second_party_resolved_dependencies_empty_placeholder = "EMPTY!"
+second_party_resolved_dependencies_env_var_name = "SECOND_PARTY_RESOLVED_DEPENDENCIES"
 
 repo_list = os.environ.get("REPO_LIST", "default")
 tracking_branch = os.environ.get("TRACKING_BRANCH", "master")
-second_party_resolved_dependencies = os.environ.get("SECOND_PARTY_RESOLVED_DEPENDENCIES")
+second_party_resolved_dependencies = os.environ.get(second_party_resolved_dependencies_env_var_name)
 
 repositories_url = os.environ.get("REPOSITORIES_URL", "https://bo.wix.com/bazel-repositories-server/repositories")
 url_with_params = repositories_url + (
     "?list={repo_list}&branch={tracking_branch}".format(repo_list=repo_list, tracking_branch=tracking_branch))
 
 
-def fetch_repositories():
+def fetch_repositories(suppress_prints):
     logging.debug('second_party_resolved_dependencies env var = %s' % second_party_resolved_dependencies)
     if (second_party_resolved_dependencies is None) or (second_party_resolved_dependencies == second_party_resolved_dependencies_empty_placeholder):
         logging.debug("Fetching resolved dependencies from url:\t%s" % url_with_params)
@@ -50,14 +50,18 @@ def fetch_repositories():
             dependencies_raw_string = urlopen(url_with_params, timeout=5).read()
         except URLError as e:
             logging.debug("FAIL: fetching from BRS. URLError = %s", e)
-            print("Fetching from bazel repositories server failed (URLError)")
+            if not suppress_prints:
+                print("Fetching from bazel repositories server failed (URLError)")
             sys.exit(1)
         except socket.timeout:
-            print("Fetching from bazel repositories server failed (Timeout)")
+            if not suppress_prints:
+                print("Fetching from bazel repositories server failed (Timeout)")
             sys.exit(1)
     else:
         logging.debug("Overriding resolved dependencies from env var SECOND_PARTY_RESOLVED_DEPENDENCIES")
         dependencies_raw_string = base64.b64decode(second_party_resolved_dependencies)
+        if not suppress_prints:
+            print("Using 2nd party dependencies from environment variable %s" % second_party_resolved_dependencies_env_var_name)
     io = StringIO()
     json.dump(json.loads(dependencies_raw_string)["repositories"], io, sort_keys=True, indent=4, separators=(',', ': '))
     json_file_repos = io.getvalue()
@@ -102,19 +106,18 @@ def write_content_to_path(content, path):
         openedfile.close()
 
 
-def write_repositories(workspace_dir):
+def write_repositories(workspace_dir, suppress_logs):
     current_branch = read_current_branch()
     starlark_file_path = "{}{}{}{}".format(workspace_dir, tools_relative_path, current_branch, starlark_file_name_postfix).replace(
         "\n", "")
     symlink_path = workspace_dir + symlink_relative_path
-    if (os.path.isfile(starlark_file_path) and file_is_not_empty(starlark_file_path)) and (
-            not os.path.isfile(workspace_dir + CI_ENV_FLAG_FILE)):
+    if os.path.isfile(starlark_file_path) and file_is_not_empty(starlark_file_path):
         write_symlink_to_path(symlink_path, starlark_file_path)
-        print("2nd party dependencies resolved! "
-              "(by using a local versions file or by existence of ci.environment file)")
+        if not suppress_logs:
+            print("Using 2nd party dependencies from a local versions file (%s)" % starlark_file_path)
         sys.exit(0)
 
-    json_file_repos, starlark_file_repos = fetch_repositories()
+    json_file_repos, starlark_file_repos = fetch_repositories(suppress_logs)
 
     json_file_path = "{}{}{}{}".format(workspace_dir, tools_relative_path, current_branch, json_file_name_postfix).replace("\n", "")
     write_content_to_path(json_file_repos, json_file_path)
@@ -125,19 +128,24 @@ def write_repositories(workspace_dir):
     open(workspace_dir + "/BUILD.bazel", 'a').close()
     logging.debug("Generating %s" % workspace_dir + "/tools/BUILD.bazel")
     open(workspace_dir + "/tools/BUILD.bazel", 'a').close()
-    print("2nd party dependencies resolved!")
+    if not suppress_logs:
+        print("2nd party dependencies resolved!")
 
 
 def parse_workspace_dir():
     parser = argparse.ArgumentParser()
     parser.add_argument('workspace_dir')
+    parser.add_argument('suppress_logs')
     args = parser.parse_args()
-    return args.workspace_dir
+    return args.workspace_dir, args.suppress_logs
 
 
 def main():
-    print("Resolving 2nd party dependencies")
-    write_repositories(parse_workspace_dir())
+    (workspace_dir, suppress_logs_string) = parse_workspace_dir()
+    suppress_logs = suppress_logs_string == 'True'
+    if not suppress_logs:
+        print("Resolving 2nd party dependencies...")
+    write_repositories(workspace_dir, suppress_logs)
 
 
 if __name__ == "__main__":

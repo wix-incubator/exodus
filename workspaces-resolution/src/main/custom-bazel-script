@@ -8,6 +8,26 @@ while [[ "${WORKSPACE_DIR}" != / ]]; do
     WORKSPACE_DIR="$(dirname "${WORKSPACE_DIR}")"
 done
 
-python ${WORKSPACE_DIR}/tools/resolve_2nd_party_repositories.py ${WORKSPACE_DIR}
+ARGUMENTS=$@
+function contains() {
+    echo "inside contains ${ARGUMENTS}"
+    STRING="query"
+    for ARG in ${ARGUMENTS[@]}
+    do
+        if [ "$ARG" = "$STRING" ]; then
+            echo "found match ${ARG}=${STRING}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+if contains; then
+    SUPPRESS_PRINTS=True
+else
+    SUPPRESS_PRINTS=False
+fi
+
+python ${WORKSPACE_DIR}/tools/resolve_2nd_party_repositories.py ${WORKSPACE_DIR} ${SUPPRESS_PRINTS}
 
 exec -a "bazel-after-workspace-resolve" "${BAZEL_REAL}" "$@"
