@@ -6,7 +6,11 @@ import subprocess
 import sys
 import logging
 import base64
-from StringIO import StringIO
+import socket
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
 
@@ -14,11 +18,13 @@ logging.basicConfig(level=logging_level, format='%(asctime)s  %(levelname)s: %(m
 
 if sys.version_info[0] == 3:
     from urllib.request import urlopen
+    from urllib.error import URLError
 else:
     # Not Python 3 - today, it is most likely to be Python 2
     # But note that this might need an update when Python 4
     # might be around one day
-    from urllib import urlopen
+    from urllib2 import urlopen
+    from urllib2 import URLError
 
 tools_relative_path = "/tools/"
 CI_ENV_FLAG_FILE = tools_relative_path + "ci.environment"
@@ -40,7 +46,15 @@ def fetch_repositories():
     logging.debug('second_party_resolved_dependencies env var = %s' % second_party_resolved_dependencies)
     if (second_party_resolved_dependencies is None) or (second_party_resolved_dependencies == second_party_resolved_dependencies_empty_placeholder):
         logging.debug("Fetching resolved dependencies from url:\t%s" % url_with_params)
-        dependencies_raw_string = urlopen(url_with_params).read()
+        try:
+            dependencies_raw_string = urlopen(url_with_params, timeout=5).read()
+        except URLError as e:
+            logging.debug("FAIL: fetching from BRS. URLError = %s", e)
+            print("Fetching from bazel repositories server failed (URLError)")
+            sys.exit(1)
+        except socket.timeout:
+            print("Fetching from bazel repositories server failed (Timeout)")
+            sys.exit(1)
     else:
         logging.debug("Overriding resolved dependencies from env var SECOND_PARTY_RESOLVED_DEPENDENCIES")
         dependencies_raw_string = base64.b64decode(second_party_resolved_dependencies)
@@ -71,7 +85,8 @@ def write_symlink_to_path(symlink_path, path):
 def run_process(splitted_command, fail_msg):
     logging.debug("Running:\t%s" % ' '.join(splitted_command))
     process = subprocess.Popen(splitted_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = process.communicate()
+    encoded_out, err = process.communicate()
+    out = encoded_out.decode("utf-8")
     if err:
         msg = "%s. stderr = %s" % (fail_msg, err)
         logging.error(msg)
@@ -89,7 +104,7 @@ def write_content_to_path(content, path):
 
 def write_repositories(workspace_dir):
     current_branch = read_current_branch()
-    starlark_file_path = (workspace_dir + tools_relative_path + current_branch + starlark_file_name_postfix).replace(
+    starlark_file_path = "{}{}{}{}".format(workspace_dir, tools_relative_path, current_branch, starlark_file_name_postfix).replace(
         "\n", "")
     symlink_path = workspace_dir + symlink_relative_path
     if (os.path.isfile(starlark_file_path) and file_is_not_empty(starlark_file_path)) and (
@@ -101,7 +116,7 @@ def write_repositories(workspace_dir):
 
     json_file_repos, starlark_file_repos = fetch_repositories()
 
-    json_file_path = (workspace_dir + tools_relative_path + current_branch + json_file_name_postfix).replace("\n", "")
+    json_file_path = "{}{}{}{}".format(workspace_dir, tools_relative_path, current_branch, json_file_name_postfix).replace("\n", "")
     write_content_to_path(json_file_repos, json_file_path)
     write_content_to_path(starlark_file_repos, starlark_file_path)
     write_symlink_to_path(symlink_path, starlark_file_path)
