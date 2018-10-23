@@ -36,13 +36,14 @@ second_party_resolved_dependencies_env_var_name = "SECOND_PARTY_RESOLVED_DEPENDE
 
 
 def main():
-    print("Resolving 2nd party dependencies")
     load_environment_variables()
-    parse_workspace_dir()
+    parse_arguments()
+    if not should_suppress_prints:
+        print("Resolving 2nd party dependencies")
     resolve_repositories()
 
 
-def parse_workspace_dir():
+def parse_arguments():
     global workspace_dir, should_suppress_prints
     parser = argparse.ArgumentParser()
     parser.add_argument('workspace_dir')
@@ -56,23 +57,22 @@ def resolve_repositories():
     starlark_file_path = create_starlark_file_path(read_current_branch())
     if can_use_existing_resolved_dependencies(starlark_file_path):
         write_symlink_to_path(symlink_path(), starlark_file_path)
-        if should_suppress_prints:
+        if not should_suppress_prints:
             print("2nd party dependencies resolved! (by using a local dependencies file)")
     elif (second_party_resolved_deps_override is not None) and \
             (second_party_resolved_deps_override != second_party_resolved_deps_override_empty_placeholder):
         create_version_files_from_deps_override(second_party_resolved_deps_override)
-        if should_suppress_prints:
+        if not should_suppress_prints:
             print("2nd party dependencies resolved! (by resolved dependencies override)")
     elif (build_branch_override is not None) and \
             (build_branch_override != build_branch_override_empty_placeholder) and \
             does_non_empty_file_exist(create_starlark_file_path(build_branch_override)):
         create_versions_files_from_other_branch(read_current_branch(), build_branch_override)
-        print("2nd party dependencies resolved! (by using build branch override)")
-        if should_suppress_prints:
+        if not should_suppress_prints:
             print("2nd party dependencies resolved! (by using build branch override)")
     else:
         create_versions_files_from_server()
-        if should_suppress_prints:
+        if not should_suppress_prints:
             print("2nd party dependencies resolved! (by fetching from bazel repositories server)")
 
 

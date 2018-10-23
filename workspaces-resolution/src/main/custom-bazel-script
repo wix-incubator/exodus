@@ -10,12 +10,10 @@ done
 
 ARGUMENTS=$@
 function contains() {
-    echo "inside contains ${ARGUMENTS}"
     STRING="query"
     for ARG in ${ARGUMENTS[@]}
     do
         if [ "$ARG" = "$STRING" ]; then
-            echo "found match ${ARG}=${STRING}"
             return 0
         fi
     done
