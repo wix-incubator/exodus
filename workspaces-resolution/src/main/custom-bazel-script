@@ -10,10 +10,11 @@ done
 
 ARGUMENTS=$@
 function contains() {
-    STRING="query"
+    QUERY_COMMAND="query"
+    INFO_COMMAND="info"
     for ARG in ${ARGUMENTS[@]}
     do
-        if [ "$ARG" = "$STRING" ]; then
+        if [ "$ARG" = "$QUERY_COMMAND" -o "$ARG" = "$INFO_COMMAND" ]; then
             return 0
         fi
     done
