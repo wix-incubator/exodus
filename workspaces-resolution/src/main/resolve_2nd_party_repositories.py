@@ -7,6 +7,7 @@ import sys
 import logging
 import base64
 import socket
+import zlib
 try:
     from StringIO import StringIO
 except ImportError:
@@ -33,6 +34,7 @@ symlink_relative_path = tools_relative_path + "2nd_party_resolved_dependencies_c
 second_party_resolved_deps_override_empty_placeholder = "EMPTY!"
 build_branch_override_empty_placeholder = "~EMPTY~"
 second_party_resolved_dependencies_env_var_name = "SECOND_PARTY_RESOLVED_DEPENDENCIES"
+compressed_second_party_resolved_dependencies_env_var_name = "COMPRESSED_SECOND_PARTY_RESOLVED_DEPENDENCIES"
 
 
 def main():
@@ -56,24 +58,25 @@ def parse_arguments():
 def resolve_repositories():
     starlark_file_path = create_starlark_file_path(read_current_branch())
     if can_use_existing_resolved_dependencies(starlark_file_path):
-        write_symlink_to_path(symlink_path(), starlark_file_path)
-        if not should_suppress_prints:
-            print("2nd party dependencies resolved! (by using a local dependencies file)")
+        point_symlink_to_path(starlark_file_path)
+    elif (compressed_second_party_resolved_deps_override is not None) and \
+            (compressed_second_party_resolved_deps_override != second_party_resolved_deps_override_empty_placeholder):
+        create_version_files_from_compressed_deps_override(compressed_second_party_resolved_deps_override)
     elif (second_party_resolved_deps_override is not None) and \
             (second_party_resolved_deps_override != second_party_resolved_deps_override_empty_placeholder):
         create_version_files_from_deps_override(second_party_resolved_deps_override)
-        if not should_suppress_prints:
-            print("2nd party dependencies resolved! (by resolved dependencies override)")
     elif (build_branch_override is not None) and \
             (build_branch_override != build_branch_override_empty_placeholder) and \
             does_non_empty_file_exist(create_starlark_file_path(build_branch_override)):
         create_versions_files_from_other_branch(read_current_branch(), build_branch_override)
-        if not should_suppress_prints:
-            print("2nd party dependencies resolved! (by using build branch override)")
     else:
         create_versions_files_from_server()
-        if not should_suppress_prints:
-            print("2nd party dependencies resolved! (by fetching from bazel repositories server)")
+
+
+def point_symlink_to_path(starlark_file_path):
+    write_symlink_to_path(symlink_path(), starlark_file_path)
+    if not should_suppress_prints:
+        print("2nd party dependencies resolved! (by using a local dependencies file)")
 
 
 def can_use_existing_resolved_dependencies(starlark_file_path):
@@ -94,6 +97,17 @@ def can_use_branch_override():
 def create_version_files_from_deps_override(encoded_deps):
     logging.debug("Overriding resolved dependencies from env var SECOND_PARTY_RESOLVED_DEPENDENCIES")
     create_version_files_from_raw_string(base64.b64decode(encoded_deps))
+    if not should_suppress_prints:
+        print("2nd party dependencies resolved! (by resolved dependencies override)")
+
+
+def create_version_files_from_compressed_deps_override(encoded_deps):
+    logging.debug("Overriding resolved dependencies from env var COMPRESSED_SECOND_PARTY_RESOLVED_DEPENDENCIES")
+    decoded_deps = base64.b64decode(encoded_deps)
+    uncompressed_deps = zlib.decompress(decoded_deps)
+    create_version_files_from_raw_string(uncompressed_deps)
+    if not should_suppress_prints:
+        print("2nd party dependencies resolved! (by compressed resolved dependencies override)")
 
 
 def create_versions_files_from_other_branch(current_branch, other_branch):
@@ -102,6 +116,8 @@ def create_versions_files_from_other_branch(current_branch, other_branch):
                  create_starlark_file_path(current_branch)],
                 'Failed to create resolved dependencies file for branch %s' % current_branch)
     write_symlink_to_path(symlink_path(), create_starlark_file_path(other_branch))
+    if not should_suppress_prints:
+        print("2nd party dependencies resolved! (by using build branch override)")
 
 
 def create_versions_files_from_server():
@@ -120,6 +136,8 @@ def create_versions_files_from_server():
             print("Fetching from bazel repositories server failed (Timeout)")
         sys.exit(1)
     create_version_files_from_raw_string(dependencies_raw_string)
+    if not should_suppress_prints:
+        print("2nd party dependencies resolved! (by fetching from bazel repositories server)")
 
 
 def create_version_files_from_raw_string(dependencies_raw_string):
@@ -179,13 +197,15 @@ def write_content_to_path(content, path):
 
 
 def load_environment_variables():
-    global repo_list, tracking_branch, second_party_resolved_deps_override, build_branch_override, repositories_url
+    global repo_list, tracking_branch, second_party_resolved_deps_override, compressed_second_party_resolved_deps_override, build_branch_override, repositories_url
     repo_list = os.environ.get("REPO_LIST", "default")
     logging.debug("[env var] repo_list = %s", repo_list)
     tracking_branch = os.environ.get("TRACKING_BRANCH", "master")
     logging.debug("[env var] tracking_branch = %s", tracking_branch)
     second_party_resolved_deps_override = os.environ.get(second_party_resolved_dependencies_env_var_name)
     logging.debug("[env var] second_party_resolved_deps_override = %s", second_party_resolved_deps_override)
+    compressed_second_party_resolved_deps_override = os.environ.get(compressed_second_party_resolved_dependencies_env_var_name)
+    logging.debug("[env var] compressed_second_party_resolved_deps_override = %s", compressed_second_party_resolved_deps_override)
     build_branch_override = os.environ.get("BUILD_BRANCH_OVERRIDE")
     logging.debug("[env var] build_branch_override = %s", build_branch_override)
     repositories_url = os.environ.get("REPOSITORIES_URL", "https://bo.wix.com/bazel-repositories-server/repositories")
