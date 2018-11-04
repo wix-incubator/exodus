@@ -74,8 +74,10 @@ class HighestVersionConflictResolution {
     (groupId, artifactId, classifier)
   }
 
-  private def highestVersionIn(dependencies:Set[Dependency]):Dependency =
-    dependencies.maxBy(d => new ComparableVersion(d.coordinates.version))
+  private def highestVersionIn(dependencies:Set[Dependency]):Dependency = {
+    val exclusions = dependencies.flatMap(_.exclusions)
+    dependencies.maxBy(d => new ComparableVersion(d.coordinates.version)).withExclusions(exclusions)
+  }
 
 }
 

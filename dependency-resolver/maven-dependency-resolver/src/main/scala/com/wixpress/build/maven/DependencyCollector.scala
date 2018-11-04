@@ -1,14 +1,11 @@
 package com.wixpress.build.maven
 
-class DependencyCollector(resolver: MavenDependencyResolver, dependencies: Set[Dependency] = Set.empty) {
-
-  def withManagedDependenciesOf(artifact: Coordinates): DependencyCollector =
-    addOrOverrideDependencies(resolver.managedDependenciesOf(artifact))
+class DependencyCollector(dependencies: Set[Dependency] = Set.empty) {
 
   def addOrOverrideDependencies(newDependencies: Set[Dependency]) =
-    new DependencyCollector(resolver, dependencies.addOrOverride(newDependencies))
+    new DependencyCollector(dependencies.addOrOverride(newDependencies))
 
-  def mergeExclusionsOfSameCoordinates() = new DependencyCollector(resolver,dependencies.map(withAllExclusionsOfSameDependency))
+  def mergeExclusionsOfSameCoordinates() = new DependencyCollector(dependencies.map(withAllExclusionsOfSameDependency))
 
   def dependencySet(): Set[Dependency] = dependencies
 

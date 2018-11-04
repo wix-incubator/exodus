@@ -1,7 +1,7 @@
 package com.wixpress.build.sync
 
-import com.wixpress.build.maven.MavenMakers.randomCoordinates
-import com.wixpress.build.maven.{Coordinates, Dependency, MavenScope}
+import com.wixpress.build.maven.MavenMakers.{aDependency, randomCoordinates}
+import com.wixpress.build.maven.{Coordinates, Dependency, Exclusion, MavenScope}
 import org.specs2.mutable.SpecWithJUnit
 import org.specs2.specification.Scope
 
@@ -44,11 +44,23 @@ class HighestVersionConflictResolutionTest extends SpecWithJUnit {
 
       resolution.resolve(dependencies) must be_==(dependencies)
     }
+
+    "collect exclusions from all dependencies of the same groupId and artifactId" in new Context {
+      val dep = aDependency("mygroup").withVersion("1.0.2")
+      val exclusion1 = Exclusion("ex-group", "ex-artifact")
+      val exclusion2 = Exclusion("ex-group", "ex-artifact2")
+      val depWithExclusion1 = dep.withExclusions(Set(exclusion1))
+      val depWithExclusion2 = dep.withVersion("1.0.1").withExclusions(Set(exclusion2))
+      val dependencies = Set(dep, depWithExclusion1, depWithExclusion2)
+
+      resolution.resolve(dependencies) must contain(exactly(dep.withExclusions(Set(exclusion1, exclusion2))))
+    }
   }
 
   abstract class Context extends Scope {
-      val resolution = new HighestVersionConflictResolution()
-      val coordinates = randomCoordinates()
+    val resolution = new HighestVersionConflictResolution()
+    val coordinates = randomCoordinates()
   }
+
   private def dependency(coordinates: Coordinates) = Dependency(coordinates, MavenScope.Compile)
 }

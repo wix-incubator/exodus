@@ -1,6 +1,5 @@
 package com.wixpress.build.maven
 
-import com.wixpress.build.maven.ArtifactDescriptor.anArtifact
 import com.wixpress.build.maven.MavenMakers.aDependency
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -9,27 +8,18 @@ import org.specs2.specification.Scope
 class DependencyCollectorTest extends SpecificationWithJUnit {
 
   trait ctx extends Scope {
-    def emptyResolver = new FakeMavenDependencyResolver(Set.empty)
 
-    def resolverWithManagedDependencies(managedDependencies: Set[Dependency]) =
-      new FakeMavenDependencyResolver(
-        Set(anArtifact(
-          coordinates = artifactWithManagedDependencies,
-          deps = List.empty,
-          managedDeps = managedDependencies.toList)))
-
-    def artifactWithManagedDependencies = MavenMakers.someCoordinates("managed")
   }
 
   "DependencyCollector" >> {
     "when no new dependencies were added after initialization" should {
       "return empty dependency set" in new ctx {
-        val collector = new DependencyCollector(emptyResolver)
+        val collector = new DependencyCollector()
         collector.dependencySet() mustEqual Set.empty[Dependency]
       }
 
       "return a set with dependencies after they were added using the addOrOverrideDependencies call" in new ctx {
-        val collector = new DependencyCollector(emptyResolver)
+        val collector = new DependencyCollector()
         val newDependencies = Set(aDependency("a"))
 
         collector
@@ -37,14 +27,6 @@ class DependencyCollectorTest extends SpecificationWithJUnit {
           .dependencySet() must contain(allOf(newDependencies))
       }
 
-      "return a set with dependencies that were extracted from managed dependencies of given artifact" in new ctx {
-        val newDependencies = Set(aDependency("b"))
-        val collector = new DependencyCollector(resolverWithManagedDependencies(newDependencies))
-
-        collector
-          .withManagedDependenciesOf(artifactWithManagedDependencies)
-          .dependencySet() must contain(allOf(newDependencies))
-      }
 
       "merge all exclusions for each dependency" in new ctx {
         val otherDependency = aDependency("guava", exclusions = Set(MavenMakers.anExclusion("a")))
@@ -53,7 +35,7 @@ class DependencyCollectorTest extends SpecificationWithJUnit {
           aDependency("b", exclusions = Set(MavenMakers.anExclusion("c"))),
           aDependency("b", exclusions = Set(MavenMakers.anExclusion("d"))),
           otherDependency)
-        val collector = new DependencyCollector(emptyResolver, newDependencies)
+        val collector = new DependencyCollector(newDependencies)
 
         collector.mergeExclusionsOfSameCoordinates().dependencySet() mustEqual Set(
           aDependency("b", exclusions = Set(
@@ -67,8 +49,7 @@ class DependencyCollectorTest extends SpecificationWithJUnit {
     "after already collect dependency A," should {
       trait oneCollectedDependencyCtx extends ctx {
         val existingDependency: Dependency = aDependency("existing")
-        def resolver: MavenDependencyResolver = emptyResolver
-        def collector = new DependencyCollector(resolver, Set(existingDependency))
+        def collector = new DependencyCollector(Set(existingDependency))
       }
 
       "return a set with both A and new dependencies after they were added using the with dependencies call" in new oneCollectedDependencyCtx {
@@ -85,8 +66,6 @@ class DependencyCollectorTest extends SpecificationWithJUnit {
           .addOrOverrideDependencies(Set(newDependency))
           .dependencySet() mustEqual Set(newDependency)
       }
-
-      // TODO: same tests for dependencies added from managed dependencies coordinates
 
     }
 

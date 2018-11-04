@@ -66,7 +66,7 @@ class AppTinker(configuration: RunConfiguration) {
     codeModules.flatMap(_.dependencies.directDependencies).filterExternalDeps(codeModules.map(_.coordinates))
 
   private def dependencyCollector = {
-    new DependencyCollector(aetherResolver)
+    new DependencyCollector()
       .addOrOverrideDependencies(constantDependencies)
       .addOrOverrideDependencies(new HighestVersionConflictResolution().resolve(directDependencies))
       .mergeExclusionsOfSameCoordinates()
