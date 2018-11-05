@@ -19,8 +19,9 @@ pipeline {
                          |--test_arg=--jvm_flags=-Dwix.environment=CI \\
                          |--test_env=AUTOMATION_MASTER_KEY'''.stripMargin()
         DOCKER_HOST = "${env.TEST_DOCKER_HOST}"
-        BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
-        PATH = "$BAZEL_HOME/bin:$JAVA_HOME/bin:$PATH"
+        BUILDOZER_HOME = tool name: 'buildozer', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
+        BUILDIFIER_HOME = tool name: 'buildifier', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
+        PATH = "$BAZEL_HOME/bin:$BUILDOZER_HOME/bin:$BUILDIFIER_HOME/bin:$JAVA_HOME/bin:$PATH"
     }
     stages {
         stage('checkout') {
