@@ -53,6 +53,20 @@ import better.files.File
 
       File(repoRoot.resolve("WORKSPACE")).contentAsString must contain(s"""third_party_deps_of_external_wix_repositories""")
     }
+
+    "load fw snapshots for repos other than wix-framework" in new ctx {
+      val writer = new WorkspaceWriter(repoRoot, "workspace_name")
+      writer.write()
+
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must contain(s"""fw_snapshot_dependencies""")
+    }
+
+    "not load fw snapshots for wix-framework repo" in new ctx {
+      val writer = new WorkspaceWriter(repoRoot, "wix_platform_wix_framework")
+      writer.write()
+
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must not contain(s"""fw_snapshot_dependencies""")
+    }
   }
 
   abstract class ctx extends baseCtx {

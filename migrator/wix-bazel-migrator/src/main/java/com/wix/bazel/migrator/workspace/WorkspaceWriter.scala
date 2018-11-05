@@ -79,7 +79,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |    strip_prefix = "protobuf-3.6.1",
          |)
          |
-         |load("//:third_party.bzl", "third_party_dependencies")
+         |${loadFWSnapshots(workspaceName)}
          |
          |third_party_dependencies()
          |
@@ -131,6 +131,17 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
 
   private def workspaceSuffixOverride(): String = {
     WorkspaceOverridesReader.from(repoRoot).suffix
+  }
+
+  private def loadFWSnapshots(workspaceName: String) = {
+    if (workspaceName != frameworkWSName)
+      s"""
+         |load("@core_server_build_tools//:third_party_fw_snapshots.bzl", "fw_snapshot_dependencies")
+         |
+         |fw_snapshot_dependencies()
+         |""".stripMargin
+      else
+      ""
   }
 
   private def loadGrpcRepos(workspaceName: String) = {
