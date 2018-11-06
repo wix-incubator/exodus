@@ -34,6 +34,7 @@ class ThirdPartyValidatorTest extends SpecificationWithJUnit {
     }
 
     "no conflicts if there are no multiple versions in dependencies" in new ctx {
+      
       val someOtherDependency = Dependency(someCoordinates("other-dep"), MavenScope.Compile)
       private val sourceModules = Set(
         aModule(artifactId = "module-a").withDirectDependency(someCompileDependency),
