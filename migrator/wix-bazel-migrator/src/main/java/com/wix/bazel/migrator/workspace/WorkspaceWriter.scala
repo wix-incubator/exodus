@@ -81,6 +81,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |
          |${loadFWSnapshots(workspaceName)}
          |
+         |load("//:third_party.bzl", "third_party_dependencies")
+         |
          |third_party_dependencies()
          |
          |load("@core_server_build_tools//:third_party.bzl", "managed_third_party_dependencies")
