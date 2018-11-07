@@ -89,13 +89,13 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |
          |managed_third_party_dependencies()
          |${externalWixReposThirdParties(interRepoSourceDependency)}
-         |rules_docker_version = "0.5.1"
-         |rules_docker_version_sha256 = "29d109605e0d6f9c892584f07275b8c9260803bf0c6fcb7de2623b2bedc910bd"
+         |rules_docker_version = "ca954af7d662e79555f4ece2612e9c0edfde84a6"
+         |rules_docker_version_sha256 = "b1140ae55594081ffb0219c75b060e411015352feac2949b10044a39d96a365e"
          |http_archive(
          |    name = "io_bazel_rules_docker",
          |    sha256 = rules_docker_version_sha256,
          |    strip_prefix= "rules_docker-%s" % rules_docker_version,
-         |    urls = ["https://github.com/bazelbuild/rules_docker/archive/v%s.tar.gz"%rules_docker_version],
+         |    urls = ["https://github.com/anchlovi/rules_docker/archive/%s.zip"%rules_docker_version],
          |)
          |
          |load("//third_party/docker_images:docker_images.bzl", "docker_images")
