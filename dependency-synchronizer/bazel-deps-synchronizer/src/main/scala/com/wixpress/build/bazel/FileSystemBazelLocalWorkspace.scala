@@ -12,7 +12,7 @@ class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
 
   val localWorkspaceName: String = {
     val workspaceFileContent = contentIfExistsOf(root / "WORKSPACE")
-    val validWorkspaceWith = """workspace\s*\(\s*name\s*=\s*"([^"]+)"\s*\)\s*""".r
+    val validWorkspaceWith = """(?s).*workspace\s*\(\s*name\s*=\s*"([^"]+)"\s*\).*""".r
 
     workspaceFileContent match {
       case Some(validWorkspaceWith(name)) => name

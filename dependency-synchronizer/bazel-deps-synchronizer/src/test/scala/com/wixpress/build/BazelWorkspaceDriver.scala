@@ -32,7 +32,7 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
     val groupId = coordinates.groupIdForBazel
     val targetName = coordinates.workspaceRuleName
     val maybeImportFile = bazelRepo.thirdPartyImportTargetsFileContent(groupId)
-    maybeImportFile.flatMap(ImportExternalTargetsFile.Reader(_).ruleByName(targetName))
+    maybeImportFile.flatMap(ImportExternalTargetsFileReader(_).ruleByName(targetName))
   }
 
   def findLibraryRuleBy(coordinates: Coordinates): Option[LibraryRule] = {

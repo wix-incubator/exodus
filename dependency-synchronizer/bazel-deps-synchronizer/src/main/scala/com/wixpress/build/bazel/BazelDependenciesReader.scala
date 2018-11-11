@@ -4,15 +4,21 @@ import com.wixpress.build.maven._
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 class BazelDependenciesReader(localWorkspace: BazelLocalWorkspace) {
-  def allDependenciesAsMavenDependencyNodes(): Set[DependencyNode] = {
-    val importExternalTargetsFileParser = ImportExternalTargetsFile.AllFilesReader(localWorkspace.allThirdPartyImportTargetsFilesContent())
+  def allDependenciesAsMavenDependencyNodes(externalDeps: Set[Dependency] = Set()): Set[DependencyNode] = {
+    val pomAggregatesCoordinates = ThirdPartyReposFile.Parser(localWorkspace.thirdPartyReposFileContent()).allMavenCoordinates
+
+    val importExternalTargetsFileParser = AllImportExternalFilesDependencyNodesReader(
+      filesContent = localWorkspace.allThirdPartyImportTargetsFilesContent(),
+      pomAggregatesCoordinates,
+      externalDeps,
+      localWorkspace.localWorkspaceName)
     importExternalTargetsFileParser.allMavenDependencyNodes()
   }
 
 
   def allDependenciesAsMavenDependencies(): Set[Dependency] = {
     val thirdPartyReposParser = ThirdPartyReposFile.Parser(localWorkspace.thirdPartyReposFileContent())
-    val importExternalTargetsFileParser = ImportExternalTargetsFile.AllFilesReader(localWorkspace.allThirdPartyImportTargetsFilesContent())
+    val importExternalTargetsFileParser = AllImportExternalFilesCoordinatesReader(localWorkspace.allThirdPartyImportTargetsFilesContent())
     val coordinates = importExternalTargetsFileParser.allMavenCoordinates ++ thirdPartyReposParser.allMavenCoordinates
     coordinates
       .map(toDependency)
@@ -32,7 +38,7 @@ class BazelDependenciesReader(localWorkspace: BazelLocalWorkspace) {
 
   private def externalImportRuleExclusionsOf(coordinates: Coordinates) = {
     val thirdPartyImportTargetsFileContent = localWorkspace.thirdPartyImportTargetsFileContent(coordinates.groupIdForBazel)
-    val importExternalRule = thirdPartyImportTargetsFileContent.flatMap(ImportExternalTargetsFile.Reader(_).ruleByName(coordinates.workspaceRuleName))
+    val importExternalRule = thirdPartyImportTargetsFileContent.flatMap(ImportExternalTargetsFileReader(_).ruleByName(coordinates.workspaceRuleName))
     val importExternalExclusions = importExternalRule.map(_.exclusions).getOrElse(Set.empty)
     importExternalExclusions
   }

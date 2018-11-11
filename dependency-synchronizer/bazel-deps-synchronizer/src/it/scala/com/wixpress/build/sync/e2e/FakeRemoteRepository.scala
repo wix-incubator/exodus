@@ -4,6 +4,7 @@ import better.files.File
 import com.gitblit.utils.JGitUtils
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.ImportExternalTargetsFile._
+import com.wixpress.build.bazel.ImportExternalTargetsFileReader
 import com.wixpress.build.bazel.ThirdPartyReposFile._
 import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.sync.BazelMavenSynchronizer
@@ -90,7 +91,7 @@ class FakeRemoteRepository {
     val importExternalRuleName = coordinates.workspaceRuleName
     val groupId = coordinates.groupIdForBazel
     updatedContentOfFileIn(BazelMavenSynchronizer.BranchName, s"$thirdPartyImportFilesPathRoot/$groupId.bzl").map((importExternalTargetsContent) => {
-      val maybeRule: Option[Coordinates] = Reader(importExternalTargetsContent).findCoordinatesByName(importExternalRuleName)
+      val maybeRule: Option[Coordinates] = ImportExternalTargetsFileReader(importExternalTargetsContent).findCoordinatesByName(importExternalRuleName)
       maybeRule match {
         case Some(c) if c == coordinates => "success"
         case _ => throw new RuntimeException(s"Could not find workspace rule for $coordinates in bazel remote repository")

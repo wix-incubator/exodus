@@ -3,7 +3,6 @@ package com.wix.build.maven.analysis
 import java.nio.file.{Files, Path}
 
 import com.wix.bazel.migrator.model._
-import com.wix.build.maven.analysis.MavenBuildSystem.SourcesDirectories
 import com.wixpress.build.maven._
 import org.apache.maven.model.Model
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
@@ -15,10 +14,9 @@ class MavenBuildSystem(repoRoot: Path,
                        sourceModulesOverrides: SourceModulesOverrides = SourceModulesOverrides.empty) {
 
   private val dependencyResolver: MavenDependencyResolver = new AetherMavenDependencyResolver(remoteMavenRepositoryUrls)
-
+  private val mavenSourceModules: MavenSourceModules = new MavenSourceModules(repoRoot, sourceModulesOverrides)
   def modules(): Set[SourceModule] = {
-    readRootModules()
-      .filterNot(sourceModulesOverrides.mutedModule)
+    mavenSourceModules.modules()
       .map(withDirectDependencies)
       .map(withAllModuleDependencies)
   }
@@ -32,7 +30,14 @@ class MavenBuildSystem(repoRoot: Path,
     module.copy(
       dependencies = module.dependencies.copy(
         directDependencies = dependencyResolver.directDependenciesOf(module.coordinates)))
+}
 
+class MavenSourceModules(repoRoot: Path,
+                         sourceModulesOverrides: SourceModulesOverrides = SourceModulesOverrides.empty) {
+  def modules(): Set[SourceModule] = {
+    readRootModules()
+      .filterNot(sourceModulesOverrides.mutedModule)
+  }
 
   private def readRootModules(): Set[SourceModule] = {
     if (containsPom(repoRoot)) {
@@ -85,7 +90,7 @@ class MavenBuildSystem(repoRoot: Path,
 
 
   private def resourcePathsIn(modulePath: Path) =
-    SourcesDirectories
+    MavenSourceModules.SourcesDirectories
       .map(toResourcesRelativePath)
       .filter(resourcePath => Files.exists(modulePath.resolve(resourcePath)))
 
@@ -109,16 +114,8 @@ class MavenBuildSystem(repoRoot: Path,
 
   private def getVersionOrParentVersion(model: Model) =
     Option(model.getVersion).getOrElse(model.getParent.getVersion)
-
 }
 
-object MavenBuildSystem {
+object MavenSourceModules {
   private val SourcesDirectories = Set("src/main", "src/test", "src/it", "src/e2e")
-}
-
-
-private object MavenToBazel {
-
-  def groupIdToPackage(groupId: String): String = s"third_party/${groupId.replace('.', '/')}"
-
 }
