@@ -17,6 +17,7 @@ pipeline {
                          |--experimental_remap_main_repo=true \\
                          |--config=remote \\
                          |--config=rbe_based \\
+                         |--test_output=summary \\
                          |--config=results \\
                          |--project_id=gcb-with-custom-workers \\
                          |--remote_instance_name=projects/gcb-with-custom-workers/instances/default_instance \\
@@ -39,6 +40,7 @@ pipeline {
                 script {
                     bazelrc = readFile(".bazelrc").replaceAll("build --disk_cache","# build --disk_cache")
                     writeFile file: ".bazelrc", text: bazelrc
+                    sh "bazel clean"
                     wrap([
                         $class: 'LogfilesizecheckerWrapper',
                         'maxLogSize': 3000,
@@ -66,10 +68,6 @@ pipeline {
                 link = "https://source.cloud.google.com/results/invocations/${invocation_id}/targets"
                 println "See results here: ${link}"
                 currentBuild.description = """<a href="$link" target="_blank">$invocation_id</a>"""
-
-                if (env.BAZEL_COMMAND == "build" && env.FOUND_TEST == "true") {
-                    archiveArtifacts 'bazel-testlogs/**,bazel-out/**/test.outputs/outputs.zip'
-                }
             }
         }
     }
