@@ -44,6 +44,8 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
         |#The following environment variable is used by bazel integration e2e tests which need to know if we're using the
         |#`remote` configuration and so add custom toolchains which means the tests need to add them as well
         |test --test_env=REMOTE="true"
+        |
+        |test --test_env=CC
       """.stripMargin
     writeToDisk(contents)
   }
