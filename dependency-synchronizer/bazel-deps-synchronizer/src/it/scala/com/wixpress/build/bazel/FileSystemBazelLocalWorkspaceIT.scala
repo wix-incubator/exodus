@@ -123,7 +123,7 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
                     """.stripMargin)
 
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).localWorkspaceName mustEqual workspaceName
-    }
+    }.pendingUntilFixed("First @workspace_name//third_party/... should be the same as @//third_party/... to bazel and strict deps")
   }
 
   trait blankWorkspaceCtx extends Scope {
