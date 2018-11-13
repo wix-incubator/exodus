@@ -26,7 +26,7 @@ class BazelRcRemoteWriter(repoRoot: Path) {
        |# for a remote machine to execute them.
        |build:remote --jobs=100
        |
-       |import %workspace%/.bazelrc
+       |# (no need to import %workspace%/.bazelrc, bazel does this by default)
        |import %workspace%/.bazelrc.remotesettings
        |
        |# Set various strategies so that all actions execute remotely. Mixing remote
