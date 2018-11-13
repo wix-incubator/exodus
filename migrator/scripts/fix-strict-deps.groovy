@@ -96,7 +96,7 @@ def build_and_fix(ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL) {
                        |'''.stripMargin(),
             returnStatus: true)
     build_log = readFile "bazel-build.log"
-    if (build_log.contains("buildozer")) {
+    if (build_log.contains("buildozer") || build_log.contains("[strict]")) {
         if (build_log.contains("Unknown label of file")){
             slackSend "Found 'Unknown label...' warning in ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|link>)"
         }
