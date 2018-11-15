@@ -14,7 +14,7 @@ specs2_ite2e_test(
         "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator",
         "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/workspace",
-        "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
+        "@com_github_pathikrit_better_files_2_12",
     ],
 )
 

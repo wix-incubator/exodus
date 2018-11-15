@@ -9,9 +9,9 @@ scala_library(
     ],
     deps = [
         "//test-utils:main_dependencies",
-        "@com_gitblit_gitblit//:com_gitblit_gitblit",
-        "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
-        "@org_eclipse_jgit_org_eclipse_jgit//:org_eclipse_jgit_org_eclipse_jgit",
+        "@com_gitblit_gitblit",
+        "@com_github_pathikrit_better_files_2_12",
+        "@org_eclipse_jgit_org_eclipse_jgit",
     ],
 )
 

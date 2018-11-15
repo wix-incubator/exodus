@@ -13,8 +13,8 @@ specs2_ite2e_test(
         "//migrator/wix-bazel-migrator:tests_dependencies",
         "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/tinker_bazel/migrator/transform_build/maven/analysis",
-        "@com_github_marschall_memoryfilesystem//:com_github_marschall_memoryfilesystem",
-        "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
+        "@com_github_marschall_memoryfilesystem",
+        "@com_github_pathikrit_better_files_2_12",
     ],
 )
 

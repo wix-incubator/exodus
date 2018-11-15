@@ -10,7 +10,7 @@ scala_library(
     deps = [
         "//migrator/wix-bazel-migrator:main_dependencies",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "@com_fasterxml_jackson_core_jackson_annotations//:com_fasterxml_jackson_core_jackson_annotations",
+        "@com_fasterxml_jackson_core_jackson_annotations",
     ],
 )
 

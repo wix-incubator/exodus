@@ -12,12 +12,12 @@ scala_library(
         "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
         "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven/resolver",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "@com_github_pathikrit_better_files_2_12//:com_github_pathikrit_better_files_2_12",
-        "@org_apache_maven_maven_model//:org_apache_maven_maven_model",
-        "@org_apache_maven_maven_resolver_provider//:org_apache_maven_maven_resolver_provider",
-        "@org_apache_maven_resolver_maven_resolver_api//:org_apache_maven_resolver_maven_resolver_api",
-        "@org_apache_maven_resolver_maven_resolver_util//:org_apache_maven_resolver_maven_resolver_util",
-        "@org_codehaus_plexus_plexus_utils//:org_codehaus_plexus_plexus_utils",
+        "@com_github_pathikrit_better_files_2_12",
+        "@org_apache_maven_maven_model",
+        "@org_apache_maven_maven_resolver_provider",
+        "@org_apache_maven_resolver_maven_resolver_api",
+        "@org_apache_maven_resolver_maven_resolver_util",
+        "@org_codehaus_plexus_plexus_utils",
     ],
 )
 

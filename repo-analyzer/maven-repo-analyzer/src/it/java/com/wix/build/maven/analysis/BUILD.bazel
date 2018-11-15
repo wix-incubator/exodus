@@ -16,8 +16,8 @@ specs2_ite2e_test(
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "//repo-analyzer/maven-repo-analyzer:tests_dependencies",
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
-        "@com_github_marschall_memoryfilesystem//:com_github_marschall_memoryfilesystem",
-        "@org_apache_maven_maven_model//:org_apache_maven_maven_model",
+        "@com_github_marschall_memoryfilesystem",
+        "@org_apache_maven_maven_model",
     ],
 )
 
