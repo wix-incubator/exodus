@@ -7,7 +7,8 @@ import org.specs2.mutable.SpecificationWithJUnit
 
 class RuleResolverTest extends SpecificationWithJUnit {
 
-  val ruleResolver = new RuleResolver("some_workspace")
+  val someWorkspace = "some_workspace"
+  val ruleResolver = new RuleResolver(someWorkspace)
 
   "RuleResolver" should {
 
@@ -76,6 +77,10 @@ class RuleResolverTest extends SpecificationWithJUnit {
       ruleResolver.`for`(pomArtifact, runtimeDependencies, compileDependencies)
         .ruleTargetLocator mustEqual LibraryRule.packageNameBy(artifact)
     }
+
+    "return non jar label with @workspaceName prefix" in {
+      ruleResolver.nonJarLabelBy(artifact) startsWith s"@$someWorkspace"
+    }.pendingUntilFixed("First @workspace_name//third_party/... should be the same as @//third_party/... to bazel and strict deps")
 
   }
 

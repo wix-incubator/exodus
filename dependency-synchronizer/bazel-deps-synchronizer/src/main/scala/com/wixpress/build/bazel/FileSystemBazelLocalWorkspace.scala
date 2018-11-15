@@ -15,7 +15,7 @@ class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
     val validWorkspaceWith = """(?s).*workspace\s*\(\s*name\s*=\s*"([^"]+)"\s*\).*""".r
 
     workspaceFileContent match {
-//      case Some(validWorkspaceWith(name)) => name
+      case Some(validWorkspaceWith(name)) => name
       case _ =>   ""
     }
   }

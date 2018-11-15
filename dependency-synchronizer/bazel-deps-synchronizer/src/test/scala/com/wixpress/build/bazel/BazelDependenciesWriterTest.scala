@@ -26,7 +26,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
       def labelOfPomArtifact(dependency: Dependency) = {
         val coordinates = dependency.coordinates
-        s"@$localWorkspaceName//${packageNameBy(coordinates)}:${coordinates.libraryRuleName}"
+        s"@//${packageNameBy(coordinates)}:${coordinates.libraryRuleName}"
       }
 
       def labelOfJarArtifact(dependency: Dependency) = {

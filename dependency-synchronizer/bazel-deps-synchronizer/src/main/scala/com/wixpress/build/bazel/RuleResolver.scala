@@ -33,7 +33,7 @@ class RuleResolver(localWorkspaceName: String) {
   }
 
   def nonJarLabelBy(coordinates: Coordinates): String = {
-    s"@$localWorkspaceName${LibraryRule.nonJarLabelBy(coordinates)}"
+    s"@${LibraryRule.nonJarLabelBy(coordinates)}"
   }
 }
 
