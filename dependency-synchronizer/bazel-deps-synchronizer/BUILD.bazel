@@ -5,6 +5,7 @@ scala_library(
     deps = [
         "//dependency-resolver/maven-dependency-resolver:main_dependencies",
         "//dependency-resolver/maven-dependency-resolver-api:main_dependencies",
+        "//migrator/bazel-migrator-model:main_dependencies",
         "//models/maven-bazel-model-translation:main_dependencies",
         "//models/maven-model:main_dependencies",
         "//wix-bazel-repositories/bazel-repositories-core:main_dependencies",

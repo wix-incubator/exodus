@@ -9,10 +9,10 @@ scala_library(
     ],
     deps = [
         "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
-        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven:maven",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
         "//dependency-synchronizer/bazel-deps-synchronizer:main_dependencies",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
-        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model:model",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "@com_fasterxml_jackson_core_jackson_annotations",
         "@com_fasterxml_jackson_core_jackson_core",
