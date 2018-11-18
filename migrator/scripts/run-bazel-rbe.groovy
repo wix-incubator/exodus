@@ -20,7 +20,6 @@ pipeline {
                          |--config=results \\
                          |--project_id=gcb-with-custom-workers \\
                          |--remote_instance_name=projects/gcb-with-custom-workers/instances/default_instance \\
-                         |--test_timeout=120,300,900,3600 \\
                          |--test_arg=--jvm_flags=-Dwix.environment=CI  \\
                          |--test_env=AUTOMATION_MASTER_KEY'''.stripMargin()
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
