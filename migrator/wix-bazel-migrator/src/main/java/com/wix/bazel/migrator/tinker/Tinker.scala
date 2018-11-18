@@ -30,6 +30,14 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     cleanGitIgnore()
   }
 
+  lazy val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
+    externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
+    registry = new CompositeExternalSourceModuleRegistry(
+      new ConstantExternalSourceModuleRegistry(),
+      new CodotaExternalSourceModuleRegistry(configuration.codotaToken)))
+
+  lazy val mavenArchiveTargetsOverrides = MavenArchiveTargetsOverridesReader.from(repoRoot)
+
   private def failOnConflictsIfNeeded(): Unit = if (configuration.failOnSevereConflicts)
     failIfFoundSevereConflictsIn(checkConflictsInThirdPartyDependencies(aetherResolver))
 
@@ -92,6 +100,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     val packagesTransformers = Seq(
       externalProtoTransformer(),
       moduleDepsTransformer(),
+      providedMavenDependencyTransformer(),
       additionalDepsByMavenDepsTransformer()
     )
 
@@ -106,17 +115,12 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   private def externalProtoTransformer() = new ExternalProtoTransformer(codeModules)
 
   private def moduleDepsTransformer() = {
-    val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
-      externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
-      registry = new CompositeExternalSourceModuleRegistry(
-        new ConstantExternalSourceModuleRegistry(),
-        new CodotaExternalSourceModuleRegistry(configuration.codotaToken)))
-
-    val mavenArchiveTargetsOverrides = MavenArchiveTargetsOverridesReader.from(repoRoot)
-
     val transformer = new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides)
     transformer
   }
+
+  private def providedMavenDependencyTransformer() =
+    new ProvidedMavenDependencyTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides)
 
   private def additionalDepsByMavenDepsTransformer() = {
     val overrides = configuration.additionalDepsByMavenDeps match {

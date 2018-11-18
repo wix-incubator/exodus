@@ -8,7 +8,8 @@ class RuleResolver(localWorkspaceName: String) {
              compileTimeDependencies: Set[Coordinates] = Set.empty,
              exclusions: Set[Exclusion] = Set.empty,
              checksum: Option[String] = None,
-             srcChecksum: Option[String] = None): RuleToPersist =
+             srcChecksum: Option[String] = None,
+             neverlink: Boolean = false): RuleToPersist =
     artifact.packaging match {
       case Packaging("jar") => RuleToPersist(
         ImportExternalRule.of(artifact,
@@ -17,7 +18,9 @@ class RuleResolver(localWorkspaceName: String) {
           exclusions,
           labelBy,
           checksum,
-          srcChecksum),
+          srcChecksum,
+          neverlink = neverlink
+        ),
         ImportExternalRule.ruleLocatorFrom(artifact))
       case Packaging("pom") => RuleToPersist(
         LibraryRule.pomLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy),

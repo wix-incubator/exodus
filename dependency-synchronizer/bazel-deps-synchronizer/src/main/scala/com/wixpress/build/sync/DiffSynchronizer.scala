@@ -34,7 +34,7 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
   }
 
   def calculateDivergentDependencies(localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode]): Set[DependencyNode] = {
-    val divergentLocalDependencies = localNodes.forceCompileScope diff managedNodes
+    val divergentLocalDependencies = localNodes.forceCompileScopeIfNotProvided diff managedNodes
 
     decorateNodesWithChecksum(divergentLocalDependencies)
   }

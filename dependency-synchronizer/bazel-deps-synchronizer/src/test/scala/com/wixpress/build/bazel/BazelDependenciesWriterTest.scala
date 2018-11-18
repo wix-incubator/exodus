@@ -49,6 +49,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     "given one new root dependency" should {
       trait newRootDependencyNodeCtx extends emptyThirdPartyReposCtx {
         val baseDependency = aDependency("some-dep")
+        val providedDependency = aDependency(artifactId = "some-dep", scope = MavenScope.Provided)
         val matchingGroupId = baseDependency.coordinates.groupIdForBazel
       }
 
@@ -67,6 +68,15 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
           containScalaImportExternalRuleFor(baseDependency.coordinates,
             s"""|jar_sha256 = "checksum",""".stripMargin)
+      }
+
+      "write import_external rule with neverlink and linkable rule name to third party repos file " in new newRootDependencyNodeCtx {
+        writer.writeDependencies(aRootDependencyNode(providedDependency))
+
+        localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
+          containScalaImportExternalRuleFor(providedDependency.coordinates,
+            s"""|neverlink = 1,
+                |generated_linkable_rule_name = "linkable",""".stripMargin)
       }
 
       "write import_external rule with src jar sha256 to third party repos file " in new newRootDependencyNodeCtx {
