@@ -14,7 +14,7 @@
     </parent>
 
     <properties>
-        <resolverVersion>1.1.0</resolverVersion>
+        <resolverVersion>1.3.1</resolverVersion>
     </properties>
 
     <dependencies>
