@@ -16,13 +16,6 @@ case class DependencyNode(baseDependency: Dependency,
 
 object DependencyNode {
   implicit class DependencyNodesExtended(dependencyNodes:Set[DependencyNode]) {
-    def forceCompileScope: Set[DependencyNode] =
-      dependencyNodes.map(node => node.copy(baseDependency = node.baseDependency.forceCompileScope))
-
-    def forceCompileScopeIfNotProvided: Set[DependencyNode] =
-      dependencyNodes.map(forceCompileScopeForNotProvided)
-
-    private def forceCompileScopeForNotProvided(node: DependencyNode) =
-      if (node.baseDependency.scope == MavenScope.Provided) node else node.copy(baseDependency = node.baseDependency.forceCompileScope)
+    def forceCompileScope: Set[DependencyNode] = dependencyNodes.map(node => node.copy(baseDependency = node.baseDependency.forceCompileScope))
   }
 }

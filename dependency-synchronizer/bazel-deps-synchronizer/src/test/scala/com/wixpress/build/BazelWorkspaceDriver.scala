@@ -111,16 +111,14 @@ object BazelWorkspaceDriver {
                                      exclusions: Set[Exclusion],
                                      checksum: Option[String],
                                      coordinatesToLabel: Coordinates => String,
-                                     srcChecksum: Option[String],
-                                     neverlink: Boolean = false) = {
+                                     srcChecksum: Option[String]) = {
     ImportExternalRule.of(artifact,
       runtimeDependencies,
       compileTimeDependencies,
       exclusions,
       coordinatesToLabel = coordinatesToLabel,
       checksum,
-      srcChecksum,
-      neverlink)
+      srcChecksum)
   }
 
   def includeImportExternalTargetWith(artifact: Coordinates,
@@ -129,8 +127,7 @@ object BazelWorkspaceDriver {
                                       exclusions: Set[Exclusion] = Set.empty,
                                       checksum: Option[String] = None,
                                       coordinatesToLabel: Coordinates => String = labelBy,
-                                      srcChecksum: Option[String] = None,
-                                      neverlink: Boolean = false): Matcher[BazelWorkspaceDriver] =
+                                      srcChecksum: Option[String] = None): Matcher[BazelWorkspaceDriver] =
 
     be_===(BazelExternalDependency(
       importExternalRule = Some(importExternalRuleWith(
@@ -140,8 +137,7 @@ object BazelWorkspaceDriver {
         exclusions = exclusions,
         checksum = checksum,
         coordinatesToLabel,
-        srcChecksum = srcChecksum,
-        neverlink)))) ^^ {
+        srcChecksum = srcChecksum)))) ^^ {
       (_:BazelWorkspaceDriver).bazelExternalDependencyFor(artifact) aka s"bazel workspace does not include import external rule target for $artifact"
     }
 

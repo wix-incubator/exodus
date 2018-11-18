@@ -153,7 +153,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit with Pack
     "add module_deps targets to matching existing package" in new ctx {
       val leafModule = aModule("some-module")
       val leafModuleTarget = dummyJvmTarget(forModule = leafModule)
-      val matchingPackage = packageWith(leafModuleTarget, leafModule)
+      val matchingPackage = packageWith(leafModuleTarget, withRelativePath = leafModule.relativePathFromMonoRepoRoot, leafModule)
       val inputPackage = Set(matchingPackage)
 
       val outputPackages = transformerFor(Set(leafModule)).transform(inputPackage)
@@ -172,7 +172,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit with Pack
       val leafModule = aModule("some-module")
       val anotherModule = aModule()
       val anotherTarget = dummyJvmTarget(forModule = anotherModule)
-      val somePackage = packageWith(anotherTarget, anotherModule)
+      val somePackage = packageWith(anotherTarget, withRelativePath = anotherModule.relativePathFromMonoRepoRoot,anotherModule)
       val inputPackage = Set(somePackage)
 
       val outputPackages = transformerFor(Set(leafModule)).transform(inputPackage)

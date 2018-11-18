@@ -40,19 +40,6 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
       localWorkspace must includeImportExternalTargetWith(divergentDependency.coordinates)
     }
 
-    "persist jar import with local provided scope " in new baseCtx {
-      givenBazelWorkspaceWithManagedDependencies(aRootDependencyNode(managedDependency))
-
-      val divergentDependency = managedDependency.withScope(MavenScope.Provided)
-
-      val resolver = givenFakeResolverForDependencies(rootDependencies = Set(managedDependency))
-      val synchronizer = givenSynchornizerFor(resolver)
-
-      synchronizer.sync(Set(aRootDependencyNode(divergentDependency)))
-
-      localWorkspace must includeImportExternalTargetWith(divergentDependency.coordinates, neverlink = true)
-    }
-
     "persist dependency with its dependencies (managed has no dependency)" in new baseCtx {
       givenBazelWorkspaceWithManagedDependencies(aRootDependencyNode(managedDependency))
 

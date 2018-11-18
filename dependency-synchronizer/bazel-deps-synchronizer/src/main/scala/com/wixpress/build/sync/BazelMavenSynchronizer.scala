@@ -21,7 +21,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     val dependenciesToUpdate = newDependencyNodes(dependencyManagementSource, dependencies, localCopy)
     logger.info(s"syncing ${dependenciesToUpdate.size} dependencies")
 
-    dependenciesToUpdate.headOption.foreach { depNode => logger.info(s"First dep to sync is ${depNode.baseDependency}.") }
+    dependenciesToUpdate.headOption.foreach{depNode => logger.info(s"First dep to sync is ${depNode.baseDependency}.")}
 
     if (dependenciesToUpdate.isEmpty)
       return
@@ -31,7 +31,6 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     val modifiedFiles = new BazelDependenciesWriter(localCopy).writeDependencies(dependenciesToUpdateWithChecksums)
     persister.persistWithMessage(modifiedFiles, dependenciesToUpdateWithChecksums.map(_.baseDependency.coordinates))
   }
-
   private def newDependencyNodes(dependencyManagementSource: Coordinates,
                                  dependencies: Set[Dependency],
                                  localWorkspace: BazelLocalWorkspace) = {
@@ -70,15 +69,16 @@ class HighestVersionConflictResolution {
       .mapValues(highestVersionIn)
       .values.toSet
 
-  def groupIdArtifactIdClassifier(dependency: Dependency) = {
+  private def groupIdArtifactIdClassifier(dependency: Dependency) = {
     import dependency.coordinates._
     (groupId, artifactId, classifier)
   }
 
-  private def highestVersionIn(dependencies: Set[Dependency]): Dependency = {
+  private def highestVersionIn(dependencies:Set[Dependency]):Dependency = {
     val exclusions = dependencies.flatMap(_.exclusions)
     dependencies.maxBy(d => new ComparableVersion(d.coordinates.version)).withExclusions(exclusions)
   }
+
 }
 
 object BazelMavenSynchronizer {

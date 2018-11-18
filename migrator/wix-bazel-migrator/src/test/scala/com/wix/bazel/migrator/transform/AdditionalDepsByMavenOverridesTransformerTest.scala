@@ -113,7 +113,7 @@ class AdditionalDepsByMavenOverridesTransformerTest extends SpecificationWithJUn
       withRuntimeDeps = Set(existingRuntimeDep),
       testOnly = targetIsTestOnly)
 
-    def somePackage = packageWith(someModuleDepsTarget, sourceModule)
+    def somePackage = packageWith(someModuleDepsTarget, sourceModule.relativePathFromMonoRepoRoot, sourceModule)
   }
 
 }

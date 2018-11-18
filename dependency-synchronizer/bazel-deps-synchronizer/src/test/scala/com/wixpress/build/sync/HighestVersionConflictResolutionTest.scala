@@ -62,5 +62,5 @@ class HighestVersionConflictResolutionTest extends SpecWithJUnit {
     val coordinates = randomCoordinates()
   }
 
-  protected def dependency(coordinates: Coordinates) = Dependency(coordinates, MavenScope.Compile)
+  private def dependency(coordinates: Coordinates) = Dependency(coordinates, MavenScope.Compile)
 }

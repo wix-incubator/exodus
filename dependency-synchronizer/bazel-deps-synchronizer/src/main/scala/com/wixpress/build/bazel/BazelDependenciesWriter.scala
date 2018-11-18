@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
-import com.wixpress.build.maven.{Coordinates, DependencyNode, MavenScope, Packaging}
+import com.wixpress.build.maven.{Coordinates, DependencyNode, Packaging}
 
 class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
   val ruleResolver = new RuleResolver(localWorkspace.localWorkspaceName)
@@ -62,8 +62,7 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
       compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(_.isProtoArtifact),
       exclusions = dependencyNode.baseDependency.exclusions,
       checksum = dependencyNode.checksum,
-      srcChecksum = dependencyNode.srcChecksum,
-      neverlink = dependencyNode.baseDependency.scope == MavenScope.Provided
+      srcChecksum = dependencyNode.srcChecksum
     )
     ruleToPersist.withUpdateDeps(runtimeDependenciesOverrides, compileTimeDependenciesOverrides)
   }

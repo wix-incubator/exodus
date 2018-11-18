@@ -94,7 +94,6 @@ object ImportExternalTargetsFileReader {
   val ImportExternalDepFilter = """@(.*?)//.*""".r("ruleName")
 
   val SrcSha256Filter = """(?s)srcjar_sha256\s*?=\s*?"(.+?)"""".r("src_checksum")
-  val NeverlinkFilter = """(?s)neverlink\s*=\s*([0-1])""".r("neverlink")
 }
 
 case class ImportExternalTargetsFileReader(content: String) {
@@ -119,18 +118,12 @@ case class ImportExternalTargetsFileReader(content: String) {
       compileTimeDeps = extractListByAttribute(CompileTimeDepsFilter, ruleText),
       exclusions = extractExclusions(ruleText),
       checksum = extractChecksum(ruleText),
-      srcChecksum = extractSrcChecksum(ruleText),
-      neverlink = extractNeverlink(ruleText)))
-    }
+      srcChecksum = extractSrcChecksum(ruleText)))
+  }
 
   private def extractSrcChecksum(ruleText: String) = {
     val maybeMatch = SrcSha256Filter.findFirstMatchIn(ruleText)
     maybeMatch.map(_.group("src_checksum"))
-  }
-
-  private def extractNeverlink(ruleText: String) = {
-    val maybeMatch = NeverlinkFilter.findFirstMatchIn(ruleText)
-    maybeMatch.map(_.group("neverlink")).contains("1")
   }
 
   def findCoordinatesByName(name: String): Option[Coordinates] = {
