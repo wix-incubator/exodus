@@ -55,17 +55,13 @@ case class DiffWriter(targetRepository: BazelRepository, remoteBranch: Option[St
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, branchName, targetRepository)
 
   def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit = {
-    log.info(s"targetRepository.localWorkspace. branchName: $branchName...")
     val localCopy = targetRepository.localWorkspace(branchName)
     val writer = new BazelDependenciesWriter(localCopy)
-    log.info("filter nodesWithPomPackaging")
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom")
-
-    log.info(s"writer.writeDependencies...")
 
     val modifiedFiles = writer.writeDependencies(divergentLocalDependencies, divergentLocalDependencies ++ nodesWithPomPackaging)
 
-    log.info(s"persister.persistWithMessage(modifiedFiles... ${modifiedFiles.size} files.")
+    log.info(s"modifying ${modifiedFiles.size} files.")
 
     persister.persistWithMessage(modifiedFiles, divergentLocalDependencies.map(_.baseDependency.coordinates))
   }

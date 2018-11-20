@@ -5,9 +5,6 @@ import com.jcraft.jsch.Session
 import org.eclipse.jgit.api.ResetCommand.ResetType
 import org.eclipse.jgit.api.{Git, TransportCommand}
 import org.eclipse.jgit.transport.{JschConfigSessionFactory, SshTransport, _}
-import org.slf4j.LoggerFactory
-
-import scala.util.{Failure, Try}
 
 class GitBazelRepository(
                           gitURL: String,
@@ -15,7 +12,6 @@ class GitBazelRepository(
                           username: String = "builduser",
                           email: String = "builduser@ci.com")
                           (implicit authentication: GitAuthentication) extends BazelRepository {
-  private val log = LoggerFactory.getLogger(getClass)
 
   private val DefaultRemote = "origin"
   private val DefaultBranch = "master"
@@ -46,25 +42,19 @@ class GitBazelRepository(
 
   private def cleanAndUpdateLocalRepo(branchName: String) = {
     withLocalGit(git => {
-      Try {
-        authentication.set(git.fetch())
-          .call()
+      authentication.set(git.fetch())
+        .call()
 
-        git.clean()
-          .setCleanDirectories(true)
-          .setForce(true)
-          .call()
+      git.clean()
+        .setCleanDirectories(true)
+        .setForce(true)
+        .call()
 
-        if (branchName == DefaultBranch)
-          git.reset()
-            .setRef(s"$DefaultRemote/$branchName")
-            .setMode(ResetType.HARD)
-            .call()
-      } match {
-        case Failure(ex: Exception) =>
-          log.error(s"${ex.getMessage()}")
-        case _ =>
-      }
+      if (branchName == DefaultBranch)
+        git.reset()
+          .setRef(s"$DefaultRemote/$branchName")
+          .setMode(ResetType.HARD)
+          .call()
     })
   }
 
