@@ -118,11 +118,11 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     val targetRepoDriver = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
 
     val resolver = givenFakeResolverForDependencies(rootDependencies = Set(asCompileDependency(dependencyManagementCoordinates)))
-    def synchronizer = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository, dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule]())
+    def synchronizer = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository, dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule](), "")
   }
 
   trait sourceModulesCtx extends ctx {
     def sourceModules: Set[SourceModule]
-    override def synchronizer = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository, dependencyManagementCoordinates, resolver, _ => None, sourceModules)
+    override def synchronizer = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository, dependencyManagementCoordinates, resolver, _ => None, sourceModules, "")
   }
 }

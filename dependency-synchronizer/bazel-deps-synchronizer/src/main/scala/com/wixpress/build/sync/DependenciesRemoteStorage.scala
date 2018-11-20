@@ -116,7 +116,6 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
 
     log.warn(
       s"""~~~~${ex.getMessage}
-         |${stackTraceOf(ex)}
          |""".stripMargin)
     Failure(ex)
   }

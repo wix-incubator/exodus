@@ -50,10 +50,11 @@ class GitBazelRepository(
         .setForce(true)
         .call()
 
-      git.reset()
-        .setRef(s"$DefaultRemote/$branchName")
-        .setMode(ResetType.HARD)
-        .call()
+      if (branchName == DefaultBranch)
+        git.reset()
+          .setRef(s"$DefaultRemote/$branchName")
+          .setMode(ResetType.HARD)
+          .call()
     })
   }
 

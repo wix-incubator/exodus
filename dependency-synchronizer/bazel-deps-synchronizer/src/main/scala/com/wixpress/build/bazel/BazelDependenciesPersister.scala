@@ -7,10 +7,16 @@ class BazelDependenciesPersister(commitHeader: String, branch: String, bazelRepo
   def persistWithMessage(fileset: Set[String], dependenciesSet: Set[Coordinates]): Unit =
     bazelRepository.persist(branch, fileset, persistMessageBy(dependenciesSet))
 
-  private def persistMessageBy(dependenciesSet: Set[Coordinates]): String =
+  private def persistMessageBy(dependenciesSet: Set[Coordinates]): String = {
+    val suffix = branch match {
+      case "master" => ""
+      case _ => "\n#automerge"
+    }
+
     s"""$commitHeader
-       |${sortedListOfDependencies(dependenciesSet)}
+       |${sortedListOfDependencies(dependenciesSet)}$suffix
        |""".stripMargin
+  }
 
   private def sortedListOfDependencies(dependenciesSet: Set[Coordinates]) =
     dependenciesSet.map(_.serialized)

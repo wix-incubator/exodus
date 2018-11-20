@@ -92,7 +92,6 @@ class MavenRepoRemoteStorage(baseUrls: List[String])extends DependenciesRemoteSt
 
     log.warn(
       s"""~~~~${ex.getMessage}
-         |${stackTraceOf(ex)}
          |""".stripMargin)
     Failure(ex)
   }

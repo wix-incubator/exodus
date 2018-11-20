@@ -25,8 +25,8 @@ class FakeRemoteRepository {
     .map(_.asCaseClass)
     .toList
 
-  def initWithThirdPartyReposFileContent(content: String): FakeRemoteRepository = {
-    writeThirdPartyReposFile(content)
+  def initWithThirdPartyReposFileContent(content: String, branchName: String = DefaultBranch): FakeRemoteRepository = {
+    writeThirdPartyReposFile(content, branchName)
     this
   }
 
@@ -41,7 +41,7 @@ class FakeRemoteRepository {
 
   def remoteURI: String = remoteRepo.pathAsString
 
-  private def writeThirdPartyReposFile(content: String) = {
+  private def writeThirdPartyReposFile(content: String, branchName: String) = {
     val thirdPartyReposFile = localClone.path.createChild(thirdPartyReposFilePath)
     val git = localClone.git
     thirdPartyReposFile.overwrite(content)
@@ -58,6 +58,27 @@ class FakeRemoteRepository {
     git.push()
       .setRemote(DefaultRemote)
       .setRefSpecs(new RefSpec(DefaultBranch))
+      .call()
+
+    createBranch(branchName)
+  }
+
+  def createBranch(branch: String): Unit = {
+    val git = localClone.git
+    git.commit()
+      .setMessage("empty commit")
+      .setAllowEmpty(true)
+      .setAuthor(GitUserName, GitUserEmail)
+      .call()
+
+    if (branch != DefaultBranch) {
+      git.branchCreate().setName(branch).call()
+      git.checkout().setName(branch).call()
+    }
+
+    git.push()
+      .setRemote(DefaultRemote)
+      .setRefSpecs(new RefSpec(branch))
       .call()
   }
 
@@ -87,10 +108,10 @@ class FakeRemoteRepository {
   }
 
 
-  def hasWorkspaceRuleFor(coordinates: Coordinates): Try[String] = {
+  def hasWorkspaceRuleFor(coordinates: Coordinates, branchName: String = BazelMavenSynchronizer.BranchName): Try[String] = {
     val importExternalRuleName = coordinates.workspaceRuleName
     val groupId = coordinates.groupIdForBazel
-    updatedContentOfFileIn(BazelMavenSynchronizer.BranchName, s"$thirdPartyImportFilesPathRoot/$groupId.bzl").map((importExternalTargetsContent) => {
+    updatedContentOfFileIn(branchName, s"$thirdPartyImportFilesPathRoot/$groupId.bzl").map((importExternalTargetsContent) => {
       val maybeRule: Option[Coordinates] = ImportExternalTargetsFileReader(importExternalTargetsContent).findCoordinatesByName(importExternalRuleName)
       maybeRule match {
         case Some(c) if c == coordinates => "success"
@@ -149,6 +170,6 @@ object GitRepository {
 }
 
 object FakeRemoteRepository {
-  def newBlankRepository: FakeRemoteRepository = (new FakeRemoteRepository).initWithThirdPartyReposFileContent("")
+  def newBlankRepository(branchName: String = "master"): FakeRemoteRepository = (new FakeRemoteRepository).initWithThirdPartyReposFileContent("", branchName)
 }
 

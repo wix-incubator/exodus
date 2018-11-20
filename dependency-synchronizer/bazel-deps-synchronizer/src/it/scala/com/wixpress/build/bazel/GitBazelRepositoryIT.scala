@@ -41,6 +41,12 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
       localWorkspace.thirdPartyReposFileContent() mustEqual thirdPartyReposFileContent
     }
 
+    "return valid bazel local third party repos content for some-branch" in new exitingThirdPartyRepo{
+      val localWorkspace = gitBazelRepository.localWorkspace("some-branch")
+
+      localWorkspace.thirdPartyReposFileContent() mustEqual thirdPartyReposFileContent
+    }
+
     "persist file change to remote git repository" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
       val someLocalPath = File.newTemporaryDirectory("clone")
       val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath)
@@ -71,6 +77,19 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
       fakeRemoteRepository.updatedContentOfFileIn(branchName, thirdPartyReposFilePath) must beSuccessfulTry(newContent)
     }
 
+    "persist short lived branch with new content" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
+      val someLocalPath = File.newTemporaryDirectory("clone")
+      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath)
+
+      val branchName = "some-branch"
+
+      val newContent = "new-content"
+      gitBazelRepository.localWorkspace(branchName).overwriteThirdPartyReposFile(newContent)
+      gitBazelRepository.persist(branchName, Set(thirdPartyReposFilePath), "some message")
+
+      fakeRemoteRepository.updatedContentOfFileIn(branchName, thirdPartyReposFilePath) must beSuccessfulTry(newContent)
+    }
+
     "persist with commit message with given username and email that will be visible on remote repository" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
       val someLocalPath = File.newTemporaryDirectory("clone")
       val username = "someuser"
@@ -96,6 +115,12 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
   trait fakeRemoteRepositoryWithEmptyThirdPartyRepos extends Scope {
     val fakeRemoteRepository = new FakeRemoteRepository
     fakeRemoteRepository.initWithThirdPartyReposFileContent("")
+  }
+
+  trait exitingThirdPartyRepo extends Scope {
+    val thirdPartyReposFileContent = "some third party repos file content"
+    val fakeRemoteRepository = aFakeRemoteRepoWithThirdPartyReposFile(thirdPartyReposFileContent)
+    val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, aRandomTempDirectory)
   }
 
   private def aRandomTempDirectory = {

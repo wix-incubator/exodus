@@ -27,6 +27,7 @@ class BazelDependenciesPersisterTest extends SpecificationWithJUnit {
         message =
           s"""$header
              | - ${coordinates.serialized}
+             |#automerge
              |""".stripMargin))
     }
 
@@ -44,9 +45,27 @@ class BazelDependenciesPersisterTest extends SpecificationWithJUnit {
         message =
           s"""$header
              |${someDependencies.map(_.serialized).toSeq.sorted.map(c => s" - $c").mkString("\n")}
+             |#automerge
              |""".stripMargin))
+    }
 
+    "do not add #automerge for master branch commit messages" in  {
+      val branch = "master"
+      val header = "some header"
+      val bazelRepository = new FakeBazelRepository()
+      val persister = new BazelDependenciesPersister(header, branch, bazelRepository)
 
+      val changedFiles = Set("file1", "file2")
+
+      persister.persistWithMessage(changedFiles, Set.empty)
+
+      bazelRepository.lastCommit should beEqualTo(DummyCommit(
+        branchName = branch,
+        changedFilePaths = changedFiles,
+        message =
+          s"""$header
+             |
+             |""".stripMargin))
     }
   }
 }

@@ -8,8 +8,9 @@ import org.slf4j.LoggerFactory
 class UserAddedDepsDiffSynchronizer(bazelRepo: BazelRepository, bazelRepoWithManagedDependencies: BazelRepository,
                                     ManagedDependenciesArtifact: Coordinates, aetherResolver: MavenDependencyResolver,
                                     remoteStorage: DependenciesRemoteStorage,
-                                    mavenModules: Set[SourceModule]) {
-  val diffWriter = DiffWriter(bazelRepo)
+                                    mavenModules: Set[SourceModule],
+                                    randomString: => String) {
+  val diffWriter = DiffWriter(bazelRepo, Some(s"user_added_3rd_party_deps_$randomString"))
   val diffCalculator = DiffCalculator(bazelRepoWithManagedDependencies, aetherResolver, remoteStorage)
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -17,7 +18,9 @@ class UserAddedDepsDiffSynchronizer(bazelRepo: BazelRepository, bazelRepoWithMan
   def syncThirdParties(userAddedDependencies: Set[Dependency]): DiffResult = {
     val diffResult = resolveUpdatedLocalNodes(userAddedDependencies)
 
+    log.info(s"writes updates for ${diffResult.updatedLocalNodes.size} dependency nodes...")
     diffWriter.persistResolvedDependencies(diffResult.updatedLocalNodes, diffResult.localNodes)
+    log.info(s"Finished writing updates.")
 
     diffResult
   }

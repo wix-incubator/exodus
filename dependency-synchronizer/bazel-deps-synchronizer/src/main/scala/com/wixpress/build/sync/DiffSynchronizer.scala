@@ -47,15 +47,21 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
   }
 }
 
-case class DiffWriter(targetRepository: BazelRepository) {
-  private val persister = new BazelDependenciesPersister(PersistMessageHeader, BranchName, targetRepository)
+case class DiffWriter(targetRepository: BazelRepository, remoteBranch: Option[String] = None) {
+  private val log = LoggerFactory.getLogger(getClass)
+
+  private val branchName = remoteBranch.fold("master")(b => b)
+
+  private val persister = new BazelDependenciesPersister(PersistMessageHeader, branchName, targetRepository)
 
   def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit = {
-    val localCopy = targetRepository.localWorkspace("master")
+    val localCopy = targetRepository.localWorkspace(branchName)
     val writer = new BazelDependenciesWriter(localCopy)
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom")
 
     val modifiedFiles = writer.writeDependencies(divergentLocalDependencies, divergentLocalDependencies ++ nodesWithPomPackaging)
+
+    log.info(s"modifying ${modifiedFiles.size} files.")
 
     persister.persistWithMessage(modifiedFiles, divergentLocalDependencies.map(_.baseDependency.coordinates))
   }
