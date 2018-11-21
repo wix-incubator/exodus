@@ -56,45 +56,6 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
       synchronizer.resolveUpdatedLocalNodes(Set()).localNodes must contain(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
     }
 
-    "when aggregating local nodes and user-added nodes" should {
-      "include user-added node without its transitive dep due to exclusion in local node" in new ctx {
-        val localDependency: Dependency = asCompileDependency(artifactA)
-        val transitiveDependency = asCompileDependency(someCoordinates("transitive"))
-        val localNodes = Set(aRootDependencyNode(localDependency.copy(exclusions = Set(Exclusion(transitiveDependency)))))
-        val userAddedDeps = Set(localDependency)
-        val userAddedNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
-        synchronizer.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
-      }
-
-      // TODO can be removed in phase 2
-      "include user-added node without its transitive dep due to it already existing as source module in local repo" in new sourceModulesCtx {
-        val localDependency: Dependency = asCompileDependency(artifactA)
-        private val transitiveArtifact: Coordinates = someCoordinates("transitive")
-        val transitiveDependency = asCompileDependency(transitiveArtifact)
-
-        val sourceModules = Set(SourceModule(relativePathFromMonoRepoRoot = "", coordinates = transitiveArtifact ))
-
-        val localNodes = Set[DependencyNode](aRootDependencyNode(localDependency))
-        val userAddedDeps = Set(localDependency)
-        val userAddedNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
-
-        synchronizer.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
-      }
-
-      // TODO can be removed in phase 2
-      "not include user-added node due to it already existing as source module in local repo" in new sourceModulesCtx {
-        val localDependency: Dependency = asCompileDependency(artifactA)
-
-        val sourceModules = Set(SourceModule(relativePathFromMonoRepoRoot = "", coordinates = artifactA ))
-
-        val localNodes = Set[DependencyNode]()
-        val userAddedDeps = Set(localDependency)
-        val userAddedNodes = Set(aRootDependencyNode(localDependency))
-
-        synchronizer.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
-
-      }
-    }
   }
 
   trait ctx extends Scope {
@@ -121,8 +82,4 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     def synchronizer = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository, dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule](), "")
   }
 
-  trait sourceModulesCtx extends ctx {
-    def sourceModules: Set[SourceModule]
-    override def synchronizer = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository, dependencyManagementCoordinates, resolver, _ => None, sourceModules, "")
-  }
 }
