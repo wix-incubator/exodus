@@ -9,8 +9,8 @@ import org.eclipse.jgit.transport.{JschConfigSessionFactory, SshTransport, _}
 class GitBazelRepository(
                           gitURL: String,
                           checkoutDir: File,
-                          username: String = "builduser",
-                          email: String = "builduser@ci.com")
+                          username: String = "WixBuildServer",
+                          email: String = "buildserver@wix.com")
                           (implicit authentication: GitAuthentication) extends BazelRepository {
 
   private val DefaultRemote = "origin"
