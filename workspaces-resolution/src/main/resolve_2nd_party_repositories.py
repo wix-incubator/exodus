@@ -185,11 +185,6 @@ def does_non_empty_file_exist(path):
     return os.path.isfile(path) and os.stat(path).st_size != 0
 
 
-def read_current_repo_url():
-    return run_process(['git', 'config', '--get', 'remote.origin.url'],
-                       "Failed to read the current repository remote origin url")
-
-
 def read_current_branch():
     return run_process(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], "Failed to read the current branch")
 
