@@ -8,6 +8,7 @@ import logging
 import base64
 import socket
 import zlib
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -28,13 +29,16 @@ else:
     from urllib2 import URLError
 
 tools_relative_path = "/tools/"
+versions_files_folder = tools_relative_path + "2nd_party_resolved_dependencies/"
 starlark_file_name_postfix = "_2nd_party_resolved_dependencies.bzl"
-json_file_name_postfix = "_2nd_party_resolved_dependencies.json"
+default_json_file_name = "2nd_party_resolved_dependencies.json"
 symlink_relative_path = tools_relative_path + "2nd_party_resolved_dependencies_current_branch.bzl"
 second_party_resolved_deps_override_empty_placeholder = "EMPTY!"
 build_branch_override_empty_placeholder = "~EMPTY~"
+json_file_path_override_empty_placeholder = "EMPTY"
 second_party_resolved_dependencies_env_var_name = "SECOND_PARTY_RESOLVED_DEPENDENCIES"
 compressed_second_party_resolved_dependencies_env_var_name = "COMPRESSED_SECOND_PARTY_RESOLVED_DEPENDENCIES"
+json_file_path_override_env_var_name = "RESOLVED_2ND_DEPENDENCIES_JSON_PATH"
 
 
 def main():
@@ -145,10 +149,18 @@ def create_version_files_from_raw_string(dependencies_raw_string):
     create_version_files(read_current_branch(), json_file_repos, starlark_file_repos)
 
 
-def create_version_files(current_branch, json_file_repos, starlark_file_repos):
-    json_file_path = "{}{}{}{}".format(workspace_dir, tools_relative_path, current_branch, json_file_name_postfix).replace("\n", "")
-    starlark_file_path = create_starlark_file_path(current_branch)
+def create_version_folder_if_not_exists():
+    versions_folder_full_path = "{}{}".format(workspace_dir, versions_files_folder)
+    if not os.path.exists(versions_folder_full_path):
+        logging.debug("Creating folder: {}".format(versions_folder_full_path))
+        os.makedirs(versions_folder_full_path)
 
+
+def create_version_files(current_branch, json_file_repos, starlark_file_repos):
+    starlark_file_path = create_starlark_file_path(current_branch)
+    json_file_path = get_json_file_path()
+
+    create_version_folder_if_not_exists()
     write_content_to_path(json_file_repos, json_file_path)
     write_content_to_path(starlark_file_repos, starlark_file_path)
     write_symlink_to_path(symlink_path(), starlark_file_path)
@@ -157,6 +169,16 @@ def create_version_files(current_branch, json_file_repos, starlark_file_repos):
     open(workspace_dir + "/BUILD.bazel", 'a').close()
     logging.debug("Generating %s" % workspace_dir + "/tools/BUILD.bazel")
     open(workspace_dir + "/tools/BUILD.bazel", 'a').close()
+
+
+def get_json_file_path():
+    if json_file_path_override is not None and json_file_path_override != json_file_path_override_empty_placeholder:
+        path = "{}/{}".format(workspace_dir, json_file_path_override)
+        logging.debug("Versions used in this build will be written to {}".format(path))
+        if not should_suppress_prints:
+            print("Versions used in this build will be written to {}".format(path))
+        return path
+    return "{}{}{}".format(workspace_dir, versions_files_folder, default_json_file_name)
 
 
 def does_non_empty_file_exist(path):
@@ -190,14 +212,14 @@ def run_process(splitted_command, fail_msg):
 
 
 def write_content_to_path(content, path):
-    with open(path, "w+") as openedfile:
+    with open(path, "w+") as opened_file:
         logging.debug("Generating %s with content:\n%s" % (path, content))
-        openedfile.write(content)
-        openedfile.close()
+        opened_file.write(content)
+        opened_file.close()
 
 
 def load_environment_variables():
-    global repo_list, tracking_branch, second_party_resolved_deps_override, compressed_second_party_resolved_deps_override, build_branch_override, repositories_url
+    global repo_list, tracking_branch, second_party_resolved_deps_override, compressed_second_party_resolved_deps_override, json_file_path_override, build_branch_override, repositories_url
     repo_list = os.environ.get("REPO_LIST", "default")
     logging.debug("[env var] repo_list = %s", repo_list)
     tracking_branch = os.environ.get("TRACKING_BRANCH", "master")
@@ -206,6 +228,8 @@ def load_environment_variables():
     logging.debug("[env var] second_party_resolved_deps_override = %s", second_party_resolved_deps_override)
     compressed_second_party_resolved_deps_override = os.environ.get(compressed_second_party_resolved_dependencies_env_var_name)
     logging.debug("[env var] compressed_second_party_resolved_deps_override = %s", compressed_second_party_resolved_deps_override)
+    json_file_path_override = os.environ.get(json_file_path_override_env_var_name)
+    logging.debug("[env var] json_file_path_override = %s", json_file_path_override)
     build_branch_override = os.environ.get("BUILD_BRANCH_OVERRIDE")
     logging.debug("[env var] build_branch_override = %s", build_branch_override)
     repositories_url = os.environ.get("REPOSITORIES_URL", "https://bo.wix.com/bazel-repositories-server/repositories")
@@ -213,7 +237,7 @@ def load_environment_variables():
 
 
 def create_starlark_file_path(branch):
-    return "{}{}{}{}".format(workspace_dir, tools_relative_path, branch, starlark_file_name_postfix).replace(
+    return "{}{}{}{}".format(workspace_dir, versions_files_folder, branch, starlark_file_name_postfix).replace(
         "\n", "")
 
 

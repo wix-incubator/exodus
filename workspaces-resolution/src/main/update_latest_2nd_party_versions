@@ -1,0 +1,8 @@
+#!/bin/bash
+
+WORKSPACE_DIR=$(pwd)
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+rm ${WORKSPACE_DIR}/tools/${BRANCH}_2nd_party_resolved_dependencies.bzl
+
+python ${WORKSPACE_DIR}/tools/resolve_2nd_party_repositories.py ${WORKSPACE_DIR} False
