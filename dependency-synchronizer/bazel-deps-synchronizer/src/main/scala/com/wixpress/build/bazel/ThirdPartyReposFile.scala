@@ -15,6 +15,7 @@ object ThirdPartyReposFile {
     def fromCoordinates(coordinates: Coordinates): Builder = {
       coordinates.packaging match {
         case Packaging("jar") => withLoadStatementsFor(coordinates)
+        case Packaging("war") => unchangedBuilder
         case _ => withMavenArtifact(coordinates)
       }
     }
@@ -36,7 +37,11 @@ object ThirdPartyReposFile {
          |
          |${serializedImportExternalTargetsFileMethodCall(coordinates)}
          |""".stripMargin
-      }
+    }
+
+    private def unchangedBuilder = {
+      Builder(content)
+    }
 
     def withMavenArtifact(coordinates: Coordinates): Builder =
       Builder(newThirdPartyReposWithMavenArchive(coordinates))

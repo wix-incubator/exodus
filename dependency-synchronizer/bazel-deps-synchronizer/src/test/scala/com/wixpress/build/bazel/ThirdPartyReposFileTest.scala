@@ -2,7 +2,8 @@ package com.wixpress.build.bazel
 
 import com.wixpress.build.bazel.CoordinatesTestBuilders._
 import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
-import com.wixpress.build.maven.{Coordinates, Packaging}
+import com.wixpress.build.bazel.ThirdPartyReposFile.Builder
+import com.wixpress.build.maven.{Coordinates, MavenMakers, Packaging}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -95,6 +96,11 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
            |""".stripMargin
 
       ThirdPartyReposFile.Builder(thirdPartyRepos).withLoadStatementsFor(newJar).content mustEqual expectedThirdPartyRepos
+    }
+
+    "ignore war dependencies" in {
+      val warDependnecy = MavenMakers.someCoordinates("some-dep", Packaging("war"))
+      ThirdPartyReposFile.Builder("foo").fromCoordinates(warDependnecy) mustEqual Builder("foo")
     }
   }
 
