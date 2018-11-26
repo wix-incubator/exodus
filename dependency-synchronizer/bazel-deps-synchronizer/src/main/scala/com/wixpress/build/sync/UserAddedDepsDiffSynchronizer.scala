@@ -83,8 +83,14 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
   }
 
   private def filterNotWarDeps(addedNodes: Set[DependencyNode]) = {
-    addedNodes.filterNot(n => n.baseDependency.coordinates.packaging == Packaging("war"))
-      .filterNot(n => n.dependencies.exists(_.coordinates.packaging == Packaging("war")))
+    def isWarPackaging(d: Dependency) = {
+      d.coordinates.packaging.isWar
+    }
+
+    addedNodes.filterNot(n => isWarPackaging(n.baseDependency))
+      .map(n => {
+        n.copy(dependencies = n.dependencies.filterNot(d => isWarPackaging(d)))
+      })
   }
 
   private def filterNotLocalSourceModules(addedNodes: Set[DependencyNode]) = {

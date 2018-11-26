@@ -49,15 +49,16 @@ class DependencyAggregatorTest extends SpecWithJUnit {
     }
 
     // fw jars have such packaging which there is no reason to depend on
-    "filter our direct dep with 'war' packaging" in new ctx {
+    "filter our direct dep with 'war' packaging but keep transitive deps" in new ctx {
       val warDependency: Dependency = asCompileDependency(artifactA.copy(packaging = Packaging("war")))
+      val localDependency: Dependency = asCompileDependency(artifactB)
 
       val localNodes = Set[DependencyNode]()
 
-      val userAddedDeps = Set(warDependency)
-      val userAddedNodes = Set(aRootDependencyNode(warDependency))
+      val userAddedDeps = Set(warDependency, localDependency)
+      val userAddedNodes = Set(DependencyNode(warDependency, Set(localDependency)), aRootDependencyNode(localDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
+      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
     }
 
     "filter our transitive dep with 'war' packaging" in new ctx {
@@ -68,7 +69,18 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val localNodes = Set[DependencyNode]()
 
       val userAddedDeps = Set(localDependency, warDependency)
-      val userAddedNodes = Set(DependencyNode(localDependency, Set(warDependency)))
+      val userAddedNodes = Set(DependencyNode(localDependency, Set(warDependency)), aRootDependencyNode(warDependency))
+
+      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
+    }
+
+    "filter our direct dep with 'WAR' packaging" in new ctx {
+      val warDependency: Dependency = asCompileDependency(artifactA.copy(packaging = Packaging("WAR")))
+
+      val localNodes = Set[DependencyNode]()
+
+      val userAddedDeps = Set(warDependency)
+      val userAddedNodes = Set(aRootDependencyNode(warDependency))
 
       aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
     }

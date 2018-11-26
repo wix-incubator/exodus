@@ -2,9 +2,9 @@ package com.wixpress.build.sync
 
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.{DependencyNode, MavenDependencyResolver}
-import com.wixpress.build.sync.BazelMavenSynchronizer.{BranchName, PersistMessageHeader}
+import com.wixpress.build.sync.ArtifactoryRemoteStorage._
+import com.wixpress.build.sync.BazelMavenSynchronizer.PersistMessageHeader
 import org.slf4j.LoggerFactory
-import ArtifactoryRemoteStorage._
 
 case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelRepository,
                             targetRepository: BazelRepository, resolver: MavenDependencyResolver,

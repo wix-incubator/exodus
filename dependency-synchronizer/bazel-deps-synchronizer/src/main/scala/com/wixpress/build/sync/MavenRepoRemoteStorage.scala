@@ -84,12 +84,6 @@ class MavenRepoRemoteStorage(baseUrls: List[String])extends DependenciesRemoteSt
   }
 
   private def printAndFail(ex: Throwable) = {
-    def stackTraceOf(ex: Throwable) = {
-      val exceptionStackTrace = new StringWriter()
-      ex.printStackTrace(new PrintWriter(exceptionStackTrace))
-      exceptionStackTrace.toString
-    }
-
     log.warn(
       s"""~~~~${ex.getMessage}
          |""".stripMargin)
