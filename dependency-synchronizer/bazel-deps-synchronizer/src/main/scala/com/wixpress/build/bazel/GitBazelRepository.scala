@@ -5,6 +5,7 @@ import com.jcraft.jsch.Session
 import org.eclipse.jgit.api.ResetCommand.ResetType
 import org.eclipse.jgit.api.{Git, TransportCommand}
 import org.eclipse.jgit.transport.{JschConfigSessionFactory, SshTransport, _}
+import org.slf4j.LoggerFactory
 
 class GitBazelRepository(
                           gitURL: String,
@@ -12,6 +13,8 @@ class GitBazelRepository(
                           username: String = "WixBuildServer",
                           email: String = "buildserver@wix.com")
                           (implicit authentication: GitAuthentication) extends BazelRepository {
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   private val DefaultRemote = "origin"
   private val DefaultBranch = "master"
@@ -87,6 +90,7 @@ class GitBazelRepository(
   }
 
   private def pushToRemote(git: Git, branchName: String) = {
+    log.info(s"pushing to $gitURL, branch: $branchName")
     authentication.set(git.push())
       .setRemote(DefaultRemote)
       .setRefSpecs(new RefSpec(branchName))
