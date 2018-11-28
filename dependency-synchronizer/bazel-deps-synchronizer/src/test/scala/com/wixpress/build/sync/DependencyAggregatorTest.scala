@@ -2,7 +2,7 @@ package com.wixpress.build.sync
 
 import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.maven.MavenMakers._
-import com.wixpress.build.maven.{DependencyNode, _}
+import com.wixpress.build.maven._
 import org.specs2.mutable.SpecWithJUnit
 import org.specs2.specification.Scope
 
@@ -17,6 +17,52 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(localDependency)
       val userAddedNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
       aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
+    }
+
+    "update to user-added versions for both base dependency and transitive dependencies" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA)
+      val transitiveDependency = asCompileDependency(someCoordinates("transitive"))
+      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)))
+      val addedDependency = localDependency.withVersion("new-version")
+      val addedTransitiveDependency = transitiveDependency.withVersion("new-version")
+      val userAddedDeps = Set(addedDependency)
+      val userAddedNodes = Set(DependencyNode(addedDependency, Set(addedTransitiveDependency)), aRootDependencyNode(addedTransitiveDependency))
+
+      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+    }
+
+    // add test for not touching transitive nodes that are not part of user-added and also transtivie nodes that are identical!!!
+    "remove added unique transitive deps on added base depndency with new version" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA)
+      val transitiveDependency = asCompileDependency(someCoordinates("transitive"))
+      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)))
+      val addedDependency = localDependency.withVersion("new-version")
+      val userAddedDeps = Set(addedDependency)
+      val userAddedNodes = Set(aRootDependencyNode(addedDependency))
+
+      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+    }
+
+    "keep local unique transitive deps on added base depdendency with same version" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA)
+      val transitiveDependency = asCompileDependency(someCoordinates("transitive"))
+      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)))
+      val addedDependency = localDependency
+      val userAddedDeps = Set(addedDependency)
+      val userAddedNodes = Set(aRootDependencyNode(addedDependency))
+
+      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
+    }
+
+    "keep identical transitive deps" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA)
+      val transitiveDependency = asCompileDependency(someCoordinates("transitive"))
+      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)))
+      val addedDependency = localDependency.withVersion("new-version")
+      val userAddedDeps = Set(addedDependency)
+      val userAddedNodes = Set(DependencyNode(addedDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
+
+      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
     // TODO can be removed in phase 2

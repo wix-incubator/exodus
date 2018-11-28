@@ -97,36 +97,41 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
     new GlobalExclusionFilterer(mavenModules.map(_.coordinates)).filterGlobalsFromDependencyNodes(addedNodes)
   }
 
-  private def newNodesWithLocalExclusionsFilteredOut(externalAddedNodes: Set[DependencyNode], localNodes: Set[DependencyNode]) = {
-    val filteredDuplicateNodes = externalAddedNodes.filterNot(n => {
+  private def newNodesWithLocalExclusionsFilteredOut(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode]) = {
+    val newNodes = addedNodes.filterNot(n => {
       localNodes.exists(l => l.baseDependency.coordinates.equalsIgnoringVersion(n.baseDependency.coordinates))
     })
-    val filteredExcludedNodes = filteredDuplicateNodes.filterNot(n => {
+    val newNonExcludedNodes = newNodes.filterNot(n => {
       localNodes.exists(l => l.baseDependency.exclusions.exists(e => e.equalsCoordinates(n.baseDependency.coordinates)))
     })
-    log.debug(s"filteredExcludedNodes count: ${filteredExcludedNodes.size}")
-    filteredExcludedNodes
+    log.debug(s"newNonExcludedNodes count: ${newNonExcludedNodes.size}")
+    newNonExcludedNodes
   }
 
   private def updateLocalNodesWithAddedDepsVersions(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode], addedDeps: Set[Dependency]) = {
-    def updateBaseDependency(localNode: DependencyNode, addedNodes: DependencyNode, addedDeps: Set[Dependency]) = {
-      if (addedDeps.exists(localNode.baseDependency.equalsOnCoordinatesIgnoringVersion))
+    def updateBaseDependency(localNode: DependencyNode, addedNodes: DependencyNode) = {
         localNode.baseDependency.withVersion(addedNodes.baseDependency.version)
-      else
-        localNode.baseDependency
     }
 
     def updateDependencies(localNode: DependencyNode, addedNode: DependencyNode) = {
-      localNode.dependencies ++ addedNode.dependencies.filterNot(node => {
+      val addedIncludedDependencies = addedNode.dependencies.filterNot(node => {
         localNode.baseDependency.exclusions.exists(e => e.equalsCoordinates(node.coordinates))
       })
+
+      if (localNode.baseDependency.coordinates == addedNode.baseDependency.coordinates)
+        localNode.dependencies
+      else{
+        addedIncludedDependencies
+      }
     }
 
     localNodes.flatMap(l => {
       val nodeToAdd = addedNodes.find(n => n.baseDependency.coordinates.equalsIgnoringVersion(l.baseDependency.coordinates))
-      nodeToAdd.map(n => l.copy(
-        baseDependency = updateBaseDependency(l, n, addedDeps),
-        dependencies = updateDependencies(l, n)))
+      nodeToAdd.map(n => {
+        l.copy(
+          baseDependency = updateBaseDependency(l, n),
+          dependencies = updateDependencies(l, n))
+      })
     })
   }
 }
