@@ -3,10 +3,6 @@ package com.wixpress.build.bazel
 import java.io.FileNotFoundException
 
 import better.files.File
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind._
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
 class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
 

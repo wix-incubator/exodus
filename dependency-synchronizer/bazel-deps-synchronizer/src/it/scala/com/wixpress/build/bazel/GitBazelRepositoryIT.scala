@@ -3,6 +3,7 @@ package com.wixpress.build.bazel
 import better.files.File
 import com.wixpress.build.bazel.ThirdPartyReposFile.thirdPartyReposFilePath
 import com.wixpress.build.sync.e2e.{Commit, FakeRemoteRepository}
+import org.eclipse.jgit.api.Git
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
@@ -110,11 +111,30 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
 
       fakeRemoteRepository.allCommitsForBranch(branchName) must contain(expectedCommit)
     }
+
+    "not throw exception for new localWorkspace for some branch when there are old conflicting changes" in new noConflictCtx {
+      val localGitPath = File.newTemporaryDirectory("clone")
+      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, localGitPath)
+
+      addFileAndCommit(branchName, fileName, "old content")(localGitPath)
+      addFile(DefaultBranch, fileName, "new content")(localGitPath)
+
+      gitBazelRepository.localWorkspace(branchName)
+
+      checkoutBranch(branchName)(localGitPath) must not throwA[Exception]()
+
+    }
   }
 
   trait fakeRemoteRepositoryWithEmptyThirdPartyRepos extends Scope {
     val fakeRemoteRepository = new FakeRemoteRepository
     fakeRemoteRepository.initWithThirdPartyReposFileContent("")
+  }
+
+  trait noConflictCtx extends fakeRemoteRepositoryWithEmptyThirdPartyRepos {
+    val DefaultBranch = "master"
+    val branchName = "some-branch"
+    val fileName = "some-file.txt"
   }
 
   trait exitingThirdPartyRepo extends Scope {
@@ -132,5 +152,44 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
   private def aFakeRemoteRepoWithThirdPartyReposFile(thirdPartyReposFileContent: String) =
     (new FakeRemoteRepository).initWithThirdPartyReposFileContent(thirdPartyReposFileContent)
 
+  private def checkoutBranch(branchName: String)(checkoutDir: File) = {
+    val git: Git = Git.open(checkoutDir.toJava)
 
+    git.checkout()
+      .setCreateBranch(false)
+      .setName(branchName)
+      .call()
+  }
+
+  private def addFileAndCommit(branchName: String, newFile: String, content: String)(checkoutDir: File) = {
+    val git: Git = Git.open(checkoutDir.toJava)
+
+    git.checkout()
+      .setCreateBranch(true)
+      .setName(branchName)
+      .call()
+
+    checkoutDir.createChild(newFile).overwrite(content)
+    val gitAdd = git.add()
+    Set(newFile).foreach(gitAdd.addFilepattern)
+    gitAdd.call()
+
+    git.commit()
+      .setMessage("bla")
+      .setAuthor("bla", "bla@foo.nb")
+      .call()
+  }
+
+  private def addFile(branchName: String, fileName: String, content: String)(checkoutDir: File) = {
+    val git: Git = Git.open(checkoutDir.toJava)
+    git.checkout()
+      .setName(branchName)
+      .call()
+
+    checkoutDir.createChild(fileName).overwrite(content)
+    val gitNewAdd = git.add()
+
+    Set(fileName).foreach(gitNewAdd.addFilepattern)
+    gitNewAdd.call()
+  }
 }

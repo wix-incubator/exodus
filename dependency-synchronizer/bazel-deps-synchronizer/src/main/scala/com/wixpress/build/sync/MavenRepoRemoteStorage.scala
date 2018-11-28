@@ -1,13 +1,10 @@
 package com.wixpress.build.sync
 
-import java.io.{PrintWriter, StringWriter}
-
 import com.wixpress.build.maven.{Coordinates, DependencyNode}
-import com.wixpress.build.sync.ArtifactoryRemoteStorage.Sha256
+import com.wixpress.build.sync.ArtifactoryRemoteStorage.{Sha256, _}
 import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
 import scalaj.http.{Http, HttpResponse}
-import ArtifactoryRemoteStorage._
 
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
