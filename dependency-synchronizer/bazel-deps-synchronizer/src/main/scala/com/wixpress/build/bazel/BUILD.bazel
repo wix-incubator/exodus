@@ -20,7 +20,7 @@ scala_library(
         "@com_jcraft_jsch",
         "@junit_junit",
         "@org_eclipse_jgit_org_eclipse_jgit",
-        "@org_slf4j_slf4j_api//:org_slf4j_slf4j_api",
+        "@org_slf4j_slf4j_api",
     ],
 )
 
