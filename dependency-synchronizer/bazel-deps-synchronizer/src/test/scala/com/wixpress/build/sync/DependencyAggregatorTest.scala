@@ -16,7 +16,16 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val localNodes = Set(aRootDependencyNode(localDependency.copy(exclusions = Set(Exclusion(transitiveDependency)))))
       val userAddedDeps = Set(localDependency)
       val userAddedNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
+    }
+
+    "include user-added node even though it is excluded by local node" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA)
+      val excludedDependency: Dependency = asCompileDependency(artifactB)
+      val localNodes = Set(aRootDependencyNode(localDependency.copy(exclusions = Set(Exclusion(excludedDependency)))))
+      val userAddedDeps = Set(excludedDependency)
+      val userAddedNodes = Set(aRootDependencyNode(excludedDependency))
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(excludedDependency))
     }
 
     "update to user-added versions for both base dependency and transitive dependencies" in new ctx {
@@ -28,7 +37,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(DependencyNode(addedDependency, Set(addedTransitiveDependency)), aRootDependencyNode(addedTransitiveDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
     // add test for not touching transitive nodes that are not part of user-added and also transtivie nodes that are identical!!!
@@ -40,7 +49,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(aRootDependencyNode(addedDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
     "keep local unique transitive deps on added base depdendency with same version" in new ctx {
@@ -51,7 +60,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(aRootDependencyNode(addedDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
     }
 
     "keep identical transitive deps" in new ctx {
@@ -62,7 +71,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(DependencyNode(addedDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
     // TODO can be removed in phase 2
@@ -77,7 +86,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(localDependency)
       val userAddedNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
     }
 
     // TODO can be removed in phase 2
@@ -90,7 +99,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(localDependency)
       val userAddedNodes = Set(aRootDependencyNode(localDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
 
     }
 
@@ -104,7 +113,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(warDependency, localDependency)
       val userAddedNodes = Set(DependencyNode(warDependency, Set(localDependency)), aRootDependencyNode(localDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
     }
 
     "filter our transitive dep with 'war' packaging" in new ctx {
@@ -117,7 +126,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(localDependency, warDependency)
       val userAddedNodes = Set(DependencyNode(localDependency, Set(warDependency)), aRootDependencyNode(warDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
     }
 
     "filter our direct dep with 'WAR' packaging" in new ctx {
@@ -128,7 +137,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(warDependency)
       val userAddedNodes = Set(aRootDependencyNode(warDependency))
 
-      aggregator.aggregateLocalAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
     }
   }
 

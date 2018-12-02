@@ -30,7 +30,7 @@ class UserAddedDepsDiffSynchronizer(bazelRepo: BazelRepository, bazelRepoWithMan
     val managedNodes = readManagedNodes()
     val localNodes = readLocalDependencyNodes(externalDependencyNodes = managedNodes)
     val addedNodes = resolveUserAddedDependencyNodes(userAddedDependencies)
-    val aggregateNodes = aggregator.aggregateLocalAndUserAddedNodes(localNodes = localNodes, userAddedDependencies, addedNodes = addedNodes)
+    val aggregateNodes = aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes = localNodes, userAddedDependencies, addedNodes = addedNodes)
     val divergentLocalNodes = calculateDivergentLocalNodes(managedNodes, aggregateNodes)
 
     DiffResult(divergentLocalNodes, localNodes, managedNodes)
@@ -71,12 +71,12 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
   private val log = LoggerFactory.getLogger(getClass)
 
 
-  def aggregateLocalAndUserAddedNodes(localNodes: Set[DependencyNode], addedDeps: Set[Dependency], addedNodes: Set[DependencyNode]): Set[DependencyNode] = {
+  def collectAffectedLocalNodesAndUserAddedNodes(localNodes: Set[DependencyNode], addedDeps: Set[Dependency], addedNodes: Set[DependencyNode]): Set[DependencyNode] = {
     log.info("combine userAddedDependencies with local dependencies...")
 
     val nonWarNodes = filterNotWarDeps(addedNodes)
     val externalAddedNodes = filterNotLocalSourceModules(nonWarNodes)
-    val newAddedNodesThatAreNotExcludedLocally = newNodesWithLocalExclusionsFilteredOut(externalAddedNodes, localNodes)
+    val newAddedNodesThatAreNotExcludedLocally = newNodesWithLocalExclusionsFilteredOut(externalAddedNodes, localNodes, addedDeps)
     val updatedLocalNodes = updateLocalNodesWithAddedDepsVersions(externalAddedNodes, localNodes, addedDeps)
 
     updatedLocalNodes ++ newAddedNodesThatAreNotExcludedLocally
@@ -97,12 +97,14 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
     new GlobalExclusionFilterer(mavenModules.map(_.coordinates)).filterGlobalsFromDependencyNodes(addedNodes)
   }
 
-  private def newNodesWithLocalExclusionsFilteredOut(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode]) = {
+  private def newNodesWithLocalExclusionsFilteredOut(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode], addedDeps: Set[Dependency]) = {
     val newNodes = addedNodes.filterNot(n => {
       localNodes.exists(l => l.baseDependency.coordinates.equalsIgnoringVersion(n.baseDependency.coordinates))
     })
     val newNonExcludedNodes = newNodes.filterNot(n => {
-      localNodes.exists(l => l.baseDependency.exclusions.exists(e => e.equalsCoordinates(n.baseDependency.coordinates)))
+      localNodes.exists(l =>
+        l.baseDependency.exclusions.exists(e => e.equalsCoordinates(n.baseDependency.coordinates)) &&
+          !addedDeps.contains(n.baseDependency))
     })
     log.debug(s"newNonExcludedNodes count: ${newNonExcludedNodes.size}")
     newNonExcludedNodes
