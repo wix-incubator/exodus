@@ -31,7 +31,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
       def labelOfJarArtifact(dependency: Dependency) = {
         val coordinates = dependency.coordinates
-        s"@${coordinates.workspaceRuleName}//jar"
+        s"@${coordinates.workspaceRuleName}"
       }
 
       localWorkspace.overwriteThirdPartyReposFile("")

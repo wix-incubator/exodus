@@ -86,7 +86,7 @@ object ImportExternalRule {
     )
   }
 
-  def jarLabelBy(coordinates: Coordinates): String = s"@${coordinates.workspaceRuleName}//jar"
+  def jarLabelBy(coordinates: Coordinates): String = s"@${coordinates.workspaceRuleName}"
 
   def importExternalFilePathBy(coordinates: Coordinates): Option[String] = {
     coordinates.packaging match {

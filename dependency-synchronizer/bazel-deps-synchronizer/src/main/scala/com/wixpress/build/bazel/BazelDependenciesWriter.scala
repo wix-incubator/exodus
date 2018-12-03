@@ -27,7 +27,8 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
   }
 
   private def writeThirdPartyFolderContent(dependencyNodes: Set[DependencyNode]): Unit = {
-    val groupedTargets = dependencyNodes.flatMap(maybeRuleBy).groupBy(_.ruleTargetLocator).values
+    val targetsToPersist = dependencyNodes.flatMap(maybeRuleBy)
+    val groupedTargets = targetsToPersist.groupBy(_.ruleTargetLocator).values
     groupedTargets.foreach { targetsGroup =>
       val sortedTargets = targetsGroup.toSeq.sortBy(_.rule.name)
       sortedTargets.foreach(overwriteThirdPartyFolderFiles)

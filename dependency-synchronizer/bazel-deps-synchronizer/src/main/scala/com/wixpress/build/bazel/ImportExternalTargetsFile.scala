@@ -73,7 +73,9 @@ object ImportExternalTargetsFileReader {
   }
 
   def parseImportExternalDep(text: String) = {
-    ImportExternalDepFilter.findFirstMatchIn(text).map(_.group("ruleName"))
+    val maybeMatch = ImportExternalDepDeprecateFilter.findFirstMatchIn(text)
+    val stillMaybeMatch = maybeMatch.fold(ImportExternalDepFilter.findFirstMatchIn(text))(m => Option(m))
+    stillMaybeMatch.map(_.group("ruleName"))
   }
 
   def regexOfImportExternalRuleWithNameMatching(pattern: String) = {
@@ -91,7 +93,8 @@ object ImportExternalTargetsFileReader {
   val StringsGroup = "Strings"
   val listOfStringsFilter = """"(.+?)"""".r(StringsGroup)
   val Sha256Filter = """(?s)jar_sha256\s*?=\s*?"(.+?)"""".r("checksum")
-  val ImportExternalDepFilter = """@(.*?)//.*""".r("ruleName")
+  val ImportExternalDepDeprecateFilter = """@(.*?)//.*""".r("ruleName")
+  val ImportExternalDepFilter = """@(.*)""".r("ruleName")
 
   val SrcSha256Filter = """(?s)srcjar_sha256\s*?=\s*?"(.+?)"""".r("src_checksum")
 }
