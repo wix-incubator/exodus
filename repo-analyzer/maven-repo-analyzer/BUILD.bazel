@@ -8,9 +8,9 @@ scala_library(
         "//migrator/bazel-migrator-model:main_dependencies",
         "//models/maven-bazel-model-translation:main_dependencies",
         "//models/maven-model:main_dependencies",
-        "@org_apache_maven_maven_model//jar",
-        "@org_codehaus_plexus_plexus_utils//jar",
-        "@org_scala_lang_scala_library//jar",
+        "@org_apache_maven_maven_model",
+        "@org_codehaus_plexus_plexus_utils",
+        "@org_scala_lang_scala_library",
     ],
 )
 
@@ -21,11 +21,11 @@ scala_library(
         "main_dependencies",
         "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
         "//migrator/bazel-migrator-model-testkit:main_dependencies",
-        "@com_github_marschall_memoryfilesystem//jar",
-        "@org_specs2_specs2_common_2_12//jar",
-        "@org_specs2_specs2_core_2_12//jar",
-        "@org_specs2_specs2_junit_2_12//jar",
-        "@org_specs2_specs2_matcher_2_12//jar",
+        "@com_github_marschall_memoryfilesystem",
+        "@org_specs2_specs2_common_2_12",
+        "@org_specs2_specs2_core_2_12",
+        "@org_specs2_specs2_junit_2_12",
+        "@org_specs2_specs2_matcher_2_12",
     ],
 )
 

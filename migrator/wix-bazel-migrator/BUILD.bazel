@@ -12,14 +12,14 @@ scala_library(
         "//migrator/codota-thin-client:main_dependencies",
         "//repo-analyzer/maven-repo-analyzer:main_dependencies",
         "//wix-bazel-repositories/bazel-repositories-core:main_dependencies",
-        "@ch_qos_logback_logback_classic//jar",
-        "@com_codota_codota_sdk_java//jar",
-        "@com_fasterxml_jackson_core_jackson_annotations//jar",
-        "@com_fasterxml_jackson_core_jackson_databind//jar",
-        "@com_fasterxml_jackson_module_jackson_module_scala_2_12//jar",
-        "@com_github_scopt_scopt_2_12//jar",
-        "@org_scala_lang_scala_library//jar",
-        "@org_scalaj_scalaj_http_2_12//jar",
+        "@ch_qos_logback_logback_classic",
+        "@com_codota_codota_sdk_java",
+        "@com_fasterxml_jackson_core_jackson_annotations",
+        "@com_fasterxml_jackson_core_jackson_databind",
+        "@com_fasterxml_jackson_module_jackson_module_scala_2_12",
+        "@com_github_scopt_scopt_2_12",
+        "@org_scala_lang_scala_library",
+        "@org_scalaj_scalaj_http_2_12",
     ],
 )
 
@@ -32,8 +32,8 @@ scala_library(
         "//migrator/bazel-migrator-model-testkit:main_dependencies",
         "//test-utils:main_dependencies",
         "//third_party/com/wixpress/hoopoe:hoopoe_specs2",
-        "@com_gitblit_gitblit//jar",
-        "@com_github_marschall_memoryfilesystem//jar",
+        "@com_gitblit_gitblit",
+        "@com_github_marschall_memoryfilesystem",
     ],
 )
 

@@ -9,15 +9,15 @@ scala_library(
         "//models/maven-bazel-model-translation:main_dependencies",
         "//models/maven-model:main_dependencies",
         "//wix-bazel-repositories/bazel-repositories-core:main_dependencies",
-        "@com_fasterxml_jackson_core_jackson_core//jar",
-        "@com_fasterxml_jackson_core_jackson_databind//jar",
-        "@com_fasterxml_jackson_module_jackson_module_scala_2_12//jar",
-        "@com_github_pathikrit_better_files_2_12//jar",
-        "@org_apache_maven_maven_artifact//jar",
-        "@org_codehaus_plexus_plexus_container_default//jar",
-        "@org_eclipse_jgit_org_eclipse_jgit//jar",
-        "@org_scala_lang_scala_library//jar",
-        "@org_scalaj_scalaj_http_2_12//jar",
+        "@com_fasterxml_jackson_core_jackson_core",
+        "@com_fasterxml_jackson_core_jackson_databind",
+        "@com_fasterxml_jackson_module_jackson_module_scala_2_12",
+        "@com_github_pathikrit_better_files_2_12",
+        "@org_apache_maven_maven_artifact",
+        "@org_codehaus_plexus_plexus_container_default",
+        "@org_eclipse_jgit_org_eclipse_jgit",
+        "@org_scala_lang_scala_library",
+        "@org_scalaj_scalaj_http_2_12",
     ],
 )
 
@@ -31,8 +31,8 @@ scala_library(
     deps = [
         "main_dependencies",
         "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
-        "@com_gitblit_gitblit//jar",
-        "@com_github_tomakehurst_wiremock//jar",
+        "@com_gitblit_gitblit",
+        "@com_github_tomakehurst_wiremock",
     ],
 )
 
