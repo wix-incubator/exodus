@@ -28,46 +28,67 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(excludedDependency))
     }
 
-    "update to user-added versions for both base dependency and transitive dependencies" in new ctx {
-      val localDependency: Dependency = asCompileDependency(artifactA)
-      val transitiveDependency = asCompileDependency(someCoordinates("transitive"))
-      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)))
-      val addedDependency = localDependency.withVersion("new-version")
-      val addedTransitiveDependency = transitiveDependency.withVersion("new-version")
+    "update to user-added versions for both base dependency and transitive dependencies if base dep has higher version" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA.withVersion("1.0.0"))
+      val transitiveDependency = asCompileDependency(someCoordinates("transitive").withVersion("1.0.0"))
+      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
+      val addedDependency = localDependency.withVersion("2.0.0")
+      val addedTransitiveDependency = transitiveDependency.withVersion("2.0.0")
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(DependencyNode(addedDependency, Set(addedTransitiveDependency)), aRootDependencyNode(addedTransitiveDependency))
 
       aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
-    // add test for not touching transitive nodes that are not part of user-added and also transtivie nodes that are identical!!!
-    "remove added unique transitive deps on added base depndency with new version" in new ctx {
-      val localDependency: Dependency = asCompileDependency(artifactA)
+    "do not update to user-added versions if base dep has lower version" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA.withVersion("2.0.1"))
+      val transitiveDependency = asCompileDependency(someCoordinates("transitive").withVersion("2.0.1"))
+      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
+      val addedDependency = localDependency.withVersion("2.0.0")
+      val addedTransitiveDependency = transitiveDependency.withVersion("2.0.0")
+      val userAddedDeps = Set(addedDependency)
+      val userAddedNodes = Set(DependencyNode(addedDependency, Set(addedTransitiveDependency)), aRootDependencyNode(addedTransitiveDependency))
+
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
+    }
+
+    "do not update to user-added versions if dep have the same version" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA.withVersion("2.0.0"))
+      val transitiveDependency = asCompileDependency(someCoordinates("transitive").withVersion("2.0.1"))
+      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
+      val addedTransitiveDependency = transitiveDependency.withVersion("2.0.1")
+
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, Set(localDependency), localNodes) mustEqual localNodes
+    }
+
+    "remove local unique transitive deps on added base depndency with new version" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA).withVersion("1.0.0")
       val transitiveDependency = asCompileDependency(someCoordinates("transitive"))
-      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)))
-      val addedDependency = localDependency.withVersion("new-version")
+      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
+      val addedDependency = localDependency.withVersion("1.1.0")
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(aRootDependencyNode(addedDependency))
 
       aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
-    "keep local unique transitive deps on added base depdendency with same version" in new ctx {
+    "keep local unique transitive deps on added base depdendency with same version while not touching transitive root node" in new ctx {
       val localDependency: Dependency = asCompileDependency(artifactA)
       val transitiveDependency = asCompileDependency(someCoordinates("transitive"))
-      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)))
+      val localNode = DependencyNode(localDependency, Set(transitiveDependency))
+      val localNodes = Set(localNode, aRootDependencyNode(transitiveDependency))
       val addedDependency = localDependency
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(aRootDependencyNode(addedDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(localNode)
     }
 
     "keep identical transitive deps" in new ctx {
       val localDependency: Dependency = asCompileDependency(artifactA)
-      val transitiveDependency = asCompileDependency(someCoordinates("transitive"))
-      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)))
-      val addedDependency = localDependency.withVersion("new-version")
+      val transitiveDependency = asCompileDependency(someCoordinates("transitive").withVersion("2.0.0-SNAPSHOT"))
+      val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
+      val addedDependency = localDependency.withVersion("2.0.1-SNAPSHOT")
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(DependencyNode(addedDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
 

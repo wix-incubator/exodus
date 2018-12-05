@@ -26,6 +26,10 @@ case class Coordinates(groupId: String,
   def isProtoArtifact: Boolean = {
     packaging.isArchive && classifier.contains("proto")
   }
+
+  def withVersion(version: String): Coordinates = {
+    this.copy(version = version)
+  }
 }
 
 object Coordinates {

@@ -3,6 +3,7 @@ package com.wixpress.build.sync
 import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository}
 import com.wixpress.build.maven._
+import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
 
 class UserAddedDepsDiffSynchronizer(bazelRepo: BazelRepository, bazelRepoWithManagedDependencies: BazelRepository,
@@ -111,18 +112,27 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
   }
 
   private def updateLocalNodesWithAddedDepsVersions(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode], addedDeps: Set[Dependency]) = {
-    def updateBaseDependency(localNode: DependencyNode, addedNodes: DependencyNode) = {
-        localNode.baseDependency.withVersion(addedNodes.baseDependency.version)
+    def resolveHighestVersion(node: Dependency*) = {
+      node.toSet.maxBy{d: Dependency => new ComparableVersion(d.coordinates.version)}
     }
 
-    def updateDependencies(localNode: DependencyNode, addedNode: DependencyNode) = {
+    def updateBaseDependency(localNode: DependencyNode, addedNode: DependencyNode, depWithHighestVersion: Dependency) = {
+      if (depWithHighestVersion == addedNode.baseDependency)
+        localNode.baseDependency.withVersion(addedNode.baseDependency.version)
+      else
+        localNode.baseDependency
+    }
+
+    def updateDependencies(localNode: DependencyNode, addedNode: DependencyNode, depWithHighestVersion: Dependency) = {
       val addedIncludedDependencies = addedNode.dependencies.filterNot(node => {
         localNode.baseDependency.exclusions.exists(e => e.equalsCoordinates(node.coordinates))
       })
 
-      if (localNode.baseDependency.coordinates == addedNode.baseDependency.coordinates)
+
+      if (localNode.baseDependency.coordinates == addedNode.baseDependency.coordinates ||
+        depWithHighestVersion == localNode.baseDependency)
         localNode.dependencies
-      else{
+      else {
         addedIncludedDependencies
       }
     }
@@ -130,9 +140,11 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
     localNodes.flatMap(l => {
       val nodeToAdd = addedNodes.find(n => n.baseDependency.coordinates.equalsIgnoringVersion(l.baseDependency.coordinates))
       nodeToAdd.map(n => {
+        val depWithHighestVersion: Dependency = resolveHighestVersion(l.baseDependency, n.baseDependency)
+
         l.copy(
-          baseDependency = updateBaseDependency(l, n),
-          dependencies = updateDependencies(l, n))
+          baseDependency = updateBaseDependency(l, n, depWithHighestVersion),
+          dependencies = updateDependencies(l, n, depWithHighestVersion))
       })
     })
   }
