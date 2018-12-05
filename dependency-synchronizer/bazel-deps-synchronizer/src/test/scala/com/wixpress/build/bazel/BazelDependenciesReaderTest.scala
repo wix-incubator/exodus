@@ -128,6 +128,24 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
         ))
     }
 
+    "a dependency node without internal source dependency that is not referenced with local workspace_name" in new emptyWorkspaceNameCtx {
+      localWorkspace.overwriteThirdPartyImportTargetsFile(artifact.groupIdForBazel,
+        s"""
+           |import_external(
+           |  name = "${artifact.workspaceRuleName}",
+           |  artifact = "${artifact.serialized}",
+           |  runtime_deps = [
+           |          "@//path/to:target",
+           |      ],
+           |)""".stripMargin)
+
+      val dependencyNodes: Set[DependencyNode] = reader.allDependenciesAsMavenDependencyNodes()
+      dependencyNodes must containTheSameElementsAs(
+        Seq(
+          aRootDependencyNode(asCompileDependency(artifact))
+        ))
+    }
+
     "a dependency node with 1 transitive dependency from given external set" in new emptyWorkspaceNameCtx {
       localWorkspace.overwriteThirdPartyImportTargetsFile(artifact.groupIdForBazel,
         ImportExternalRule.of(artifact,

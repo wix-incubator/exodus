@@ -41,9 +41,14 @@ case class ImportExternalTargetsFilePartialDependencyNodesReader(content: String
   }
 
   object LocalSourceDependencyLabel {
-    def unapply(label: String): Boolean = LocalSourceDepFilter(localWorkspaceName).findFirstMatchIn(label).isDefined
+    def unapply(label: String): Boolean = {
+      val maybeMatch = FullyQualifiedLocalSourceDepFilter(localWorkspaceName).findFirstMatchIn(label)
+      val stillMaybeMatch = maybeMatch.fold(LocalSourceDepFilter.findFirstMatchIn(label))(m => Option(m))
+      stillMaybeMatch.isDefined
+    }
 
-    private def LocalSourceDepFilter(localWorkspaceName: String) = ("""@""" + localWorkspaceName + """//(.*)""").r
+    private def FullyQualifiedLocalSourceDepFilter(localWorkspaceName: String) = ("""@""" + localWorkspaceName + """//(.*)""").r
+    private def LocalSourceDepFilter = """@//(.*)""".r
   }
 }
 
