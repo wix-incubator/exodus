@@ -17,9 +17,9 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
         |# bazelrc a standalone file that can be copied more easily.
         |build:rbe_based --host_javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
         |build:rbe_based --javabase=@core_server_build_tools//rbe-toolchains/jdk:jdk8
-        |build --crosstool_top=@bazel_toolchains//configs/ubuntu16_04_clang/1.1/bazel_0.16.1/default:toolchain
+        |build --crosstool_top=@bazel_toolchains//configs/ubuntu16_04_clang/1.1/bazel_0.20.0/default:toolchain
         |build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
-        |build --extra_toolchains=@bazel_toolchains//configs/ubuntu16_04_clang/1.1/bazel_0.16.1/cpp:cc-toolchain-clang-x86_64-default
+        |build --extra_toolchains=@bazel_toolchains//configs/ubuntu16_04_clang/1.1/bazel_0.20.0/cpp:cc-toolchain-clang-x86_64-default
         |build --extra_execution_platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
         |build --host_platform=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
         |build --platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178

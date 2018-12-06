@@ -24,8 +24,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |)
          |
          |# Required configuration for remote build execution
-         |bazel_toolchains_version="719f8035a20997289727e16693acdebc8e918e28"
-         |bazel_toolchains_sha256="f08758b646beea3b37dc9e07d63020cecd5f9d29f42de1cd60e9325e047c7103"
+         |bazel_toolchains_version="31b5dc8c4e9c7fd3f5f4d04c6714f2ce87b126c1"
+         |bazel_toolchains_sha256="07a81ee03f5feae354c9f98c884e8e886914856fb2b6a63cba4619ef10aaaf0b"
          |http_archive(
          |             name = "bazel_toolchains",
          |             urls = [
@@ -148,7 +148,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
 
   private def loadGrpcRepos(workspaceName: String) = {
       val loadRepoStatement = if (workspaceName != serverInfraWSName && !interRepoSourceDependency)
-        s"""|wix_grpc_version="17456d4325fbea56b152aa5aafc510cf8a2989fc" # update this as needed
+        s"""|wix_grpc_version="8119c16428d8280292aca234aa44b00ca07fdb24" # update this as needed
             |
             |git_repository(
             |             #name is server_infra to align with server-infra repo, see https://github.com/wix-platform/bazel_proto_poc/pull/16 for more details
