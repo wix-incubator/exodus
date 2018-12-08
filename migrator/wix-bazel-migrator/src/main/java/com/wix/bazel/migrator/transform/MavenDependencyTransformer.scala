@@ -13,12 +13,20 @@ class MavenDependencyTransformer(repoModules: Set[SourceModule],
                                  externalPackageLocator: ExternalSourceModuleRegistry,
                                  archiveOverrideCoordinates: MavenArchiveTargetsOverrides) {
 
-  def toBazelDependency(dependency: maven.Dependency): Option[String] = {
+  type DependencyTransformer = (maven.Dependency) => String
+
+  def toBazelDependency(dependency: maven.Dependency): Option[String] =
+    toBazelDependency(dependency, asThirdPartyDependency)
+
+  def toLinkableBazelDependency(dependency: maven.Dependency): Option[String] =
+    toBazelDependency(dependency, asLinkableThirdPartyDependency)
+
+  private def toBazelDependency(dependency: maven.Dependency, transformThirdParty: DependencyTransformer): Option[String] = {
     if (ignoredDependency(dependency.coordinates)) None else Some(
       findInRepoModules(dependency.coordinates)
         .map(asRepoSourceDependency)
         .orElse(asExternalTargetDependency(dependency.coordinates))
-        .getOrElse(asThirdPartyDependency(dependency))
+        .getOrElse(transformThirdParty(dependency))
     )
   }
 
@@ -27,33 +35,37 @@ class MavenDependencyTransformer(repoModules: Set[SourceModule],
 
   private def ignoredDependency(coordinates: Coordinates) = coordinates.isProtoArtifact
 
-  private def findInRepoModules(coordinates: Coordinates) = {
-    repoModules
+  private def findInRepoModules(coordinates: Coordinates) = repoModules
       .find(_.coordinates.equalsOnGroupIdAndArtifactId(coordinates))
-  }
 
   private def asRepoSourceDependency(sourceModule: SourceModule): String = {
     val packageName = sourceModule.relativePathFromMonoRepoRoot
     s"//$packageName:$ProductionDepsTargetName"
   }
 
+  private def asThirdPartyDependency(dependency: maven.Dependency): String =
+    asThirdPartyDependency(dependency, asThirdPartyJarDependency)
 
-  private def asThirdPartyDependency(dependency: maven.Dependency): String = {
+  private def asLinkableThirdPartyDependency(dependency: maven.Dependency): String =
+    asThirdPartyDependency(dependency, asThirdPartyLinkableDependency)
+
+  private def asThirdPartyDependency(dependency: maven.Dependency, importExternalDepLabel: DependencyTransformer): String = {
     dependency.coordinates.packaging match {
-      case Packaging("jar") => asThirdPartyJarDependency(dependency)
+      case Packaging("jar") => importExternalDepLabel(dependency)
       case Packaging("pom") => asThirdPartyPomDependency(dependency)
       case ArchivePackaging() => asExternalRepoArchive(dependency)
       case _ => throw new RuntimeException("unsupported dependency packaging on " + dependency.coordinates.serialized)
     }
   }
 
-  private def asThirdPartyJarDependency(dependency: maven.Dependency): String = {
+  private def asThirdPartyJarDependency(dependency: maven.Dependency): String =
     ImportExternalRule.jarLabelBy(dependency.coordinates)
-  }
 
-  private def asThirdPartyPomDependency(dependency: maven.Dependency): String = {
+  private def asThirdPartyLinkableDependency(dependency: maven.Dependency): String =
+    ImportExternalRule.linkableLabelBy(dependency.coordinates)
+
+  private def asThirdPartyPomDependency(dependency: maven.Dependency): String =
     LibraryRule.nonJarLabelBy(dependency.coordinates)
-  }
 
   private def asExternalRepoArchive(dependency: maven.Dependency): String = {
     val overrideCoordinates = archiveOverrideCoordinates.unpackedOverridesToArchive

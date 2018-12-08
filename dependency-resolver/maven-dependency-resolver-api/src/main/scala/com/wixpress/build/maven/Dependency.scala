@@ -11,6 +11,8 @@ case class Dependency(coordinates: Coordinates, scope: MavenScope, exclusions: S
   def withScope(scope:MavenScope) : Dependency = this.copy(scope = scope)
 
   def equalsOnCoordinatesIgnoringVersion(dependency: Dependency): Boolean = dependency.coordinates.equalsIgnoringVersion(coordinates)
+
+  def shortSerializedForm() = s"${coordinates.groupId}:${coordinates.artifactId}"
 }
 
 object Dependency {

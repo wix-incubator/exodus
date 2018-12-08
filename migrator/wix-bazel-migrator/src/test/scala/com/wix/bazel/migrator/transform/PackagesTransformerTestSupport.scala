@@ -40,7 +40,7 @@ trait PackagesTransformerTestSupport {
     originatingSourceModule = forModule
   )
 
-  def packageWith(existingTarget: Target, withRelativePath: String, originatingSourceModule:SourceModule): model.Package = {
+  def packageWith(existingTarget: Target, originatingSourceModule:SourceModule): model.Package = {
     model.Package(
       relativePathFromMonoRepoRoot = originatingSourceModule.relativePathFromMonoRepoRoot,
       targets = Set(existingTarget),
@@ -77,7 +77,8 @@ trait PackagesTransformerTestSupport {
   implicit class DependencyExtended(dependency: maven.Dependency) {
     private val coordinates = dependency.coordinates
 
-    def asThirdPartyDependency: String = s"${ImportExternalRule.jarLabelBy(coordinates)}"
+    def asThirdPartyDependency: String = ImportExternalRule.jarLabelBy(coordinates)
+    def asLinkableThirdPartyDependency: String = ImportExternalRule.linkableLabelBy(coordinates)
   }
 
   implicit class SourceModuleExtended(module: SourceModule) {

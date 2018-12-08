@@ -14,12 +14,13 @@ class RuleResolverTest extends SpecificationWithJUnit {
 
     "return import external rule in case given regular jar coordinates" in {
 
-      ruleResolver.`for`(artifact, runtimeDependencies, compileDependencies, checksum = someChecksum).rule mustEqual ImportExternalRule(
+      ruleResolver.`for`(artifact, runtimeDependencies, compileDependencies, checksum = someChecksum, neverlink = true).rule mustEqual ImportExternalRule(
         name = artifact.workspaceRuleName,
         artifact = artifact.serialized,
         runtimeDeps = runtimeDependencies.map(ImportExternalRule.jarLabelBy),
         compileTimeDeps = compileDependencies.map(ImportExternalRule.jarLabelBy),
-        checksum = someChecksum
+        checksum = someChecksum,
+        neverlink = true
       )
     }
 

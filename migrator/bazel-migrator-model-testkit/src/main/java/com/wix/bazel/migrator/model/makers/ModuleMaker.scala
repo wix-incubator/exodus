@@ -40,7 +40,9 @@ object ModuleMaker {
     def withDependencies(dependencies: Dependency*): ModuleDependencies = withDependencies(dependencies.toIterable)
 
     def withDependencies(dependencies: Iterable[Dependency]): ModuleDependencies =
-      moduleDependencies.copy(directDependencies = moduleDependencies.directDependencies ++ dependencies)
+      moduleDependencies.copy(
+        directDependencies = moduleDependencies.directDependencies ++ dependencies,
+        allDependencies = moduleDependencies.allDependencies ++ dependencies)
 
   }
 

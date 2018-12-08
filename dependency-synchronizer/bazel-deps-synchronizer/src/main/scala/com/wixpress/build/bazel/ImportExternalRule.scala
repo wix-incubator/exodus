@@ -12,11 +12,12 @@ case class ImportExternalRule(name: String,
                               exclusions: Set[Exclusion] = Set.empty,
                               testOnly: Boolean = false,
                               checksum: Option[String] = None,
-                              srcChecksum: Option[String] = None) extends RuleWithDeps {
+                              srcChecksum: Option[String] = None,
+                              neverlink: Boolean = false) extends RuleWithDeps {
   def serialized: String = {
     s"""  $RuleType(
        |      name = "$name",
-       |      $serializedArtifact$serializedTestOnly$serializedChecksum$serializedSrcChecksum$serializedAttributes$serializedExclusions
+       |      $serializedArtifact$serializedTestOnly$serializedChecksum$serializedSrcChecksum$serializedAttributes$serializedExclusions$serializedNeverlink
        |  )""".stripMargin
   }
 
@@ -39,6 +40,11 @@ case class ImportExternalRule(name: String,
     toListEntry("exports", exports) +
       toListEntry("deps", compileTimeDeps) +
       toListEntry("runtime_deps", runtimeDeps)
+
+  private def serializedNeverlink =
+    if (neverlink) """
+                    |      neverlink = 1,
+                    |      generated_linkable_rule_name = "linkable",""".stripMargin else ""
 
   private def toListEntry(keyName: String, elements: Iterable[String]): String = {
     if (elements.isEmpty) "" else {
@@ -74,7 +80,8 @@ object ImportExternalRule {
          exclusions: Set[Exclusion] = Set.empty,
          coordinatesToLabel: Coordinates => String,
          checksum: Option[String] = None,
-         srcChecksum: Option[String] = None): ImportExternalRule = {
+         srcChecksum: Option[String] = None,
+         neverlink: Boolean = false): ImportExternalRule = {
     ImportExternalRule(
       name = artifact.workspaceRuleName,
       artifact = artifact.serialized,
@@ -82,11 +89,13 @@ object ImportExternalRule {
       runtimeDeps = runtimeDependencies.map(coordinatesToLabel),
       exclusions = exclusions,
       checksum = checksum,
-      srcChecksum = srcChecksum
+      srcChecksum = srcChecksum,
+      neverlink = neverlink
     )
   }
 
   def jarLabelBy(coordinates: Coordinates): String = s"@${coordinates.workspaceRuleName}"
+  def linkableLabelBy(coordinates: Coordinates): String = s"@${coordinates.workspaceRuleName}//:linkable"
 
   def importExternalFilePathBy(coordinates: Coordinates): Option[String] = {
     coordinates.packaging match {
