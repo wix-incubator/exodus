@@ -1,8 +1,8 @@
 package com.wixpress.build.sync
 
 import com.wixpress.build.BazelWorkspaceDriver._
+import com.wixpress.build.bazel.FakeLocalBazelWorkspace.thirdPartyReposFilePath
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{overrideCoordinatesFrom, runtimeOverrides}
-import com.wixpress.build.bazel.ThirdPartyReposFile._
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._

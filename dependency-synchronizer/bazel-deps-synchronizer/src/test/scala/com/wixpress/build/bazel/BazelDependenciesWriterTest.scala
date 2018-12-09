@@ -1,9 +1,9 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.bazel.FakeLocalBazelWorkspace.thirdPartyReposFilePath
 import com.wixpress.build.bazel.LibraryRule.packageNameBy
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{compileTimeOverrides, overrideCoordinatesFrom, runtimeOverrides}
-import com.wixpress.build.bazel.ThirdPartyReposFile.thirdPartyReposFilePath
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
 import org.specs2.matcher.Matcher

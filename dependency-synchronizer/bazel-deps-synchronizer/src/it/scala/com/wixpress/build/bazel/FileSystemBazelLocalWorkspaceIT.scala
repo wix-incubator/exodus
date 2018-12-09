@@ -3,9 +3,9 @@ package com.wixpress.build.bazel
 import java.io.FileNotFoundException
 
 import better.files._
-import com.wixpress.build.bazel.ImportExternalTargetsFile.thirdPartyImportFilesPathRoot
+import com.wixpress.build.bazel.FakeLocalBazelWorkspace.thirdPartyReposFilePath
+import com.wixpress.build.bazel.FakeLocalBazelWorkspace.thirdPartyImportFilesPathRoot
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.runtimeOverrides
-import com.wixpress.build.bazel.ThirdPartyReposFile.thirdPartyReposFilePath
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 

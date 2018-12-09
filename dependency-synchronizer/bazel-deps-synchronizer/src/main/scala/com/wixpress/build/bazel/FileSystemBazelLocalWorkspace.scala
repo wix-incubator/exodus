@@ -4,7 +4,11 @@ import java.io.FileNotFoundException
 
 import better.files.File
 
-class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
+class FileSystemBazelLocalWorkspace(root: File, paths: ThirdPartyPaths = ManagedThirdPartyPaths()) extends BazelLocalWorkspace {
+
+  val thirdPartyPaths = paths
+
+  import thirdPartyPaths._
 
   val localWorkspaceName: String = {
     val workspaceFileContent = contentIfExistsOf(root / "WORKSPACE")

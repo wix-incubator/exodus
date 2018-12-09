@@ -3,9 +3,7 @@ package com.wixpress.build.sync.e2e
 import better.files.File
 import com.gitblit.utils.JGitUtils
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.bazel.ImportExternalTargetsFile._
-import com.wixpress.build.bazel.ImportExternalTargetsFileReader
-import com.wixpress.build.bazel.ThirdPartyReposFile._
+import com.wixpress.build.bazel.{ImportExternalTargetsFileReader, ManagedThirdPartyPaths, ThirdPartyPaths}
 import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.sync.BazelMavenSynchronizer
 import org.eclipse.jgit.api.Git
@@ -16,7 +14,11 @@ import org.eclipse.jgit.transport.RefSpec
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.util.Try
 
-class FakeRemoteRepository {
+class FakeRemoteRepository(paths: ThirdPartyPaths = ManagedThirdPartyPaths()) {
+
+  val thirdPartyPaths = paths
+
+  import thirdPartyPaths._
 
   def allCommitsForBranch(branchName: String): List[Commit] = remoteRepo.git.log()
     .add(remoteRepo.git.getRepository.resolve(branchName))

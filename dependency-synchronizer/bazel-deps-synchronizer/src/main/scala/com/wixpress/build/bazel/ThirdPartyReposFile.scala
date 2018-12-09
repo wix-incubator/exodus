@@ -9,8 +9,6 @@ import scala.util.matching.Regex.Match
 
 object ThirdPartyReposFile {
 
-  val thirdPartyReposFilePath = "third_party.bzl"
-
   case class Builder(content: String = "") {
     def fromCoordinates(coordinates: Coordinates): Builder = {
       coordinates.packaging match {

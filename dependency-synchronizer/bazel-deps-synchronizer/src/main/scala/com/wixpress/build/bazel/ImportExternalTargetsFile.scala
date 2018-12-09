@@ -9,7 +9,6 @@ import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
 
 object ImportExternalTargetsFile {
-  val thirdPartyImportFilesPathRoot = "third_party"
 
   def serializedLoadImportExternalTargetsFile(fromCoordinates: Coordinates) = {
     val groupId = fromCoordinates.groupIdForBazel

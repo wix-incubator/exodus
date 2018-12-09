@@ -71,7 +71,7 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
 
   private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) = {
     val affectedFiles = dependencyNodes.map(_.baseDependency.coordinates).flatMap(findFilesAccordingToPackagingOf)
-    affectedFiles + ThirdPartyReposFile.thirdPartyReposFilePath
+    affectedFiles + localWorkspace.thirdPartyPaths.thirdPartyReposFilePath
   }
 
   private def findFilesAccordingToPackagingOf(artifact: Coordinates) = {

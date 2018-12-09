@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import better.files.File
-import com.wixpress.build.bazel.ThirdPartyReposFile.thirdPartyReposFilePath
+import com.wixpress.build.bazel.FakeLocalBazelWorkspace.thirdPartyReposFilePath
 import com.wixpress.build.sync.e2e.{Commit, FakeRemoteRepository}
 import org.eclipse.jgit.api.Git
 import org.specs2.mutable.SpecificationWithJUnit
