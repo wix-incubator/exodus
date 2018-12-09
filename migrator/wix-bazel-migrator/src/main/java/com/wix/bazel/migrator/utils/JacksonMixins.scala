@@ -8,5 +8,8 @@ trait TypeAddingMixin
 @JsonIgnoreProperties(Array("archive"))
 trait IgnoringIsArchiveDefMixin
 
+@JsonIgnoreProperties(Array("war"))
+trait IgnoringIsWarDefMixin
+
 @JsonIgnoreProperties(Array("protoArtifact"))
 trait IgnoringIsProtoArtifactDefMixin
