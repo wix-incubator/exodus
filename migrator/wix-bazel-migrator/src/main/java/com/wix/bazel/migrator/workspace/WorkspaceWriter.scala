@@ -148,7 +148,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
 
   private def loadGrpcRepos(workspaceName: String) = {
       val loadRepoStatement = if (workspaceName != serverInfraWSName && !interRepoSourceDependency)
-        s"""|wix_grpc_version="8119c16428d8280292aca234aa44b00ca07fdb24" # update this as needed
+        s"""|wix_grpc_version="259567051cd2385b26a791e0153e4264212961e7" # update this as needed
             |
             |git_repository(
             |             #name is server_infra to align with server-infra repo, see https://github.com/wix-platform/bazel_proto_poc/pull/16 for more details
