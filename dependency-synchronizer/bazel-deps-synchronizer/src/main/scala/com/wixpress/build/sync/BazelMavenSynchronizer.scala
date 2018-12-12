@@ -8,7 +8,7 @@ import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
 
 class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, targetRepository: BazelRepository,
-                             dependenciesRemoteStorage: DependenciesRemoteStorage) {
+                             dependenciesRemoteStorage: DependenciesRemoteStorage, thirdPartyPaths: ThirdPartyPaths = ManagedThirdPartyPaths()) {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, BranchName, targetRepository)
@@ -16,7 +16,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
   def sync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]): Unit = {
     logger.info(s"starting sync with managed dependencies in $dependencyManagementSource")
-    val localCopy = targetRepository.localWorkspace("master")
+    val localCopy = targetRepository.localWorkspace("master", thirdPartyPaths)
 
     val dependenciesToUpdate = newDependencyNodes(dependencyManagementSource, dependencies, localCopy)
     logger.info(s"syncing ${dependenciesToUpdate.size} dependencies")

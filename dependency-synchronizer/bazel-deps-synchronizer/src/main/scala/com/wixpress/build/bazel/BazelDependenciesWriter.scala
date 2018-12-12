@@ -22,8 +22,13 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace) {
       .foldLeft(ThirdPartyReposFile.Builder(existingThirdPartyReposFile))(_.fromCoordinates(_))
 
     val content = thirdPartyReposBuilder.content
-    val nonEmptyContent = Option(content).filter(_.trim.nonEmpty).fold("  pass")(c => c)
+    val contentWithCorrectThirdPartyPath = potentiallyFixThirdPartyPath(content)
+    val nonEmptyContent = Option(contentWithCorrectThirdPartyPath).filter(_.trim.nonEmpty).fold("  pass")(c => c)
     localWorkspace.overwriteThirdPartyReposFile(nonEmptyContent)
+  }
+
+  private def potentiallyFixThirdPartyPath(content: String) = {
+    content.replaceAll(ManagedThirdPartyPaths().thirdPartyImportFilesPathRoot, localWorkspace.thirdPartyPaths.thirdPartyImportFilesPathRoot)
   }
 
   private def writeThirdPartyFolderContent(dependencyNodes: Set[DependencyNode]): Unit = {

@@ -375,6 +375,19 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         )
       }
     }
+
+    "given third party paths are not default" should {
+      "contain the right load statement" in  {
+        val localWorkspace = new FakeLocalBazelWorkspace(paths = FWThirdPartyPaths())
+        def writer = new BazelDependenciesWriter(localWorkspace)
+
+        val dependency: Dependency = aDependency("some-artifact")
+        writer.writeDependencies(aRootDependencyNode(dependency))
+
+        localWorkspace.thirdPartyReposFileContent() must containLoadStatementFor(dependency.coordinates, FWThirdPartyPaths().thirdPartyImportFilesPathRoot)
+
+      }
+    }
   }
 
   private def containsExactlyOneRuleOfName(name: String): Matcher[String] = (countMatches(s"""name += +"$name"""".r, _: String)) ^^ equalTo(1)
@@ -383,11 +396,11 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
   private def countMatches(regex: Regex, string: String) = regex.findAllMatchIn(string).size
 
-  private def containLoadStatementFor(coordinates: Coordinates) = {
+  private def containLoadStatementFor(coordinates: Coordinates, thirdPartyFolderPath: String = "third_party") = {
     val groupId = coordinates.groupIdForBazel
 
     contain(
-      s"""load("//:third_party/${groupId}.bzl", ${groupId}_deps = "dependencies")""") and
+      s"""load("//:$thirdPartyFolderPath/${groupId}.bzl", ${groupId}_deps = "dependencies")""") and
     contain(s"${groupId}_deps()")
   }
 

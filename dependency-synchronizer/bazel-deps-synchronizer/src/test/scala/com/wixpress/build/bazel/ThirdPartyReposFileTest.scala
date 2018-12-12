@@ -127,7 +127,7 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
     val firstJar: Coordinates = coordinates.head
     val restOfJars = coordinates.tail
 
-    val restLoads = restOfJars.map(serializedLoadImportExternalTargetsFile).mkString("\n\n")
+    val restLoads = restOfJars.map(serializedLoadImportExternalTargetsFile(_)).mkString("\n\n")
     val restCalls = restOfJars.map(serializedImportExternalTargetsFileMethodCall).mkString("\n\n")
 
 
