@@ -15,6 +15,12 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
   private val conflictResolution = new HighestVersionConflictResolution()
 
   def sync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]): Unit = {
+    val dependenciesToUpdateWithChecksums = calcDepNodesToSync(dependencyManagementSource, dependencies)
+
+    persist(dependenciesToUpdateWithChecksums)
+  }
+
+  def calcDepNodesToSync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]) = {
     logger.info(s"starting sync with managed dependencies in $dependencyManagementSource")
     val localCopy = targetRepository.localWorkspace("master", thirdPartyPaths)
 
@@ -24,12 +30,9 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     dependenciesToUpdate.headOption.foreach { depNode => logger.info(s"First dep to sync is ${depNode.baseDependency}.") }
 
     if (dependenciesToUpdate.isEmpty)
-      return
-
-    val dependenciesToUpdateWithChecksums = decorateNodesWithChecksum(dependenciesToUpdate)
-
-    val modifiedFiles = new BazelDependenciesWriter(localCopy).writeDependencies(dependenciesToUpdateWithChecksums)
-    persister.persistWithMessage(modifiedFiles, dependenciesToUpdateWithChecksums.map(_.baseDependency.coordinates))
+      Set[DependencyNode]()
+    else
+      decorateNodesWithChecksum(dependenciesToUpdate)
   }
 
   private def newDependencyNodes(dependencyManagementSource: Coordinates,
@@ -48,10 +51,8 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     val newManagedDependencies = dependenciesToSync diff currentDependenciesFromBazel
 
     logger.info(s"calculated ${newManagedDependencies.size} dependencies that need to added/updated")
-    logger.info(s"calculating transitive dep closure for added/updated depedenencies")
-    val nodes = mavenDependencyResolver.dependencyClosureOf(newManagedDependencies, managedDependenciesFromMaven)
-    logger.info(s"Finish calculating.")
-    nodes
+
+    mavenDependencyResolver.dependencyClosureOf(newManagedDependencies, managedDependenciesFromMaven)
   }
 
   private def uniqueDependenciesFrom(possiblyConflictedDependencySet: Set[Dependency]) = {
@@ -63,6 +64,15 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     val nodes = divergentLocalDependencies.map(_.updateChecksumFrom(dependenciesRemoteStorage))
     logger.info("completed fetching sha256 checksums.")
     nodes
+  }
+
+  def persist(dependenciesToUpdate: Set[DependencyNode]) = {
+    if (dependenciesToUpdate.nonEmpty) {
+      val localCopy = targetRepository.localWorkspace("master", thirdPartyPaths)
+
+      val modifiedFiles = new BazelDependenciesWriter(localCopy).writeDependencies(dependenciesToUpdate)
+      persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates))
+    }
   }
 }
 
