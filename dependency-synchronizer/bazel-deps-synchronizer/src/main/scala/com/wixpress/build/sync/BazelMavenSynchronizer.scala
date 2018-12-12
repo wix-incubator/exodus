@@ -48,8 +48,10 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     val newManagedDependencies = dependenciesToSync diff currentDependenciesFromBazel
 
     logger.info(s"calculated ${newManagedDependencies.size} dependencies that need to added/updated")
-
-    mavenDependencyResolver.dependencyClosureOf(newManagedDependencies, managedDependenciesFromMaven)
+    logger.info(s"calculating transitive dep closure for added/updated depedenencies")
+    val nodes = mavenDependencyResolver.dependencyClosureOf(newManagedDependencies, managedDependenciesFromMaven)
+    logger.info(s"Finish calculating.")
+    nodes
   }
 
   private def uniqueDependenciesFrom(possiblyConflictedDependencySet: Set[Dependency]) = {
