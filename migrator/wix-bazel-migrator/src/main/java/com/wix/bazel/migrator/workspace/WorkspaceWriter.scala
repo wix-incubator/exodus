@@ -13,6 +13,10 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
       s"""
          |workspace(name = "$workspaceName")
          |load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+         |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
+         |
+         |load("//:tools/load_2nd_party_repositories.bzl", "load_2nd_party_repositories")
+         |load_2nd_party_repositories()
          |
          |load("@core_server_build_tools//dependencies/rules_scala:rules_scala.bzl", "rules_scala")
          |rules_scala()
@@ -30,13 +34,6 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |    name = "default",
          |    url = "http://repo.dev.wixpress.com/artifactory/libs-snapshots",
          |)
-         |
-         |
-         |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
-         |
-         |load("//:tools/load_2nd_party_repositories.bzl", "load_2nd_party_repositories")
-         |
-         |load_2nd_party_repositories()
          |
          |load("@$frameworkWSName//test-infrastructures-modules/mysql-testkit/downloader:mysql_installer.bzl", "mysql_default_version", "mysql")
          |mysql_default_version()
