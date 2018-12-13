@@ -23,21 +23,21 @@ import better.files.File
       val writer = new WorkspaceWriter(repoRoot, serverInfraWorkspaceName)
       writer.write()
 
-      File(repoRoot.resolve("WORKSPACE")).contentAsString must not(contain("git@github.com:wix-platform/bazel_proto_poc.git"))
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must not(contain("grpc_repository_for_isolated_mode"))
     }
 
     "not load grpc_repositories from bazel_proto_poc in case inter repo dependency flag is on " in new ctx {
       val writer = new WorkspaceWriter(repoRoot, workspaceName, interRepoSourceDependency = true)
       writer.write()
 
-      File(repoRoot.resolve("WORKSPACE")).contentAsString must not(contain("git@github.com:wix-platform/bazel_proto_poc.git"))
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must not(contain("grpc_repository_for_isolated_mode"))
     }
 
     "load grpc_repositories from poc when migrating non server-infra repo" in new ctx {
       val writer = new WorkspaceWriter(repoRoot, workspaceName)
       writer.write()
 
-      File(repoRoot.resolve("WORKSPACE")).contentAsString must contain("git@github.com:wix-platform/bazel_proto_poc.git")
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must contain("grpc_repository_for_isolated_mode")
     }
 
     "load jar_jar repositories from github" in new ctx {

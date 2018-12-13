@@ -13,28 +13,18 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
       s"""
          |workspace(name = "$workspaceName")
          |load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-         |rules_scala_version="4cfa1bae27490d577a036a66d8de08085059cfa1" # update this as needed
-         |rules_scala_version_sha256="99097662c8e07cb452e865847a7ecae072bd6c4460121e5d82fd4cf6d2aba407"
-         |http_archive(
-         |             name = "io_bazel_rules_scala",
-         |             url = "https://github.com/wix/rules_scala/archive/%s.zip"%rules_scala_version,
-         |             type = "zip",
-         |             strip_prefix= "rules_scala-%s" % rules_scala_version,
-         |             sha256 = rules_scala_version_sha256,
-         |)
          |
-         |# Required configuration for remote build execution
-         |bazel_toolchains_version="31b5dc8c4e9c7fd3f5f4d04c6714f2ce87b126c1"
-         |bazel_toolchains_sha256="07a81ee03f5feae354c9f98c884e8e886914856fb2b6a63cba4619ef10aaaf0b"
-         |http_archive(
-         |             name = "bazel_toolchains",
-         |             urls = [
-         |               "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/%s.tar.gz"%bazel_toolchains_version,
-         |               "https://github.com/bazelbuild/bazel-toolchains/archive/%s.tar.gz"%bazel_toolchains_version
-         |             ],
-         |             strip_prefix = "bazel-toolchains-%s"%bazel_toolchains_version,
-         |             sha256 = bazel_toolchains_sha256,
-         |)
+         |load("@core_server_build_tools//dependencies/rules_scala:rules_scala.bzl", "rules_scala")
+         |rules_scala()
+         |
+         |load("@core_server_build_tools//:repositories.bzl", "scala_repositories")
+         |scala_repositories()
+         |
+         |load("@core_server_build_tools//dependencies/rules_docker:rules_docker.bzl", "rules_docker")
+         |rules_docker()
+         |
+         |load("@core_server_build_tools//toolchains:toolchains_defs.bzl","toolchains_repositories")
+         |toolchains_repositories()
          |
          |maven_server(
          |    name = "default",
@@ -48,8 +38,6 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |
          |load_2nd_party_repositories()
          |
-         |load("@core_server_build_tools//:repositories.bzl", "scala_repositories")
-         |scala_repositories()
          |load("@$frameworkWSName//test-infrastructures-modules/mysql-testkit/downloader:mysql_installer.bzl", "mysql_default_version", "mysql")
          |mysql_default_version()
          |mysql("5.6", "latest")
@@ -89,14 +77,6 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |
          |managed_third_party_dependencies()
          |${externalWixReposThirdParties(interRepoSourceDependency)}
-         |rules_docker_version = "9fc05b064de4795832eb1dde9778a1d92adca0dc"
-         |rules_docker_version_sha256 = "8eb9527c4309fa01e78aca2ab04af26aca2b6220d755256a874f6fa6246a81f3"
-         |http_archive(
-         |    name = "io_bazel_rules_docker",
-         |    sha256 = rules_docker_version_sha256,
-         |    strip_prefix= "rules_docker-%s" % rules_docker_version,
-         |    urls = ["https://github.com/or-shachar/rules_docker/archive/%s.tar.gz"%rules_docker_version],
-         |)
          |
          |load("//third_party/docker_images:docker_images.bzl", "docker_images")
          |
@@ -111,6 +91,9 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |load("@com_github_johnynek_bazel_jar_jar//:jar_jar.bzl", "jar_jar_repositories")
          |
          |jar_jar_repositories()
+         |
+         |load("@core_server_build_tools//dependencies/kube:kube_repositories.bzl", "kube_repositories")
+         |kube_repositories()
          |
          |${workspaceSuffixOverride()}
          |
@@ -148,14 +131,10 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
 
   private def loadGrpcRepos(workspaceName: String) = {
       val loadRepoStatement = if (workspaceName != serverInfraWSName && !interRepoSourceDependency)
-        s"""|wix_grpc_version="2bdd2dd85e8c1f9b3e49e2563d70ffaa06a33b74" # update this as needed
+        s"""|
+            |load("@core_server_build_tools//:repositories.bzl", "grpc_repository_for_isolated_mode")
+            |grpc_repository_for_isolated_mode()
             |
-            |git_repository(
-            |             #name is server_infra to align with server-infra repo, see https://github.com/wix-platform/bazel_proto_poc/pull/16 for more details
-            |             name = "server_infra",
-            |             remote = "git@github.com:wix-platform/bazel_proto_poc.git",
-            |             commit = wix_grpc_version
-            |)
             |""".stripMargin
       else
         ""
