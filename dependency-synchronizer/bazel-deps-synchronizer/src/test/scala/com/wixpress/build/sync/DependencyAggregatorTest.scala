@@ -40,6 +40,16 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
+    "update snapshot version" in new ctx {
+      val localDependency: Dependency = asCompileDependency(artifactA.withVersion("1.0.0-SNAPSHOT"))
+      val transitiveDependency = asCompileDependency(someCoordinates("transitive").withVersion("1.0.0-SNAPSHOT"))
+      val localNodes = Set(aRootDependencyNode(localDependency))
+      val userAddedDeps = Set(localDependency)
+      val userAddedNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
+
+      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+    }
+
     "do not update to user-added versions if base dep has lower version" in new ctx {
       val localDependency: Dependency = asCompileDependency(artifactA.withVersion("2.0.1"))
       val transitiveDependency = asCompileDependency(someCoordinates("transitive").withVersion("2.0.1"))

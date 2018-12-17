@@ -129,8 +129,8 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
       })
 
 
-      if (localNode.baseDependency.coordinates == addedNode.baseDependency.coordinates ||
-        depWithHighestVersion == localNode.baseDependency)
+      if ((localNode.baseDependency.coordinates == addedNode.baseDependency.coordinates ||
+        depWithHighestVersion == localNode.baseDependency) && !addedNode.baseDependency.version.contains("-SNAPSHOT"))
         localNode.dependencies
       else {
         addedIncludedDependencies
