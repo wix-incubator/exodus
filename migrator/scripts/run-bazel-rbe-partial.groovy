@@ -52,7 +52,7 @@ pipeline {
                                                     |      --test_tag_filters=-docker \\
                                                     |      --build_event_json_file=build.bep \\
                                                     |      ${env.BAZEL_FLAGS} \\
-                                                    |      ${env.TEST_TARGET_LABEL}
+                                                    |      ${env.TEST_TARGETFrameworkGASynchronizerE2E_LABEL}
                                                     |""".stripMargin())
 
                         }
