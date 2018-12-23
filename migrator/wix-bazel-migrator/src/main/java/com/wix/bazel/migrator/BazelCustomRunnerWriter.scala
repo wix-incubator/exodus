@@ -17,6 +17,7 @@ class BazelCustomRunnerWriter(repoRoot: Path, interRepoSourceDependency: Boolean
     writeToDisk(path, WorkspaceResolveScriptFileName, getResourceContents(WorkspaceResolveScriptFileName))
     writeToDisk(path, LoadExternalRepositoriesScriptFileName, getResourceContents(LoadExternalRepositoriesScriptFileName))
     writeExecutableScript(gitHooksPath, PostCheckoutScriptFileName, getResourceContents(PostCheckoutScriptFileName))
+    writeExecutableScript(path, UpdateVersionsScriptFileName, getResourceContents(UpdateVersionsScriptFileName))
 
     if (interRepoSourceDependency) {
       writeToDisk(path, ExternalThirdPartyLoadingScriptFileName, getResourceContents(ExternalThirdPartyLoadingScriptFileName))
@@ -49,6 +50,7 @@ object BazelCustomRunnerWriter {
   val CustomBazelScriptName = "custom-bazel-script"
   val LoadExternalRepositoriesScriptFileName = "load_2nd_party_repositories.bzl"
   val PostCheckoutScriptFileName = "post-checkout"
+  val UpdateVersionsScriptFileName = "update_latest_2nd_party_versions"
 
   val ExternalThirdPartyLoadingScriptFileName = "load_third_parties_of_external_wix_repositories.py"
   val CrossRepoCustomBazelScriptName = "cross-repo-custom-bazel-script"
