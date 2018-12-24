@@ -27,6 +27,14 @@ else
     SUPPRESS_PRINTS=False
 fi
 
+LOAD_THIRD_PARTIES_FILE="${WORKSPACE_DIR}/tools/load_third_parties_of_external_wix_repositories.py"
+
+if [ -f $LOAD_THIRD_PARTIES_FILE ]; then
+    export REPO_LIST=phase2
+    export TRACKING_BRANCH=social-master
+    python $LOAD_THIRD_PARTIES_FILE ${WORKSPACE_DIR}
+fi
+
 python ${WORKSPACE_DIR}/tools/resolve_2nd_party_repositories.py ${WORKSPACE_DIR} ${SUPPRESS_PRINTS}
 
 exec -a "bazel-after-workspace-resolve" "${BAZEL_REAL}" "$@"
