@@ -27,6 +27,9 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |load("@core_server_build_tools//dependencies/rules_docker:rules_docker.bzl", "rules_docker")
          |rules_docker()
          |
+         |load("@core_server_build_tools//dependencies/google_protobuf:google_protobuf.bzl", "google_protobuf")
+         |google_protobuf()
+         |
          |load("@core_server_build_tools//toolchains:toolchains_defs.bzl","toolchains_repositories")
          |toolchains_repositories()
          |
@@ -57,12 +60,6 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |
          |load("@server_infra//:proto_repos.bzl", "scala_proto_repositories")
          |scala_proto_repositories()
-         |
-         |http_archive(
-         |    name = "com_google_protobuf",
-         |    urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-java-3.6.1.zip"],
-         |    strip_prefix = "protobuf-3.6.1",
-         |)
          |
          |${loadFWSnapshots(workspaceName)}
          |
