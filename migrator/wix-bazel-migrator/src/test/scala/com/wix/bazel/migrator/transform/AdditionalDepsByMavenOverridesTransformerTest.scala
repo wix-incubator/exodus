@@ -29,11 +29,29 @@ class AdditionalDepsByMavenOverridesTransformerTest extends SpecificationWithJUn
       }
     }
 
+    "in case cross repo is on but server-infra is excluded" should {
+      "not modify moduleDeps targets" in new ctx {
+        val transformer = new AdditionalDepsByMavenOverridesTransformer(
+          overrides = AdditionalDepsByMavenDepsOverrides(List(additionalDepsByMavenOverride)),
+          interRepoSourceDependency = true, includeServerInfraInSocialModeSet = false
+        )
+
+        transformer.transform(Set(somePackage)) must contain(
+          aPackage(
+            target = a(moduleDepsTarget(
+              name = someModuleDepsTarget.name,
+              deps = contain(exactly(existingDep)),
+              runtimeDeps = contain(exactly(existingRuntimeDep)),
+              originatingSourceModule = beEqualTo(sourceModule)
+            ))))
+      }
+    }
+
     "in case cross repo is on" should {
       "add deps to moduleDeps targets if they depend on additionalDepsByMavenOverrides" in new ctx {
         val transformer = new AdditionalDepsByMavenOverridesTransformer(
           overrides = AdditionalDepsByMavenDepsOverrides(List(additionalDepsByMavenOverride)),
-          interRepoSourceDependency = true
+          interRepoSourceDependency = true, includeServerInfraInSocialModeSet = true
         )
 
         transformer.transform(Set(somePackage)) must contain(
@@ -54,7 +72,7 @@ class AdditionalDepsByMavenOverridesTransformerTest extends SpecificationWithJUn
 
         val transformer = new AdditionalDepsByMavenOverridesTransformer(
           overrides = AdditionalDepsByMavenDepsOverrides(List(additionalDepsByMavenOverride)),
-          interRepoSourceDependency = true
+          interRepoSourceDependency = true, includeServerInfraInSocialModeSet = true
         )
 
         transformer.transform(Set(somePackage)) must contain(
@@ -73,7 +91,7 @@ class AdditionalDepsByMavenOverridesTransformerTest extends SpecificationWithJUn
         override def targetIsTestOnly = false
         val transformer = new AdditionalDepsByMavenOverridesTransformer(
           overrides = AdditionalDepsByMavenDepsOverrides(List(additionalDepsByMavenOverride)),
-          interRepoSourceDependency = true
+          interRepoSourceDependency = true, includeServerInfraInSocialModeSet = true
         )
 
         transformer.transform(Set(somePackage)) must contain(

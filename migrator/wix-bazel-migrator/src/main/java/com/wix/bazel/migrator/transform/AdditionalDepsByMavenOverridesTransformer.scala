@@ -7,12 +7,14 @@ import com.wix.bazel.migrator.overrides.AdditionalDepsByMavenDepsOverrides
 import com.wixpress.build.maven
 import com.wixpress.build.maven.MavenScope
 
-class AdditionalDepsByMavenOverridesTransformer(overrides: AdditionalDepsByMavenDepsOverrides,interRepoSourceDependency: Boolean = false) extends PackagesTransformer {
+class AdditionalDepsByMavenOverridesTransformer(overrides: AdditionalDepsByMavenDepsOverrides,
+                                                interRepoSourceDependency: Boolean = false,
+                                                includeServerInfraInSocialModeSet: Boolean = false) extends PackagesTransformer {
 
   private val overridesMap: Map[(String, String), AdditionalDeps] = overrides.overrides.groupBy(o => (o.groupId, o.artifactId)).mapValues(_.head.additionalDeps)
 
   override def transform(packages: Set[model.Package]): Set[model.Package] = {
-    if (interRepoSourceDependency) {
+    if (interRepoSourceDependency && includeServerInfraInSocialModeSet ) {
       packages.map(p => p.copy(targets = p.targets.map(transformTarget)))
     } else {
       packages

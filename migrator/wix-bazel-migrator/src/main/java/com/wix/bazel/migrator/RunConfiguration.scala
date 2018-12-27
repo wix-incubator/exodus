@@ -14,7 +14,8 @@ case class RunConfiguration(repoRoot: File,
                             interRepoSourceDependency: Boolean = false,
                             artifactoryToken: String = "",
                             sourceDependenciesWhitelist: Option[Path] = None,
-                            additionalDepsByMavenDeps: Option[Path] = None)
+                            additionalDepsByMavenDeps: Option[Path] = None,
+                            includeServerInfraInSocialModeSet: Boolean = false)
 
 object RunConfiguration {
   private val Empty = RunConfiguration(null, null, null, null)
@@ -83,6 +84,10 @@ object RunConfiguration {
       .withFallback(() => sys.props.getOrElse("additional.deps.by.maven.deps", ""))
       .action { case (path, cfg) if path != "" => cfg.copy(additionalDepsByMavenDeps = Some(Paths.get(path)))
       case (_, cfg) =>  cfg.copy(additionalDepsByMavenDeps = None)}
+
+    opt[Boolean]("include-server-infra-in-social-mode-set")
+      .withFallback(() => booleanProperty("include.server.infra.in.social.mode.set"))
+      .action { case (include, cfg) => cfg.copy(includeServerInfraInSocialModeSet = include) }
   }
 
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)

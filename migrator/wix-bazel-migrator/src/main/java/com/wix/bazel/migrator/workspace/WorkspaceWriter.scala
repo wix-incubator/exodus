@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path}
 import WorkspaceWriter._
 import com.wix.bazel.migrator.overrides.WorkspaceOverridesReader
 
-class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDependency: Boolean = false) {
+class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDependency: Boolean = false, includeServerInfraInSocialModeSet: Boolean = false) {
   private val frameworkWSName = "wix_platform_wix_framework"
 
   def write(): Unit = {
@@ -124,7 +124,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
   }
 
   private def loadGrpcRepos(workspaceName: String) = {
-      val loadRepoStatement = if (workspaceName != serverInfraWSName && !interRepoSourceDependency)
+      val loadRepoStatement = if ((workspaceName != serverInfraWSName && !interRepoSourceDependency) ||
+                                  (interRepoSourceDependency && !includeServerInfraInSocialModeSet))
         s"""|
             |load("@core_server_build_tools//:repositories.bzl", "grpc_repository_for_isolated_mode")
             |grpc_repository_for_isolated_mode()

@@ -128,7 +128,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
       case Some(path) => AdditionalDepsByMavenDepsOverridesReader.from(path)
       case None => AdditionalDepsByMavenDepsOverrides.empty
     }
-    new AdditionalDepsByMavenOverridesTransformer(overrides,configuration.interRepoSourceDependency)
+    new AdditionalDepsByMavenOverridesTransformer(overrides,configuration.interRepoSourceDependency, configuration.includeServerInfraInSocialModeSet)
   }
 
   private def dependencyAnalyzer = {
