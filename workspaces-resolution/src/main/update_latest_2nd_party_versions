@@ -2,7 +2,10 @@
 
 WORKSPACE_DIR=$(pwd)
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
+FILENAME=${WORKSPACE_DIR}/tools/2nd_party_resolved_dependencies/${BRANCH}_2nd_party_resolved_dependencies.bzl
 
-rm ${WORKSPACE_DIR}/tools/2nd_party_resolved_dependencies/${BRANCH}_2nd_party_resolved_dependencies.bzl
+if [ -f ${FILENAME} ]; then
+    rm ${FILENAME}
+fi
 
 python ${WORKSPACE_DIR}/tools/resolve_2nd_party_repositories.py ${WORKSPACE_DIR} False
