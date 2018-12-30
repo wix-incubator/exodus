@@ -61,7 +61,7 @@ import better.files.File
       File(repoRoot.resolve("WORKSPACE")).contentAsString must contain(s"""third_party_deps_of_external_wix_repositories""")
     }
 
-    "load fw snapshots for repos other than wix-framework" in new ctx {
+    "load fw snapshots for repos other than wix-framework and server-infra" in new ctx {
       val writer = new WorkspaceWriter(repoRoot, "workspace_name")
       writer.write()
 
@@ -70,6 +70,13 @@ import better.files.File
 
     "not load fw snapshots for wix-framework repo" in new ctx {
       val writer = new WorkspaceWriter(repoRoot, "wix_platform_wix_framework")
+      writer.write()
+
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must not contain(s"""fw_snapshot_dependencies""")
+    }
+
+    "not load fw snapshots for wix-framework and server-infra repos" in new ctx {
+      val writer = new WorkspaceWriter(repoRoot, "server_infra")
       writer.write()
 
       File(repoRoot.resolve("WORKSPACE")).contentAsString must not contain(s"""fw_snapshot_dependencies""")

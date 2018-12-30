@@ -113,7 +113,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
   }
 
   private def loadFWSnapshots(workspaceName: String) = {
-    if (workspaceName != frameworkWSName)
+    if (workspaceName != frameworkWSName && workspaceName != serverInfraWSName)
       s"""
          |load("@core_server_build_tools//:third_party_fw_snapshots.bzl", "fw_snapshot_dependencies")
          |
