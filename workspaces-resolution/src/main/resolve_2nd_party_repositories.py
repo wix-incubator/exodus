@@ -10,8 +10,10 @@ import socket
 import zlib
 
 try:
+    # python 2
     from StringIO import StringIO
 except ImportError:
+    # python 3
     from io import StringIO
 
 logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
@@ -232,7 +234,8 @@ def load_environment_variables():
 
 
 def create_starlark_file_path(branch):
-    return "{}{}{}{}".format(workspace_dir, versions_files_folder, branch, starlark_file_name_postfix).replace(
+    escaped_branch = branch.replace("/", "_")
+    return "{}{}{}{}".format(workspace_dir, versions_files_folder, escaped_branch, starlark_file_name_postfix).replace(
         "\n", "")
 
 
