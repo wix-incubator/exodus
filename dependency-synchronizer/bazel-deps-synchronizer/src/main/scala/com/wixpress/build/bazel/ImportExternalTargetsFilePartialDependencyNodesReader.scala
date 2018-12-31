@@ -63,10 +63,10 @@ case class AllImportExternalFilesDependencyNodesReader(filesContent: Set[String]
   }
 
   private def mavenDependencyNodeFrom(partialNode: PartialDependencyNode, baseDependencies: Set[Dependency]):DependencyNode = {
-    DependencyNode(partialNode.baseDependency, partialNode.targetDependencies.flatMap(t => transitiveDepFrom(t, baseDependencies)))
+    DependencyNode(partialNode.baseDependency, partialNode.targetDependencies.flatMap(t => transitiveDepFrom(t, baseDependencies, partialNode.baseDependency.coordinates)))
   }
 
-  private def transitiveDepFrom(partialDep: PartialDependency, baseDependencies: Set[Dependency]) = {
+  private def transitiveDepFrom(partialDep: PartialDependency, baseDependencies: Set[Dependency], dependantArtifact: Coordinates) = {
     def lookupDep: Option[Dependency] = {
       partialDep match {
         case _: PartialPomAggregateDependency => pomAggregatesCoordinates.find(_.workspaceRuleName == partialDep.ruleName).map(Dependency(_, partialDep.scope))
@@ -77,7 +77,7 @@ case class AllImportExternalFilesDependencyNodesReader(filesContent: Set[String]
 
     val maybeDependency = lookupDep.map(_.copy(scope = partialDep.scope))
     if (maybeDependency.isEmpty)
-      throw new RuntimeException(s"missing artifact information for: $partialDep. cannot finish compiling dep closure. please consult with support.")
+      throw new RuntimeException(s"missing artifact information for: $partialDep.\nThe dependant artifact is $dependantArtifact.\ncannot finish compiling dep closure. please consult with support.")
     maybeDependency
   }
 }
