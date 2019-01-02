@@ -11,7 +11,7 @@ object BazelSyncGreyhoundEvents{
   val BazelManagedDepsSyncEndedTopic : String = "BazelManagedDepsSyncEndedTopic"
 }
 
-case class ThirdPartyArtifact(coordinates : Coordinates, digest : String){
+case class ThirdPartyArtifact(coordinates : Coordinates, digest : Option[String]){
   def label() : String = {
     val gid = coordinates.groupId.replaceAll("-","_").replaceAll("\\.","_")
     val aid = coordinates.artifactId.replaceAll("-","_").replaceAll("\\.","_")
@@ -19,5 +19,4 @@ case class ThirdPartyArtifact(coordinates : Coordinates, digest : String){
   }
 }
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-case class BazelManagedDepsSyncEnded()
+case class BazelManagedDepsSyncEnded(thirdPartyArtifacts : Set[ThirdPartyArtifact])
