@@ -1,0 +1,25 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "api",
+    srcs = [
+        "//dependency-synchronizer/bazel-deps-synchronizer-api/src/test/scala/com/wix/build/sync/api:sources",
+    ],
+    data = ["//dependency-synchronizer/bazel-deps-synchronizer-api:coordinates"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven:maven",
+        "//dependency-synchronizer/bazel-deps-synchronizer-api/src/main/scala/com/wix/build/sync/api",
+        "@com_fasterxml_jackson_core_jackson_annotations",
+        "@com_fasterxml_jackson_core_jackson_core",
+        "@com_fasterxml_jackson_core_jackson_databind",
+
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["*.java"]) + glob(["*.scala"]),
+    visibility = ["//dependency-synchronizer/bazel-deps-synchronizer-cli/src/test/scala/com/wix/build/sync/api:__pkg__"],
+)
