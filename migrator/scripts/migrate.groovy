@@ -77,7 +77,6 @@ pipeline {
                     script{
                         if (fileExists('bazel_migration/post-migration.sh')){
                             sh "sh bazel_migration/post-migration.sh"
-
                         }
                     }
                 }
