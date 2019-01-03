@@ -7,7 +7,7 @@ class ThirdPartyArtifactTest extends SpecificationWithJUnit{
   "ThirdPartyArtifact" should{
     "create a third party bazel label" in {
       val coordinates = Coordinates("com.wixpress.kuku","kuki-kiki","1.2.3")
-      ThirdPartyArtifact(coordinates,Option("digest")).label() must beEqualTo("@com_wixpress_kuku_kuki_kiki")
+      ThirdPartyArtifact("com.wixpress.kuku","kuki-kiki","1.2.3","jar",None,Option("digest")).label() must beEqualTo("@com_wixpress_kuku_kuki_kiki")
     }
   }
 }
