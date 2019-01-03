@@ -177,6 +177,23 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
           DependencyNode(asCompileDependency(artifact), Set(asCompileDependency(pomArtifact)))
         ))
     }
+
+    "a dependency node with chceksums" in new emptyWorkspaceNameCtx {
+      private val checksum = "5ec1b94e9254c25480548633a48b7ae8a9ada7527e28f5c575943fe0c2ab7350"
+      private val srcChecksum = "5a52d14fe932024aed8848e2cd5217d6e8eb4176d014a9d75ab28a5c92c18169"
+      localWorkspace.overwriteThirdPartyImportTargetsFile(artifact.groupIdForBazel,
+        ImportExternalRule.of(artifact,
+          checksum = Some(checksum),
+          srcChecksum = Some(srcChecksum),
+          coordinatesToLabel = resolver.labelBy)
+          .serialized)
+
+      val dependencyNodes: Set[DependencyNode] = reader.allDependenciesAsMavenDependencyNodes()
+      dependencyNodes must containTheSameElementsAs(
+        Seq(
+          DependencyNode(asCompileDependency(artifact), Set(), checksum = Some(checksum), Some(srcChecksum))
+        ))
+    }
   }
 
   trait emptyThirdPartyReposCtx extends Scope {

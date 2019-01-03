@@ -19,12 +19,12 @@ class BazelDependenciesReader(localWorkspace: BazelLocalWorkspace) {
   def allDependenciesAsMavenDependencies(): Set[Dependency] = {
     val thirdPartyReposParser = ThirdPartyReposFile.Parser(localWorkspace.thirdPartyReposFileContent())
     val importExternalTargetsFileParser = AllImportExternalFilesCoordinatesReader(localWorkspace.allThirdPartyImportTargetsFilesContent())
-    val coordinates = importExternalTargetsFileParser.allMavenCoordinates ++ thirdPartyReposParser.allMavenCoordinates
+    val coordinates = importExternalTargetsFileParser.allMavenCoordinates ++ thirdPartyReposParser.allMavenCoordinates.map(ValidatedCoordinates(_, None, None))
     coordinates
       .map(toDependency)
   }
 
-  private def toDependency(coordinates: Coordinates) = Dependency(coordinates, MavenScope.Compile, exclusionsOf(coordinates))
+  private def toDependency(validatedCoordinates: ValidatedCoordinates) = Dependency(validatedCoordinates.coordinates, MavenScope.Compile, exclusionsOf(validatedCoordinates.coordinates))
 
   private def exclusionsOf(coordinates: Coordinates): Set[Exclusion] =
     buildFileRuleExclusionsOf(coordinates) ++ externalImportRuleExclusionsOf(coordinates)

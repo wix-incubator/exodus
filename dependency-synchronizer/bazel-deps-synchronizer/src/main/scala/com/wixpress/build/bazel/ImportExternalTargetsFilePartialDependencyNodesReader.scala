@@ -9,15 +9,16 @@ case class ImportExternalTargetsFilePartialDependencyNodesReader(content: String
     splitToStringsWithJarImportsInside(content).flatMap(parse).toSet
   }
 
-  def parse(importExternalTarget: String) = {
-    parseCoordinates(importExternalTarget).map(coords => {
+  private def parse(importExternalTarget: String) = {
+    parseCoordinates(importExternalTarget).map(validatedCoordinates => {
       val exclusions = extractExclusions(importExternalTarget)
       val compileDeps = extractListByAttribute(CompileTimeDepsFilter, importExternalTarget)
       val runtimeDeps = extractListByAttribute(RunTimeDepsFilter, importExternalTarget)
 
-      PartialDependencyNode(Dependency(coords, MavenScope.Compile, exclusions),
+      PartialDependencyNode(Dependency(validatedCoordinates.coordinates, MavenScope.Compile, exclusions),
         compileDeps.flatMap(d => parseTargetDependency(d, MavenScope.Compile)) ++
-          runtimeDeps.flatMap(d => parseTargetDependency(d, MavenScope.Runtime))
+          runtimeDeps.flatMap(d => parseTargetDependency(d, MavenScope.Runtime)),
+        validatedCoordinates.checksum, validatedCoordinates.srcChecksum
       )
     })
   }
@@ -63,7 +64,11 @@ case class AllImportExternalFilesDependencyNodesReader(filesContent: Set[String]
   }
 
   private def mavenDependencyNodeFrom(partialNode: PartialDependencyNode, baseDependencies: Set[Dependency]):DependencyNode = {
-    DependencyNode(partialNode.baseDependency, partialNode.targetDependencies.flatMap(t => transitiveDepFrom(t, baseDependencies, partialNode.baseDependency.coordinates)))
+    DependencyNode(
+      partialNode.baseDependency,
+      partialNode.targetDependencies.flatMap(t => transitiveDepFrom(t, baseDependencies, partialNode.baseDependency.coordinates)),
+      checksum = partialNode.checksum,
+      srcChecksum = partialNode.srcChecksum)
   }
 
   private def transitiveDepFrom(partialDep: PartialDependency, baseDependencies: Set[Dependency], dependantArtifact: Coordinates) = {
@@ -82,7 +87,7 @@ case class AllImportExternalFilesDependencyNodesReader(filesContent: Set[String]
   }
 }
 
-case class PartialDependencyNode(baseDependency: Dependency, targetDependencies: Set[PartialDependency])
+case class PartialDependencyNode(baseDependency: Dependency, targetDependencies: Set[PartialDependency], checksum: Option[String] = None, srcChecksum: Option[String] = None)
 
 trait PartialDependency {
   val ruleName: String

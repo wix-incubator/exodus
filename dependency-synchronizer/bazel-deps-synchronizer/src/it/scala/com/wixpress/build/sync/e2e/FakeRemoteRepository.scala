@@ -3,7 +3,7 @@ package com.wixpress.build.sync.e2e
 import better.files.File
 import com.gitblit.utils.JGitUtils
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.bazel.{ImportExternalTargetsFileReader, ManagedThirdPartyPaths, ThirdPartyPaths}
+import com.wixpress.build.bazel.{ImportExternalTargetsFileReader, ManagedThirdPartyPaths, ThirdPartyPaths, ValidatedCoordinates}
 import com.wixpress.build.maven.Coordinates
 import com.wixpress.build.sync.BazelMavenSynchronizer
 import org.eclipse.jgit.api.Git
@@ -114,9 +114,9 @@ class FakeRemoteRepository(paths: ThirdPartyPaths = ManagedThirdPartyPaths()) {
     val importExternalRuleName = coordinates.workspaceRuleName
     val groupId = coordinates.groupIdForBazel
     updatedContentOfFileIn(branchName, s"$thirdPartyImportFilesPathRoot/$groupId.bzl").map((importExternalTargetsContent) => {
-      val maybeRule: Option[Coordinates] = ImportExternalTargetsFileReader(importExternalTargetsContent).findCoordinatesByName(importExternalRuleName)
+      val maybeRule: Option[ValidatedCoordinates] = ImportExternalTargetsFileReader(importExternalTargetsContent).findCoordinatesByName(importExternalRuleName)
       maybeRule match {
-        case Some(c) if c == coordinates => "success"
+        case Some(c) if c.coordinates == coordinates => "success"
         case _ => throw new RuntimeException(s"Could not find workspace rule for $coordinates in bazel remote repository")
       }
     })

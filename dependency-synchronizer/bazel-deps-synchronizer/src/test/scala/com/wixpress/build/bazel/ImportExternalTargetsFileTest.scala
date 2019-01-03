@@ -24,7 +24,7 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
     "extract coordinates from jar rule" in new ctx{
       val coordinates = ImportExternalTargetsFileReader(fileWithJarWorkspaceRule).allMavenCoordinates
 
-      coordinates must contain(mavenJarCoordinates)
+      coordinates.map(_.coordinates) must contain(mavenJarCoordinates)
     }
 
     "extract Bazel dependency without deps from file" in new ctx {
@@ -135,7 +135,7 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
 
       val retrievedCoordinates = ImportExternalTargetsFileReader(fileWithJarWorkspaceRule).findCoordinatesByName(mavenJarRuleName)
 
-      retrievedCoordinates must beSome(mavenJarCoordinates)
+      retrievedCoordinates.map(_.coordinates) must beSome(mavenJarCoordinates)
     }
   }
 

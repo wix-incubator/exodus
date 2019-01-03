@@ -38,10 +38,12 @@ object ImportExternalTargetsFile {
 }
 
 object ImportExternalTargetsFileReader {
-  def parseCoordinates(jar: String) = {
+  def parseCoordinates(jar: String): Option[ValidatedCoordinates] = {
     ArtifactFilter.findFirstMatchIn(jar)
       .map(_.group("artifact"))
       .map(Coordinates.deserialize)
+      .map(c => ValidatedCoordinates(c, Sha256Filter.findFirstMatchIn(jar).map(_.group("checksum")), None))
+      .map(vc => vc.copy(srcChecksum = SrcSha256Filter.findFirstMatchIn(jar).map(_.group("src_checksum"))))
   }
 
   def splitToStringsWithJarImportsInside(thirdPartyRepos: String) =
@@ -100,7 +102,7 @@ object ImportExternalTargetsFileReader {
 }
 
 case class ImportExternalTargetsFileReader(content: String) {
-  def allMavenCoordinates: Set[Coordinates] = {
+  def allMavenCoordinates: Set[ValidatedCoordinates] = {
     val strings = splitToStringsWithJarImportsInside(content)
     strings.flatMap(parseCoordinates).toSet
   }
@@ -135,7 +137,7 @@ case class ImportExternalTargetsFileReader(content: String) {
     maybeMatch.map(_.group("neverlink")).contains("1")
   }
 
-  def findCoordinatesByName(name: String): Option[Coordinates] = {
+  def findCoordinatesByName(name: String): Option[ValidatedCoordinates] = {
     findTargetWithSameNameAs(name = name, within = content)
       .map(extractFullMatchText)
       .flatMap(parseCoordinates)
@@ -143,7 +145,9 @@ case class ImportExternalTargetsFileReader(content: String) {
 }
 
 case class AllImportExternalFilesCoordinatesReader(filesContent: Set[String]) {
-  def allMavenCoordinates: Set[Coordinates] = {
+  def allMavenCoordinates: Set[ValidatedCoordinates] = {
     filesContent.flatMap(c => ImportExternalTargetsFileReader(c).allMavenCoordinates)
   }
 }
+
+case class ValidatedCoordinates(coordinates: Coordinates, checksum: Option[String], srcChecksum: Option[String])
