@@ -113,7 +113,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
   }
 
   private def loadFWSnapshots(workspaceName: String) = {
-    if (workspaceName != frameworkWSName && workspaceName != serverInfraWSName)
+    if (workspaceName != frameworkWSName && workspaceName != serverInfraWSName && workspaceName != metaSiteWSName)
       s"""
          |load("@core_server_build_tools//:third_party_fw_snapshots.bzl", "fw_snapshot_dependencies")
          |
@@ -151,4 +151,5 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
 
 object WorkspaceWriter {
   val serverInfraWSName = "server_infra"
+  val metaSiteWSName = "meta_site"
 }
