@@ -234,7 +234,7 @@ def load_environment_variables():
 
 
 def create_starlark_file_path(branch):
-    escaped_branch = branch.replace("/", "_")
+    escaped_branch = branch.replace("/", "..")
     return "{}{}{}{}".format(workspace_dir, versions_files_folder, escaped_branch, starlark_file_name_postfix).replace(
         "\n", "")
 
