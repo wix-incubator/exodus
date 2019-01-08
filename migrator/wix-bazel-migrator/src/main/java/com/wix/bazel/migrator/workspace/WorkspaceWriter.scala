@@ -61,8 +61,6 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |load("@server_infra//:proto_repos.bzl", "scala_proto_repositories")
          |scala_proto_repositories()
          |
-         |${loadFWSnapshots(workspaceName)}
-         |
          |load("//:third_party.bzl", "third_party_dependencies")
          |
          |third_party_dependencies()
@@ -112,17 +110,6 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
     WorkspaceOverridesReader.from(repoRoot).suffix
   }
 
-  private def loadFWSnapshots(workspaceName: String) = {
-    if (workspaceName != frameworkWSName && workspaceName != serverInfraWSName && workspaceName != metaSiteWSName)
-      s"""
-         |load("@core_server_build_tools//:third_party_fw_snapshots.bzl", "fw_snapshot_dependencies")
-         |
-         |fw_snapshot_dependencies()
-         |""".stripMargin
-      else
-      ""
-  }
-
   private def loadGrpcRepos(workspaceName: String) = {
       val loadRepoStatement = if ((workspaceName != serverInfraWSName && !interRepoSourceDependency) ||
                                   (interRepoSourceDependency && !includeServerInfraInSocialModeSet))
@@ -151,5 +138,4 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
 
 object WorkspaceWriter {
   val serverInfraWSName = "server_infra"
-  val metaSiteWSName = "meta_site"
 }
