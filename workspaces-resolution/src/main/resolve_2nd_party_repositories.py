@@ -31,10 +31,11 @@ else:
     from urllib2 import URLError
 
 tools_relative_path = "/tools/"
-versions_files_folder = tools_relative_path + "2nd_party_resolved_dependencies/"
+versions_files_local_cache_folder = tools_relative_path + "2nd_party_resolved_dependencies/"
 starlark_file_name_postfix = "_2nd_party_resolved_dependencies.bzl"
 default_json_file_name = "2nd_party_resolved_dependencies.json"
-symlink_relative_path = tools_relative_path + "2nd_party_resolved_dependencies_current_branch.bzl"
+local_cache_symlink_relative_path = tools_relative_path + "2nd_party_resolved_dependencies_current_branch.bzl"
+git_tracked_symlink_relative_path = tools_relative_path + "fixed_2nd_party_resolved_dependencies.bzl"
 second_party_resolved_deps_override_empty_placeholder = "EMPTY!"
 build_branch_override_empty_placeholder = "~EMPTY~"
 json_file_path_override_empty_placeholder = "EMPTY"
@@ -62,31 +63,43 @@ def parse_arguments():
 
 
 def resolve_repositories():
-    starlark_file_path = create_starlark_file_path(read_current_branch())
-    if can_use_existing_resolved_dependencies(starlark_file_path):
-        point_symlink_to_path(starlark_file_path)
+    local_cache_starlark_file_path = create_local_cache_starlark_file_path(read_current_branch())
+    if can_use_existing_resolved_dependencies_from_local_cache(local_cache_starlark_file_path):
+        point_local_cache_symlink_to_path(local_cache_starlark_file_path)
     elif (compressed_second_party_resolved_deps_override is not None) and \
             (compressed_second_party_resolved_deps_override != second_party_resolved_deps_override_empty_placeholder):
         create_version_files_from_compressed_deps_override(compressed_second_party_resolved_deps_override)
     elif (second_party_resolved_deps_override is not None) and \
             (second_party_resolved_deps_override != second_party_resolved_deps_override_empty_placeholder):
         create_version_files_from_deps_override(second_party_resolved_deps_override)
+    elif can_use_existing_resolved_dependencies_from_git_tracked_folder():
+        point_local_cache_symlink_to_git_tracked_symlink()
     elif (build_branch_override is not None) and \
             (build_branch_override != build_branch_override_empty_placeholder) and \
-            does_non_empty_file_exist(create_starlark_file_path(build_branch_override)):
+            does_non_empty_file_exist(create_local_cache_starlark_file_path(build_branch_override)):
         create_versions_files_from_other_branch(read_current_branch(), build_branch_override)
     else:
         create_versions_files_from_server()
 
 
-def point_symlink_to_path(starlark_file_path):
-    write_symlink_to_path(symlink_path(), starlark_file_path)
+def point_local_cache_symlink_to_path(starlark_file_path):
+    write_symlink_to_path(local_cache_symlink_path(), starlark_file_path)
     if not should_suppress_prints:
         print("2nd party dependencies resolved! (by using a local dependencies file)")
 
 
-def can_use_existing_resolved_dependencies(starlark_file_path):
+def point_local_cache_symlink_to_git_tracked_symlink():
+    write_symlink_to_path(local_cache_symlink_path(), git_tracked_symlink_path())
+    if not should_suppress_prints:
+        print("2nd party dependencies resolved! (by git tracked fixed dependencies)")
+
+
+def can_use_existing_resolved_dependencies_from_local_cache(starlark_file_path):
     return does_non_empty_file_exist(starlark_file_path)
+
+
+def can_use_existing_resolved_dependencies_from_git_tracked_folder():
+    return does_non_empty_file_exist(git_tracked_symlink_path())
 
 
 def can_use_second_party_resolved_depts_override():
@@ -97,7 +110,7 @@ def can_use_second_party_resolved_depts_override():
 def can_use_branch_override():
     return (build_branch_override is not None) and \
            (build_branch_override != build_branch_override_empty_placeholder) and \
-           does_non_empty_file_exist(create_starlark_file_path(build_branch_override))
+           does_non_empty_file_exist(create_local_cache_starlark_file_path(build_branch_override))
 
 
 def create_version_files_from_deps_override(encoded_deps):
@@ -118,10 +131,10 @@ def create_version_files_from_compressed_deps_override(encoded_deps):
 
 def create_versions_files_from_other_branch(current_branch, other_branch):
     logging.debug("Overriding build branch %s from env var BUILD_BRANCH_OVERRIDE" % other_branch)
-    run_process(['cp', create_starlark_file_path(other_branch),
-                 create_starlark_file_path(current_branch)],
+    run_process(['cp', create_local_cache_starlark_file_path(other_branch),
+                 create_local_cache_starlark_file_path(current_branch)],
                 'Failed to create resolved dependencies file for branch %s' % current_branch)
-    write_symlink_to_path(symlink_path(), create_starlark_file_path(other_branch))
+    write_symlink_to_path(local_cache_symlink_path(), create_local_cache_starlark_file_path(other_branch))
     if not should_suppress_prints:
         print("2nd party dependencies resolved! (by using build branch override)")
 
@@ -152,20 +165,20 @@ def create_version_files_from_raw_string(dependencies_raw_string):
 
 
 def create_version_folder_if_not_exists():
-    versions_folder_full_path = "{}{}".format(workspace_dir, versions_files_folder)
+    versions_folder_full_path = "{}{}".format(workspace_dir, versions_files_local_cache_folder)
     if not os.path.exists(versions_folder_full_path):
         logging.debug("Creating folder: {}".format(versions_folder_full_path))
         os.makedirs(versions_folder_full_path)
 
 
 def create_version_files(current_branch, json_file_repos, starlark_file_repos):
-    starlark_file_path = create_starlark_file_path(current_branch)
+    starlark_file_path = create_local_cache_starlark_file_path(current_branch)
     json_file_path = get_json_file_path()
 
     create_version_folder_if_not_exists()
     write_content_to_path(json_file_repos, json_file_path)
     write_content_to_path(starlark_file_repos, starlark_file_path)
-    write_symlink_to_path(symlink_path(), starlark_file_path)
+    write_symlink_to_path(local_cache_symlink_path(), starlark_file_path)
 
     logging.debug("Generating %s" % workspace_dir + "/BUILD.bazel")
     open(workspace_dir + "/BUILD.bazel", 'a').close()
@@ -180,7 +193,7 @@ def get_json_file_path():
         if not should_suppress_prints:
             print("Versions used in this build will be written to {}".format(path))
         return path
-    return "{}{}{}".format(workspace_dir, versions_files_folder, default_json_file_name)
+    return "{}{}{}".format(workspace_dir, versions_files_local_cache_folder, default_json_file_name)
 
 
 def does_non_empty_file_exist(path):
@@ -233,14 +246,18 @@ def load_environment_variables():
     logging.debug("[env var] repositories_url = %s", repositories_url)
 
 
-def create_starlark_file_path(branch):
+def create_local_cache_starlark_file_path(branch):
     escaped_branch = branch.replace("/", "..")
-    return "{}{}{}{}".format(workspace_dir, versions_files_folder, escaped_branch, starlark_file_name_postfix).replace(
+    return "{}{}{}{}".format(workspace_dir, versions_files_local_cache_folder, escaped_branch, starlark_file_name_postfix).replace(
         "\n", "")
 
 
-def symlink_path():
-    return workspace_dir + symlink_relative_path
+def local_cache_symlink_path():
+    return workspace_dir + local_cache_symlink_relative_path
+
+
+def git_tracked_symlink_path():
+    return workspace_dir + git_tracked_symlink_relative_path
 
 
 def decode_dependencies_to_files(dependencies_raw_string):
