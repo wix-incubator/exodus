@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+import os
+import utils
+import sys
+from shutil import copyfile
+
+local_cache_versions_folder = "2nd_party_resolved_dependencies"
+git_tracked_versions_folder = "fixed_2nd_party_resolved_dependencies"
+versions_file_postfix = "2nd_party_resolved_dependencies.bzl"
+tools_path = os.path.dirname(sys.argv[0])
+
+current_branch = utils.read_current_branch(tools_path)
+local_cache_versions_file_path = "{tools}/{versions_folder}/{branch}_{postfix}".format(
+    tools=tools_path,
+    versions_folder=local_cache_versions_folder,
+    branch=current_branch,
+    postfix=versions_file_postfix)
+git_tracked_versions_file_path = "{tools}/{versions_folder}/{branch}_{postfix}".format(
+    tools=tools_path,
+    versions_folder=git_tracked_versions_folder,
+    branch=current_branch,
+    postfix=versions_file_postfix)
+git_tracked_folder_path = "{tools}/{versions_folder}".format(
+    tools=tools_path,
+    versions_folder=git_tracked_versions_folder)
+
+try:
+    if not os.path.exists(git_tracked_folder_path):
+        os.makedirs(git_tracked_folder_path)
+    copyfile(local_cache_versions_file_path, git_tracked_versions_file_path)
+except Exception as error:
+    print("error copying versions file: {}".format(error))
+
+
