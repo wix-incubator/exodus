@@ -2,12 +2,12 @@ import argparse
 import json
 import os
 import os.path
-import subprocess
 import sys
 import logging
 import base64
 import socket
 import zlib
+from utils import run_process, read_current_branch
 
 try:
     # python 2
@@ -200,25 +200,8 @@ def does_non_empty_file_exist(path):
     return os.path.isfile(path) and os.stat(path).st_size != 0
 
 
-def read_current_branch():
-    return run_process(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], "Failed to read the current branch")
-
-
 def write_symlink_to_path(link_path, path):
     run_process(['ln', '-sf', path, link_path], "Failed to write symlink %s => %s" % (link_path, path))
-
-
-def run_process(splitted_command, fail_msg):
-    logging.debug("Running:\t%s" % ' '.join(splitted_command))
-    process = subprocess.Popen(splitted_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    encoded_out, err = process.communicate()
-    out = encoded_out.decode("utf-8")
-    if err:
-        msg = "%s. stderr = %s" % (fail_msg, err)
-        logging.error(msg)
-        raise Exception(msg)
-    logging.debug("Output:\t%s" % out)
-    return out
 
 
 def write_content_to_path(content, path):

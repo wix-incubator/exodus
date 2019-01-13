@@ -6,7 +6,7 @@ logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else log
 logging.basicConfig(level=logging_level, format='%(asctime)s  %(levelname)s: %(message)s')
 
 
-def read_current_branch(directory):
+def read_current_branch(directory=None):
     fail_message = "Failed to read the current branch"
     if directory is None:
         branch = run_process(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], fail_message)
