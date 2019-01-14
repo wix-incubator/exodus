@@ -20,9 +20,9 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
         |build --crosstool_top=@core_server_build_tools//toolchains:crosstool_top
         |build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
         |build --extra_toolchains=@core_server_build_tools//toolchains:extra_toolchains
-        |build --extra_execution_platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
-        |build --host_platform=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
-        |build --platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604_r340178
+        |build --extra_execution_platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604
+        |build --host_platform=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604
+        |build --platforms=@core_server_build_tools//rbe-toolchains/jdk:rbe_ubuntu1604
         |build:rbe_based --action_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_BW_CMPTBL
         |
         |# Enable encryption.
