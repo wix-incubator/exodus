@@ -1,13 +1,11 @@
 import argparse
 import json
-import os
 import os.path
 import sys
-import logging
 import base64
 import socket
 import zlib
-from utils import run_process, read_current_branch
+from utils import *
 
 try:
     # python 2
@@ -15,10 +13,6 @@ try:
 except ImportError:
     # python 3
     from io import StringIO
-
-logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
-
-logging.basicConfig(level=logging_level, format='%(asctime)s  %(levelname)s: %(message)s')
 
 if sys.version_info[0] == 3:
     from urllib.request import urlopen
@@ -35,7 +29,6 @@ versions_files_local_cache_folder = tools_relative_path + "2nd_party_resolved_de
 starlark_file_name_postfix = "_2nd_party_resolved_dependencies.bzl"
 default_json_file_name = "2nd_party_resolved_dependencies.json"
 local_cache_symlink_relative_path = tools_relative_path + "2nd_party_resolved_dependencies_current_branch.bzl"
-git_tracked_symlink_relative_path = tools_relative_path + "fixed_2nd_party_resolved_dependencies.bzl"
 second_party_resolved_deps_override_empty_placeholder = "EMPTY!"
 build_branch_override_empty_placeholder = "~EMPTY~"
 json_file_path_override_empty_placeholder = "EMPTY"
@@ -200,8 +193,7 @@ def does_non_empty_file_exist(path):
     return os.path.isfile(path) and os.stat(path).st_size != 0
 
 
-def write_symlink_to_path(link_path, path):
-    run_process(['ln', '-sf', path, link_path], "Failed to write symlink %s => %s" % (link_path, path))
+
 
 
 def write_content_to_path(content, path):
@@ -240,7 +232,7 @@ def local_cache_symlink_path():
 
 
 def git_tracked_symlink_path():
-    return workspace_dir + git_tracked_symlink_relative_path
+    return workspace_dir + tools_relative_path + git_tracked_symlink_file_name
 
 
 def decode_dependencies_to_files(dependencies_raw_string):

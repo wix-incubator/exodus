@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-import os
-from utils import read_current_branch
+from utils import *
 import sys
 from shutil import copyfile
 
@@ -25,10 +24,16 @@ git_tracked_folder_path = "{tools}/{versions_folder}".format(
     tools=tools_path,
     versions_folder=git_tracked_versions_folder)
 
+
+def git_tracked_symlink_path():
+    return "{}/{}".format(tools_path, git_tracked_symlink_file_name)
+
+
 try:
     if not os.path.exists(git_tracked_folder_path):
         os.makedirs(git_tracked_folder_path)
     copyfile(local_cache_versions_file_path, git_tracked_versions_file_path)
+    write_symlink_to_path(git_tracked_symlink_path(), git_tracked_versions_file_path)
 except Exception as error:
     print("error copying versions file: {}".format(error))
 

@@ -5,6 +5,8 @@ import subprocess
 logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
 logging.basicConfig(level=logging_level, format='%(asctime)s  %(levelname)s: %(message)s')
 
+git_tracked_symlink_file_name = "fixed_resolved_dependencies_for_ci_branch_build.bzl"
+
 
 def read_current_branch(directory=None):
     fail_message = "Failed to read the current branch"
@@ -26,3 +28,8 @@ def run_process(splitted_command, fail_msg):
         raise Exception(msg)
     logging.debug("Output:\t%s" % out)
     return out
+
+
+def write_symlink_to_path(link_path, path):
+    run_process(['ln', '-sf', path, link_path], "Failed to write symlink %s => %s" % (link_path, path))
+
