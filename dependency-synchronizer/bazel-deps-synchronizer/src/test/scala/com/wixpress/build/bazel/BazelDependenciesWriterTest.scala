@@ -388,6 +388,26 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
       }
     }
+
+    "given an overrided set of neverlink coordinates" should {
+      "write target with 'neverlink = 1 ' if came from overrided list" in {
+        val localWorkspaceName = "some_workspace_name"
+        val localWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = localWorkspaceName)
+
+        val artifact = someCoordinates("some-artifact")
+
+        def writer = new BazelDependenciesWriter(localWorkspace, Set(artifact))
+
+        writer.writeDependencies(aRootDependencyNode(asCompileDependency(artifact)))
+
+        val importExternalFileContent = localWorkspace.thirdPartyImportTargetsFileContent(artifact.groupIdForBazel)
+
+        importExternalFileContent must containScalaImportExternalRuleFor(artifact,
+          s"""|    neverlink = 1,
+              |    generated_linkable_rule_name = "linkable",""".stripMargin
+        )
+      }
+    }
   }
 
   private def containsExactlyOneRuleOfName(name: String): Matcher[String] = (countMatches(s"""name += +"$name"""".r, _: String)) ^^ equalTo(1)

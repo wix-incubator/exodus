@@ -7,6 +7,7 @@ import com.wix.bazel.migrator.transform._
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
 import com.wix.build.maven.analysis.ThirdPartyConflicts
+import com.wixpress.build.bazel.NeverLinkResolver._
 
 class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   def migrate(): Unit = {
@@ -121,7 +122,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   }
 
   private def providedMavenDependencyTransformer() =
-    new ProvidedMavenDependencyTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides)
+    new ProvidedMavenDependencyTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides, globalNeverLinkDependencies)
 
   private def additionalDepsByMavenDepsTransformer() = {
     val overrides = configuration.additionalDepsByMavenDeps match {
