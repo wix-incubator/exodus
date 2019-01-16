@@ -1,40 +1,45 @@
 #!/usr/bin/env python
 
-from utils import *
 import sys
+sys.dont_write_bytecode = True
+from utils import *
 from shutil import copyfile
 
-local_cache_versions_folder = "2nd_party_resolved_dependencies"
-git_tracked_versions_folder = "fixed_2nd_party_resolved_dependencies"
-versions_file_postfix = "2nd_party_resolved_dependencies.bzl"
-tools_path = os.path.dirname(sys.argv[0])
+workspace_dir = os.path.dirname(os.path.dirname(sys.argv[0]))
 
-current_branch = read_current_branch(tools_path)
-local_cache_versions_file_path = "{tools}/{versions_folder}/{branch}_{postfix}".format(
-    tools=tools_path,
+current_branch = read_current_branch(workspace_dir)
+local_cache_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
+    workspace_dir=workspace_dir,
+    tools=tools_relative_path,
     versions_folder=local_cache_versions_folder,
     branch=current_branch,
-    postfix=versions_file_postfix)
-git_tracked_versions_file_path = "{tools}/{versions_folder}/{branch}_{postfix}".format(
-    tools=tools_path,
+    postfix=starlark_file_name_postfix)
+git_tracked_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
+    workspace_dir=workspace_dir,
+    tools=tools_relative_path,
     versions_folder=git_tracked_versions_folder,
     branch=current_branch,
-    postfix=versions_file_postfix)
-git_tracked_folder_path = "{tools}/{versions_folder}".format(
-    tools=tools_path,
+    postfix=starlark_file_name_postfix)
+git_tracked_folder_path = "{workspace_dir}{tools}{versions_folder}".format(
+    workspace_dir=workspace_dir,
+    tools=tools_relative_path,
     versions_folder=git_tracked_versions_folder)
-
-
-def git_tracked_symlink_path():
-    return "{}/{}".format(tools_path, git_tracked_symlink_file_name)
-
 
 try:
     if not os.path.exists(git_tracked_folder_path):
+        logging.debug("Creating git_tracked_folder_path = {}".format(git_tracked_folder_path))
         os.makedirs(git_tracked_folder_path)
+    if not does_non_empty_file_exist(local_cache_versions_file_path):
+        repositories_url = os.environ.get("REPOSITORIES_URL", default_repositories_url)
+        logging.debug("[env var] repositories_url = %s", repositories_url)
+        logging.debug("Creating versions files from server in local cache")
+        create_versions_files_from_server(workspace_dir, repositories_url=repositories_url)
+        logging.debug("AFTER create_versions_files_from_server")
+
+    logging.debug("copying versions file from local cache to git tracked folder")
     copyfile(local_cache_versions_file_path, git_tracked_versions_file_path)
-    write_symlink_to_path(git_tracked_symlink_path(), git_tracked_versions_file_path)
+    logging.debug("writing git tracked symlink")
+    write_symlink_to_path(git_tracked_symlink_path(workspace_dir), git_tracked_versions_file_path)
+    logging.debug("Versions files synced!!!")
 except Exception as error:
     print("error copying versions file: {}".format(error))
-
-
