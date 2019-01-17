@@ -5,12 +5,11 @@ import com.wix.bazel.migrator.model
 import com.wix.bazel.migrator.model.Target.ModuleDeps
 import com.wix.bazel.migrator.model.{PackagesTransformer, SourceModule}
 import com.wix.bazel.migrator.overrides.MavenArchiveTargetsOverrides
-import com.wixpress.build.maven.{Coordinates, MavenScope, Dependency => MavenDependency}
+import com.wixpress.build.maven.{MavenScope, Packaging, Dependency => MavenDependency}
 
 class ProvidedMavenDependencyTransformer(repoModules: Set[SourceModule],
                                          externalPackageLocator: ExternalSourceModuleRegistry,
-                                         mavenArchiveTargetsOverrides: MavenArchiveTargetsOverrides,
-                                         globalNeverLinkDependencies: Set[Coordinates]) extends PackagesTransformer {
+                                         mavenArchiveTargetsOverrides: MavenArchiveTargetsOverrides) extends PackagesTransformer {
 
   private val dependencyTransformer = new MavenDependencyTransformer(
     repoModules, externalPackageLocator, mavenArchiveTargetsOverrides)
@@ -74,8 +73,7 @@ class ProvidedMavenDependencyTransformer(repoModules: Set[SourceModule],
       dependencyTransformer.toBazelDependency(dependency)
 
   private def isNeededToBeMarkedAsLinkable(dependency: MavenDependency) = {
-    dependency.scope != MavenScope.Provided &&
-      (isUsedAsProvidedInRepo(dependency) || globalNeverLinkDependencies.exists(dependency.coordinates.equalsIgnoringVersion))
+    dependency.scope != MavenScope.Provided && isUsedAsProvidedInRepo(dependency)
   }
 
   private def isUsedAsProvidedInRepo(dependency: MavenDependency) = repoProvidedDeps(dependency.shortSerializedForm())

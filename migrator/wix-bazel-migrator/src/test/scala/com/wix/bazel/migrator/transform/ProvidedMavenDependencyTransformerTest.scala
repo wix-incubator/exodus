@@ -3,11 +3,12 @@ package com.wix.bazel.migrator.transform
 import com.wix.bazel.migrator.external.registry.FakeExternalSourceModuleRegistry
 import com.wix.bazel.migrator.model.Matchers.{a, aPackage, moduleDepsTarget}
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.bazel.migrator.model.makers.ModuleMaker.{aModule, _}
+import com.wix.bazel.migrator.model.makers.ModuleMaker.aModule
 import com.wix.bazel.migrator.overrides.MavenArchiveTargetsOverrides
 import com.wixpress.build.maven.MavenMakers.aDependency
-import com.wixpress.build.maven.{Coordinates, MavenScope}
+import com.wixpress.build.maven.MavenScope
 import org.specs2.mutable.SpecificationWithJUnit
+import com.wix.bazel.migrator.model.makers.ModuleMaker._
 import org.specs2.specification.Scope
 
 //noinspection TypeAnnotation
@@ -73,26 +74,17 @@ class ProvidedMavenDependencyTransformerTest extends SpecificationWithJUnit with
               notProvidedInternalDepModule.asModuleDeps))
           ))))
     }
-
-    "return linkable target dep for main_dependencies if dep is in overrideNeverLinkDependencies list and not Provided" in new ctx {
-      transform(modules, Set(compileThirdPartyDependency.coordinates)) must contain(
-        aPackage(
-          target = a(moduleDepsTarget(
-            name = "main_dependencies",
-            deps = contain(compileThirdPartyDependency.asLinkableThirdPartyDependency)
-          ))))
-    }
   }
 
   trait ctx extends Scope {
     val externalPackageLocator = new FakeExternalSourceModuleRegistry(Map.empty)
     val emptyMavenArchiveTargetsOverrides = MavenArchiveTargetsOverrides(Set.empty)
 
-    def transform(modules: Set[SourceModule], globalNeverLinkDependencies: Set[Coordinates] = Set()) = {
+    def transform(modules: Set[SourceModule]) = {
       val moduleDependenciesTransformer = new ModuleDependenciesTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides)
       val packages = moduleDependenciesTransformer.transform()
 
-      val transformer = new ProvidedMavenDependencyTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides, globalNeverLinkDependencies)
+      val transformer = new ProvidedMavenDependencyTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides)
       transformer.transform(packages)
     }
   }
