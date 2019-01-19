@@ -9,7 +9,6 @@ class SourcesPackageWriter(repoRoot: Path, bazelPackages: Set[Package]) {
     bazelPackages
       .flatMap(jvmTargetsAndRelativePathFromMonoRepoRoot)
       .flatMap(sourceDirAndRelativePackagePaths)
-      .map(sourcesTargetAndSourceDirPath)
       .foreach(writeSourcesTarget)
   }
 
@@ -29,29 +28,13 @@ class SourcesPackageWriter(repoRoot: Path, bazelPackages: Set[Package]) {
     }
   }
 
-  def sourcesTargetAndSourceDirPath(sourceDirPathAndRelativePackagePath: SourceDirPathAndRelativePackagePath): SourcesTargetAndSourceDirPath = {
-      val sourcesTarget =
-        s"""
-           |filegroup(
-           |    name = "sources",
-           |    srcs = glob(["*.java"]) + glob(["*.scala"]),
-           |    visibility = ["//${sourceDirPathAndRelativePackagePath.relativePackagePath}:__pkg__"]
-           |)
-           |
-            """.
-          stripMargin.getBytes
-      val sourceDirBuildPath =
-        sourceDirPathAndRelativePackagePath.sourceDirPath.resolve("BUILD.bazel")
-      SourcesTargetAndSourceDirPath(sourceDirBuildPath, sourcesTarget)
-    }
-
-  private def writeSourcesTarget(a: SourcesTargetAndSourceDirPath) = {
+  private def writeSourcesTarget(s: SourceDirPathAndRelativePackagePath) =
     Files.write(
-      a.sourceDirBuildPath,
-      a.sourcesTarget,
+      s.sourceDirBuildPath,
+      s.sourcesTarget.getBytes,
       StandardOpenOption.CREATE, StandardOpenOption.APPEND
     )
-  }
+
 
   private def adjustSource(source: String) = {
     if (source.startsWith("/"))
@@ -60,11 +43,30 @@ class SourcesPackageWriter(repoRoot: Path, bazelPackages: Set[Package]) {
       source
   }
 
-  private[migrator] case class SourceDirPathAndRelativePackagePath(sourceDirPath: Path, relativePackagePath: String)
   private[migrator] case class SourcesTargetAndSourceDirPath(sourceDirBuildPath: Path, sourcesTarget: Array[Byte])
+
   private[migrator] case class JvmTargetAndRelativePath(jvm: Target.Jvm, relativePath: String)
+
   private[migrator] object JvmTargetAndRelativePathFromMonoRepoRoot {
     def apply(targetAndRelativePath: (Target.Jvm, String)) =
       JvmTargetAndRelativePath(targetAndRelativePath._1, targetAndRelativePath._2)
   }
+
+}
+
+private[migrator] case class SourceDirPathAndRelativePackagePath(sourceDirPath: Path, relativePackagePath: String){
+  def sourcesTarget: String = {
+    if (sourceDirPath.endsWith(relativePackagePath))
+      """
+        |sources()
+        |""".stripMargin
+    else
+      s"""
+         |sources(
+         |    visibility = ["//$relativePackagePath:__pkg__"]
+         |)
+         |""".stripMargin
+  }
+
+  def sourceDirBuildPath: Path = sourceDirPath.resolve("BUILD.bazel")
 }
