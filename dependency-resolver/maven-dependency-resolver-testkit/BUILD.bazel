@@ -5,7 +5,7 @@ scala_library(
     deps = [
         "//dependency-resolver/maven-dependency-resolver-api:main_dependencies",
         "@commons_codec_commons_codec",
-        "@javax_servlet_javax_servlet_api",
+        "@javax_servlet_javax_servlet_api//:linkable",
         "@org_apache_maven_maven_model",
         "@org_apache_maven_maven_model_builder",
         "@org_codehaus_mojo_mrm_api",
