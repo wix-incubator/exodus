@@ -34,9 +34,9 @@ def parse_arguments():
 
 
 def resolve_repositories():
-    local_cache_starlark_file_path = create_local_cache_starlark_file_path(workspace_dir, read_current_branch())
-    if can_use_existing_resolved_dependencies_from_local_cache(local_cache_starlark_file_path):
-        point_local_cache_symlink_to_path(local_cache_starlark_file_path)
+    starlark_file_path = local_cache_starlark_file_path(workspace_dir, read_current_branch())
+    if can_use_existing_resolved_dependencies_from_local_cache(starlark_file_path):
+        point_local_cache_symlink_to_path(starlark_file_path)
     elif (compressed_second_party_resolved_deps_override is not None) and \
             (compressed_second_party_resolved_deps_override != second_party_resolved_deps_override_empty_placeholder):
         create_version_files_from_compressed_deps_override(compressed_second_party_resolved_deps_override)
@@ -47,7 +47,7 @@ def resolve_repositories():
         point_local_cache_symlink_to_git_tracked_symlink()
     elif (build_branch_override is not None) and \
             (build_branch_override != build_branch_override_empty_placeholder) and \
-            does_non_empty_file_exist(create_local_cache_starlark_file_path(workspace_dir, build_branch_override)):
+            does_non_empty_file_exist(local_cache_starlark_file_path(workspace_dir, build_branch_override)):
         create_versions_files_from_other_branch(read_current_branch(), build_branch_override)
     else:
         create_versions_files_from_server(workspace_dir,
@@ -86,7 +86,7 @@ def can_use_second_party_resolved_depts_override():
 def can_use_branch_override():
     return (build_branch_override is not None) and \
            (build_branch_override != build_branch_override_empty_placeholder) and \
-           does_non_empty_file_exist(create_local_cache_starlark_file_path(workspace_dir, build_branch_override))
+           does_non_empty_file_exist(local_cache_starlark_file_path(workspace_dir, build_branch_override))
 
 
 def create_version_files_from_deps_override(encoded_deps):
@@ -107,10 +107,10 @@ def create_version_files_from_compressed_deps_override(encoded_deps):
 
 def create_versions_files_from_other_branch(current_branch, other_branch):
     logging.debug("Overriding build branch %s from env var BUILD_BRANCH_OVERRIDE" % other_branch)
-    run_process(['cp', create_local_cache_starlark_file_path(workspace_dir, other_branch),
-                 create_local_cache_starlark_file_path(workspace_dir, current_branch)],
-                'Failed to create resolved dependencies file for branch %s' % current_branch)
-    write_symlink_to_path(local_cache_symlink_path(workspace_dir), create_local_cache_starlark_file_path(workspace_dir, other_branch))
+    # run_process(['cp', local_cache_starlark_file_path(workspace_dir, other_branch),
+    #              local_cache_starlark_file_path(workspace_dir, current_branch)],
+    #             'Failed to create resolved dependencies file for branch %s' % current_branch)
+    write_symlink_to_path(local_cache_symlink_path(workspace_dir), local_cache_starlark_file_path(workspace_dir, other_branch))
     if not should_suppress_prints:
         print("2nd party dependencies resolved! (by using build branch override)")
 

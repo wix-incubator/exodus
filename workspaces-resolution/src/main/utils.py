@@ -41,6 +41,8 @@ default_json_file_name = "2nd_party_resolved_dependencies.json"
 default_repo_list = "default"
 default_tracking_branch = "master"
 
+folder_of_script = os.path.dirname(sys.argv[0])
+
 
 def read_current_branch(directory=None):
     fail_message = "Failed to read the current branch"
@@ -52,8 +54,8 @@ def read_current_branch(directory=None):
 
 
 def run_process(splitted_command, fail_msg):
-    logging.debug("Running:\t%s" % ' '.join(splitted_command))
-    process = subprocess.Popen(splitted_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    logging.debug("Running:\t{}".format(' '.join(splitted_command)))
+    process = subprocess.Popen(splitted_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder_of_script)
     encoded_out, err = process.communicate()
     out = encoded_out.decode("utf-8")
     if err:
@@ -129,7 +131,7 @@ def create_version_files(workspace_dir,
 
 
 def create_starlark_versions_file(workspace_dir, current_branch, starlark_file_repos):
-    starlark_file_path = create_local_cache_starlark_file_path(workspace_dir, current_branch)
+    starlark_file_path = local_cache_starlark_file_path(workspace_dir, current_branch)
     create_version_folder_if_not_exists(workspace_dir)
     write_content_to_path(starlark_file_repos, starlark_file_path)
     write_symlink_to_path(local_cache_symlink_path(workspace_dir), starlark_file_path)
@@ -149,7 +151,7 @@ def decode_dependencies_to_files(dependencies_raw_string):
     return json_file_repos, starlark_file_repos
 
 
-def create_local_cache_starlark_file_path(workspace_dir, branch):
+def local_cache_starlark_file_path(workspace_dir, branch):
     escaped_branch = branch.replace("/", "..")
     return "{}{}{}{}".format(workspace_dir, versions_files_local_cache_folder, escaped_branch,
                              starlark_file_name_postfix).replace("\n", "")
