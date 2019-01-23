@@ -50,7 +50,9 @@ class ProvidedMavenDependencyTransformer(repoModules: Set[SourceModule],
   private def transformProdModuleDeps(moduleDeps: ModuleDeps) = {
     moduleDeps.copy(
       deps = extractDirectDependenciesOfScope(moduleDeps.originatingSourceModule, MavenScope.Compile, MavenScope.Provided)
-        .flatMap(toBazelDependency)
+        .flatMap(toBazelDependency),
+      runtimeDeps = extractDirectDependenciesOfScope(moduleDeps.originatingSourceModule, MavenScope.Runtime, MavenScope.Provided)
+        .flatMap(toBazelDependency),
     )
   }
 

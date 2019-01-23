@@ -40,6 +40,22 @@ class ProvidedMavenDependencyTransformerTest extends SpecificationWithJUnit with
           ))))
     }
 
+    "return package with module deps target with linkable runtime dep targets" in new ctx {
+      val notProvidedRuntimeDep = providedThirdPartyDependency.copy(scope = MavenScope.Runtime)
+      val module = aModule("some-module-with-not-provided-dep")
+        .withDirectDependency(
+          notProvidedRuntimeDep
+        )
+
+      transform(modules + module) must contain(
+        aPackage(
+          target = a(moduleDepsTarget(
+            name = "main_dependencies",
+            runtimeDeps = contain(exactly(
+              notProvidedRuntimeDep.asLinkableThirdPartyDependency))
+          ))))
+    }
+
     "return package with module deps target without linkable targets" in new ctx {
       val otherProvidedDep = aDependency("other-provided-dep", MavenScope.Provided)
       val module = aModule("some-module-with-provided-dep")
@@ -74,12 +90,21 @@ class ProvidedMavenDependencyTransformerTest extends SpecificationWithJUnit with
           ))))
     }
 
-    "return linkable target dep for main_dependencies if dep is in overrideNeverLinkDependencies list and not Provided" in new ctx {
+    "return linkable target dep for main_dependencies if compiletime dep is in overrideNeverLinkDependencies list and not Provided" in new ctx {
       transform(modules, Set(compileThirdPartyDependency.coordinates)) must contain(
         aPackage(
           target = a(moduleDepsTarget(
             name = "main_dependencies",
             deps = contain(compileThirdPartyDependency.asLinkableThirdPartyDependency)
+          ))))
+    }
+
+    "return linkable target dep for main_dependencies if runtime dep is in overrideNeverLinkDependencies list and not Provided" in new ctx {
+      transform(modules, Set(runtimeThirdPartyDependency.coordinates)) must contain(
+        aPackage(
+          target = a(moduleDepsTarget(
+            name = "main_dependencies",
+            runtimeDeps = contain(runtimeThirdPartyDependency.asLinkableThirdPartyDependency)
           ))))
     }
   }
