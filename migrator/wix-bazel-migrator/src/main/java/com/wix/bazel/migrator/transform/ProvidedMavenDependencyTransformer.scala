@@ -5,21 +5,17 @@ import com.wix.bazel.migrator.model
 import com.wix.bazel.migrator.model.Target.ModuleDeps
 import com.wix.bazel.migrator.model.{PackagesTransformer, SourceModule}
 import com.wix.bazel.migrator.overrides.MavenArchiveTargetsOverrides
+import com.wixpress.build.bazel.ImportExternalRule
+import com.wixpress.build.maven
 import com.wixpress.build.maven.{Coordinates, MavenScope, Dependency => MavenDependency}
 
-class ProvidedMavenDependencyTransformer(repoModules: Set[SourceModule],
-                                         externalPackageLocator: ExternalSourceModuleRegistry,
-                                         mavenArchiveTargetsOverrides: MavenArchiveTargetsOverrides,
-                                         globalNeverLinkDependencies: Set[Coordinates]) extends PackagesTransformer {
+class ProvidedModuleTestDependenciesTransformer(repoModules: Set[SourceModule],
+                                                externalPackageLocator: ExternalSourceModuleRegistry,
+                                                mavenArchiveTargetsOverrides: MavenArchiveTargetsOverrides) extends PackagesTransformer {
 
-  private val dependencyTransformer = new MavenDependencyTransformer(
-    repoModules, externalPackageLocator, mavenArchiveTargetsOverrides)
-
-  private val repoProvidedDeps = repoModules
-    .flatMap(_.dependencies.directDependencies)
-    .filter(_.scope == MavenScope.Provided)
-    .filterNot(isRepoModule)
-    .map(_.shortSerializedForm())
+  private val dependencyTransformer = new ProvidedMavenDependencyTransformer(
+    repoModules, externalPackageLocator, mavenArchiveTargetsOverrides, Set())
+  private val repoProvidedDeps = RepoProvidedDeps(repoModules)
 
   override def transform(packages: Set[model.Package] = Set.empty[model.Package]): Set[model.Package] =
     packages map transformPackage
@@ -27,8 +23,8 @@ class ProvidedMavenDependencyTransformer(repoModules: Set[SourceModule],
   private def transformPackage(pckg: model.Package) =
     pckg.copy(
       targets = pckg.targets.map {
-        case t@ModuleDeps(_, _, deps, runtimeDeps, testOnly, _, _, _) =>
-          if (testOnly) transformTestsModuleDeps(t) else transformProdModuleDeps(t)
+        case t@ModuleDeps(_, _, deps, runtimeDeps, testOnly, _, _, _) if testOnly =>
+           transformTestsModuleDeps(t)
         case t => t
       }
     )
@@ -38,45 +34,59 @@ class ProvidedMavenDependencyTransformer(repoModules: Set[SourceModule],
       moduleDeps.originatingSourceModule
         .dependencies
         .allDependencies
-        .filterNot(isRepoModule)
-        .filter(isUsedAsProvidedInRepo)
+        .filterNot(isRepoModule) // TODO erase this!!!! already exists in RepoProvidedDeps
+        .filter(repoProvidedDeps.isUsedAsProvidedInRepo)
 
     moduleDeps.copy(
       runtimeDeps = moduleDeps.runtimeDeps ++
-        providedDependencies.flatMap(dependencyTransformer.toLinkableBazelDependency)
+        providedDependencies.flatMap(dependencyTransformer.asLinkableThirdPartyDependency)
     )
   }
 
-  private def transformProdModuleDeps(moduleDeps: ModuleDeps) = {
-    moduleDeps.copy(
-      deps = extractDirectDependenciesOfScope(moduleDeps.originatingSourceModule, MavenScope.Compile, MavenScope.Provided)
-        .flatMap(toBazelDependency)
-    )
-  }
+  // TODO erase this!!!! already exists in RepoProvidedDeps
+  private def isRepoModule(dep: MavenDependency) =
+    repoModules
+      .exists(_.coordinates.equalsOnGroupIdAndArtifactId(dep.coordinates))
+}
 
-  private def extractDirectDependenciesOfScope(module: SourceModule, scopes: MavenScope*) =
-    extractDependenciesOfScope(module.dependencies.directDependencies, scopes: _*)
+case class RepoProvidedDeps(repoModules: Set[SourceModule]) {
+  def isUsedAsProvidedInRepo(dependency: MavenDependency): Boolean = repoProvidedDeps(dependency.shortSerializedForm())
 
-  private def extractDependenciesOfScope(dependencies: Set[MavenDependency], scopes: MavenScope*) =
-    dependencies.filter(dep => scopes.contains(dep.scope))
+  private val repoProvidedDeps = repoModules
+    .flatMap(_.dependencies.directDependencies)
+    .filter(_.scope == MavenScope.Provided)
+    .filterNot(isRepoModule)
+    .map(_.shortSerializedForm())
 
   private def isRepoModule(dep: MavenDependency) =
     repoModules
       .exists(_.coordinates.equalsOnGroupIdAndArtifactId(dep.coordinates))
+}
 
-  private def toBazelDependency(dependency: MavenDependency) =
+class ProvidedMavenDependencyTransformer(repoModules: Set[SourceModule],
+                                         externalPackageLocator: ExternalSourceModuleRegistry,
+                                         mavenArchiveTargetsOverrides: MavenArchiveTargetsOverrides,
+                                         globalNeverLinkDependencies: Set[Coordinates])
+  extends MavenDependencyTransformer(repoModules, externalPackageLocator, mavenArchiveTargetsOverrides) {
+  private val repoProvidedDeps = RepoProvidedDeps(repoModules)
+
+  override def toBazelDependency(dependency: MavenDependency) =
     toLinkableBazelDependencyIfNeeded(dependency: MavenDependency)
 
   private def toLinkableBazelDependencyIfNeeded(dependency: MavenDependency) =
     if (isNeededToBeMarkedAsLinkable(dependency))
-      dependencyTransformer.toLinkableBazelDependency(dependency)
+      asLinkableThirdPartyDependency(dependency)
     else
-      dependencyTransformer.toBazelDependency(dependency)
+      super.toBazelDependency(dependency)
 
   private def isNeededToBeMarkedAsLinkable(dependency: MavenDependency) = {
     dependency.scope != MavenScope.Provided &&
-      (isUsedAsProvidedInRepo(dependency) || globalNeverLinkDependencies.exists(dependency.coordinates.equalsIgnoringVersion))
+      (repoProvidedDeps.isUsedAsProvidedInRepo(dependency) || globalNeverLinkDependencies.exists(dependency.coordinates.equalsIgnoringVersion))
   }
 
-  private def isUsedAsProvidedInRepo(dependency: MavenDependency) = repoProvidedDeps(dependency.shortSerializedForm())
+  def asLinkableThirdPartyDependency(dependency: maven.Dependency): Option[String] =
+    Option(asThirdPartyDependency(dependency, asThirdPartyLinkableDependency))
+
+  private def asThirdPartyLinkableDependency(dependency: maven.Dependency): String =
+    ImportExternalRule.linkableLabelBy(dependency.coordinates)
 }

@@ -11,7 +11,7 @@ import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
 //noinspection TypeAnnotation
-class ProvidedMavenDependencyTransformerTest extends SpecificationWithJUnit with PackagesTransformerTestSupport {
+class ProvidedModuleTestDependenciesTransformerTest extends SpecificationWithJUnit with PackagesTransformerTestSupport {
   sequential
   "Provided Maven Dependency Transformer" should {
 
@@ -38,6 +38,24 @@ class ProvidedMavenDependencyTransformerTest extends SpecificationWithJUnit with
             deps = contain(exactly(
               notProvidedDep.asLinkableThirdPartyDependency))
           ))))
+    }
+
+    "return package with module deps target with linkable runtime dep targets without affecting any other runtime target" in new ctx {
+      val notProvidedRuntimeDep = providedThirdPartyDependency.copy(scope = MavenScope.Runtime)
+      val module = aModule("some-module-with-not-provided-dep")
+        .withDirectDependency(
+          notProvidedRuntimeDep, runtimeThirdPartyDependency
+        ) .withResourcesFolder("src/main/resources")
+
+      transform(modules + module) must contain(
+        aPackage(
+        target = a(moduleDepsTarget(
+          name = "main_dependencies",
+          runtimeDeps = contain(atLeast(runtimeThirdPartyDependency.asThirdPartyDependency,
+            notProvidedRuntimeDep.asLinkableThirdPartyDependency,
+            "//" + module.relativePathFromMonoRepoRoot + "/src/main/resources:resources")),
+          originatingSourceModule = beEqualTo(module)
+        ))))
     }
 
     "return package with module deps target without linkable targets" in new ctx {
@@ -74,12 +92,21 @@ class ProvidedMavenDependencyTransformerTest extends SpecificationWithJUnit with
           ))))
     }
 
-    "return linkable target dep for main_dependencies if dep is in overrideNeverLinkDependencies list and not Provided" in new ctx {
+    "return linkable target dep for main_dependencies if compiletime dep is in overrideNeverLinkDependencies list and not Provided" in new ctx {
       transform(modules, Set(compileThirdPartyDependency.coordinates)) must contain(
         aPackage(
           target = a(moduleDepsTarget(
             name = "main_dependencies",
             deps = contain(compileThirdPartyDependency.asLinkableThirdPartyDependency)
+          ))))
+    }
+
+    "return linkable target dep for main_dependencies if runtime dep is in overrideNeverLinkDependencies list and not Provided" in new ctx {
+      transform(modules, Set(runtimeThirdPartyDependency.coordinates)) must contain(
+        aPackage(
+          target = a(moduleDepsTarget(
+            name = "main_dependencies",
+            runtimeDeps = contain(runtimeThirdPartyDependency.asLinkableThirdPartyDependency)
           ))))
     }
   }
@@ -89,10 +116,10 @@ class ProvidedMavenDependencyTransformerTest extends SpecificationWithJUnit with
     val emptyMavenArchiveTargetsOverrides = MavenArchiveTargetsOverrides(Set.empty)
 
     def transform(modules: Set[SourceModule], globalNeverLinkDependencies: Set[Coordinates] = Set()) = {
-      val moduleDependenciesTransformer = new ModuleDependenciesTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides)
+      val moduleDependenciesTransformer = new ModuleDependenciesTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides, globalNeverLinkDependencies)
       val packages = moduleDependenciesTransformer.transform()
 
-      val transformer = new ProvidedMavenDependencyTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides, globalNeverLinkDependencies)
+      val transformer = new ProvidedModuleTestDependenciesTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides)
       transformer.transform(packages)
     }
   }

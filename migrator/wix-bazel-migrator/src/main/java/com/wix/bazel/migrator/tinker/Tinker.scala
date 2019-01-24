@@ -102,7 +102,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     val packagesTransformers = Seq(
       externalProtoTransformer(),
       moduleDepsTransformer(),
-      providedMavenDependencyTransformer(),
+      providedModuleTestDependenciesTransformer(),
       additionalDepsByMavenDepsTransformer()
     )
 
@@ -117,12 +117,11 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   private def externalProtoTransformer() = new ExternalProtoTransformer(codeModules)
 
   private def moduleDepsTransformer() = {
-    val transformer = new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides)
-    transformer
+    new ModuleDependenciesTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides, globalNeverLinkDependencies)
   }
 
-  private def providedMavenDependencyTransformer() =
-    new ProvidedMavenDependencyTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides, globalNeverLinkDependencies)
+  private def providedModuleTestDependenciesTransformer() =
+    new ProvidedModuleTestDependenciesTransformer(codeModules, externalSourceModuleRegistry, mavenArchiveTargetsOverrides)
 
   private def additionalDepsByMavenDepsTransformer() = {
     val overrides = configuration.additionalDepsByMavenDeps match {

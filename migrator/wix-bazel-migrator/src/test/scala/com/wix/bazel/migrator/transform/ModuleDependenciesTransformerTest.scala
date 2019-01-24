@@ -204,7 +204,7 @@ class ModuleDependenciesTransformerTest extends SpecificationWithJUnit with Pack
     val emptyMavenArchiveTargetsOverrides = MavenArchiveTargetsOverrides(Set.empty)
 
     def transformerFor(modules: Set[SourceModule]) = {
-      new ModuleDependenciesTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides)
+      new ModuleDependenciesTransformer(modules, externalPackageLocator, emptyMavenArchiveTargetsOverrides, Set())
     }
 
   }
