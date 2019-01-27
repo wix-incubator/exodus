@@ -18,8 +18,4 @@ specs2_unit_test(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//dependency-resolver/maven-dependency-resolver/src/test/scala/com/wixpress/build/maven:__pkg__"],
-)
+sources()

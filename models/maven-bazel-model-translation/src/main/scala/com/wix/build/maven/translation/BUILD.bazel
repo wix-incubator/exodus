@@ -13,8 +13,4 @@ scala_library(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation:__pkg__"],
-)
+sources()

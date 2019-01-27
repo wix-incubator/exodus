@@ -13,8 +13,4 @@ scala_library(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven:__pkg__"],
-)
+sources()

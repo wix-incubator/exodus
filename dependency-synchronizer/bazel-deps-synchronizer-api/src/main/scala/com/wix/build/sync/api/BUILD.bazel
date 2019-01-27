@@ -8,17 +8,9 @@ scala_library(
     runtime_deps = [
     ],
     deps = [
-        "//models/maven-model/src/main/scala/com/wixpress/build/maven:maven",
-        "@com_fasterxml_jackson_core_jackson_annotations",
-        "@com_fasterxml_jackson_core_jackson_core",
-        "@com_fasterxml_jackson_core_jackson_databind",
-
+        "//dependency-synchronizer/bazel-deps-synchronizer-api:main_dependencies",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//dependency-synchronizer/bazel-deps-synchronizer-api/src/main/scala/com/wix/build/api:__pkg__"],
-)
-
+sources()

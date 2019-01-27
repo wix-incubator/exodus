@@ -15,8 +15,4 @@ scala_library(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//test-utils/src/main/scala/com/wixpress/build/git:__pkg__"],
-)
+sources()

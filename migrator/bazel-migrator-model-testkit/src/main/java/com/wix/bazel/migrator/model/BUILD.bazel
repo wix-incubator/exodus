@@ -16,8 +16,4 @@ scala_library(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model:__pkg__"],
-)
+sources()

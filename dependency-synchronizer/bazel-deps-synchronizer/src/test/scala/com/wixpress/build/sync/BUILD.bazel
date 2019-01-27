@@ -22,8 +22,4 @@ specs2_unit_test(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/sync:__pkg__"],
-)
+sources()

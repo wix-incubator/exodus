@@ -18,8 +18,4 @@ scala_library(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//migrator/codota-thin-client/src/main/scala/com/wixpress/build/codota:__pkg__"],
-)
+sources()

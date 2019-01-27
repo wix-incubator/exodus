@@ -22,8 +22,4 @@ specs2_unit_test(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//migrator/bazel-external-graph-transformer/src/test/scala/com/wix/bazel/migrator/transform:__pkg__"],
-)
+sources()

@@ -20,8 +20,4 @@ specs2_unit_test(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//repo-analyzer/maven-repo-analyzer/src/test/java/com/wix/build/maven/analysis:__pkg__"],
-)
+sources()

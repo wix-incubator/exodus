@@ -3,7 +3,11 @@ package(default_visibility = ["//visibility:public"])
 scala_library(
     name = "main_dependencies",
     deps = [
-        "@org_scala_lang_scala_library//jar",
+        "//models/maven-model:main_dependencies",
+        "@com_fasterxml_jackson_core_jackson_annotations",
+        "@com_fasterxml_jackson_core_jackson_core",
+        "@com_fasterxml_jackson_core_jackson_databind",
+        "@org_scala_lang_scala_library",
     ],
 )
 
@@ -12,6 +16,7 @@ scala_library(
     testonly = 1,
     deps = [
         "main_dependencies",
+        "@com_wixpress_common_wix_framework_scala_test_dependencies",
     ],
 )
 

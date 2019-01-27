@@ -24,8 +24,4 @@ scala_library(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//dependency-synchronizer/bazel-deps-synchronizer/src/it/scala/com/wixpress/build/sync/e2e:__pkg__"],
-)
+sources()

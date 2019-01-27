@@ -19,8 +19,4 @@ scala_library(
     ],
 )
 
-filegroup(
-    name = "sources",
-    srcs = glob(["*.java"]) + glob(["*.scala"]),
-    visibility = ["//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis:__pkg__"],
-)
+sources()
