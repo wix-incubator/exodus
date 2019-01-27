@@ -35,8 +35,8 @@ case class ImportExternalTargetsFileWriter(content: String) {
     ImportExternalTargetsFileWriter(contentStart + contentMiddle + contentEnd)
   }
 
-  def withMavenArtifact(artifact: Coordinates, coordinatesToLabel: Coordinates => String): ImportExternalTargetsFileWriter = {
-    withTarget(ImportExternalRule.of(artifact, coordinatesToLabel = coordinatesToLabel))
+  def withMavenArtifact(artifact: Coordinates): ImportExternalTargetsFileWriter = {
+    withTarget(ImportExternalRule.of(artifact))
   }
 
   val fileHeader: String =

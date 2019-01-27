@@ -65,17 +65,15 @@ case class LibraryRule(
 object LibraryRule {
   val RuleType = "scala_import"
 
-  def pomLibraryRule(
-                      artifact: Coordinates,
-                      runtimeDependencies: Set[Coordinates],
-                      compileTimeDependencies: Set[Coordinates],
-                      exclusions: Set[Exclusion],
-                      coordinatesToLabel: Coordinates => String): LibraryRule = {
+  def pomLibraryRule(artifact: Coordinates,
+                     runtimeDependencies: Set[BazelDep],
+                     compileTimeDependencies: Set[BazelDep],
+                     exclusions: Set[Exclusion]): LibraryRule = {
     LibraryRule(
       name = artifact.libraryRuleName,
       jars = Set.empty,
-      exports = compileTimeDependencies.map(coordinatesToLabel),
-      runtimeDeps = runtimeDependencies.map(coordinatesToLabel),
+      exports = compileTimeDependencies.map(_.toLabel),
+      runtimeDeps = runtimeDependencies.map(_.toLabel),
       exclusions = exclusions
     )
   }

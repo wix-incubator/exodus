@@ -1,5 +1,6 @@
 package com.wixpress.build.bazel
 
+import com.wixpress.build.bazel.LibraryRuleDep.nonJarLabelBy
 import com.wixpress.build.maven.{Coordinates, Exclusion, Packaging}
 class RuleResolver(localWorkspaceName: String) {
 
@@ -13,30 +14,50 @@ class RuleResolver(localWorkspaceName: String) {
     artifact.packaging match {
       case Packaging("jar") => RuleToPersist(
         ImportExternalRule.of(artifact,
-          runtimeDependencies,
-          compileTimeDependencies,
+          runtimeDependencies.map(resolveDepBy),
+          compileTimeDependencies.map(resolveDepBy),
           exclusions,
-          labelBy,
           checksum,
           srcChecksum,
-          neverlink = neverlink
-        ),
+          neverlink = neverlink),
         ImportExternalRule.ruleLocatorFrom(artifact))
       case Packaging("pom") => RuleToPersist(
-        LibraryRule.pomLibraryRule(artifact, runtimeDependencies, compileTimeDependencies, exclusions, labelBy),
+        LibraryRule.pomLibraryRule(artifact,
+          runtimeDependencies.map(resolveDepBy),
+          compileTimeDependencies.map(resolveDepBy),
+          exclusions),
         LibraryRule.packageNameBy(artifact))
       case _ => throw new RuntimeException(s"no rule defined for ${artifact.serialized}")
     }
 
-  def labelBy(coordinates: Coordinates): String = {
+  def resolveDepBy(coordinates: Coordinates): BazelDep = {
     coordinates.packaging match {
-      case Packaging("jar") => ImportExternalRule.jarLabelBy(coordinates)
-      case _ => nonJarLabelBy(coordinates)
+      case Packaging("jar") => ImportExternalDep(coordinates)
+      case _ => LibraryRuleDep(coordinates)
     }
   }
+}
 
+trait BazelDep {
+  val coordinates: Coordinates
+  def toLabel: String
+}
+case class ImportExternalDep(coordinates: Coordinates) extends BazelDep {
+  override def toLabel(): String = ImportExternalRule.jarLabelBy(coordinates)
+}
+
+// TODO: add workspace name....
+case class LibraryRuleDep(coordinates: Coordinates) extends BazelDep {
+  override def toLabel(): String = nonJarLabelBy(coordinates)
+}
+
+object LibraryRuleDep {
   def nonJarLabelBy(coordinates: Coordinates): String = {
     s"@${LibraryRule.nonJarLabelBy(coordinates)}"
+  }
+
+  def apply(coordinates: Coordinates): LibraryRuleDep = {
+    new LibraryRuleDep(coordinates)
   }
 }
 

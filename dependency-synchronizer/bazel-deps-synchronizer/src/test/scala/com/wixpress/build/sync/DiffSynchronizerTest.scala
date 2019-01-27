@@ -211,9 +211,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       localWorkspace must includeLibraryRuleTarget(
         aManagedDependency.coordinates,
-        LibraryRule.pomLibraryRule(
-          artifact = aManagedDependency.coordinates, Set.empty, Set.empty, Set.empty, _ => ""
-        ))
+        LibraryRule.pomLibraryRule(artifact = aManagedDependency.coordinates, Set.empty, Set.empty, Set.empty))
     }
 
     "persist jar import with sha256" in new resolvedCtx {

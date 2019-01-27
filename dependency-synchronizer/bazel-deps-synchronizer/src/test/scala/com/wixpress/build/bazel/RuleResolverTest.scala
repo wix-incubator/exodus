@@ -41,8 +41,8 @@ class RuleResolverTest extends SpecificationWithJUnit {
       ruleResolver.`for`(artifact, pomRuntimeDependencies, pomCompileDependencies).rule  mustEqual ImportExternalRule(
         name = artifact.workspaceRuleName,
         artifact = artifact.serialized,
-        runtimeDeps = pomRuntimeDependencies.map(ruleResolver.nonJarLabelBy),
-        compileTimeDeps = pomCompileDependencies.map(ruleResolver.nonJarLabelBy)
+        runtimeDeps = pomRuntimeDependencies.map(LibraryRuleDep.nonJarLabelBy),
+        compileTimeDeps = pomCompileDependencies.map(LibraryRuleDep.nonJarLabelBy)
       )
     }
 
@@ -59,8 +59,8 @@ class RuleResolverTest extends SpecificationWithJUnit {
       ruleResolver.`for`(pomArtifact, pomRuntimeDependencies, pomCompileDependencies).rule  mustEqual LibraryRule(
         name = artifact.libraryRuleName,
         jars = Set.empty,
-        runtimeDeps = pomRuntimeDependencies.map(ruleResolver.nonJarLabelBy),
-        exports = pomCompileDependencies.map(ruleResolver.nonJarLabelBy)
+        runtimeDeps = pomRuntimeDependencies.map(LibraryRuleDep.nonJarLabelBy),
+        exports = pomCompileDependencies.map(LibraryRuleDep.nonJarLabelBy)
       )
     }
 
@@ -80,7 +80,7 @@ class RuleResolverTest extends SpecificationWithJUnit {
     }
 
     "return non jar label with @workspaceName prefix" in {
-      ruleResolver.nonJarLabelBy(artifact) startsWith s"@$someWorkspace"
+      LibraryRuleDep.nonJarLabelBy(artifact) startsWith s"@$someWorkspace"
     }.pendingUntilFixed("First @workspace_name//third_party/... should be the same as @//third_party/... to bazel and strict deps")
 
   }

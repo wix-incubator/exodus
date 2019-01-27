@@ -44,7 +44,7 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
 
   private def updateImportExternalTargetsFile(mavenJarInBazel: MavenJarInBazel): Unit = {
     import mavenJarInBazel._
-    val rule = ImportExternalRule.of(artifact, runtimeDependencies, compileTimeDependencies, exclusions, ruleResolver.labelBy)
+    val rule = ImportExternalRule.of(artifact, runtimeDependencies.map(ImportExternalDep), compileTimeDependencies.map(ImportExternalDep), exclusions)
     val artifactGroup = artifact.groupIdForBazel
 
     val importExternalTargetsFileContent = bazelRepo.thirdPartyImportTargetsFileContent(artifactGroup).getOrElse("")
@@ -65,19 +65,6 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
        |${serializedImportExternalTargetsFileMethodCall(mavenJar)}
        |""".stripMargin
   }
-
-  def importExternalRuleWith(artifact: Coordinates,
-                             runtimeDependencies: Set[Coordinates] = Set.empty,
-                             compileTimeDependencies: Set[Coordinates] = Set.empty,
-                             exclusions: Set[Exclusion] = Set.empty,
-                             checksum: Option[String] = None) = {
-    ImportExternalRule.of(artifact,
-      runtimeDependencies,
-      compileTimeDependencies,
-      exclusions,
-      coordinatesToLabel = ruleResolver.labelBy,
-      checksum)
-  }
 }
 
 object BazelWorkspaceDriver {
@@ -94,15 +81,11 @@ object BazelWorkspaceDriver {
       libraryRule = Some(expectedlibraryRule)))
   }
 
-  private def labelBy(coordinates: Coordinates): String = {
+  def resolveDepBy(coordinates: Coordinates): BazelDep = {
     coordinates.packaging match {
-      case Packaging("jar") => ImportExternalRule.jarLabelBy(coordinates)
-      case _ => nonJarLabelBy(coordinates)
+      case Packaging("jar") => ImportExternalDep(coordinates)
+      case _ => LibraryRuleDep(coordinates)
     }
-  }
-
-  private def nonJarLabelBy(coordinates: Coordinates): String = {
-    s"@$localWorkspaceName${LibraryRule.nonJarLabelBy(coordinates)}"
   }
 
   private def importExternalRuleWith(artifact: Coordinates,
@@ -110,17 +93,13 @@ object BazelWorkspaceDriver {
                                      compileTimeDependencies: Set[Coordinates],
                                      exclusions: Set[Exclusion],
                                      checksum: Option[String],
-                                     coordinatesToLabel: Coordinates => String,
+                                     coordinatesToDep: Coordinates => BazelDep,
                                      srcChecksum: Option[String],
                                      neverlink: Boolean = false) = {
     ImportExternalRule.of(artifact,
-      runtimeDependencies,
-      compileTimeDependencies,
-      exclusions,
-      coordinatesToLabel = coordinatesToLabel,
-      checksum,
-      srcChecksum,
-      neverlink)
+      runtimeDependencies.map(coordinatesToDep),
+      compileTimeDependencies.map(coordinatesToDep),
+      exclusions, checksum = checksum, srcChecksum = srcChecksum, neverlink = neverlink)
   }
 
   def includeImportExternalTargetWith(artifact: Coordinates,
@@ -128,7 +107,7 @@ object BazelWorkspaceDriver {
                                       compileTimeDependencies: Set[Coordinates] = Set.empty,
                                       exclusions: Set[Exclusion] = Set.empty,
                                       checksum: Option[String] = None,
-                                      coordinatesToLabel: Coordinates => String = labelBy,
+                                      coordinatesToDep: Coordinates => BazelDep = resolveDepBy,
                                       srcChecksum: Option[String] = None,
                                       neverlink: Boolean = false): Matcher[BazelWorkspaceDriver] =
 
@@ -139,7 +118,7 @@ object BazelWorkspaceDriver {
         compileTimeDependencies = compileTimeDependencies,
         exclusions = exclusions,
         checksum = checksum,
-        coordinatesToLabel,
+        coordinatesToDep,
         srcChecksum = srcChecksum,
         neverlink)))) ^^ {
       (_:BazelWorkspaceDriver).bazelExternalDependencyFor(artifact) aka s"bazel workspace does not include import external rule target for $artifact"

@@ -177,7 +177,7 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
   }
 
   private def importExternalTargetsFileWith(newHead: Coordinates, importExternalTargetsFile: String) = {
-    ImportExternalTargetsFileWriter(importExternalTargetsFile).withMavenArtifact(newHead, resolver.labelBy)
+    ImportExternalTargetsFileWriter(importExternalTargetsFile).withMavenArtifact(newHead)
   }
 
   private def createImportExternalTargetsFileWith(coordinates: List[Coordinates]) = {
@@ -205,10 +205,6 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
                              runtimeDependencies: Set[Coordinates] = Set.empty,
                              compileTimeDependencies: Set[Coordinates] = Set.empty,
                              exclusions: Set[Exclusion] = Set.empty) = {
-    ImportExternalRule.of(artifact,
-      runtimeDependencies,
-      compileTimeDependencies,
-      exclusions,
-      coordinatesToLabel = resolver.labelBy)
+    ImportExternalRule.of(artifact, runtimeDependencies.map(ImportExternalDep), compileTimeDependencies.map(ImportExternalDep), exclusions)
   }
 }

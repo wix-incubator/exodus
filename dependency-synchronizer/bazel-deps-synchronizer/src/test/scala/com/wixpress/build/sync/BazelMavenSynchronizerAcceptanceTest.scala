@@ -2,6 +2,7 @@ package com.wixpress.build.sync
 
 import com.wixpress.build.BazelWorkspaceDriver._
 import com.wixpress.build.bazel.FakeLocalBazelWorkspace.thirdPartyReposFilePath
+import com.wixpress.build.bazel.ImportExternalRule._
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{overrideCoordinatesFrom, runtimeOverrides}
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.MavenMakers._
@@ -58,7 +59,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         syncBasedOn(updatedResolver, Set(newDependency))
 
         val expectedChange = Change(
-          filePaths = Set(thirdPartyReposFilePath, ImportExternalRule.importExternalFilePathBy(newDependency.coordinates).get),
+          filePaths = Set(thirdPartyReposFilePath, importExternalFilePathBy(newDependency.coordinates).get),
           message =
             s"""$PersistMessageHeader
                | - ${newDependency.coordinates.serialized}
@@ -128,10 +129,10 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
       }
 
       "reflect third party overrides in appropriate third_party target" in new baseCtx {
-        private val injectedRuntimeDep = "some-label"
+        val injectedCoordinates: Coordinates = someCoordinates("some_label")
         givenBazelWorkspace(
           mavenJarsInBazel = Set.empty,
-          overrides = runtimeOverrides(overrideCoordinatesFrom(baseDependency.coordinates), injectedRuntimeDep)
+          overrides = runtimeOverrides(overrideCoordinatesFrom(baseDependency.coordinates), jarLabelBy(injectedCoordinates))
         )
         val baseJarArtifact = ArtifactDescriptor.rootFor(baseDependency.coordinates)
         val dependencyJarArtifact = ArtifactDescriptor.rootFor(transitiveDependency.coordinates)
@@ -143,8 +144,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
         bazelWorkspace must includeImportExternalTargetWith(
           artifact = baseDependency.coordinates,
-          runtimeDependencies = Set(someCoordinates(injectedRuntimeDep)),
-          coordinatesToLabel = _ => injectedRuntimeDep)
+          runtimeDependencies = Set(injectedCoordinates))
       }
 
       "create appropriate third_party target for the new transitive dependency" in new blankBazelWorkspaceAndNewManagedArtifactWithDependency {

@@ -75,18 +75,17 @@ object ImportExternalRule {
   val RuleType = "import_external"
 
   def of(artifact: Coordinates,
-         runtimeDependencies: Set[Coordinates] = Set.empty,
-         compileTimeDependencies: Set[Coordinates] = Set.empty,
+         runtimeDependencies: Set[BazelDep] = Set.empty,
+         compileTimeDependencies: Set[BazelDep] = Set.empty,
          exclusions: Set[Exclusion] = Set.empty,
-         coordinatesToLabel: Coordinates => String,
          checksum: Option[String] = None,
          srcChecksum: Option[String] = None,
          neverlink: Boolean = false): ImportExternalRule = {
     ImportExternalRule(
       name = artifact.workspaceRuleName,
       artifact = artifact.serialized,
-      compileTimeDeps = compileTimeDependencies.map(coordinatesToLabel),
-      runtimeDeps = runtimeDependencies.map(coordinatesToLabel),
+      compileTimeDeps = compileTimeDependencies.map(_.toLabel),
+      runtimeDeps = runtimeDependencies.map(_.toLabel),
       exclusions = exclusions,
       checksum = checksum,
       srcChecksum = srcChecksum,
