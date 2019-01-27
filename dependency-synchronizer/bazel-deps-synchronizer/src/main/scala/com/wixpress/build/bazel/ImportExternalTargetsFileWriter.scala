@@ -29,7 +29,7 @@ case class ImportExternalTargetsFileWriter(content: String) {
   }
 
   private def replacedMatchedWithTarget(matched: Match, rule: ImportExternalRule): ImportExternalTargetsFileWriter = {
-    val contentStart = content.take(matched.start - "    ".length)
+    val contentStart = content.take(matched.start - "  ".length)
     val contentMiddle = rule.serialized
     val contentEnd = content.drop(matched.end)
     ImportExternalTargetsFileWriter(contentStart + contentMiddle + contentEnd)
