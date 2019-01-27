@@ -24,7 +24,7 @@ except ImportError:
     # python 3
     from io import StringIOfin
 
-logging_level = logging.DEBUG  # if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
+logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
 logging.basicConfig(level=logging_level, format='%(asctime)s  %(levelname)s: %(message)s')
 
 local_cache_versions_folder = "2nd_party_resolved_dependencies"
