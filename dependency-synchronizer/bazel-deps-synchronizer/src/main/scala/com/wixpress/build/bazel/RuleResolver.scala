@@ -1,12 +1,12 @@
 package com.wixpress.build.bazel
 
-import com.wixpress.build.bazel.LibraryRuleDep.nonJarLabelBy
 import com.wixpress.build.maven.{Coordinates, Exclusion, Packaging}
+
 class RuleResolver(localWorkspaceName: String) {
 
   def `for`( artifact: Coordinates,
-             runtimeDependencies: Set[Coordinates] = Set.empty,
-             compileTimeDependencies: Set[Coordinates] = Set.empty,
+             runtimeDependencies: Set[BazelDep] = Set.empty,
+             compileTimeDependencies: Set[BazelDep] = Set.empty,
              exclusions: Set[Exclusion] = Set.empty,
              checksum: Option[String] = None,
              srcChecksum: Option[String] = None,
@@ -14,8 +14,8 @@ class RuleResolver(localWorkspaceName: String) {
     artifact.packaging match {
       case Packaging("jar") => RuleToPersist(
         ImportExternalRule.of(artifact,
-          runtimeDependencies.map(resolveDepBy),
-          compileTimeDependencies.map(resolveDepBy),
+          runtimeDependencies,
+          compileTimeDependencies,
           exclusions,
           checksum,
           srcChecksum,
@@ -23,42 +23,12 @@ class RuleResolver(localWorkspaceName: String) {
         ImportExternalRule.ruleLocatorFrom(artifact))
       case Packaging("pom") => RuleToPersist(
         LibraryRule.pomLibraryRule(artifact,
-          runtimeDependencies.map(resolveDepBy),
-          compileTimeDependencies.map(resolveDepBy),
+          runtimeDependencies,
+          compileTimeDependencies,
           exclusions),
         LibraryRule.packageNameBy(artifact))
       case _ => throw new RuntimeException(s"no rule defined for ${artifact.serialized}")
     }
-
-  def resolveDepBy(coordinates: Coordinates): BazelDep = {
-    coordinates.packaging match {
-      case Packaging("jar") => ImportExternalDep(coordinates)
-      case _ => LibraryRuleDep(coordinates)
-    }
-  }
-}
-
-trait BazelDep {
-  val coordinates: Coordinates
-  def toLabel: String
-}
-case class ImportExternalDep(coordinates: Coordinates) extends BazelDep {
-  override def toLabel(): String = ImportExternalRule.jarLabelBy(coordinates)
-}
-
-// TODO: add workspace name....
-case class LibraryRuleDep(coordinates: Coordinates) extends BazelDep {
-  override def toLabel(): String = nonJarLabelBy(coordinates)
-}
-
-object LibraryRuleDep {
-  def nonJarLabelBy(coordinates: Coordinates): String = {
-    s"@${LibraryRule.nonJarLabelBy(coordinates)}"
-  }
-
-  def apply(coordinates: Coordinates): LibraryRuleDep = {
-    new LibraryRuleDep(coordinates)
-  }
 }
 
 trait RuleWithDeps {

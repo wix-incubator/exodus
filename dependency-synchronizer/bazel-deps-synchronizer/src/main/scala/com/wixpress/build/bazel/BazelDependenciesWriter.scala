@@ -3,9 +3,10 @@ package com.wixpress.build.bazel
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
 import com.wixpress.build.maven._
 
-class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace, overrideGlobalNeverLinkDependencies: Set[Coordinates] = Set.empty) {
+class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
+                              neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) {
   val ruleResolver = new RuleResolver(localWorkspace.localWorkspaceName)
-  val neverLinkResolver = NeverLinkResolver(overrideGlobalNeverLinkDependencies)
+  val annotatedDepNodeTransformer = new AnnotatedDependencyNodeTransformer(neverLinkResolver)
 
   def writeDependencies(dependencyNodes: DependencyNode*): Set[String] =
     writeDependencies(dependencyNodes.toSet)
@@ -33,7 +34,9 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace, overrideGloba
   }
 
   private def writeThirdPartyFolderContent(dependencyNodes: Set[DependencyNode]): Unit = {
-    val targetsToPersist = dependencyNodes.flatMap(maybeRuleBy)
+    val annotatedDependencyNodes = dependencyNodes.map(annotatedDepNodeTransformer.annotate)
+
+    val targetsToPersist = annotatedDependencyNodes.flatMap(maybeRuleBy)
     val groupedTargets = targetsToPersist.groupBy(_.ruleTargetLocator).values
     groupedTargets.foreach { targetsGroup =>
       val sortedTargets = targetsGroup.toSeq.sortBy(_.rule.name)
@@ -41,18 +44,13 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace, overrideGloba
     }
   }
 
-  private def overwriteThirdPartyFolderFiles(ruleToPersist: RuleToPersist): Unit = {
-    BazelBuildFile.persistTarget(ruleToPersist, localWorkspace)
-    ImportExternalTargetsFile.persistTarget(ruleToPersist, localWorkspace)
-  }
-
-  private def maybeRuleBy(dependencyNode: DependencyNode) =
+  private def maybeRuleBy(dependencyNode: AnnotatedDependencyNode) =
     dependencyNode.baseDependency.coordinates.packaging match {
       case Packaging("pom") | Packaging("jar") => Some(createRuleBy(dependencyNode))
       case _ => None
     }
 
-  private def createRuleBy(dependencyNode: DependencyNode) = {
+  private def createRuleBy(dependencyNode: AnnotatedDependencyNode) = {
     val runtimeDependenciesOverrides = localWorkspace.thirdPartyOverrides().runtimeDependenciesOverridesOf(
       OverrideCoordinates(dependencyNode.baseDependency.coordinates.groupId,
         dependencyNode.baseDependency.coordinates.artifactId)
@@ -65,14 +63,21 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace, overrideGloba
 
     val ruleToPersist = ruleResolver.`for`(
       artifact = dependencyNode.baseDependency.coordinates,
-      runtimeDependencies = dependencyNode.runtimeDependencies.filterNot(_.isProtoArtifact),
-      compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(_.isProtoArtifact),
+      runtimeDependencies = dependencyNode.runtimeDependencies,
+      compileTimeDependencies = dependencyNode.compileTimeDependencies,
       exclusions = dependencyNode.baseDependency.exclusions,
       checksum = dependencyNode.checksum,
       srcChecksum = dependencyNode.srcChecksum,
-      neverlink = neverLinkResolver.isNeverLink(dependencyNode.baseDependency)
+      neverlink = dependencyNode.neverlink
     )
+
+    // TODO: try to move this BEFORE the `for` so won't need `withUpdateDeps` in trait
     ruleToPersist.withUpdateDeps(runtimeDependenciesOverrides, compileTimeDependenciesOverrides)
+  }
+
+  private def overwriteThirdPartyFolderFiles(ruleToPersist: RuleToPersist): Unit = {
+    BazelBuildFile.persistTarget(ruleToPersist, localWorkspace)
+    ImportExternalTargetsFile.persistTarget(ruleToPersist, localWorkspace)
   }
 
   private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) = {
@@ -93,5 +98,33 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace, overrideGloba
 
     writeThirdPartyFolderContent(dependenciesForThirdPartyFolder)
     computeAffectedFilesBy(dependenciesForThirdPartyFolder)
+  }
+}
+
+case class AnnotatedDependencyNode(baseDependency: Dependency,
+                              runtimeDependencies: Set[BazelDep],
+                              compileTimeDependencies: Set[BazelDep],
+                              checksum: Option[String] = None,
+                              srcChecksum: Option[String] = None,
+                                   neverlink: Boolean = false)
+
+
+class AnnotatedDependencyNodeTransformer(neverLinkResolver: NeverLinkResolver = new NeverLinkResolver()) {
+
+  def annotate(dependencyNode: DependencyNode): AnnotatedDependencyNode = {
+    AnnotatedDependencyNode(
+      baseDependency = dependencyNode.baseDependency,
+      runtimeDependencies = dependencyNode.runtimeDependencies.filterNot(_.isProtoArtifact).map(resolveDepBy),
+      compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(_.isProtoArtifact).map(resolveDepBy),
+      checksum = dependencyNode.checksum,
+      srcChecksum = dependencyNode.srcChecksum,
+      neverlink = neverLinkResolver.isNeverLink(dependencyNode.baseDependency))
+  }
+
+  private def resolveDepBy(coordinates: Coordinates): BazelDep = {
+    coordinates.packaging match {
+      case Packaging("jar") => ImportExternalDep(coordinates, neverLinkResolver.isLinkable(coordinates))
+      case _ => LibraryRuleDep(coordinates)
+    }
   }
 }

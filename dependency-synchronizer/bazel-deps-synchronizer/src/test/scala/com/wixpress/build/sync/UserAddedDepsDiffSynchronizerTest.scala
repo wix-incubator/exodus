@@ -3,7 +3,7 @@ package com.wixpress.build.sync
 import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.BazelWorkspaceDriver
 import com.wixpress.build.BazelWorkspaceDriver._
-import com.wixpress.build.bazel.{FakeLocalBazelWorkspace, ImportExternalRule, InMemoryBazelRepository}
+import com.wixpress.build.bazel.{FakeLocalBazelWorkspace, ImportExternalRule, InMemoryBazelRepository, NeverLinkResolver}
 import com.wixpress.build.maven.FakeMavenDependencyResolver._
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven.{DependencyNode, _}
@@ -40,6 +40,17 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
         targetRepoDriver must includeImportExternalTargetWith(updatedArtifact)
       }
+
+      "add linkable suffix to relevant transitive dep" in new linkableCtx {
+        val diffSynchronizer: UserAddedDepsDiffSynchronizer = synchronizerWithLinkableArtifact(artifactB)
+        targetFakeLocalWorkspace.hasDependencies(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
+        managedDepsLocalWorkspace.hasDependencies(aRootDependencyNode(asCompileDependency(artifactB)))
+
+        diffSynchronizer.syncThirdParties(Set(artifactA).map(toDependency))
+
+        targetRepoDriver.transitiveCompileTimeDepOf(artifactA) must contain(contain("//:linkable"))
+
+      }
     }
 
     "calculate difference from managed" in new ctx {
@@ -55,7 +66,6 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
       synchronizer.resolveUpdatedLocalNodes(Set()).localNodes must contain(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
     }
-
   }
 
   trait ctx extends Scope {
@@ -79,7 +89,13 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     val targetRepoDriver = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
 
     val resolver = givenFakeResolverForDependencies(rootDependencies = Set(asCompileDependency(dependencyManagementCoordinates)))
-    def synchronizer = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository, dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule](), "")
+    def synchronizer = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository,
+      dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule](), "", NeverLinkResolver())
+  }
+
+  trait linkableCtx extends ctx {
+    def synchronizerWithLinkableArtifact(artifact: Coordinates) = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository,
+      dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule](), "", NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)))
   }
 
 }

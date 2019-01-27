@@ -22,6 +22,10 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
     bazelExternalDependencyFor(coordinates).importExternalRule.map(r => deserialize(r.artifact).version)
   }
 
+  def transitiveCompileTimeDepOf(coordinates: Coordinates): Set[String] = {
+    bazelExternalDependencyFor(coordinates).importExternalRule.fold(Set[String]())(_.compileTimeDeps)
+  }
+
   def bazelExternalDependencyFor(coordinates: Coordinates): BazelExternalDependency = {
     val maybeImportExternalRule = findImportExternalRuleBy(coordinates)
     val maybeLibraryRule = findLibraryRuleBy(coordinates)
@@ -44,7 +48,7 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
 
   private def updateImportExternalTargetsFile(mavenJarInBazel: MavenJarInBazel): Unit = {
     import mavenJarInBazel._
-    val rule = ImportExternalRule.of(artifact, runtimeDependencies.map(ImportExternalDep), compileTimeDependencies.map(ImportExternalDep), exclusions)
+    val rule = ImportExternalRule.of(artifact, runtimeDependencies.map(ImportExternalDep(_)), compileTimeDependencies.map(ImportExternalDep(_)), exclusions)
     val artifactGroup = artifact.groupIdForBazel
 
     val importExternalTargetsFileContent = bazelRepo.thirdPartyImportTargetsFileContent(artifactGroup).getOrElse("")

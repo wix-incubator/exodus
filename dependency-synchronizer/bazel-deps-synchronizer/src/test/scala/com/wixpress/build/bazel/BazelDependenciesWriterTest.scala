@@ -396,7 +396,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         val artifact = someCoordinates("some-artifact")
 
-        def writer = new BazelDependenciesWriter(localWorkspace, Set(artifact))
+        def writer = new BazelDependenciesWriter(localWorkspace, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)))
 
         writer.writeDependencies(aRootDependencyNode(asCompileDependency(artifact)))
 
@@ -406,6 +406,28 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
           s"""|    neverlink = 1,
               |    generated_linkable_rule_name = "linkable",""".stripMargin
         )
+      }
+
+      "write target with 'linkable' transitive dep if came from global overrided list and is missing from local neverlink " in {
+        val localWorkspace = new FakeLocalBazelWorkspace()
+        val artifact = someCoordinates("some-artifact")
+        val transitiveDep = someCoordinates("some-transitiveDep")
+
+        val newTransitiveDependency = asCompileDependency(transitiveDep)
+        val newDependencyNode = DependencyNode(asCompileDependency(artifact), Set(newTransitiveDependency))
+
+        def writer = new BazelDependenciesWriter(localWorkspace,
+          NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(transitiveDep)))
+
+        writer.writeDependencies(newDependencyNode)
+
+        val importExternalFileContent = localWorkspace.thirdPartyImportTargetsFileContent(artifact.groupIdForBazel)
+
+        importExternalFileContent must containScalaImportExternalRuleFor(artifact,
+          s"""|    deps = [
+              |     "@${newTransitiveDependency.coordinates.workspaceRuleName}//:linkable"
+              |    ],""".stripMargin)
+
       }
     }
   }

@@ -93,7 +93,13 @@ object ImportExternalRule {
     )
   }
 
-  def jarLabelBy(coordinates: Coordinates): String = s"@${coordinates.workspaceRuleName}"
+  def jarLabelBy(coordinates: Coordinates, linkableSuffixNeeded: Boolean = false): String = {
+    val suffix = if (linkableSuffixNeeded)
+      "//:linkable"
+    else
+      ""
+    s"@${coordinates.workspaceRuleName}$suffix"
+  }
   def linkableLabelBy(coordinates: Coordinates): String = s"@${coordinates.workspaceRuleName}//:linkable"
 
   def importExternalFilePathBy(coordinates: Coordinates): Option[String] = {

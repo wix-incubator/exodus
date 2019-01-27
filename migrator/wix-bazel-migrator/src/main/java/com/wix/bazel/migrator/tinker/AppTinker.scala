@@ -9,8 +9,8 @@ import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.{DependencyCollectionCollisionsReport, Persister, RunConfiguration}
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.bazel.migrator.utils.{DependenciesDifferentiator, MavenCoordinatesListReader}
-import com.wix.build.maven.analysis.{SourceModules, ThirdPartyConflict, ThirdPartyConflicts, ThirdPartyValidator}
-import com.wixpress.build.bazel.NoPersistenceBazelRepository
+import com.wix.build.maven.analysis._
+import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
 import com.wixpress.build.bazel.repositories.WorkspaceName
 import com.wixpress.build.maven
 import com.wixpress.build.maven._
@@ -131,7 +131,9 @@ class AppTinker(configuration: RunConfiguration) {
     val bazelRepo = new NoPersistenceBazelRepository(repoRoot)
 
     val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
-    val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver, artifactoryRemoteStorage)
+    val neverLinkResolver = NeverLinkResolver(localNeverlinkDependencies = RepoProvidedDeps(codeModules).repoProvidedArtifacts)
+    val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver,
+      artifactoryRemoteStorage, neverLinkResolver)
 
     val localNodes = calcLocaDependencylNodes()
 

@@ -1,16 +1,18 @@
 package com.wixpress.build.sync
 
 import com.wixpress.build.bazel._
-import com.wixpress.build.maven.{DependencyNode, MavenDependencyResolver}
+import com.wixpress.build.maven.{Coordinates, DependencyNode, MavenDependencyResolver, MavenScope}
 import com.wixpress.build.sync.ArtifactoryRemoteStorage._
 import com.wixpress.build.sync.BazelMavenSynchronizer.PersistMessageHeader
 import org.slf4j.LoggerFactory
 
 case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelRepository,
                             targetRepository: BazelRepository, resolver: MavenDependencyResolver,
-                            dependenciesRemoteStorage: DependenciesRemoteStorage) {
+                            dependenciesRemoteStorage: DependenciesRemoteStorage,
+                            neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) {
+
   private val diffCalculator = DiffCalculator(bazelRepositoryWithManagedDependencies, resolver, dependenciesRemoteStorage)
-  private val diffWriter = DiffWriter(targetRepository)
+  private val diffWriter = DiffWriter(targetRepository,neverLinkResolver)
 
   def sync(localNodes: Set[DependencyNode]) = {
     val updatedLocalNodes = diffCalculator.calculateDivergentDependencies(localNodes)
@@ -47,7 +49,10 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
   }
 }
 
-case class DiffWriter(targetRepository: BazelRepository, remoteBranch: Option[String] = None) {
+case class DiffWriter(targetRepository: BazelRepository,
+                      neverLinkResolver: NeverLinkResolver,
+                      remoteBranch: Option[String] = None
+                      ) {
   private val log = LoggerFactory.getLogger(getClass)
 
   private val branchName = remoteBranch.fold("master")(b => b)
@@ -56,10 +61,11 @@ case class DiffWriter(targetRepository: BazelRepository, remoteBranch: Option[St
 
   def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit = {
     val localCopy = targetRepository.localWorkspace(branchName)
-    val writer = new BazelDependenciesWriter(localCopy)
+    val writer = new BazelDependenciesWriter(localCopy, neverLinkResolver = neverLinkResolver)
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom")
 
-    val modifiedFiles = writer.writeDependencies(divergentLocalDependencies, divergentLocalDependencies ++ nodesWithPomPackaging)
+    val modifiedFiles = writer.
+      writeDependencies(divergentLocalDependencies, divergentLocalDependencies ++ nodesWithPomPackaging)
 
     log.info(s"modifying ${modifiedFiles.size} files.")
 

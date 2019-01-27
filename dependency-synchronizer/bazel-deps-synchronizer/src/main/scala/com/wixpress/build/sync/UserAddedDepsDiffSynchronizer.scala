@@ -1,7 +1,7 @@
 package com.wixpress.build.sync
 
 import com.wix.bazel.migrator.model.SourceModule
-import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository}
+import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository, NeverLinkResolver}
 import com.wixpress.build.maven._
 import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
@@ -10,8 +10,9 @@ class UserAddedDepsDiffSynchronizer(bazelRepo: BazelRepository, bazelRepoWithMan
                                     ManagedDependenciesArtifact: Coordinates, aetherResolver: MavenDependencyResolver,
                                     remoteStorage: DependenciesRemoteStorage,
                                     mavenModules: Set[SourceModule],
-                                    randomString: => String) {
-  val diffWriter = DiffWriter(bazelRepo, Some(s"user_added_3rd_party_deps_$randomString"))
+                                    randomString: => String,
+                                    neverLinkResolver: NeverLinkResolver) {
+  val diffWriter = DiffWriter(bazelRepo, neverLinkResolver, Some(s"user_added_3rd_party_deps_$randomString"))
   val diffCalculator = DiffCalculator(bazelRepoWithManagedDependencies, aetherResolver, remoteStorage)
   val aggregator = new DependencyAggregator(mavenModules)
 

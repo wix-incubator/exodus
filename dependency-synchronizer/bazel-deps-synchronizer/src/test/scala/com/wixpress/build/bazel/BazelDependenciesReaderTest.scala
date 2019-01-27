@@ -85,7 +85,7 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
     "a dependency node with 1 transitive dependency found locally" in new emptyWorkspaceNameCtx {
       localWorkspace.overwriteThirdPartyImportTargetsFile(artifact.groupIdForBazel,
         ImportExternalRule.of(artifact,
-          runtimeDependencies = Set(resolver.resolveDepBy(artifact2)))
+          runtimeDependencies = Set(resolveDepBy(artifact2)))
           .serialized +
           ImportExternalRule.of(artifact2)
             .serialized)
@@ -101,7 +101,7 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
     "throw exception on missing import_external target definition on deps lookup" in new emptyWorkspaceNameCtx {
       localWorkspace.overwriteThirdPartyImportTargetsFile(artifact.groupIdForBazel,
         ImportExternalRule.of(artifact,
-          runtimeDependencies = Set(resolver.resolveDepBy(artifact2)))
+          runtimeDependencies = Set(resolveDepBy(artifact2)))
           .serialized)
 
       reader.allDependenciesAsMavenDependencyNodes() must throwA[RuntimeException]
@@ -146,7 +146,7 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
     "a dependency node with 1 transitive dependency from given external set" in new emptyWorkspaceNameCtx {
       localWorkspace.overwriteThirdPartyImportTargetsFile(artifact.groupIdForBazel,
         ImportExternalRule.of(artifact,
-          runtimeDependencies = Set(resolver.resolveDepBy(artifact2)))
+          runtimeDependencies = Set(resolveDepBy(artifact2)))
           .serialized)
 
       val dependencyNodes: Set[DependencyNode] = reader.allDependenciesAsMavenDependencyNodes(Set(Dependency(artifact2, MavenScope.Runtime)))
@@ -161,7 +161,7 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
 
       localWorkspace.overwriteThirdPartyImportTargetsFile(artifact.groupIdForBazel,
         ImportExternalRule.of(artifact,
-          compileTimeDependencies = Set(resolver.resolveDepBy(pomArtifact)))
+          compileTimeDependencies = Set(resolveDepBy(pomArtifact)))
           .serialized)
 
       localWorkspace.overwriteThirdPartyReposFile(WorkspaceRule.of(pomArtifact).serialized)
@@ -205,6 +205,11 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
   }
 
   trait emptyWorkspaceNameCtx extends emptyThirdPartyReposCtx {
-    val resolver = new RuleResolver("")
+    def resolveDepBy(coordinates: Coordinates): BazelDep = {
+      coordinates.packaging match {
+        case Packaging("jar") => ImportExternalDep(coordinates, false)
+        case _ => LibraryRuleDep(coordinates)
+      }
+    }
   }
 }

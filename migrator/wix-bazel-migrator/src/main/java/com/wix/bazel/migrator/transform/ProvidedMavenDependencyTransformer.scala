@@ -5,6 +5,7 @@ import com.wix.bazel.migrator.model
 import com.wix.bazel.migrator.model.Target.ModuleDeps
 import com.wix.bazel.migrator.model.{PackagesTransformer, SourceModule}
 import com.wix.bazel.migrator.overrides.MavenArchiveTargetsOverrides
+import com.wix.build.maven.analysis.RepoProvidedDeps
 import com.wixpress.build.bazel.ImportExternalRule
 import com.wixpress.build.maven
 import com.wixpress.build.maven.{Coordinates, MavenScope, Dependency => MavenDependency}
@@ -49,20 +50,6 @@ class ProvidedModuleTestDependenciesTransformer(repoModules: Set[SourceModule],
       .exists(_.coordinates.equalsOnGroupIdAndArtifactId(dep.coordinates))
 }
 
-case class RepoProvidedDeps(repoModules: Set[SourceModule]) {
-  def isUsedAsProvidedInRepo(dependency: MavenDependency): Boolean = repoProvidedDeps(dependency.shortSerializedForm())
-
-  private val repoProvidedDeps = repoModules
-    .flatMap(_.dependencies.directDependencies)
-    .filter(_.scope == MavenScope.Provided)
-    .filterNot(isRepoModule)
-    .map(_.shortSerializedForm())
-
-  private def isRepoModule(dep: MavenDependency) =
-    repoModules
-      .exists(_.coordinates.equalsOnGroupIdAndArtifactId(dep.coordinates))
-}
-
 class ProvidedMavenDependencyTransformer(repoModules: Set[SourceModule],
                                          externalPackageLocator: ExternalSourceModuleRegistry,
                                          mavenArchiveTargetsOverrides: MavenArchiveTargetsOverrides,
@@ -70,7 +57,7 @@ class ProvidedMavenDependencyTransformer(repoModules: Set[SourceModule],
   extends MavenDependencyTransformer(repoModules, externalPackageLocator, mavenArchiveTargetsOverrides) {
   private val repoProvidedDeps = RepoProvidedDeps(repoModules)
 
-  override def toBazelDependency(dependency: MavenDependency) =
+  override def toBazelDependency(dependency: MavenDependency): Option[String] =
     toLinkableBazelDependencyIfNeeded(dependency: MavenDependency)
 
   private def toLinkableBazelDependencyIfNeeded(dependency: MavenDependency) =

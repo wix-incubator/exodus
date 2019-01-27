@@ -205,6 +205,6 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
                              runtimeDependencies: Set[Coordinates] = Set.empty,
                              compileTimeDependencies: Set[Coordinates] = Set.empty,
                              exclusions: Set[Exclusion] = Set.empty) = {
-    ImportExternalRule.of(artifact, runtimeDependencies.map(ImportExternalDep), compileTimeDependencies.map(ImportExternalDep), exclusions)
+    ImportExternalRule.of(artifact, runtimeDependencies.map(ImportExternalDep(_)), compileTimeDependencies.map(ImportExternalDep(_)), exclusions)
   }
 }
