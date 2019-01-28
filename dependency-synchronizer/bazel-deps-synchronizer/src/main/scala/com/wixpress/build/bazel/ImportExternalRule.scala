@@ -26,15 +26,15 @@ case class ImportExternalRule(name: String,
 
   private def serializedTestOnly =
     if (testOnly) """
-                    |      testonly = 1,""".stripMargin else ""
+                    |        testonly = 1,""".stripMargin else ""
 
   private def serializedChecksum =
     checksum.fold("")(sha256 => s"""
-                    |      jar_sha256 = "$sha256",""".stripMargin)
+                    |        jar_sha256 = "$sha256",""".stripMargin)
 
   private def serializedSrcChecksum =
     srcChecksum.fold("")(sha256 => s"""
-                    |      srcjar_sha256 = "$sha256",""".stripMargin)
+                    |        srcjar_sha256 = "$sha256",""".stripMargin)
 
   private def serializedAttributes =
     toListEntry("exports", exports) +
@@ -43,22 +43,22 @@ case class ImportExternalRule(name: String,
 
   private def serializedNeverlink =
     if (neverlink) """
-                    |      neverlink = 1,
-                    |      generated_linkable_rule_name = "linkable",""".stripMargin else ""
+                    |        neverlink = 1,
+                    |        generated_linkable_rule_name = "linkable",""".stripMargin else ""
 
   private def toListEntry(keyName: String, elements: Iterable[String]): String = {
     if (elements.isEmpty) "" else {
       s"""
-         |      $keyName = [
-         |          ${toStringsList(elements)}
-         |      ],""".stripMargin
+         |        $keyName = [
+         |            ${toStringsList(elements)}
+         |        ],""".stripMargin
     }
   }
 
   private def toStringsList(elements: Iterable[String]) = {
     elements.toList.sorted
       .map(e => s""""$e"""")
-      .mkString(",\n          ")
+      .mkString(",\n            ")
   }
 
   private def serializedExclusions = if (exclusions.isEmpty) "" else
