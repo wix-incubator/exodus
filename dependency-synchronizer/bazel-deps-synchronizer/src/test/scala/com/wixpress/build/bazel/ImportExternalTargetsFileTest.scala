@@ -7,7 +7,6 @@ import com.wixpress.build.maven._
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
-//noinspection TypeAnnotation
 class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
   "Import External Targets File reader" should {
     trait ctx extends Scope{
@@ -175,23 +174,6 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
 
       importExternalTargetsFileWith(newJar, "").content mustEqual expectedImportExternalTargetsFile
     }
-
-    "update jar import that had different spacing" in {
-      val rest = serializeJars(jars.tail)
-
-      val headJar =
-        s"""  import_external(
-           |      name = "${jars.head.workspaceRuleName}",
-           |      artifact = "${jars.head.serialized}",
-           |  )""".stripMargin
-
-      val importExternalTargetsFile = contentWith(headJar, rest)
-
-      val newHead = jars.head.copy(version = "5.0")
-      val newJars = newHead +: jars.tail
-      val expectedImportExternalTargetsFile = createImportExternalTargetsFileWith(newJars)
-      importExternalTargetsFileWith(newHead, importExternalTargetsFile).content mustEqual expectedImportExternalTargetsFile
-    }
   }
 
   private def importExternalTargetsFileWith(newHead: Coordinates, importExternalTargetsFile: String) = {
@@ -202,21 +184,13 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
     val firstJar: Coordinates = coordinates.head
     val restOfJars = coordinates.tail
 
-    val rest = serializeJars(restOfJars)
+    val rest = restOfJars.map(jar => importExternalRuleWith(jar)).map(_.serialized).mkString("\n\n")
 
-    contentWith(importExternalRuleWith(firstJar).serialized, rest)
-  }
-
-  private def serializeJars(jars: List[Coordinates]) = {
-    jars.map(jar => importExternalRuleWith(jar)).map(_.serialized).mkString("\n\n")
-  }
-
-  private def contentWith(firstJar: String, rest: String) = {
     s"""load("@core_server_build_tools//:import_external.bzl", import_external = "safe_wix_scala_maven_import_external")
        |
        |def dependencies():
        |
-       |$firstJar
+       |${importExternalRuleWith(firstJar).serialized}
        |
        |$rest
        |
