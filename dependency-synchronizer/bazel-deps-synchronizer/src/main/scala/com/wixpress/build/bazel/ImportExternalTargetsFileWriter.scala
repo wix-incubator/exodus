@@ -29,10 +29,16 @@ case class ImportExternalTargetsFileWriter(content: String) {
   }
 
   private def replacedMatchedWithTarget(matched: Match, rule: ImportExternalRule): ImportExternalTargetsFileWriter = {
-    val contentStart = content.take(matched.start - "  ".length)
+    val contentStart = findFlexibleStartOfContent(matched)
     val contentMiddle = rule.serialized
     val contentEnd = content.drop(matched.end)
     ImportExternalTargetsFileWriter(contentStart + contentMiddle + contentEnd)
+  }
+
+  private def findFlexibleStartOfContent(matched: Match) = {
+    val contentStartPlusSpaces = content.take(matched.start)
+    val indexOfNewLine = contentStartPlusSpaces.lastIndexOf("\n")
+    contentStartPlusSpaces.take(indexOfNewLine + 1)
   }
 
   def withMavenArtifact(artifact: Coordinates): ImportExternalTargetsFileWriter = {
