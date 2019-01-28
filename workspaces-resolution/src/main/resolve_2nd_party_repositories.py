@@ -116,7 +116,7 @@ def create_versions_files_from_other_branch(current_branch, other_branch):
 
 
 def load_environment_variables():
-    global repo_list, tracking_branch, second_party_resolved_deps_override, compressed_second_party_resolved_deps_override, json_file_path_override, build_branch_override, repositories_url
+    global repo_list, tracking_branch, second_party_resolved_deps_override, compressed_second_party_resolved_deps_override, json_file_path_override, build_branch_override, repositories_url, build_type
     repo_list = os.environ.get("REPO_LIST", default_repo_list)
     logging.debug("[env var] repo_list = %s", repo_list)
     tracking_branch = os.environ.get("TRACKING_BRANCH", default_tracking_branch)
@@ -131,6 +131,8 @@ def load_environment_variables():
     logging.debug("[env var] build_branch_override = %s", build_branch_override)
     repositories_url = os.environ.get("REPOSITORIES_URL", default_repositories_url)
     logging.debug("[env var] repositories_url = %s", repositories_url)
+    build_type = os.environ.get("BUILD_TYPE", "")
+    logging.debug("[env var] build_type = %s", build_type)
 
 
 if __name__ == "__main__":
