@@ -1,6 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.bazel.EitherSupport.partitionEithers
 import com.wixpress.build.bazel.ImportExternalTargetsFileReader._
 import com.wixpress.build.maven.{Coordinates, Dependency, DependencyNode, MavenScope}
 
@@ -57,21 +58,29 @@ case class AllImportExternalFilesDependencyNodesReader(filesContent: Set[String]
                                                        pomAggregatesCoordinates: Set[Coordinates],
                                                        externalDeps: Set[Dependency] = Set(),
                                                        localWorkspaceName: String = "") {
-  def allMavenDependencyNodes(): Set[DependencyNode] = {
+  def allMavenDependencyNodes(): Either[Set[DependencyNode],Set[String]] = {
     val bazelDependencyNodes = filesContent.flatMap(c => ImportExternalTargetsFilePartialDependencyNodesReader(c, localWorkspaceName).allBazelDependencyNodes())
     val baseDependencies = bazelDependencyNodes.map(_.baseDependency)
-    bazelDependencyNodes.map(d => mavenDependencyNodeFrom(d, baseDependencies))
+    val dependencyNodesOrErrors = bazelDependencyNodes.map(d => mavenDependencyNodeFrom(d, baseDependencies))
+
+    transformEithers(dependencyNodesOrErrors)
   }
 
-  private def mavenDependencyNodeFrom(partialNode: PartialDependencyNode, baseDependencies: Set[Dependency]):DependencyNode = {
-    DependencyNode(
-      partialNode.baseDependency,
-      partialNode.targetDependencies.flatMap(t => transitiveDepFrom(t, baseDependencies, partialNode.baseDependency.coordinates)),
-      checksum = partialNode.checksum,
-      srcChecksum = partialNode.srcChecksum)
+  private def mavenDependencyNodeFrom(partialNode: PartialDependencyNode, baseDependencies: Set[Dependency]):Either[DependencyNode,Set[String]] = {
+    val dependenciesOrErrors = partialNode.targetDependencies.map(t => transitiveDepFrom(t, baseDependencies, partialNode.baseDependency.coordinates))
+
+    val (maybeDependencies, rights) = partitionEithers[Option[Dependency],String](dependenciesOrErrors)
+    if (rights.nonEmpty)
+      Right(rights)
+    else
+      Left(DependencyNode(
+        partialNode.baseDependency,
+        maybeDependencies.flatten,
+        checksum = partialNode.checksum,
+        srcChecksum = partialNode.srcChecksum))
   }
 
-  private def transitiveDepFrom(partialDep: PartialDependency, baseDependencies: Set[Dependency], dependantArtifact: Coordinates) = {
+  private def transitiveDepFrom(partialDep: PartialDependency, baseDependencies: Set[Dependency], dependantArtifact: Coordinates):Either[Option[Dependency], String] = {
     def lookupDep: Option[Dependency] = {
       partialDep match {
         case _: PartialPomAggregateDependency => pomAggregatesCoordinates.find(_.workspaceRuleName == partialDep.ruleName).map(Dependency(_, partialDep.scope))
@@ -82,8 +91,17 @@ case class AllImportExternalFilesDependencyNodesReader(filesContent: Set[String]
 
     val maybeDependency = lookupDep.map(_.copy(scope = partialDep.scope))
     if (maybeDependency.isEmpty)
-      throw new RuntimeException(s"missing artifact information for: $partialDep.\nThe dependant artifact is $dependantArtifact.\ncannot finish compiling dep closure. please consult with support.")
-    maybeDependency
+      Right(s"missing artifact information for: $partialDep.\nThe dependant artifact is ${dependantArtifact.serialized}")
+    else
+      Left(maybeDependency)
+  }
+
+  private def transformEithers(dependencyNodesOrErrors: Set[Either[DependencyNode, Set[String]]]) = {
+    val (lefts, rights) = partitionEithers(dependencyNodesOrErrors)
+    if (rights.nonEmpty)
+      Right(rights.flatten)
+    else
+      Left(lefts)
   }
 }
 
@@ -97,3 +115,11 @@ trait PartialDependency {
 case class PartialJarDependency(ruleName: String, scope: MavenScope) extends PartialDependency
 
 case class PartialPomAggregateDependency(ruleName: String, scope: MavenScope) extends PartialDependency
+
+object EitherSupport {
+  def partitionEithers[A,B](eithers: Set[Either[A, B]]): (Set[A], Set[B]) = {
+    def lefts = eithers collect { case Left(x) => x }
+    val rights = eithers collect { case Right(x) => x }
+    (lefts, rights)
+  }
+}

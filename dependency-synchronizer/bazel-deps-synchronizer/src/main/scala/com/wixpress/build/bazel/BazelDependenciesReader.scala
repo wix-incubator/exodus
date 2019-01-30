@@ -12,9 +12,18 @@ class BazelDependenciesReader(localWorkspace: BazelLocalWorkspace) {
       pomAggregatesCoordinates,
       externalDeps,
       localWorkspace.localWorkspaceName)
-    importExternalTargetsFileParser.allMavenDependencyNodes()
+    allMavenDependencyNodes(importExternalTargetsFileParser)
   }
 
+
+  private def allMavenDependencyNodes(importExternalTargetsFileParser: AllImportExternalFilesDependencyNodesReader) = {
+    val nodesOrErrors = importExternalTargetsFileParser.allMavenDependencyNodes()
+    nodesOrErrors match {
+      case Left(nodes) => nodes
+      case Right(errorMessages) =>
+        throw new RuntimeException(s"${errorMessages.mkString("\n")}\ncannot finish compiling dep closure. please consult with support.")
+    }
+  }
 
   def allDependenciesAsMavenDependencies(): Set[Dependency] = {
     val thirdPartyReposParser = ThirdPartyReposFile.Parser(localWorkspace.thirdPartyReposFileContent())
