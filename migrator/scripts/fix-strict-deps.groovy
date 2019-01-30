@@ -90,7 +90,7 @@ def build_and_fix(ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL) {
     status = sh(
             script: '''|#!/bin/bash
                        |# tee would output the stdout to file but will swallow the exit code
-                       |bazel build ${ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} -k --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
+                       |bazel build ${ADDITIONAL_FLAGS_BAZEL_SIXTEEN_UP_LOCAL} -k --build_tag_filters=-deployable --strategy=Scalac=worker //... 2>&1 | tee bazel-build.log
                        |# retrieve the exit code
                        |exit ${PIPESTATUS[0]}
                        |'''.stripMargin(),
