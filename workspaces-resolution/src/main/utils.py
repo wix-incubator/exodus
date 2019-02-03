@@ -22,7 +22,7 @@ try:
     from StringIO import StringIO
 except ImportError:
     # python 3
-    from io import StringIOfin
+    from io import StringIO
 
 logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
 logging.basicConfig(level=logging_level, format='%(asctime)s  %(levelname)s: %(message)s')
