@@ -9,28 +9,34 @@ class BazelCustomRunnerWriter(repoRoot: Path, interRepoSourceDependency: Boolean
 
   def write() = {
     val path = repoRoot.resolve("tools/")
-    val gitHooksPath = repoRoot.resolve(".git/hooks/")
-    val customBazelScriptWritingName = "bazel"
+    val resolvingLibPath = path.resolve("resolving_lib/")
+    val pythonUtilsPath = path.resolve("python_utils/")
     Files.createDirectories(path)
-    Files.createDirectories(gitHooksPath)
+    Files.createDirectories(resolvingLibPath)
+    Files.createDirectories(pythonUtilsPath)
 
-    writeToDisk(path, WorkspaceResolveScriptFileName, getResourceContents(WorkspaceResolveScriptFileName))
-    writeToDisk(path, LoadExternalRepositoriesScriptFileName, getResourceContents(LoadExternalRepositoriesScriptFileName))
-    writeToDisk(path, PythonUtilsFileName, getResourceContents(PythonUtilsFileName))
-    writeExecutableScript(gitHooksPath, PostCheckoutScriptFileName, getResourceContents(PostCheckoutScriptFileName))
-    writeExecutableScript(path, UpdateVersionsScriptFileName, getResourceContents(UpdateVersionsScriptFileName))
-//    writeExecutableScript(path, SyncFixedVersionsWithCiScriptFileName, getResourceContents(SyncFixedVersionsWithCiScriptFileName)) //on hold until feature is stable
+    resolvingScriptFiles.foreach(scriptPath => {
+      writeToDisk(path, scriptPath, getResolvingScriptContents(scriptPath))
+    })
+
+    executableResolvingScriptFiles.keys.foreach(sourceFileName => {
+      writeExecutableScript(path, executableResolvingScriptFiles(sourceFileName), getResolvingScriptContents(sourceFileName))
+    })
 
     if (interRepoSourceDependency) {
       writeToDisk(path, ExternalThirdPartyLoadingScriptFileName, getResourceContents(ExternalThirdPartyLoadingScriptFileName))
-      writeExecutableScript(path, customBazelScriptWritingName, getResourceContents(CrossRepoCustomBazelScriptName))
-    } else {
-      writeExecutableScript(path, customBazelScriptWritingName, getResourceContents(CustomBazelScriptName))
     }
   }
 
   private def writeToDisk(dest: Path, filename: String, content: String): Path = {
-    Files.write(dest.resolve(filename), content.getBytes)
+    try {
+      Files.write(dest.resolve(filename), content.getBytes)
+    } catch {
+      case e: Exception => {
+        println(s"Failed to write file: ${dest.resolve(filename)}\nError: $e")
+        throw e
+      }
+    }
   }
 
   private def getResourceContents(resourceName: String) = {
@@ -39,7 +45,19 @@ class BazelCustomRunnerWriter(repoRoot: Path, interRepoSourceDependency: Boolean
     workspaceResolveScriptContents
   }
 
-  private def writeExecutableScript(path: Path, fileName: String, content: String) = {
+  private def getResolvingScriptContents(resourceName: String): String = {
+    val scriptPathInRepo = s"$scriptsFolderPathInBazelTooling/$resourceName"
+    try {
+      scala.io.Source.fromFile(scriptPathInRepo).mkString
+    } catch {
+      case e: Exception => {
+        println(s"Failed to read file: $scriptPathInRepo\nError: $e")
+        throw e
+      }
+    }
+  }
+
+  private def writeExecutableScript(path: Path, fileName: String, content: String): Unit = {
     val pathResult = writeToDisk(path, fileName, content)
 
     val file = new File(pathResult.toString)
@@ -48,14 +66,32 @@ class BazelCustomRunnerWriter(repoRoot: Path, interRepoSourceDependency: Boolean
 }
 
 object BazelCustomRunnerWriter {
-  val WorkspaceResolveScriptFileName = "resolve_2nd_party_repositories.py"
-  val CustomBazelScriptName = "custom-bazel-script"
-  val LoadExternalRepositoriesScriptFileName = "load_2nd_party_repositories.bzl"
-  val PostCheckoutScriptFileName = "post-checkout"
-  val UpdateVersionsScriptFileName = "update_latest_2nd_party_versions"
-//  val SyncFixedVersionsWithCiScriptFileName = "sync_fixed_versions_with_ci" //on hold until feature is stable
-  val PythonUtilsFileName = "utils.py"
+
+  val scriptsFolderPathInBazelTooling = "workspaces-resolution/src/main"
+
+  val resolvingScriptFiles = List(
+    "__init__.py",
+    "load_2nd_party_repositories.bzl",
+    "resolve_2nd_party_repositories.py",
+    "python_utils/__init__.py",
+    "python_utils/logger.py",
+    "python_utils/output_to_shell.py",
+    "resolving_lib/__init__.py",
+    "resolving_lib/resolving_files_paths.py",
+    "resolving_lib/resolving_for_ci_branch_build.py",
+    "resolving_lib/resolving_for_ci_master_build.py",
+    "resolving_lib/resolving_for_ci_pr_build.py",
+    "resolving_lib/resolving_for_local_build.py",
+    "resolving_lib/resolving_from_server.py",
+    "resolving_lib/resolving_utils.py",
+    "resolving_lib/resolving_versions_overrides.py"
+  )
+
+  val executableResolvingScriptFiles: Map[String, String] = Map(
+    "custom-bazel-script" -> "bazel",
+    "update_latest_2nd_party_versions" -> "update_latest_2nd_party_versions"
+  )
+
 
   val ExternalThirdPartyLoadingScriptFileName = "load_third_parties_of_external_wix_repositories.py"
-  val CrossRepoCustomBazelScriptName = "cross-repo-custom-bazel-script"
 }

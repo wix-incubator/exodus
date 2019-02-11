@@ -1,1 +1,0 @@
-../../../../../workspaces-resolution/src/main/resolve_2nd_party_repositories.py

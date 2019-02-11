@@ -7,20 +7,24 @@ class BazelCustomRunnerWriterIT extends BaseWriterIT {
     "write workspace resolving script and a custom script that calls the former script and then runs bazel" in new internalRepoOnlyCtx {
       writer.write()
 
-      path(s"tools/$WorkspaceResolveScriptFileName") must beRegularFile(withContentFromResource = WorkspaceResolveScriptFileName)
-      path(s"tools/$LoadExternalRepositoriesScriptFileName") must beRegularFile(withContentFromResource = LoadExternalRepositoriesScriptFileName)
-      path(s".git/hooks/$PostCheckoutScriptFileName") must beRegularFile(withContentFromResource = PostCheckoutScriptFileName)
-      path("tools/bazel") must beRegularFile(withContentFromResource = CustomBazelScriptName)
+      resolvingScriptFiles.foreach(script => {
+        path(s"tools/$script") must beRegularFile(withContentFromScript = script, scriptsBaseFolder = scriptsFolderPathInBazelTooling)
+      })
+      executableResolvingScriptFiles.keys.foreach(scriptSource => {
+        path(s"tools/${executableResolvingScriptFiles(scriptSource)}") must beRegularFile(withContentFromScript = scriptSource, scriptsBaseFolder = scriptsFolderPathInBazelTooling)
+      })
     }
 
     "choose correct scripts" in new crossRepoOnlyCtx {
       writer.write()
 
-      path(s"tools/$WorkspaceResolveScriptFileName") must beRegularFile(withContentFromResource = WorkspaceResolveScriptFileName)
-      path(s"tools/$LoadExternalRepositoriesScriptFileName") must beRegularFile(withContentFromResource = LoadExternalRepositoriesScriptFileName)
-      path(s".git/hooks/$PostCheckoutScriptFileName") must beRegularFile(withContentFromResource = PostCheckoutScriptFileName)
       path(s"tools/$ExternalThirdPartyLoadingScriptFileName") must beRegularFile(withContentFromResource = ExternalThirdPartyLoadingScriptFileName)
-      path("tools/bazel") must beRegularFile(withContentFromResource = CrossRepoCustomBazelScriptName)
+      resolvingScriptFiles.foreach(script => {
+        path(s"tools/$script") must beRegularFile(withContentFromScript = script, scriptsBaseFolder = scriptsFolderPathInBazelTooling)
+      })
+      executableResolvingScriptFiles.keys.foreach(scriptSource => {
+        path(s"tools/${executableResolvingScriptFiles(scriptSource)}") must beRegularFile(withContentFromScript = scriptSource, scriptsBaseFolder = scriptsFolderPathInBazelTooling)
+      })
     }
   }
 

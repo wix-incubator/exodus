@@ -5,7 +5,10 @@ specs2_ite2e_test(
     srcs = [
         "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator:sources",
     ],
-    data = ["//migrator/wix-bazel-migrator:coordinates"],
+    data = [
+        "//migrator/wix-bazel-migrator:coordinates",
+        "//workspaces-resolution/src/main:tools_bazel_scripts",
+    ],
     jvm_flags = ["-Dexisting.manifest=$(location //migrator/wix-bazel-migrator:coordinates)"],
     runtime_deps = [
     ],

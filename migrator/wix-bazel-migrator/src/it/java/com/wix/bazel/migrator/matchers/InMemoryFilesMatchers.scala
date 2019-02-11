@@ -21,10 +21,19 @@ trait InMemoryFilesMatchers {
 
   def beRegularFile(withContentFromResource: String): Matcher[Path] = beRegularFile and withEqualContentsOf(withContentFromResource)
 
+  def beRegularFile(withContentFromScript: String, scriptsBaseFolder: String): Matcher[Path] =
+    beRegularFile and withEqualContentsOfScriptInBaseFolder(withContentFromScript, scriptsBaseFolder)
+
   private def pathContaining(lines: Seq[String]): Matcher[Path] = contain(lines.mkString(System.lineSeparator)) ^^ { (p: Path) => pathContent(p) }
 
   private def withEqualContentsOf(resourceName: String): Matcher[Path] =
     contain(fromInputStream(getClass.getResourceAsStream(s"/$resourceName")).mkString) ^^ { (p: Path) => pathContent(p) }
+
+  private def withEqualContentsOfScriptInBaseFolder(scriptName: String, scriptsBaseFolder: String): Matcher[Path] = {
+    val scriptPathInBaseFolder = s"$scriptsBaseFolder/$scriptName"
+    val content = scala.io.Source.fromFile(scriptPathInBaseFolder).mkString
+    contain(content) ^^ { (p: Path) => pathContent(p) }
+  }
 }
 
 object InMemoryFilesHelpers {

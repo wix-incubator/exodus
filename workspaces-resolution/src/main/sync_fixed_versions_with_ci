@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import sys
-sys.dont_write_bytecode = True
-from utils import *
+from resolving_lib.resolving_utils import read_current_branch, write_symlink_to_path
+from resolving_lib.resolving_files_paths import *
 from shutil import copyfile
+from resolving_lib.resolving_from_server import create_versions_files_from_server
+sys.dont_write_bytecode = True
 
 workspace_dir = os.path.dirname(os.path.dirname(sys.argv[0]))
 
@@ -33,13 +34,12 @@ try:
         repositories_url = os.environ.get("REPOSITORIES_URL", default_repositories_url)
         logging.debug("[env var] repositories_url = %s", repositories_url)
         logging.debug("Creating versions files from server in local cache")
-        create_versions_files_from_server(workspace_dir, repositories_url=repositories_url)
+        create_versions_files_from_server(workspace_dir, repositories_url_override=repositories_url)
         logging.debug("AFTER create_versions_files_from_server")
-
     logging.debug("copying versions file from local cache to git tracked folder")
     copyfile(local_cache_versions_file_path, git_tracked_versions_file_path)
     logging.debug("writing git tracked symlink")
     write_symlink_to_path(git_tracked_symlink_path(workspace_dir), git_tracked_versions_file_path)
     logging.debug("Versions files synced!!!")
 except Exception as error:
-    print("error copying versions file: {}".format(error))
+    print_message("error copying versions file: {}".format(error))
