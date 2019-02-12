@@ -8,7 +8,7 @@ scala_library(
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform:sources",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/build/maven/analysis:sources",
     ],
-    data = [
+    resources = [
         "//workspaces-resolution/src/main:tools_bazel_scripts",
     ],
     runtime_deps = [
