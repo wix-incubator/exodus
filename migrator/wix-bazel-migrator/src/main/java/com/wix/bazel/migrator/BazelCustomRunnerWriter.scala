@@ -48,7 +48,8 @@ class BazelCustomRunnerWriter(repoRoot: Path, interRepoSourceDependency: Boolean
   private def getResolvingScriptContents(resourceName: String): String = {
     val scriptPathInRepo = s"$scriptsFolderPathInBazelTooling/$resourceName"
     try {
-      scala.io.Source.fromFile(scriptPathInRepo).mkString
+      val stream: InputStream = getClass.getResourceAsStream(s"/$scriptPathInRepo")
+      scala.io.Source.fromInputStream(stream).mkString
     } catch {
       case e: Exception => {
         println(s"Failed to read file: $scriptPathInRepo\nError: $e")
