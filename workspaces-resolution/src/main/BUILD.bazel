@@ -1,11 +1,13 @@
-filegroup(name = "tools_bazel_scripts",
-          srcs = ["custom-bazel-script",
-                  "load_2nd_party_repositories.bzl",
-                  "sync_fixed_versions_with_ci",
-                  "update_latest_2nd_party_versions",
-                  ] + glob(["*.py"]) + glob(["python_utils/*.py"]) + glob(["resolving_lib/*.py"]),
-          visibility = ["//visibility:public"],)
-
+filegroup(
+    name = "tools_bazel_scripts",
+    srcs = [
+        "custom-bazel-script",
+        "load_2nd_party_repositories.bzl",
+        "sync_fixed_versions_with_ci",
+        "update_latest_2nd_party_versions",
+    ] + glob(["*.py"]) + glob(["python_utils/*.py"]) + glob(["resolving_lib/*.py"]),
+    visibility = ["//visibility:public"],
+)
 
 #filegroup(name = "tools_bazel_scripts",
 #          srcs = glob(["*.*"]).remove("BUILD.bazel"),
