@@ -1,3 +1,5 @@
+import sys
+sys.dont_write_bytecode = True
 from python_utils.logger import *
 from python_utils.output_to_shell import OutputToShell, print_message
 import argparse
