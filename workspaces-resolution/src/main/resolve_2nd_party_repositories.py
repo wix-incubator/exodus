@@ -33,7 +33,7 @@ def get_build_type_from_env_var():
 
 
 def resolve_according_to_build_type(build_type, workspace_dir):
-    if build_type == "build_only":
+    if build_type == "branch_only":
         from resolving_lib.resolving_for_ci_branch_build import resolve_2nd_party_repositories
     elif build_type == "build_master":
         from resolving_lib.resolving_for_ci_master_build import resolve_2nd_party_repositories
