@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-
+import sys
+sys.dont_write_bytecode = True
 from resolving_lib.resolving_utils import read_current_branch, write_symlink_to_path
 from resolving_lib.resolving_files_paths import *
 from shutil import copyfile
 from resolving_lib.resolving_from_server import create_versions_files_from_server
-sys.dont_write_bytecode = True
 
-workspace_dir = os.path.dirname(os.path.dirname(sys.argv[0]))
+workspace_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 current_branch = read_current_branch(workspace_dir)
 local_cache_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
