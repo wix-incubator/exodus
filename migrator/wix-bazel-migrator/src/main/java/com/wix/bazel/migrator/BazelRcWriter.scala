@@ -8,7 +8,7 @@ class BazelRcWriter(repoRoot: Path) {
 
   private val bazelRcPath = repoRoot.resolve(".bazelrc")
 
-  def resetFileWithDefaultOptions():Unit = {
+  def resetFileWithDefaultOptions(): Unit = {
     deleteIfExists()
     appendLines(defaultOptions)
   }
@@ -28,7 +28,7 @@ class BazelRcWriter(repoRoot: Path) {
 object BazelRcWriter {
   val defaultOptions: List[String] = List("build --strategy=Scalac=worker",
     "build --strict_java_deps=warn",
-    "build --strict_proto_deps=off",                                     
+    "build --strict_proto_deps=off",
     "build --experimental_remap_main_repo=true",
     "test --strategy=Scalac=worker",
     "test --test_output=errors",
@@ -40,6 +40,9 @@ object BazelRcWriter {
     "test --action_env=BUILD_TOOL=BAZEL",
     "test --action_env=DISPLAY",
     "test --test_env=LC_ALL=en_US.UTF-8",
-    "build:bazel16uplocal --action_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_BW_CMPTBL"
+    "build:bazel16uplocal --action_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_BW_CMPTBL",
+    "fetch --experimental_multi_threaded_digest=true",
+    "build --experimental_multi_threaded_digest=true",
+    "query --experimental_multi_threaded_digest=true"
   )
 }
