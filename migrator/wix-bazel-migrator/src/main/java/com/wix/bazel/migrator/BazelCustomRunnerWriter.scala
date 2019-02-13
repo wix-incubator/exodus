@@ -90,7 +90,8 @@ object BazelCustomRunnerWriter {
 
   val executableResolvingScriptFiles: Map[String, String] = Map(
     "custom-bazel-script" -> "bazel",
-    "update_latest_2nd_party_versions" -> "update_latest_2nd_party_versions"
+    "update_latest_2nd_party_versions" -> "update_latest_2nd_party_versions",
+    "sync_fixed_versions_with_ci" -> "sync_fixed_versions_with_ci"
   )
 
 
