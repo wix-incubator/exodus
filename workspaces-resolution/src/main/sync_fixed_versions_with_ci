@@ -1,45 +1,81 @@
 #!/usr/bin/env python
 import sys
-sys.dont_write_bytecode = True
-from resolving_lib.resolving_utils import read_current_branch, write_symlink_to_path
-from resolving_lib.resolving_files_paths import *
+import argparse
 from shutil import copyfile
+sys.dont_write_bytecode = True
+from resolving_lib.resolving_utils import read_current_branch, write_symlink_to_path, run_process
+from resolving_lib.resolving_files_paths import *
 from resolving_lib.resolving_from_server import create_versions_files_from_server
 
 workspace_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-current_branch = read_current_branch(workspace_dir)
-local_cache_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
-    workspace_dir=workspace_dir,
-    tools=tools_relative_path,
-    versions_folder=local_cache_versions_folder,
-    branch=current_branch,
-    postfix=starlark_file_name_postfix)
-git_tracked_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
-    workspace_dir=workspace_dir,
-    tools=tools_relative_path,
-    versions_folder=git_tracked_versions_folder,
-    branch=current_branch,
-    postfix=starlark_file_name_postfix)
-git_tracked_folder_path = "{workspace_dir}{tools}{versions_folder}".format(
-    workspace_dir=workspace_dir,
-    tools=tools_relative_path,
-    versions_folder=git_tracked_versions_folder)
 
-try:
-    if not os.path.exists(git_tracked_folder_path):
-        logging.debug("Creating git_tracked_folder_path = {}".format(git_tracked_folder_path))
-        os.makedirs(git_tracked_folder_path)
+def main():
+    create_paths()
+    try:
+        create_git_tracked_folder_if_needed()
+        create_local_cache_if_needed()
+        logging.debug("copying versions file from local cache to git tracked folder")
+        copyfile(local_cache_versions_file_path, git_tracked_versions_file_path)
+        logging.debug("writing local cache symlink to git tracked file")
+        write_symlink_to_path(local_cache_symlink_path(workspace_dir), git_tracked_versions_file_path)
+        logging.debug("writing local cache file as a symlink to git tracked file")
+        write_symlink_to_path(local_cache_versions_file_path, git_tracked_versions_file_path)
+        logging.debug("Versions files synced!!!")
+    except Exception as error:
+        print_message("Oops... something went wrong: {}. Please contact CI team for support".format(error))
+    stage_versions_file_if_needed()
+
+
+def create_local_cache_if_needed():
     if not does_non_empty_file_exist(local_cache_versions_file_path):
         logging.debug("Creating versions files from server in local cache")
         create_versions_files_from_server(workspace_dir)
         logging.debug("AFTER create_versions_files_from_server")
-    logging.debug("copying versions file from local cache to git tracked folder")
-    copyfile(local_cache_versions_file_path, git_tracked_versions_file_path)
-    logging.debug("writing local cache symlink to git tracked file")
-    write_symlink_to_path(local_cache_symlink_path(workspace_dir), git_tracked_versions_file_path)
-    logging.debug("writing local cache file as a symlink to git tracked file")
-    write_symlink_to_path(local_cache_versions_file_path, git_tracked_versions_file_path)
-    logging.debug("Versions files synced!!!")
-except Exception as error:
-    print_message("Oops... something went wrong: {}. Please contact CI team for support".format(error))
+
+
+def create_git_tracked_folder_if_needed():
+    if not os.path.exists(git_tracked_folder_path):
+        logging.debug("Creating git_tracked_folder_path = {}".format(git_tracked_folder_path))
+        os.makedirs(git_tracked_folder_path)
+
+
+def should_git_add():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--git-add', dest='should_git_add', action='store_true',
+                        help='automatically git add the created version file (default: false)')
+    args = parser.parse_args()
+    result = args.should_git_add
+    logging.debug("should_git_add = {}".format(result))
+    return result
+
+
+def stage_versions_file_if_needed():
+    if should_git_add():
+        run_process(['git', 'add', git_tracked_versions_file_path], "Failed to add created versions file to git.\n"
+                                                                    "Please do so manually")
+
+
+def create_paths():
+    current_branch = read_current_branch(workspace_dir)
+    global local_cache_versions_file_path, git_tracked_versions_file_path, git_tracked_folder_path
+    local_cache_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
+        workspace_dir=workspace_dir,
+        tools=tools_relative_path,
+        versions_folder=local_cache_versions_folder,
+        branch=current_branch,
+        postfix=starlark_file_name_postfix)
+    git_tracked_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
+        workspace_dir=workspace_dir,
+        tools=tools_relative_path,
+        versions_folder=git_tracked_versions_folder,
+        branch=current_branch,
+        postfix=starlark_file_name_postfix)
+    git_tracked_folder_path = "{workspace_dir}{tools}{versions_folder}".format(
+        workspace_dir=workspace_dir,
+        tools=tools_relative_path,
+        versions_folder=git_tracked_versions_folder)
+
+
+if __name__ == "__main__":
+    main()
