@@ -85,8 +85,8 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
 
   private def writeJdk8CustomFlags(): Unit = {
     val jdk8CustomFlags = List(
-      "build --host_javabase=@core_server_build_tools//toolchains:jdk8",
-      "build --javabase=@core_server_build_tools//toolchains:jdk8"
+      "build --host_javabase=@core_server_build_tools//toolchains/jdk:wix_remote_jdk",
+      "build --javabase=@core_server_build_tools//toolchains/jdk:wix_remote_jdk"
     )
     new BazelRcWriter(repoRoot).appendLines(jdk8CustomFlags)
   }

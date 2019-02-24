@@ -26,23 +26,29 @@ class BazelRcWriter(repoRoot: Path) {
 }
 
 object BazelRcWriter {
-  val defaultOptions: List[String] = List("build --strategy=Scalac=worker",
-    "build --strict_java_deps=warn",
-    "build --strict_proto_deps=off",
-    "build --experimental_remap_main_repo=true",
-    "test --strategy=Scalac=worker",
+  val defaultOptions: List[String] = List(
+    "# fetch",
+    "fetch --experimental_multi_threaded_digest=true",
+    "",
+    "# query",
+    "query --experimental_multi_threaded_digest=true",
+    "",
+    "# test",
+    "test --test_env=BUILD_TOOL=BAZEL",
+    "test --test_env=DISPLAY",
+    "test --test_env=LC_ALL=en_US.UTF-8",
+    "test --test_tmpdir=/tmp",
     "test --test_output=errors",
     "test --test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false",
     "test --test_arg=--jvm_flags=-Dwix.environment=CI",
-    "build --experimental_ui",
-    "test --experimental_ui",
-    "test --test_tmpdir=/tmp",
-    "test --action_env=BUILD_TOOL=BAZEL",
-    "test --action_env=DISPLAY",
-    "test --test_env=LC_ALL=en_US.UTF-8",
+    "",
+    "# build",
     "build:bazel16uplocal --action_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_BW_CMPTBL",
-    "fetch --experimental_multi_threaded_digest=true",
+    "build --strategy=Scalac=worker",
+    "build --strict_java_deps=error",
+    "build --strict_proto_deps=off",
+    "build --experimental_remap_main_repo=true",
     "build --experimental_multi_threaded_digest=true",
-    "query --experimental_multi_threaded_digest=true"
+    "build --experimental_ui",
   )
 }
