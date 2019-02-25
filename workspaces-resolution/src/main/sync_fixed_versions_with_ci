@@ -16,21 +16,35 @@ def main():
     create_paths()
     try:
         create_git_tracked_folder_if_needed()
-        create_local_cache_if_needed()
-        logging.debug("copying versions file from local cache to git tracked folder")
-        copyfile(local_cache_versions_file_path, git_tracked_versions_file_path)
-        logging.debug("writing local cache symlink to git tracked file")
-        write_symlink_to_path(local_cache_symlink_path(workspace_dir), git_tracked_versions_file_path)
-        logging.debug("writing local cache file as a symlink to git tracked file")
-        write_symlink_to_path(local_cache_versions_file_path, git_tracked_versions_file_path)
-        logging.debug("Versions files synced!!!")
+        if not does_non_empty_file_exist(git_tracked_versions_file_path):
+            create_local_cache_if_needed()
+            logging.debug("copying versions file from local cache to git tracked folder")
+            copyfile(local_cache_versions_file_path, git_tracked_versions_file_path)
+            output = ("Local versions file synced to CI for branch {branch_name}\n"
+                      "Please push the created versions file to branch {branch_name}\n"
+                      "To detach local versions from CI, please delete the created versions file and git push the change") \
+                .format(branch_name=read_current_branch())
+        else:
+            create_local_cache_folder_if_needed()
+            current_branch = read_current_branch()
+            output = ("Git tracked versions file already exists for branch {branch_name}\n"
+                      "Rebuilding local cache pointers to git tracked versions file {file_path}\n"
+                      "Make sure you pushed the git tracked versions file to branch {branch_name}")\
+                .format(file_path=git_tracked_starlark_file_partial_path(current_branch), branch_name=current_branch)
     except Exception as error:
         print_message("Oops... something went wrong: {}. Please contact CI team for support".format(error))
+        sys.exit(1)
+    write_local_cache_symlinks()
+    logging.debug("Versions files synced!!!")
     stage_versions_file_if_needed()
-    print(("Local versions file synced to CI for branch {branch_name}\n"
-           "Please push the created versions file to branch {branch_name}\n"
-           "To detach local versions from CI, please delete the created versions file and git push the change")
-          .format(branch_name=read_current_branch()))
+    print(output)
+
+
+def write_local_cache_symlinks():
+    logging.debug("writing local cache symlink to git tracked file")
+    write_symlink_to_path(local_cache_symlink_path(workspace_dir), git_tracked_versions_file_path)
+    logging.debug("writing local cache file as a symlink to git tracked file")
+    write_symlink_to_path(local_cache_versions_file_path, git_tracked_versions_file_path)
 
 
 def create_local_cache_if_needed():
@@ -44,6 +58,12 @@ def create_git_tracked_folder_if_needed():
     if not os.path.exists(git_tracked_folder_path):
         logging.debug("Creating git_tracked_folder_path = {}".format(git_tracked_folder_path))
         os.makedirs(git_tracked_folder_path)
+
+
+def create_local_cache_folder_if_needed():
+    if not os.path.exists(local_cache_folder_path):
+        logging.debug("Creating local_cache_folder_path = {}".format(local_cache_folder_path))
+        os.makedirs(local_cache_folder_path)
 
 
 def should_git_add():
@@ -64,7 +84,7 @@ def stage_versions_file_if_needed():
 
 def create_paths():
     current_branch = read_current_branch(workspace_dir)
-    global local_cache_versions_file_path, git_tracked_versions_file_path, git_tracked_folder_path
+    global local_cache_versions_file_path, git_tracked_versions_file_path, git_tracked_folder_path, local_cache_folder_path
     local_cache_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
         workspace_dir=workspace_dir,
         tools=tools_relative_path,
@@ -81,6 +101,10 @@ def create_paths():
         workspace_dir=workspace_dir,
         tools=tools_relative_path,
         versions_folder=git_tracked_versions_folder)
+    local_cache_folder_path = "{workspace_dir}{tools}{versions_folder}".format(
+        workspace_dir=workspace_dir,
+        tools=tools_relative_path,
+        versions_folder=local_cache_versions_folder)
 
 
 if __name__ == "__main__":
