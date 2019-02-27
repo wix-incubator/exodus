@@ -376,19 +376,6 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       }
     }
 
-    "given third party paths are not default" should {
-      "contain the right load statement" in  {
-        val localWorkspace = new FakeLocalBazelWorkspace(paths = FWThirdPartyPaths())
-        def writer = new BazelDependenciesWriter(localWorkspace)
-
-        val dependency: Dependency = aDependency("some-artifact")
-        writer.writeDependencies(aRootDependencyNode(dependency))
-
-        localWorkspace.thirdPartyReposFileContent() must containLoadStatementFor(dependency.coordinates, FWThirdPartyPaths().thirdPartyImportFilesPathRoot)
-
-      }
-    }
-
     "given an overrided set of neverlink coordinates" should {
       "write target with 'neverlink = 1 ' if came from overrided list" in {
         val localWorkspaceName = "some_workspace_name"

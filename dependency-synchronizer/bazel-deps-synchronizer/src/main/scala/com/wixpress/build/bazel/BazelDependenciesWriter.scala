@@ -2,6 +2,7 @@ package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
 import com.wixpress.build.maven._
+import ThirdPartyPaths._
 
 class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
                               neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) {
@@ -24,13 +25,8 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
       .foldLeft(ThirdPartyReposFile.Builder(existingThirdPartyReposFile))(_.fromCoordinates(_))
 
     val content = thirdPartyReposBuilder.content
-    val contentWithCorrectThirdPartyPath = potentiallyFixThirdPartyPath(content)
-    val nonEmptyContent = Option(contentWithCorrectThirdPartyPath).filter(_.trim.nonEmpty).fold("  pass")(c => c)
+    val nonEmptyContent = Option(content).filter(_.trim.nonEmpty).fold("  pass")(c => c)
     localWorkspace.overwriteThirdPartyReposFile(nonEmptyContent)
-  }
-
-  private def potentiallyFixThirdPartyPath(content: String) = {
-    content.replaceAll(ManagedThirdPartyPaths().thirdPartyImportFilesPathRoot, localWorkspace.thirdPartyPaths.thirdPartyImportFilesPathRoot)
   }
 
   private def writeThirdPartyFolderContent(dependencyNodes: Set[DependencyNode]): Unit = {
@@ -82,7 +78,7 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
 
   private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) = {
     val affectedFiles = dependencyNodes.map(_.baseDependency.coordinates).flatMap(findFilesAccordingToPackagingOf)
-    affectedFiles + localWorkspace.thirdPartyPaths.thirdPartyReposFilePath
+    affectedFiles + thirdPartyReposFilePath
   }
 
   private def findFilesAccordingToPackagingOf(artifact: Coordinates) = {

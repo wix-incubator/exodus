@@ -2,8 +2,6 @@ package com.wixpress.build.bazel
 
 trait BazelLocalWorkspace {
 
-  val thirdPartyPaths: ThirdPartyPaths
-
   def overwriteBuildFile(packageName: String, content: String): Unit
 
   def overwriteThirdPartyImportTargetsFile(thirdPartyGroup: String, content: String): Unit
@@ -24,13 +22,7 @@ trait BazelLocalWorkspace {
 
 }
 
-trait ThirdPartyPaths {
-  val thirdPartyReposFilePath: String
-  val thirdPartyImportFilesPathRoot: String
+object ThirdPartyPaths {
+  val thirdPartyReposFilePath: String = "third_party.bzl"
+  val thirdPartyImportFilesPathRoot: String = "third_party"
 }
-
-case class ManagedThirdPartyPaths(thirdPartyReposFilePath: String =  "third_party.bzl",
-                                  thirdPartyImportFilesPathRoot: String = "third_party") extends ThirdPartyPaths
-
-case class FWThirdPartyPaths(thirdPartyReposFilePath: String =  "third_party_fw_snapshots.bzl",
-                                  thirdPartyImportFilesPathRoot: String = "third_party_fw_snapshots") extends ThirdPartyPaths

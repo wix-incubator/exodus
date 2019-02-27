@@ -3,12 +3,9 @@ package com.wixpress.build.bazel
 import java.io.FileNotFoundException
 
 import better.files.File
+import ThirdPartyPaths._
 
-class FileSystemBazelLocalWorkspace(root: File, paths: ThirdPartyPaths = ManagedThirdPartyPaths()) extends BazelLocalWorkspace {
-
-  val thirdPartyPaths = paths
-
-  import thirdPartyPaths._
+class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
 
   val localWorkspaceName: String = {
     val workspaceFileContent = contentIfExistsOf(root / "WORKSPACE")

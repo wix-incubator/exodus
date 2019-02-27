@@ -30,7 +30,7 @@ class GitBazelRepository(
     git.close()
   }
 
-  override def localWorkspace(branchName: String, paths: ThirdPartyPaths): BazelLocalWorkspace = {
+  override def localWorkspace(branchName: String): BazelLocalWorkspace = {
     cleanAndUpdateLocalRepo(branchName: String)
     new FileSystemBazelLocalWorkspace(checkoutDir)
   }

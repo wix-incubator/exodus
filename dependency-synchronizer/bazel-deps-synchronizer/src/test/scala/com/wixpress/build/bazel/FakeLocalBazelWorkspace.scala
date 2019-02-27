@@ -1,12 +1,9 @@
 package com.wixpress.build.bazel
 
 import scala.collection.mutable
+import ThirdPartyPaths._
 
-class FakeLocalBazelWorkspace(sourceFiles: mutable.Map[String, String] = mutable.Map.empty, val localWorkspaceName: String = "", paths: ThirdPartyPaths = ManagedThirdPartyPaths()) extends BazelLocalWorkspace {
-
-  val thirdPartyPaths = paths
-
-  import thirdPartyPaths._
+class FakeLocalBazelWorkspace(sourceFiles: mutable.Map[String, String] = mutable.Map.empty, val localWorkspaceName: String = "") extends BazelLocalWorkspace {
 
   // since FakeLocalBazelWorkspace is already stateful - I allowed another state.
   // on next revision of SynchronizerAcceptanceTest - we will introduce stateless FakeWorkspace
