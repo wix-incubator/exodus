@@ -1,7 +1,7 @@
 #!/bin/bash
 
 WORKSPACE_DIR=$(pwd)
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
+BRANCH=$(git rev-parse --abbrev-ref HEAD | sed 's/\//../')
 FILENAME=${WORKSPACE_DIR}/tools/2nd_party_resolved_dependencies/${BRANCH}_2nd_party_resolved_dependencies.bzl
 
 if [ -f ${FILENAME} ]; then
