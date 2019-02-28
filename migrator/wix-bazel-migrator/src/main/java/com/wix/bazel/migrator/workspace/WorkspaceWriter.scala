@@ -56,6 +56,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |
          |register_toolchains("@core_server_build_tools//toolchains:wix_defaults_global_toolchain")
          |
+         |register_execution_platforms("@core_server_build_tools//platforms:my_host_platform")
+         |
          |${loadGrpcRepos(workspaceName)}
          |
          |load("@server_infra//:proto_repos.bzl", "scala_proto_repositories")

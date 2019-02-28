@@ -67,6 +67,13 @@ import better.files.File
 
       File(repoRoot.resolve("WORKSPACE")).contentAsString must not contain(s"""fw_snapshot_dependencies""")
     }
+
+    "register default local host execution platform" in new ctx {
+      val writer = new WorkspaceWriter(repoRoot, "workspace_name")
+      writer.write()
+
+      File(repoRoot.resolve("WORKSPACE")).contentAsString must contain("""register_execution_platforms("@core_server_build_tools//platforms:my_host_platform")""")
+    }
   }
 
   abstract class ctx extends baseCtx {
