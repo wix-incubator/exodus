@@ -20,6 +20,7 @@ specs2_mixed_test(
         "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build",
         "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/bazel",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "@com_wixpress_vi_masterguard_api",
         "@com_fasterxml_jackson_core_jackson_annotations",
         "@com_fasterxml_jackson_core_jackson_core",
         "@com_fasterxml_jackson_core_jackson_databind",

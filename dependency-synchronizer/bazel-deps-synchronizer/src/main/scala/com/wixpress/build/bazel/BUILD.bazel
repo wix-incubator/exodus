@@ -21,6 +21,7 @@ scala_library(
         "@junit_junit",
         "@org_eclipse_jgit_org_eclipse_jgit",
         "@org_slf4j_slf4j_api",
+        "@com_wixpress_vi_masterguard_api"
     ],
 )
 

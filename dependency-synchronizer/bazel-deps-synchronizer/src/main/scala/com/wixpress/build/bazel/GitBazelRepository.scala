@@ -2,6 +2,7 @@ package com.wixpress.build.bazel
 
 import better.files.File
 import com.jcraft.jsch.Session
+import com.wixpress.vi.githubtools.masterguard.enforceadmins.MasterEnforcer
 import org.eclipse.jgit.api.ResetCommand.ResetType
 import org.eclipse.jgit.api.{Git, TransportCommand}
 import org.eclipse.jgit.transport.{JschConfigSessionFactory, SshTransport, _}
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory
 class GitBazelRepository(
                           gitURL: String,
                           checkoutDir: File,
+                          masterEnforcer: MasterEnforcer,
                           username: String = "WixBuildServer",
                           email: String = "buildserver@wix.com")
                           (implicit authentication: GitAuthentication) extends BazelRepository {
@@ -91,11 +93,13 @@ class GitBazelRepository(
 
   private def pushToRemote(git: Git, branchName: String) = {
     log.info(s"pushing to $gitURL, branch: $branchName")
-    authentication.set(git.push())
-      .setRemote(DefaultRemote)
-      .setRefSpecs(new RefSpec(branchName))
-      .setForce(true)
-      .call()
+    masterEnforcer.enforceAdmins("wix-private", git.getRepository.toString, {
+      authentication.set(git.push())
+        .setRemote(DefaultRemote)
+        .setRefSpecs(new RefSpec(branchName))
+        .setForce(true)
+        .call()
+    })
   }
 
   private def withLocalGit[T](f: Git => T): T = {

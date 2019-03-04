@@ -3,6 +3,7 @@ package com.wixpress.build.bazel
 import better.files.File
 import com.wixpress.build.bazel.FakeLocalBazelWorkspace.thirdPartyReposFilePath
 import com.wixpress.build.sync.e2e.{Commit, FakeRemoteRepository}
+import com.wixpress.vi.githubtools.masterguard.enforceadmins.MasterEnforcer
 import org.eclipse.jgit.api.Git
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -17,7 +18,7 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
       val someLocalPath = aRandomTempDirectory
       someLocalPath.createChild("some-file.txt").overwrite("some content")
 
-      new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath)
+      new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath, fakeMasterEnforcer)
 
       someLocalPath.list.toList must contain(exactly(someLocalPath / thirdPartyReposFilePath, someLocalPath / ".git"))
     }
@@ -25,7 +26,7 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
     "create local path (including parents) even if they did not exit beforehand" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
       val nonExistingLocalPath = aRandomTempDirectory / "plus" / "some" / "new" / "subdirectories"
 
-      new GitBazelRepository(fakeRemoteRepository.remoteURI, nonExistingLocalPath)
+      new GitBazelRepository(fakeRemoteRepository.remoteURI, nonExistingLocalPath, fakeMasterEnforcer)
 
       eventually {
         (nonExistingLocalPath / thirdPartyReposFilePath).exists aka "third party repos file was checked out" must beTrue
@@ -35,7 +36,7 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
     "return valid bazel local third party repos content" in {
       val thirdPartyReposFileContent = "some third party repos file content"
       val fakeRemoteRepository = aFakeRemoteRepoWithThirdPartyReposFile(thirdPartyReposFileContent)
-      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, aRandomTempDirectory)
+      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, aRandomTempDirectory, new SpyMasterEnforcer)
 
       val localWorkspace = gitBazelRepository.localWorkspace("master")
 
@@ -50,7 +51,7 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
 
     "persist file change to remote git repository" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
       val someLocalPath = File.newTemporaryDirectory("clone")
-      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath)
+      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath, fakeMasterEnforcer)
 
       val fileName = "some-file.txt"
       val content = "some content"
@@ -64,7 +65,7 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
 
     "overwrite any file in target branch with the persist content" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
       val someLocalPath = File.newTemporaryDirectory("clone")
-      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath)
+      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath, fakeMasterEnforcer)
 
       val branchName = "some-branch"
 
@@ -80,7 +81,7 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
 
     "persist short lived branch with new content" in new fakeRemoteRepositoryWithEmptyThirdPartyRepos {
       val someLocalPath = File.newTemporaryDirectory("clone")
-      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath)
+      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath, fakeMasterEnforcer)
 
       val branchName = "some-branch"
 
@@ -95,7 +96,7 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
       val someLocalPath = File.newTemporaryDirectory("clone")
       val username = "someuser"
       val email = "some@email.com"
-      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath, username, email)
+      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, someLocalPath, fakeMasterEnforcer, username, email)
       val fileName = "some-file.txt"
       someLocalPath.createChild(fileName).overwrite("some content")
       val someMessage = "some message"
@@ -110,11 +111,12 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
       )
 
       fakeRemoteRepository.allCommitsForBranch(branchName) must contain(expectedCommit)
+      fakeMasterEnforcer.calledForRepo(fakeRemoteRepository.remoteURI) must beTrue
     }
 
     "not throw exception for new localWorkspace for some branch when there are old conflicting changes" in new noConflictCtx {
       val localGitPath = File.newTemporaryDirectory("clone")
-      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, localGitPath)
+      val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, localGitPath, new SpyMasterEnforcer)
 
       addFileAndCommit(branchName, fileName, "old content")(localGitPath)
       addFile(DefaultBranch, fileName, "new content")(localGitPath)
@@ -128,6 +130,7 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
 
   trait fakeRemoteRepositoryWithEmptyThirdPartyRepos extends Scope {
     val fakeRemoteRepository = new FakeRemoteRepository
+    val fakeMasterEnforcer: SpyMasterEnforcer = new SpyMasterEnforcer
     fakeRemoteRepository.initWithThirdPartyReposFileContent("")
   }
 
@@ -140,7 +143,8 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
   trait exitingThirdPartyRepo extends Scope {
     val thirdPartyReposFileContent = "some third party repos file content"
     val fakeRemoteRepository = aFakeRemoteRepoWithThirdPartyReposFile(thirdPartyReposFileContent)
-    val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, aRandomTempDirectory)
+
+    val gitBazelRepository = new GitBazelRepository(fakeRemoteRepository.remoteURI, aRandomTempDirectory, new SpyMasterEnforcer)
   }
 
   private def aRandomTempDirectory = {
@@ -151,6 +155,18 @@ class GitBazelRepositoryIT extends SpecificationWithJUnit {
 
   private def aFakeRemoteRepoWithThirdPartyReposFile(thirdPartyReposFileContent: String) =
     (new FakeRemoteRepository).initWithThirdPartyReposFileContent(thirdPartyReposFileContent)
+
+  class SpyMasterEnforcer extends MasterEnforcer {
+
+    var calledRepos:scala.collection.immutable.Set[String] = Set()
+
+    override def enforceAdmins[T](org: String, repo: String, f: => T): Unit = {
+      f
+      calledRepos += repo
+    }
+
+    def calledForRepo(repo: String) = calledRepos.contains(repo)
+  }
 
   private def checkoutBranch(branchName: String)(checkoutDir: File) = {
     val git: Git = Git.open(checkoutDir.toJava)
