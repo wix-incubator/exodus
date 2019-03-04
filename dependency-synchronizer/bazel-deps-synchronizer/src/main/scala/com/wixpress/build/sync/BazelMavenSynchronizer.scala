@@ -22,7 +22,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
   def calcDepNodesToSync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]) = {
     logger.info(s"starting sync with managed dependencies in $dependencyManagementSource")
-    val localCopy = targetRepository.localWorkspace("master")
+    val localCopy = targetRepository.localWorkspace()
 
     val dependenciesToUpdate = newDependencyNodes(dependencyManagementSource, dependencies, localCopy)
     logger.info(s"syncing ${dependenciesToUpdate.size} dependencies")
@@ -68,7 +68,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
   def persist(dependenciesToUpdate: Set[DependencyNode]) = {
     if (dependenciesToUpdate.nonEmpty) {
-      val localCopy = targetRepository.localWorkspace("master")
+      val localCopy = targetRepository.localWorkspace()
 
       val modifiedFiles = new BazelDependenciesWriter(localCopy).writeDependencies(dependenciesToUpdate)
       persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates))

@@ -41,14 +41,14 @@ class UserAddedDepsDiffSynchronizer(bazelRepo: BazelRepository, bazelRepoWithMan
   private def readManagedNodes() = {
     log.info(s"read managed dependencies from external repo Bazel files...")
 
-    val managedDepsRepoReader = new BazelDependenciesReader(bazelRepoWithManagedDependencies.localWorkspace("master"))
+    val managedDepsRepoReader = new BazelDependenciesReader(bazelRepoWithManagedDependencies.localWorkspace())
     managedDepsRepoReader.allDependenciesAsMavenDependencyNodes()
   }
 
   private def readLocalDependencyNodes(externalDependencyNodes: Set[DependencyNode]) = {
     log.info("read local dependencies from Bazel files...")
 
-    val localRepoReader = new BazelDependenciesReader(bazelRepo.localWorkspace(branchName = "master"))
+    val localRepoReader = new BazelDependenciesReader(bazelRepo.localWorkspace())
     localRepoReader.allDependenciesAsMavenDependencyNodes(externalDependencyNodes.map(_.baseDependency))
   }
 

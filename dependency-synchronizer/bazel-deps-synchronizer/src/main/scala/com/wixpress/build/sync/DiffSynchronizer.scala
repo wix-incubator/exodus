@@ -1,7 +1,7 @@
 package com.wixpress.build.sync
 
 import com.wixpress.build.bazel._
-import com.wixpress.build.maven.{Coordinates, DependencyNode, MavenDependencyResolver, MavenScope}
+import com.wixpress.build.maven.{DependencyNode, MavenDependencyResolver}
 import com.wixpress.build.sync.ArtifactoryRemoteStorage._
 import com.wixpress.build.sync.BazelMavenSynchronizer.PersistMessageHeader
 import org.slf4j.LoggerFactory
@@ -27,7 +27,7 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
   private val log = LoggerFactory.getLogger(getClass)
 
   def calculateDivergentDependencies(localNodes: Set[DependencyNode]): Set[DependencyNode] = {
-    val reader = new BazelDependenciesReader(bazelRepositoryWithManagedDependencies.localWorkspace("master"))
+    val reader = new BazelDependenciesReader(bazelRepositoryWithManagedDependencies.localWorkspace())
     val managedDeps = reader.allDependenciesAsMavenDependencies()
 
     val managedNodes = resolver.dependencyClosureOf(managedDeps, withManagedDependencies = managedDeps)
@@ -60,7 +60,7 @@ case class DiffWriter(targetRepository: BazelRepository,
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, branchName, targetRepository)
 
   def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit = {
-    val localCopy = targetRepository.localWorkspace(branchName)
+    val localCopy = targetRepository.localWorkspace()
     val writer = new BazelDependenciesWriter(localCopy, neverLinkResolver = neverLinkResolver)
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom")
 
