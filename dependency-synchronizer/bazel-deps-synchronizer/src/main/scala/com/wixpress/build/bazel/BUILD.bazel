@@ -17,11 +17,8 @@ scala_library(
         "@com_fasterxml_jackson_core_jackson_databind",
         "@com_fasterxml_jackson_module_jackson_module_scala_2_12",
         "@com_github_pathikrit_better_files_2_12",
-        "@com_jcraft_jsch",
         "@junit_junit",
-        "@org_eclipse_jgit_org_eclipse_jgit",
-        "@org_slf4j_slf4j_api",
-        "@com_wixpress_vi_masterguard_api"
+        "@org_slf4j_slf4j_api"
     ],
 )
 
