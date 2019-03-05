@@ -42,7 +42,7 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
   }
 
   private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
-    log.info("started fetching sha256 checksums for 3rd party dependencies from artifactory...")
+    log.info(s"started fetching sha256 checksums for (${divergentLocalDependencies.size}) divergent 3rd party dependencies from artifactory...")
     val nodes = divergentLocalDependencies.map(_.updateChecksumFrom(dependenciesRemoteStorage))
     log.info("completed fetching sha256 checksums.")
     nodes

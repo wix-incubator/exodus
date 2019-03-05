@@ -42,7 +42,9 @@ class UserAddedDepsDiffSynchronizer(bazelRepo: BazelRepository, bazelRepoWithMan
     log.info(s"read managed dependencies from external repo Bazel files...")
 
     val managedDepsRepoReader = new BazelDependenciesReader(bazelRepoWithManagedDependencies.localWorkspace())
-    managedDepsRepoReader.allDependenciesAsMavenDependencyNodes()
+    val managedNodes = managedDepsRepoReader.allDependenciesAsMavenDependencyNodes()
+    log.info(s"retrieved ${managedNodes.size} managed dependencies...")
+    managedNodes
   }
 
   private def readLocalDependencyNodes(externalDependencyNodes: Set[DependencyNode]) = {
@@ -63,7 +65,7 @@ class UserAddedDepsDiffSynchronizer(bazelRepo: BazelRepository, bazelRepoWithMan
   }
 
   private def calculateDivergentLocalNodes(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]) = {
-    log.info("calculate diff with managed deps and persist it...")
+    log.info(s"calculate diff with managed deps and persist it (${aggregateNodes.size} local deps, ${managedNodes.size} managed deps)...")
     log.debug(s"aggregateNodes count: ${aggregateNodes.size}")
     diffCalculator.calculateDivergentDependencies(aggregateNodes, managedNodes)
   }
