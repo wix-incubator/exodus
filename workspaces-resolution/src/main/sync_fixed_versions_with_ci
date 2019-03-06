@@ -1,14 +1,27 @@
 #!/usr/bin/env python
 import sys
 import argparse
+import os
+import logging
 from shutil import copyfile
-sys.dont_write_bytecode = True
-from resolving_lib.resolving_utils import read_current_branch, write_symlink_to_path, run_process
-from resolving_lib.resolving_files_paths import *
-from resolving_lib.resolving_from_server import create_versions_files_from_server
-from python_utils.output_to_shell import OutputToShell
 
+from resolving_lib.resolving_utils import read_current_branch, write_symlink_to_path, run_process
+from resolving_lib.resolving_files_paths import (does_non_empty_file_exist,
+                                                 git_tracked_starlark_file_partial_path,
+                                                 local_cache_symlink_path,
+                                                 tools_relative_path,
+                                                 starlark_file_name_postfix,
+                                                 git_tracked_versions_folder,
+                                                 local_cache_versions_folder)
+from resolving_lib.resolving_from_server import create_versions_files_from_server
+from python_utils.output_to_shell import (OutputToShell, print_message)
+from python_utils.logger import set_logging_level
+
+sys.dont_write_bytecode = True
 workspace_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
+set_logging_level(logging_level)
 
 
 def main():

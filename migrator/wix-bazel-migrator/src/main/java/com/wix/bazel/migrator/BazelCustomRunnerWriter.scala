@@ -71,7 +71,6 @@ object BazelCustomRunnerWriter {
   val scriptsFolderPathInBazelTooling = "workspaces-resolution/src/main"
 
   val resolvingScriptFiles = List(
-    "__init__.py",
     "load_2nd_party_repositories.bzl",
     "resolve_2nd_party_repositories.py",
     "python_utils/__init__.py",
