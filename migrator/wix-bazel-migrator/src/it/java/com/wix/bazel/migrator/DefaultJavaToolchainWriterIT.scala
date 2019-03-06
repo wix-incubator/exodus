@@ -1,31 +1,34 @@
 package com.wix.bazel.migrator
 
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
 class DefaultJavaToolchainWriterIT extends BaseWriterIT {
   "DefaultJavaToolchainWriter" should {
-    "create .bazelrc file is missing" in new ctx {
+    "create rc file is missing" in new ctx {
       writer.write()
 
-      path(withName = ".bazelrc") must beRegularFile(withContentContaining =
+      bazelRcManagedDevEnvPath must beRegularFile(withContentContaining =
         DefaultJavaToolchainWriter.bazelRcToolchainUsage(DefaultJavaToolchainWriter.DefaultJavaToolchainName))
     }
 
-    "append java tool usage to bazelrc file" in new ctx {
+    "append java tool usage to rc file" in new ctx {
       val bazelRcContent = createBazelRcFile(withContent = random)
 
       writer.write()
 
-      path(withName = ".bazelrc") must beRegularFile(withContentContaining =
+      bazelRcManagedDevEnvPath must beRegularFile(withContentContaining =
         DefaultJavaToolchainWriter.bazelRcToolchainUsage(DefaultJavaToolchainWriter.DefaultJavaToolchainName))
     }
   }
 
   abstract class ctx extends baseCtx {
-    val writer = new DefaultJavaToolchainWriter(repoRoot)
+    private val bazelRcManagedDevEnvRelativeName = "tools/bazelrc/.bazelrc.managed.dev.env"
+    final val bazelRcManagedDevEnvPath: Path = path(withName = bazelRcManagedDevEnvRelativeName)
+    final val writer = new DefaultJavaToolchainWriter(repoRoot)
 
-    def createBazelRcFile(withContent: String = "") = {
-      Files.write(repoRoot.resolve(".bazelrc"), withContent.getBytes)
+    def createBazelRcFile(withContent: String = ""): String = {
+      Files.createDirectories(bazelRcManagedDevEnvPath.getParent)
+      Files.write(repoRoot.resolve(bazelRcManagedDevEnvRelativeName), withContent.getBytes)
 
       withContent
     }

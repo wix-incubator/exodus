@@ -27,7 +27,7 @@ class BazelRcRemoteWriter(repoRoot: Path) {
        |build:remote --jobs=100
        |
        |# (no need to import %workspace%/.bazelrc, bazel does this by default)
-       |import %workspace%/.bazelrc.remotesettings
+       |import %workspace%/tools/bazelrc/.bazelrc.remotesettings
        |
        |# Set various strategies so that all actions execute remotely. Mixing remote
        |# and local execution will lead to errors unless the toolchain and remote

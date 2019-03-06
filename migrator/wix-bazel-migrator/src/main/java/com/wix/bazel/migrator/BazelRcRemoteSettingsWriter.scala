@@ -61,5 +61,5 @@ class BazelRcRemoteSettingsWriter(repoRoot: Path) {
   // move .bazelrc.remotesettings to be a resource for both the gcb-bazel-step container AND for wazel container
   // (NOTE - if jenkins is still alive when this happens, it should also be added to the jenkins execution image)
   private def writeToDisk(contents: String): Unit =
-    Files.write(repoRoot.resolve(".bazelrc.remotesettings"), contents.getBytes)
+    Files.write(repoRoot.resolve("tools/bazelrc/.bazelrc.remotesettings"), contents.getBytes)
 }

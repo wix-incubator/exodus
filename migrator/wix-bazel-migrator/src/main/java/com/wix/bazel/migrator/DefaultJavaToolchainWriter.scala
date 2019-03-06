@@ -10,7 +10,7 @@ class DefaultJavaToolchainWriter(repoRoot: Path) {
   }
 
   private def updateBazelRcFile(targetName: String): Unit =
-    new BazelRcWriter(repoRoot).appendLines(bazelRcToolchainUsage(targetName))
+    new BazelRcManagedDevEnvWriter(repoRoot).appendLines(bazelRcToolchainUsage(targetName))
 
 }
 
