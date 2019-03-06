@@ -61,7 +61,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
   private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
     logger.info("started fetching sha256 checksums for 3rd party dependencies from artifactory...")
-    val nodes = divergentLocalDependencies.map(_.toBazelNode.updateChecksumFrom(dependenciesRemoteStorage))
+    val nodes = divergentLocalDependencies.map(_.updateChecksumFrom(dependenciesRemoteStorage))
     logger.info("completed fetching sha256 checksums.")
     nodes
   }

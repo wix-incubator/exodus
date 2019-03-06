@@ -1,7 +1,7 @@
 package com.wixpress.build.sync
 
 import com.wixpress.build.bazel._
-import com.wixpress.build.maven.{DependencyNode, BazelDependencyNode, MavenDependencyResolver}
+import com.wixpress.build.maven.{BazelDependencyNode, DependencyNode, MavenDependencyResolver}
 import com.wixpress.build.sync.ArtifactoryRemoteStorage._
 import com.wixpress.build.sync.BazelMavenSynchronizer.PersistMessageHeader
 import org.slf4j.LoggerFactory
@@ -35,17 +35,10 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
     calculateDivergentDependencies(localNodes, managedNodes)
   }
 
-  def calculateDivergentDependencies(localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode]): Set[BazelDependencyNode] = {
+  private def calculateDivergentDependencies(localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode]): Set[BazelDependencyNode] = {
     val divergentLocalDependencies = localNodes.forceCompileScopeIfNotProvided diff managedNodes
 
-    decorateNodesWithChecksum(divergentLocalDependencies)
-  }
-
-  private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
-    log.info(s"started fetching sha256 checksums for (${divergentLocalDependencies.size}) divergent 3rd party dependencies from artifactory...")
-    val nodes = divergentLocalDependencies.map(_.toBazelNode.updateChecksumFrom(dependenciesRemoteStorage))
-    log.info("completed fetching sha256 checksums.")
-    nodes
+    decorateNodesWithChecksum(divergentLocalDependencies)(dependenciesRemoteStorage)
   }
 }
 

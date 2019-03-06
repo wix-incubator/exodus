@@ -171,15 +171,12 @@ object ArtifactoryRemoteStorage {
     }
   }
 
-  implicit class DependencyNodeExtensions(node: BazelDependencyNode) {
-    def updateChecksumFrom(dependenciesRemoteStorage: DependenciesRemoteStorage) = {
-      val maybeChecksum = dependenciesRemoteStorage.checksumFor(node.toMavenNode)
-      val maybeSrcChecksum = dependenciesRemoteStorage.checksumFor(node.asSourceNode.toMavenNode)
+  implicit class DependencyNodeExtensions(node: DependencyNode) {
+    def updateChecksumFrom(dependenciesRemoteStorage: DependenciesRemoteStorage):BazelDependencyNode = {
+      val maybeChecksum = dependenciesRemoteStorage.checksumFor(node)
+      val maybeSrcChecksum = dependenciesRemoteStorage.checksumFor(node.asSourceNode)
 
-      node.copy(
-        checksum = maybeChecksum,
-        srcChecksum = maybeSrcChecksum
-      )
+      BazelDependencyNode(node.baseDependency, node.dependencies, maybeChecksum, maybeSrcChecksum)
     }
 
     def asSourceNode = {
@@ -190,7 +187,7 @@ object ArtifactoryRemoteStorage {
     }
   }
 
-  def decorateNodesWithChecksum(closure: Set[BazelDependencyNode])(dependenciesRemoteStorage: DependenciesRemoteStorage) = {
+  def decorateNodesWithChecksum(closure: Set[DependencyNode])(dependenciesRemoteStorage: DependenciesRemoteStorage) = {
     closure.map(_.updateChecksumFrom(dependenciesRemoteStorage))
   }
 }

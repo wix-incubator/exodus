@@ -3,6 +3,7 @@ package com.wixpress.build.sync
 import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository}
 import com.wixpress.build.maven._
+import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksum
 import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
 
@@ -40,7 +41,6 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
                                   remoteStorage: DependenciesRemoteStorage,
                                   mavenModules: Set[SourceModule]) extends DiffCalculatorAndAggregator {
 
-  val diffCalculator = DiffCalculator(bazelRepoWithManagedDependencies, aetherResolver, remoteStorage)
   val aggregator = new DependencyAggregator(mavenModules)
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -83,7 +83,13 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
   private def calculateDivergentLocalNodes(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[BazelDependencyNode] = {
     log.info(s"calculate diff with managed deps and persist it (${aggregateNodes.size} local deps, ${managedNodes.size} managed deps)...")
     log.debug(s"aggregateNodes count: ${aggregateNodes.size}")
-    diffCalculator.calculateDivergentDependencies(aggregateNodes, managedNodes)
+
+    val divergentLocalDependencies = aggregateNodes.forceCompileScopeIfNotProvided diff managedNodes
+
+    log.info(s"started fetching sha256 checksums for (${divergentLocalDependencies.size}) divergent 3rd party dependencies from artifactory...")
+    val decoratedNodes = decorateNodesWithChecksum(divergentLocalDependencies)(remoteStorage)
+    log.info("completed fetching sha256 checksums.")
+    decoratedNodes
   }
 }
 
