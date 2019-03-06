@@ -13,7 +13,7 @@ import org.specs2.specification.Scope
 //noinspection TypeAnnotation
 class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
-  "ThirdPartyUpdater" >> {
+  "UserAddedDepsDiffSynchronizer" >> {
     "when persisting changes" should {
       "add third party dependencies to repo" in new ctx {
         val newArtifacts = Set(artifactA, artifactB)
@@ -51,20 +51,32 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
         targetRepoDriver.transitiveCompileTimeDepOf(artifactA) must contain(contain("//:linkable"))
 
       }
+
+      "if diffCalculator contains closure error, don't persist, print the closure error and exit with error" in new ctx {
+        val spyDiffWriter = new SpyDiffWriter()
+        val blah = new UserAddedDepsDiffSynchronizer(new AlwaysFailsDiffCalculator(), spyDiffWriter)
+        blah.syncThirdParties(Set()) must throwA[IllegalArgumentException]
+
+        spyDiffWriter.timesCalled must_==(0)
+      }
     }
 
-    "calculate difference from managed" in new ctx {
-      val newArtifacts = Set(artifactA, artifactB)
+    "when calculating diff" should {
 
-      private val nodes: Set[DependencyNode] = newArtifacts.map(a => aRootDependencyNode(asCompileDependency(a)))
-      synchronizer.resolveUpdatedLocalNodes(newArtifacts.map(toDependency)) mustEqual DiffResult(nodes, Set(), Set())
-    }
+      //TODO - these 2 tests to be extracted to a new UserAddedDepsDiffCalculatorTest
+      "calculate difference from managed" in new ctx {
+        val newArtifacts = Set(artifactA, artifactB)
 
-    "resolve local deps closure when a local transitive dependency is only found in managed set" in new ctx {
-      targetFakeLocalWorkspace.hasDependencies(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
-      managedDepsLocalWorkspace.hasDependencies(aRootDependencyNode(asCompileDependency(artifactB)))
+        private val nodes: Set[DependencyNode] = newArtifacts.map(a => aRootDependencyNode(asCompileDependency(a)))
+        userAddedDepsDiffCalculator.resolveUpdatedLocalNodes(newArtifacts.map(toDependency)) mustEqual DiffResult(nodes, Set(), Set())
+      }
 
-      synchronizer.resolveUpdatedLocalNodes(Set()).localNodes must contain(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
+      "resolve local deps closure when a local transitive dependency is only found in managed set" in new ctx {
+        targetFakeLocalWorkspace.hasDependencies(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
+        managedDepsLocalWorkspace.hasDependencies(aRootDependencyNode(asCompileDependency(artifactB)))
+
+        userAddedDepsDiffCalculator.resolveUpdatedLocalNodes(Set()).localNodes must contain(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
+      }
     }
   }
 
@@ -89,13 +101,33 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     val targetRepoDriver = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
 
     val resolver = givenFakeResolverForDependencies(rootDependencies = Set(asCompileDependency(dependencyManagementCoordinates)))
-    def synchronizer = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository,
-      dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule](), "", NeverLinkResolver())
+    val userAddedDepsDiffCalculator = new UserAddedDepsDiffCalculator(targetFakeBazelRepository, managedDepsFakeBazelRepository,
+      dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule]())
+
+    def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver()))
   }
 
   trait linkableCtx extends ctx {
-    def synchronizerWithLinkableArtifact(artifact: Coordinates) = new UserAddedDepsDiffSynchronizer(targetFakeBazelRepository, managedDepsFakeBazelRepository,
-      dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule](), "", NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)))
+    def synchronizerWithLinkableArtifact(artifact: Coordinates) = new UserAddedDepsDiffSynchronizer(new UserAddedDepsDiffCalculator(
+      targetFakeBazelRepository, managedDepsFakeBazelRepository, dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule]()),
+      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact))))
+  }
+
+  class AlwaysFailsDiffCalculator extends DiffCalculatorAndAggregator {
+    override def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency]): DiffResult = {
+      val dependencyOfTheRootNode = aDependency("otherArtifactId")
+
+      val updatedLocalNodes = Set(DependencyNode(asCompileDependency(someCoordinates("someArtifactId")), dependencies = Set(dependencyOfTheRootNode)))
+      val diffResultWithNonFullClosure = DiffResult(updatedLocalNodes, localNodes = Set(), managedNodes = Set())
+      diffResultWithNonFullClosure
+    }
+  }
+
+  class SpyDiffWriter extends DiffWriter {
+    var timesCalled = 0
+
+    override def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit =
+      timesCalled += 1
   }
 
 }

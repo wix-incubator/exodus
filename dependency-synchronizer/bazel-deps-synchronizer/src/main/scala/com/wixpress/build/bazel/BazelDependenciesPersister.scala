@@ -2,19 +2,15 @@ package com.wixpress.build.bazel
 
 import com.wixpress.build.maven.Coordinates
 
-class BazelDependenciesPersister(commitHeader: String, branch: String, bazelRepository: BazelRepository) {
+class BazelDependenciesPersister(commitHeader: String, bazelRepository: BazelRepository) {
 
   def persistWithMessage(fileset: Set[String], dependenciesSet: Set[Coordinates]): Unit =
-    bazelRepository.persist(branch, fileset, persistMessageBy(dependenciesSet))
+    bazelRepository.persist("master", fileset, persistMessageBy(dependenciesSet))
 
   private def persistMessageBy(dependenciesSet: Set[Coordinates]): String = {
-    val suffix = branch match {
-      case "master" => ""
-      case _ => "\n#automerge"
-    }
 
     s"""$commitHeader
-       |${sortedListOfDependencies(dependenciesSet)}$suffix
+       |${sortedListOfDependencies(dependenciesSet)}
        |""".stripMargin
   }
 

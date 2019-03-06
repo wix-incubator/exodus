@@ -11,7 +11,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
                              dependenciesRemoteStorage: DependenciesRemoteStorage) {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
-  private val persister = new BazelDependenciesPersister(PersistMessageHeader, BranchName, targetRepository)
+  private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
   private val conflictResolution = new HighestVersionConflictResolution()
 
   def sync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]): Unit = {

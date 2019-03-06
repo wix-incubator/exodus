@@ -1,41 +1,57 @@
 package com.wixpress.build.sync
 
 import com.wix.bazel.migrator.model.SourceModule
-import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository, NeverLinkResolver}
+import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository}
 import com.wixpress.build.maven._
 import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
 
-class UserAddedDepsDiffSynchronizer(bazelRepo: BazelRepository, bazelRepoWithManagedDependencies: BazelRepository,
-                                    ManagedDependenciesArtifact: Coordinates, aetherResolver: MavenDependencyResolver,
-                                    remoteStorage: DependenciesRemoteStorage,
-                                    mavenModules: Set[SourceModule],
-                                    randomString: => String,
-                                    neverLinkResolver: NeverLinkResolver) {
-  val diffWriter = DiffWriter(bazelRepo, neverLinkResolver, Some(s"user_added_3rd_party_deps_$randomString"))
-  val diffCalculator = DiffCalculator(bazelRepoWithManagedDependencies, aetherResolver, remoteStorage)
-  val aggregator = new DependencyAggregator(mavenModules)
+class UserAddedDepsDiffSynchronizer(calculator: DiffCalculatorAndAggregator,
+                                    diffWriter: DiffWriter) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   def syncThirdParties(userAddedDependencies: Set[Dependency]): DiffResult = {
-    val diffResult = resolveUpdatedLocalNodes(userAddedDependencies)
+    val diffResult = calculator.resolveUpdatedLocalNodes(userAddedDependencies)
+    val report = new ConflictReportCreator().report(diffResult)
 
-    log.info(s"writes updates for ${diffResult.updatedLocalNodes.size} dependency nodes...")
-    diffWriter.persistResolvedDependencies(diffResult.updatedLocalNodes, diffResult.localNodes)
-    log.info(s"Finished writing updates.")
+    val setOfProblems = diffResult.checkForDepsClosureError().nodesWithMissingEdge
+    if (setOfProblems.isEmpty){
+      log.info(s"writes updates for ${diffResult.updatedLocalNodes.size} dependency nodes...")
+      diffWriter.persistResolvedDependencies(diffResult.updatedLocalNodes, diffResult.localNodes)
+      log.info(s"Finished writing updates.")
+      PrettyReportPrinter.printReport(report)
+    } else {
+      PrettyReportPrinter.printReport(report)
+      log.info(s"!!!!!!!!!! NOT WRITING any dependency updates - something missing from calculated transitive closure. Contact #bazel-support NOW, we wanna know! !!!!!!!!!!")
+      throw new IllegalArgumentException(setOfProblems.map(k => s"DependencyNodeWithMissingDeps - ${k._1},\n MissingCoordinates - ${k._2}").mkString("\n\n"))
+    }
 
     diffResult
   }
+}
+
+trait DiffCalculatorAndAggregator {
+  def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency]): DiffResult
+}
+
+class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManagedDependencies: BazelRepository,
+                                  ManagedDependenciesArtifact: Coordinates, aetherResolver: MavenDependencyResolver,
+                                  remoteStorage: DependenciesRemoteStorage,
+                                  mavenModules: Set[SourceModule]) extends DiffCalculatorAndAggregator {
+
+  val diffCalculator = DiffCalculator(bazelRepoWithManagedDependencies, aetherResolver, remoteStorage)
+  val aggregator = new DependencyAggregator(mavenModules)
+  private val log = LoggerFactory.getLogger(getClass)
 
   def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency]): DiffResult = {
     val managedNodes = readManagedNodes()
     val localNodes = readLocalDependencyNodes(externalDependencyNodes = managedNodes)
     val addedNodes = resolveUserAddedDependencyNodes(userAddedDependencies)
     val aggregateNodes = aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes = localNodes, userAddedDependencies, addedNodes = addedNodes)
-    val divergentLocalNodes = calculateDivergentLocalNodes(managedNodes, aggregateNodes)
+    val updatedLocalNodes = calculateDivergentLocalNodes(managedNodes, aggregateNodes)
 
-    DiffResult(divergentLocalNodes, localNodes, managedNodes)
+    DiffResult(updatedLocalNodes, localNodes, managedNodes)
   }
 
   private def readManagedNodes() = {
@@ -81,7 +97,7 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
     val nonWarNodes = filterNotWarDeps(addedNodes)
     val externalAddedNodes = filterNotLocalSourceModules(nonWarNodes)
     val newAddedNodesThatAreNotExcludedLocally = newNodesWithLocalExclusionsFilteredOut(externalAddedNodes, localNodes, addedDeps)
-    val updatedLocalNodes = updateLocalNodesWithAddedDepsVersions(externalAddedNodes, localNodes, addedDeps)
+    val updatedLocalNodes = updateLocalNodesWithAddedDepsVersions(externalAddedNodes, localNodes)
 
     updatedLocalNodes ++ newAddedNodesThatAreNotExcludedLocally
   }
@@ -114,7 +130,7 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
     newNonExcludedNodes
   }
 
-  private def updateLocalNodesWithAddedDepsVersions(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode], addedDeps: Set[Dependency]) = {
+  private def updateLocalNodesWithAddedDepsVersions(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode]) = {
     def resolveHighestVersion(node: Dependency*) = {
       node.toSet.maxBy{d: Dependency => new ComparableVersion(d.coordinates.version)}
     }
@@ -152,5 +168,3 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
     })
   }
 }
-
-case class DiffResult(updatedLocalNodes: Set[DependencyNode], localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode])

@@ -12,7 +12,7 @@ case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelReposit
                             neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) {
 
   private val diffCalculator = DiffCalculator(bazelRepositoryWithManagedDependencies, resolver, dependenciesRemoteStorage)
-  private val diffWriter = DiffWriter(targetRepository,neverLinkResolver)
+  private val diffWriter = DefaultDiffWriter(targetRepository,neverLinkResolver)
 
   def sync(localNodes: Set[DependencyNode]) = {
     val updatedLocalNodes = diffCalculator.calculateDivergentDependencies(localNodes)
@@ -49,15 +49,16 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
   }
 }
 
-case class DiffWriter(targetRepository: BazelRepository,
-                      neverLinkResolver: NeverLinkResolver,
-                      remoteBranch: Option[String] = None
-                      ) {
+
+trait DiffWriter {
+  def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit
+}
+
+case class DefaultDiffWriter(targetRepository: BazelRepository,
+                             neverLinkResolver: NeverLinkResolver
+                      ) extends DiffWriter {
   private val log = LoggerFactory.getLogger(getClass)
-
-  private val branchName = remoteBranch.fold("master")(b => b)
-
-  private val persister = new BazelDependenciesPersister(PersistMessageHeader, branchName, targetRepository)
+  private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
 
   def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit = {
     val localCopy = targetRepository.localWorkspace()
