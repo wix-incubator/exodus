@@ -9,16 +9,16 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
   val ruleResolver = new RuleResolver(localWorkspace.localWorkspaceName)
   val annotatedDepNodeTransformer = new AnnotatedDependencyNodeTransformer(neverLinkResolver)
 
-  def writeDependencies(dependencyNodes: DependencyNode*): Set[String] =
+  def writeDependencies(dependencyNodes: BazelDependencyNode*): Set[String] =
     writeDependencies(dependencyNodes.toSet)
 
-  def writeDependencies(dependencyNodes: Set[DependencyNode]): Set[String] = {
+  def writeDependencies(dependencyNodes: Set[BazelDependencyNode]): Set[String] = {
     writeThirdPartyReposFile(dependencyNodes)
     writeThirdPartyFolderContent(dependencyNodes)
     computeAffectedFilesBy(dependencyNodes)
   }
 
-  private def writeThirdPartyReposFile(dependencyNodes: Set[DependencyNode]): Unit = {
+  private def writeThirdPartyReposFile(dependencyNodes: Set[BazelDependencyNode]): Unit = {
     val actual = dependencyNodes.toList.sortBy(_.baseDependency.coordinates.workspaceRuleName)
     val existingThirdPartyReposFile = localWorkspace.thirdPartyReposFileContent()
     val thirdPartyReposBuilder = actual.map(_.baseDependency.coordinates)
@@ -29,7 +29,7 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
     localWorkspace.overwriteThirdPartyReposFile(nonEmptyContent)
   }
 
-  private def writeThirdPartyFolderContent(dependencyNodes: Set[DependencyNode]): Unit = {
+  private def writeThirdPartyFolderContent(dependencyNodes: Set[BazelDependencyNode]): Unit = {
     val annotatedDependencyNodes = dependencyNodes.map(annotatedDepNodeTransformer.annotate)
 
     val targetsToPersist = annotatedDependencyNodes.flatMap(maybeRuleBy)
@@ -76,7 +76,7 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
     ImportExternalTargetsFile.persistTarget(ruleToPersist, localWorkspace)
   }
 
-  private def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) = {
+  private def computeAffectedFilesBy(dependencyNodes: Set[BazelDependencyNode]) = {
     val affectedFiles = dependencyNodes.map(_.baseDependency.coordinates).flatMap(findFilesAccordingToPackagingOf)
     affectedFiles + thirdPartyReposFilePath
   }
@@ -89,7 +89,7 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
     }
   }
 
-  def writeDependencies(dependenciesForThirdPartyReposFile: Set[DependencyNode], dependenciesForThirdPartyFolder: Set[DependencyNode]) = {
+  def writeDependencies(dependenciesForThirdPartyReposFile: Set[BazelDependencyNode], dependenciesForThirdPartyFolder: Set[BazelDependencyNode]) = {
     writeThirdPartyReposFile(dependenciesForThirdPartyReposFile)
 
     writeThirdPartyFolderContent(dependenciesForThirdPartyFolder)
@@ -107,7 +107,7 @@ case class AnnotatedDependencyNode(baseDependency: Dependency,
 
 class AnnotatedDependencyNodeTransformer(neverLinkResolver: NeverLinkResolver = new NeverLinkResolver()) {
 
-  def annotate(dependencyNode: DependencyNode): AnnotatedDependencyNode = {
+  def annotate(dependencyNode: BazelDependencyNode): AnnotatedDependencyNode = {
     AnnotatedDependencyNode(
       baseDependency = dependencyNode.baseDependency,
       runtimeDependencies = dependencyNode.runtimeDependencies.filterNot(_.isProtoArtifact).map(resolveDepBy),

@@ -4,6 +4,7 @@ import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.FakeLocalBazelWorkspace.thirdPartyReposFilePath
 import com.wixpress.build.bazel.LibraryRule.packageNameBy
 import com.wixpress.build.bazel.ThirdPartyOverridesMakers.{compileTimeOverrides, overrideCoordinatesFrom, runtimeOverrides}
+import com.wixpress.build.maven.DefaultChecksumValues._
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
 import org.specs2.matcher.Matcher
@@ -53,42 +54,20 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val matchingGroupId = baseDependency.coordinates.groupIdForBazel
       }
 
-      "write import_external rule to third party repos file" in new newRootDependencyNodeCtx {
-        writer.writeDependencies(aRootDependencyNode(baseDependency))
-
-        localWorkspace.thirdPartyReposFileContent() must containLoadStatementFor(baseDependency.coordinates)
-
-        localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
-          containRootScalaImportExternalRuleFor(baseDependency.coordinates)
-      }
-
       "write import_external rule with checksum to third party repos file " in new newRootDependencyNodeCtx {
-        writer.writeDependencies(aRootDependencyNode(baseDependency).copy(checksum = Some("checksum")))
+        writer.writeDependencies(aRootBazelDependencyNode(baseDependency, checksum = Some("checksum"), srcChecksum = Some("srcChecksum")))
 
         localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
-          containScalaImportExternalRuleFor(baseDependency.coordinates,
-            s"""|jar_sha256 = "checksum",""".stripMargin)
+          containRootScalaImportExternalRuleFor(baseDependency.coordinates,"checksum","srcChecksum")
       }
 
       "write import_external rule with neverlink and linkable rule name to third party repos file " in new newRootDependencyNodeCtx {
-        writer.writeDependencies(aRootDependencyNode(providedDependency))
+        writer.writeDependencies(aRootBazelDependencyNode(providedDependency))
 
         localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
           containScalaImportExternalRuleFor(providedDependency.coordinates,
             s"""|neverlink = 1,
                 |generated_linkable_rule_name = "linkable",""".stripMargin)
-      }
-
-      "write import_external rule with src jar sha256 to third party repos file " in new newRootDependencyNodeCtx {
-        val dependencyNodeWithSource =
-          aRootDependencyNode(baseDependency).copy(
-            srcChecksum = Some("src_checksum")
-          )
-
-        writer.writeDependencies(dependencyNodeWithSource)
-        localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
-          containScalaImportExternalRuleFor(baseDependency.coordinates,
-            s"""|srcjar_sha256 = "src_checksum",""".stripMargin)
       }
     }
 
@@ -99,13 +78,13 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       }
 
       "write maven_proto rule to third party repos file" in new protoDependencyNodeCtx {
-        writer.writeDependencies(aRootDependencyNode(protoDependency))
+        writer.writeDependencies(aRootBazelDependencyNode(protoDependency))
 
         localWorkspace.thirdPartyReposFileContent() must containMavenProtoRuleFor(protoCoordinates)
       }
 
       "change only third party repos file" in new protoDependencyNodeCtx {
-        val node: DependencyNode = aRootDependencyNode(protoDependency)
+        val node = aRootBazelDependencyNode(protoDependency)
         val changedFiles = writer.writeDependencies(node)
 
         changedFiles must contain(exactly(thirdPartyReposFilePath))
@@ -117,7 +96,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       abstract class dependencyWithTransitiveDependencyofScope(scope: MavenScope) extends emptyThirdPartyReposCtx {
         val baseDependency = aDependency("base")
         val transitiveDependency = aDependency("transitive", scope)
-        val dependencyNode = DependencyNode(baseDependency, Set(transitiveDependency))
+        val dependencyNode = BazelDependencyNode(baseDependency, Set(transitiveDependency), Some(defaultChecksum), Some(defaultSrcChecksum))
 
         val dependencyGroupId = baseDependency.coordinates.groupIdForBazel
       }
@@ -144,7 +123,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       "write target with compile time pom artifact dependency" in new emptyThirdPartyReposCtx {
         val baseDependency = aDependency("base")
         val transitiveDependency = aPomArtifactDependency("transitive", MavenScope.Compile)
-        val dependencyNode = DependencyNode(baseDependency, Set(transitiveDependency))
+        val dependencyNode = aBazelDependencyNode(baseDependency, Set(transitiveDependency))
         val dependencyGroupId = baseDependency.coordinates.groupIdForBazel
 
         writer.writeDependencies(dependencyNode)
@@ -159,7 +138,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val baseCoordinates = Coordinates("some.group", "some-artifact", "some-version", Packaging("pom"))
         val baseDependency = Dependency(baseCoordinates, MavenScope.Compile)
         val transitiveJarArtifactDependency = aDependency("transitive")
-        val dependencyNode = DependencyNode(baseDependency, Set(transitiveJarArtifactDependency))
+        val dependencyNode = BazelDependencyNode(baseDependency, Set(transitiveJarArtifactDependency))
 
         writer.writeDependencies(dependencyNode)
 
@@ -179,7 +158,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val baseCoordinates = Coordinates("some.group", "some-artifact", "some-version", Packaging("pom"))
         val baseDependency = Dependency(baseCoordinates, MavenScope.Compile)
         val transitivePomArtifactDependency = aPomArtifactDependency("transitive")
-        val dependencyNode = DependencyNode(baseDependency, Set(transitivePomArtifactDependency))
+        val dependencyNode = BazelDependencyNode(baseDependency, Set(transitivePomArtifactDependency))
 
         writer.writeDependencies(dependencyNode)
 
@@ -200,7 +179,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val transitiveDependencies = {
           1 to 5
         }.map(index => aDependency(s"transitive$index")).reverse
-        val dependencyNode = DependencyNode(baseDependency, transitiveDependencies.toSet)
+        val dependencyNode = aBazelDependencyNode(baseDependency, transitiveDependencies.toSet)
         val serializedLabelsOfTransitiveDependencies = transitiveDependencies
           .map(labelOfJarArtifact)
           .sorted
@@ -221,7 +200,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       "write target with exclusion" in new emptyThirdPartyReposCtx {
         val exclusion = Exclusion("some.excluded.group", "some-excluded-artifact")
         val baseDependency = aDependency("base").copy(exclusions = Set(exclusion))
-        val dependencyNode = aRootDependencyNode(baseDependency)
+        val dependencyNode = aRootBazelDependencyNode(baseDependency)
 
         writer.writeDependencies(dependencyNode)
 
@@ -271,7 +250,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     "given one dependency that already exists in the workspace " should {
       trait updateDependencyNodeCtx extends emptyThirdPartyReposCtx {
         val originalBaseDependency = aDependency("some-dep")
-        val originalDependencyNode = aRootDependencyNode(originalBaseDependency)
+        val originalDependencyNode = aRootBazelDependencyNode(originalBaseDependency)
         writer.writeDependencies(originalDependencyNode)
         val dependencyGroupId = originalBaseDependency.coordinates.groupIdForBazel
       }
@@ -279,7 +258,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       "update version of import_external rule" in new updateDependencyNodeCtx {
         val newDependency = originalBaseDependency.withVersion("other-version")
 
-        writer.writeDependencies(aRootDependencyNode(newDependency))
+        writer.writeDependencies(aRootBazelDependencyNode(newDependency))
 
         val workspaceContent = localWorkspace.thirdPartyReposFileContent()
 
@@ -293,7 +272,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
       "update dependencies of import external rule" in new updateDependencyNodeCtx {
         val newTransitiveDependency = aDependency("transitive")
-        val newDependencyNode = DependencyNode(originalBaseDependency, Set(newTransitiveDependency))
+        val newDependencyNode = aBazelDependencyNode(originalBaseDependency, Set(newTransitiveDependency))
 
         writer.writeDependencies(newDependencyNode)
 
@@ -330,7 +309,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val otherArtifact = Coordinates("other.group", "artifact-two", "some-version")
 
         def writeArtifactsAsRootDependencies(artifacts: Coordinates*) = {
-          val dependencyNodes = artifacts.map(a => aRootDependencyNode(Dependency(a, MavenScope.Compile)))
+          val dependencyNodes = artifacts.map(a => aRootBazelDependencyNode(Dependency(a, MavenScope.Compile)))
           writer.writeDependencies(dependencyNodes: _*)
         }
       }
@@ -385,7 +364,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         def writer = new BazelDependenciesWriter(localWorkspace, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)))
 
-        writer.writeDependencies(aRootDependencyNode(asCompileDependency(artifact)))
+        writer.writeDependencies(aRootBazelDependencyNode(asCompileDependency(artifact)))
 
         val importExternalFileContent = localWorkspace.thirdPartyImportTargetsFileContent(artifact.groupIdForBazel)
 
@@ -401,7 +380,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val transitiveDep = someCoordinates("some-transitiveDep")
 
         val newTransitiveDependency = asCompileDependency(transitiveDep)
-        val newDependencyNode = DependencyNode(asCompileDependency(artifact), Set(newTransitiveDependency))
+        val newDependencyNode = aBazelDependencyNode(asCompileDependency(artifact), Set(newTransitiveDependency))
 
         def writer = new BazelDependenciesWriter(localWorkspace,
           NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(transitiveDep)))
@@ -433,12 +412,14 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     contain(s"${groupId}_deps()")
   }
 
-  private def containRootScalaImportExternalRuleFor(coordinates: Coordinates) = {
+  private def containRootScalaImportExternalRuleFor(coordinates: Coordinates, checksum: String = defaultChecksum, srcChecksum: String = defaultSrcChecksum) = {
     beSome(
       containsIgnoringSpaces(
         s"""|import_external(
             |  name = "${coordinates.workspaceRuleName}",
             |  artifact = "${coordinates.serialized}",
+            |  jar_sha256 = "$checksum",
+            |  srcjar_sha256 = "$srcChecksum",
             |)""".stripMargin
       )
     )
@@ -466,6 +447,8 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         s"""|import_external(
             |  name = "${coordinates.workspaceRuleName}",
             |  artifact = "${coordinates.serialized}",
+            |  jar_sha256 = "$defaultChecksum",
+            |  srcjar_sha256 = "$defaultSrcChecksum",
             |  $withExtraParams
             |)""".stripMargin
       )

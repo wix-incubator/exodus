@@ -24,7 +24,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
       }
 
       "only add unmanaged dependencies to local repo" in new ctx {
-        managedDepsLocalWorkspace.hasDependencies(aRootDependencyNode(asCompileDependency(artifactA)))
+        managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))
 
         synchronizer.syncThirdParties(Set(artifactA, artifactB).map(toDependency))
 
@@ -33,7 +33,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
       }
 
       "update dependency's version in local repo" in new ctx {
-        targetFakeLocalWorkspace.hasDependencies(aRootDependencyNode(asCompileDependency(artifactA)))
+        targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))
 
         val updatedArtifact = artifactA.copy(version = "2.0.0")
         synchronizer.syncThirdParties(Set(updatedArtifact).map(toDependency))
@@ -43,8 +43,8 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
       "add linkable suffix to relevant transitive dep" in new linkableCtx {
         val diffSynchronizer: UserAddedDepsDiffSynchronizer = synchronizerWithLinkableArtifact(artifactB)
-        targetFakeLocalWorkspace.hasDependencies(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
-        managedDepsLocalWorkspace.hasDependencies(aRootDependencyNode(asCompileDependency(artifactB)))
+        targetFakeLocalWorkspace.hasDependencies(BazelDependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
+        managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactB)))
 
         diffSynchronizer.syncThirdParties(Set(artifactA).map(toDependency))
 
@@ -67,13 +67,13 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
       "calculate difference from managed" in new ctx {
         val newArtifacts = Set(artifactA, artifactB)
 
-        private val nodes: Set[DependencyNode] = newArtifacts.map(a => aRootDependencyNode(asCompileDependency(a)))
+        private val nodes: Set[BazelDependencyNode] = newArtifacts.map(a => aRootBazelDependencyNode(asCompileDependency(a),checksum = None, srcChecksum = None))
         userAddedDepsDiffCalculator.resolveUpdatedLocalNodes(newArtifacts.map(toDependency)) mustEqual DiffResult(nodes, Set(), Set())
       }
 
       "resolve local deps closure when a local transitive dependency is only found in managed set" in new ctx {
-        targetFakeLocalWorkspace.hasDependencies(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
-        managedDepsLocalWorkspace.hasDependencies(aRootDependencyNode(asCompileDependency(artifactB)))
+        targetFakeLocalWorkspace.hasDependencies(BazelDependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
+        managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactB)))
 
         userAddedDepsDiffCalculator.resolveUpdatedLocalNodes(Set()).localNodes must contain(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
       }
@@ -117,7 +117,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     override def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency]): DiffResult = {
       val dependencyOfTheRootNode = aDependency("otherArtifactId")
 
-      val updatedLocalNodes = Set(DependencyNode(asCompileDependency(someCoordinates("someArtifactId")), dependencies = Set(dependencyOfTheRootNode)))
+      val updatedLocalNodes = Set(BazelDependencyNode(asCompileDependency(someCoordinates("someArtifactId")), dependencies = Set(dependencyOfTheRootNode)))
       val diffResultWithNonFullClosure = DiffResult(updatedLocalNodes, localNodes = Set(), managedNodes = Set())
       diffResultWithNonFullClosure
     }
@@ -126,7 +126,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
   class SpyDiffWriter extends DiffWriter {
     var timesCalled = 0
 
-    override def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit =
+    override def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit =
       timesCalled += 1
   }
 

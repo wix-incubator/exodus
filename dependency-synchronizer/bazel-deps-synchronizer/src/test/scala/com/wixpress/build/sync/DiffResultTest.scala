@@ -1,7 +1,7 @@
 package com.wixpress.build.sync
 
 import com.wixpress.build.maven.MavenMakers.{aDependency, aRootDependencyNode, asCompileDependency, someCoordinates}
-import com.wixpress.build.maven.{Coordinates, DependencyNode}
+import com.wixpress.build.maven.{BazelDependencyNode, Coordinates, DependencyNode}
 import org.specs2.mutable.SpecificationWithJUnit
 
 class DiffResultTest extends SpecificationWithJUnit {
@@ -14,7 +14,7 @@ class DiffResultTest extends SpecificationWithJUnit {
 
       val dependencyOfTheRootNode = aDependency("otherArtifactId")
 
-      val updatedLocalNodes = Set(DependencyNode(asCompileDependency(artifact), dependencies = Set(dependencyOfTheRootNode)))
+      val updatedLocalNodes = Set(BazelDependencyNode(asCompileDependency(artifact), dependencies = Set(dependencyOfTheRootNode)))
       val diffResultWithNonFullClosure = DiffResult(updatedLocalNodes, localNodes = Set(), managedNodes = Set())
 
       diffResultWithNonFullClosure.checkForDepsClosureError().nodesWithMissingEdge.toList must
@@ -24,7 +24,7 @@ class DiffResultTest extends SpecificationWithJUnit {
     "return None if missing deps supplied by localDeps" in {
       val dependencyOfTheRootNode = aDependency("otherArtifactId")
 
-      val updatedLocalNodes = Set(DependencyNode(asCompileDependency(artifact), dependencies = Set(dependencyOfTheRootNode)))
+      val updatedLocalNodes = Set(BazelDependencyNode(asCompileDependency(artifact), dependencies = Set(dependencyOfTheRootNode)))
       val diffResultWithCompletingClosure = DiffResult(updatedLocalNodes, localNodes = Set(aRootDependencyNode(dependencyOfTheRootNode)), managedNodes = Set())
 
       diffResultWithCompletingClosure.checkForDepsClosureError().nodesWithMissingEdge must beEmpty
@@ -33,7 +33,7 @@ class DiffResultTest extends SpecificationWithJUnit {
     "return None if missing deps supplied by managedDeps" in {
       val dependencyOfTheRootNode = aDependency("otherArtifactId")
 
-      val updatedLocalNodes = Set(DependencyNode(asCompileDependency(artifact), dependencies = Set(dependencyOfTheRootNode)))
+      val updatedLocalNodes = Set(BazelDependencyNode(asCompileDependency(artifact), dependencies = Set(dependencyOfTheRootNode)))
       val diffResultWithCompletingClosure = DiffResult(updatedLocalNodes, localNodes = Set(), managedNodes = Set(aRootDependencyNode(dependencyOfTheRootNode)))
 
       diffResultWithCompletingClosure.checkForDepsClosureError().nodesWithMissingEdge must beEmpty
@@ -42,7 +42,7 @@ class DiffResultTest extends SpecificationWithJUnit {
     "return None if missing dep is supplied even with different version" in {
       val dependencyOfTheRootNode = aDependency("otherArtifactId")
 
-      val updatedLocalNodes = Set(DependencyNode(asCompileDependency(artifact), dependencies = Set(dependencyOfTheRootNode.withVersion("updatedTransitiveVersion"))))
+      val updatedLocalNodes = Set(BazelDependencyNode(asCompileDependency(artifact), dependencies = Set(dependencyOfTheRootNode.withVersion("updatedTransitiveVersion"))))
       val diffResultWithCompletingClosure = DiffResult(updatedLocalNodes, localNodes = Set(aRootDependencyNode(dependencyOfTheRootNode.withVersion("existingLocalTransitiveVersion"))), managedNodes = Set())
 
       diffResultWithCompletingClosure.checkForDepsClosureError().nodesWithMissingEdge must beEmpty

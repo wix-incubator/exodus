@@ -30,7 +30,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     dependenciesToUpdate.headOption.foreach { depNode => logger.info(s"First dep to sync is ${depNode.baseDependency}.") }
 
     if (dependenciesToUpdate.isEmpty)
-      Set[DependencyNode]()
+      Set[BazelDependencyNode]()
     else
       decorateNodesWithChecksum(dependenciesToUpdate)
   }
@@ -61,12 +61,12 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
   private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
     logger.info("started fetching sha256 checksums for 3rd party dependencies from artifactory...")
-    val nodes = divergentLocalDependencies.map(_.updateChecksumFrom(dependenciesRemoteStorage))
+    val nodes = divergentLocalDependencies.map(_.toBazelNode.updateChecksumFrom(dependenciesRemoteStorage))
     logger.info("completed fetching sha256 checksums.")
     nodes
   }
 
-  def persist(dependenciesToUpdate: Set[DependencyNode]) = {
+  def persist(dependenciesToUpdate: Set[BazelDependencyNode]) = {
     if (dependenciesToUpdate.nonEmpty) {
       val localCopy = targetRepository.localWorkspace()
 

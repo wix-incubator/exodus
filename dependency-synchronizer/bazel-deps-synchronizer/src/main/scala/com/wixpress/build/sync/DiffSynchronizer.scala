@@ -1,7 +1,7 @@
 package com.wixpress.build.sync
 
 import com.wixpress.build.bazel._
-import com.wixpress.build.maven.{DependencyNode, MavenDependencyResolver}
+import com.wixpress.build.maven.{DependencyNode, BazelDependencyNode, MavenDependencyResolver}
 import com.wixpress.build.sync.ArtifactoryRemoteStorage._
 import com.wixpress.build.sync.BazelMavenSynchronizer.PersistMessageHeader
 import org.slf4j.LoggerFactory
@@ -26,7 +26,7 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
                      dependenciesRemoteStorage: DependenciesRemoteStorage) {
   private val log = LoggerFactory.getLogger(getClass)
 
-  def calculateDivergentDependencies(localNodes: Set[DependencyNode]): Set[DependencyNode] = {
+  def calculateDivergentDependencies(localNodes: Set[DependencyNode]): Set[BazelDependencyNode] = {
     val reader = new BazelDependenciesReader(bazelRepositoryWithManagedDependencies.localWorkspace())
     val managedDeps = reader.allDependenciesAsMavenDependencies()
 
@@ -35,7 +35,7 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
     calculateDivergentDependencies(localNodes, managedNodes)
   }
 
-  def calculateDivergentDependencies(localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode]): Set[DependencyNode] = {
+  def calculateDivergentDependencies(localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode]): Set[BazelDependencyNode] = {
     val divergentLocalDependencies = localNodes.forceCompileScopeIfNotProvided diff managedNodes
 
     decorateNodesWithChecksum(divergentLocalDependencies)
@@ -43,7 +43,7 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
 
   private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
     log.info(s"started fetching sha256 checksums for (${divergentLocalDependencies.size}) divergent 3rd party dependencies from artifactory...")
-    val nodes = divergentLocalDependencies.map(_.updateChecksumFrom(dependenciesRemoteStorage))
+    val nodes = divergentLocalDependencies.map(_.toBazelNode.updateChecksumFrom(dependenciesRemoteStorage))
     log.info("completed fetching sha256 checksums.")
     nodes
   }
@@ -51,7 +51,7 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
 
 
 trait DiffWriter {
-  def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit
+  def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit
 }
 
 case class DefaultDiffWriter(targetRepository: BazelRepository,
@@ -60,10 +60,10 @@ case class DefaultDiffWriter(targetRepository: BazelRepository,
   private val log = LoggerFactory.getLogger(getClass)
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
 
-  def persistResolvedDependencies(divergentLocalDependencies: Set[DependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit = {
+  def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit = {
     val localCopy = targetRepository.localWorkspace()
     val writer = new BazelDependenciesWriter(localCopy, neverLinkResolver = neverLinkResolver)
-    val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom")
+    val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom").map(_.toBazelNode)
 
     val modifiedFiles = writer.
       writeDependencies(divergentLocalDependencies, divergentLocalDependencies ++ nodesWithPomPackaging)

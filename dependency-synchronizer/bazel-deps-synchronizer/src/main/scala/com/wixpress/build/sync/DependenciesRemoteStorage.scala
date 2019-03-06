@@ -2,7 +2,7 @@ package com.wixpress.build.sync
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.wixpress.build.maven.{Coordinates, DependencyNode}
+import com.wixpress.build.maven.{Coordinates, DependencyNode, BazelDependencyNode}
 import com.wixpress.build.sync.ArtifactoryRemoteStorage._
 import com.wixpress.build.sync.Utils.retry
 import org.apache.commons.codec.digest.DigestUtils
@@ -171,10 +171,10 @@ object ArtifactoryRemoteStorage {
     }
   }
 
-  implicit class DependencyNodeExtensions(node: DependencyNode) {
+  implicit class DependencyNodeExtensions(node: BazelDependencyNode) {
     def updateChecksumFrom(dependenciesRemoteStorage: DependenciesRemoteStorage) = {
-      val maybeChecksum = dependenciesRemoteStorage.checksumFor(node)
-      val maybeSrcChecksum = dependenciesRemoteStorage.checksumFor(node.asSourceNode)
+      val maybeChecksum = dependenciesRemoteStorage.checksumFor(node.toMavenNode)
+      val maybeSrcChecksum = dependenciesRemoteStorage.checksumFor(node.asSourceNode.toMavenNode)
 
       node.copy(
         checksum = maybeChecksum,
@@ -188,6 +188,10 @@ object ArtifactoryRemoteStorage {
 
       node.copy(baseDependency = srcBaseDependency, dependencies = Set.empty)
     }
+  }
+
+  def decorateNodesWithChecksum(closure: Set[BazelDependencyNode])(dependenciesRemoteStorage: DependenciesRemoteStorage) = {
+    closure.map(_.updateChecksumFrom(dependenciesRemoteStorage))
   }
 }
 

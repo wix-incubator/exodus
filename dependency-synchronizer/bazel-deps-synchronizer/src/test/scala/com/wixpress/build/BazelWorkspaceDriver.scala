@@ -4,7 +4,7 @@ import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.Coordinates._
-import com.wixpress.build.maven.{Coordinates, DependencyNode, Exclusion, Packaging}
+import com.wixpress.build.maven._
 import org.specs2.matcher.Matcher
 import org.specs2.matcher.Matchers._
 
@@ -75,7 +75,7 @@ object BazelWorkspaceDriver {
   val localWorkspaceName = "some_local_workspace_name"
 
   implicit class BazelWorkspaceDriverExtensions(w: BazelLocalWorkspace) {
-    def hasDependencies(dependencyNodes: DependencyNode*) = {
+    def hasDependencies(dependencyNodes: BazelDependencyNode*) = {
       new BazelDependenciesWriter(w).writeDependencies(dependencyNodes.toSet)
     }
   }

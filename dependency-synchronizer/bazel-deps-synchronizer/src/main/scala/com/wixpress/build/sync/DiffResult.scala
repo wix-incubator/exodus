@@ -1,16 +1,17 @@
 package com.wixpress.build.sync
 
-import com.wixpress.build.maven.{Coordinates, DependencyNode}
+import com.wixpress.build.maven.{BazelDependencyNode, Coordinates, DependencyNode}
 
-case class DiffResult(updatedLocalNodes: Set[DependencyNode], localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode]) {
+case class DiffResult(updatedBazelLocalNodes: Set[BazelDependencyNode], localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode]) {
 
   def checkForDepsClosureError(): UserAddedDepsClosureError = {
-    if (updatedLocalNodes.nonEmpty) {
+    if (updatedBazelLocalNodes.nonEmpty) {
+      val updatedLocalNodes = updatedBazelLocalNodes.map(_.toMavenNode)
       val collectiveClosureCoordinates = (updatedLocalNodes ++ localNodes ++ managedNodes).map(_.baseDependency.coordinates)
 
       val nodesToDepsMissingFromClosure = updatedLocalNodes.map(n => {
         val depsCoordinates = n.dependencies.map(_.coordinates)
-        (n, depsMissingFromClosureIgnoringVersion(depsCoordinates, collectiveClosureCoordinates))
+        (n.toBazelNode, depsMissingFromClosureIgnoringVersion(depsCoordinates, collectiveClosureCoordinates))
       })
 
       val nodesWithMissingDeps = nodesToDepsMissingFromClosure.filter{ pair => pair._2.nonEmpty}
@@ -34,4 +35,4 @@ case class DiffResult(updatedLocalNodes: Set[DependencyNode], localNodes: Set[De
 }
 
 
-case class UserAddedDepsClosureError(nodesWithMissingEdge: Set[(DependencyNode, Set[Coordinates])])
+case class UserAddedDepsClosureError(nodesWithMissingEdge: Set[(BazelDependencyNode, Set[Coordinates])])

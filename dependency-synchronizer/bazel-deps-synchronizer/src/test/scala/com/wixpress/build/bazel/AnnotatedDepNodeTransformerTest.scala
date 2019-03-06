@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wixpress.build.maven.MavenMakers._
-import com.wixpress.build.maven.{Coordinates, DependencyNode}
+import com.wixpress.build.maven.{BazelDependencyNode, Coordinates, DependencyNode}
 import org.specs2.matcher.{AlwaysMatcher, Matcher}
 import org.specs2.mutable.SpecificationWithJUnit
 
@@ -52,8 +52,8 @@ class AnnotatedDepNodeTransformerTest extends SpecificationWithJUnit {
   val artifact = someCoordinates("some-artifact")
   val transitiveDep = someCoordinates("some-transitiveDep")
   val transitiveDeps = Set(transitiveDep)
-  val runtimeDepNode = DependencyNode(asCompileDependency(artifact),Set(asRuntimeDependency(transitiveDep)))
-  val compileTimeDepNode = DependencyNode(asCompileDependency(artifact),Set(asCompileDependency(transitiveDep)))
+  val runtimeDepNode = BazelDependencyNode(asCompileDependency(artifact),Set(asRuntimeDependency(transitiveDep)))
+  val compileTimeDepNode = BazelDependencyNode(asCompileDependency(artifact),Set(asCompileDependency(transitiveDep)))
 
 
 

@@ -262,7 +262,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     val transitiveDependency = aDependency("transitive").withScope(MavenScope.Runtime)
 
     def givenBazelWorkspaceWithManagedDependencies(managedDeps: DependencyNode*): Unit = {
-      new BazelDependenciesWriter(externalFakeLocalWorkspace).writeDependencies(managedDeps.toSet)
+      new BazelDependenciesWriter(externalFakeLocalWorkspace).writeDependencies(managedDeps.map(_.toBazelNode).toSet)
     }
 
     def givenBazelWorkspaceWithManagedDependencies(managedDeps: Set[DependencyNode]): Unit = {

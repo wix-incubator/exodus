@@ -17,8 +17,8 @@ class UserAddedDepsDiffSynchronizer(calculator: DiffCalculatorAndAggregator,
 
     val setOfProblems = diffResult.checkForDepsClosureError().nodesWithMissingEdge
     if (setOfProblems.isEmpty){
-      log.info(s"writes updates for ${diffResult.updatedLocalNodes.size} dependency nodes...")
-      diffWriter.persistResolvedDependencies(diffResult.updatedLocalNodes, diffResult.localNodes)
+      log.info(s"writes updates for ${diffResult.updatedBazelLocalNodes.size} dependency nodes...")
+      diffWriter.persistResolvedDependencies(diffResult.updatedBazelLocalNodes, diffResult.localNodes)
       log.info(s"Finished writing updates.")
       PrettyReportPrinter.printReport(report)
     } else {
@@ -80,7 +80,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
     aetherResolver.dependencyClosureOf(userAddedDependencies, managedDependenciesFromMaven)
   }
 
-  private def calculateDivergentLocalNodes(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]) = {
+  private def calculateDivergentLocalNodes(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[BazelDependencyNode] = {
     log.info(s"calculate diff with managed deps and persist it (${aggregateNodes.size} local deps, ${managedNodes.size} managed deps)...")
     log.debug(s"aggregateNodes count: ${aggregateNodes.size}")
     diffCalculator.calculateDivergentDependencies(aggregateNodes, managedNodes)

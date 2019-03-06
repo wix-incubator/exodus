@@ -7,9 +7,9 @@ case class ConflictReportCreator() {
   private val log = LoggerFactory.getLogger(getClass)
 
   def report(diffResult: DiffResult): UserAddedDepsConflictReport = {
-    log.debug(s"result: updatedLocalNodes count: ${diffResult.updatedLocalNodes.size}. localNodes count: ${diffResult.localNodes.size}. managedNodes count: ${diffResult.managedNodes.size}")
+    log.debug(s"result: updatedLocalNodes count: ${diffResult.updatedBazelLocalNodes.size}. localNodes count: ${diffResult.localNodes.size}. managedNodes count: ${diffResult.managedNodes.size}")
 
-    val updatedLocalDeps = diffResult.updatedLocalNodes.map(_.baseDependency)
+    val updatedLocalDeps = diffResult.updatedBazelLocalNodes.map(_.baseDependency)
     val localDeps = diffResult.localNodes.map(_.baseDependency)
     val managedDeps = diffResult.managedNodes.map(_.baseDependency)
 

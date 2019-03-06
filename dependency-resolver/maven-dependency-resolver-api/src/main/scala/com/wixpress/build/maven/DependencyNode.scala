@@ -1,9 +1,7 @@
 package com.wixpress.build.maven
 
 case class DependencyNode(baseDependency: Dependency,
-                          dependencies: Set[Dependency],
-                          checksum: Option[String] = None,
-                          srcChecksum: Option[String] = None) {
+                          dependencies: Set[Dependency]) {
   val runtimeDependencies: Set[Coordinates] = coordinatesByScopeFromDependencies(MavenScope.Runtime)
   val compileTimeDependencies: Set[Coordinates] = coordinatesByScopeFromDependencies(MavenScope.Compile)
 
@@ -12,6 +10,9 @@ case class DependencyNode(baseDependency: Dependency,
       .filter(_.scope == scope)
       .map(_.coordinates)
 
+  def toBazelNode: BazelDependencyNode = {
+    BazelDependencyNode(baseDependency = baseDependency, dependencies = dependencies)
+  }
 }
 
 object DependencyNode {
@@ -25,4 +26,22 @@ object DependencyNode {
     private def forceCompileScopeForNotProvided(node: DependencyNode) =
       if (node.baseDependency.scope == MavenScope.Provided) node else node.copy(baseDependency = node.baseDependency.forceCompileScope)
   }
+}
+
+case class BazelDependencyNode(baseDependency: Dependency,
+                               dependencies: Set[Dependency],
+                               checksum: Option[String] = None,
+                               srcChecksum: Option[String] = None){
+  val runtimeDependencies: Set[Coordinates] = coordinatesByScopeFromDependencies(MavenScope.Runtime)
+  val compileTimeDependencies: Set[Coordinates] = coordinatesByScopeFromDependencies(MavenScope.Compile)
+
+  private def coordinatesByScopeFromDependencies(scope: MavenScope) =
+    dependencies
+      .filter(_.scope == scope)
+      .map(_.coordinates)
+
+  def toMavenNode: DependencyNode = {
+    DependencyNode(baseDependency = baseDependency, dependencies = dependencies)
+  }
+
 }

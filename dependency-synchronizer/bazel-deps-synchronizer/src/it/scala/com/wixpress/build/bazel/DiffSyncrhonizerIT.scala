@@ -50,7 +50,7 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
     val transitiveDependency = aDependency("transitive")
 
     def givenBazelWorkspaceWithManagedDependencies(managedDeps: DependencyNode*) = {
-      new BazelDependenciesWriter(externalFakeLocalWorkspace).writeDependencies(managedDeps.toSet)
+      new BazelDependenciesWriter(externalFakeLocalWorkspace).writeDependencies(managedDeps.map(_.toBazelNode).toSet)
     }
 
     def givenAetherResolverForDependency(node: SingleDependency) = {

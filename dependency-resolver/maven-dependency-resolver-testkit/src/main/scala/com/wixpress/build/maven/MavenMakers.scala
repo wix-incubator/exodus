@@ -1,5 +1,7 @@
 package com.wixpress.build.maven
 
+import com.wixpress.build.maven.DefaultChecksumValues.{defaultChecksum, defaultSrcChecksum}
+
 import scala.util.Random
 
 object MavenMakers {
@@ -56,9 +58,18 @@ object MavenMakers {
 
   def aRootDependencyNode(dependency: Dependency) = DependencyNode(dependency,Set.empty)
 
+  def aRootBazelDependencyNode(dependency: Dependency, checksum: Option[String] = Some(defaultChecksum), srcChecksum: Option[String] = Some(defaultSrcChecksum)) = BazelDependencyNode(dependency,Set.empty, checksum = checksum, srcChecksum = srcChecksum)
+
+  def aBazelDependencyNode(dependency: Dependency, dependencies: Set[Dependency]) = BazelDependencyNode(dependency, dependencies, Some(defaultChecksum), Some(defaultSrcChecksum))
+
   def dependencyNodesFrom(singleDependency: SingleDependency): Set[DependencyNode] =
     Set(DependencyNode(singleDependency.dependant,Set(singleDependency.dependency)), DependencyNode(singleDependency.dependency, Set()))
 }
 
 case class SingleDependency(dependant: Dependency, dependency: Dependency)
 case class SingleTransitiveDependency(dependant: Dependency, dependency: Dependency, transitiveDependency: Dependency)
+
+object DefaultChecksumValues{
+  val defaultChecksum: String = "default-checksum"
+  val defaultSrcChecksum: String = "default-src-checksum"
+}

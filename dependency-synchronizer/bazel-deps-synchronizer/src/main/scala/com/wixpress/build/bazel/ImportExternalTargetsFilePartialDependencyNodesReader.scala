@@ -18,8 +18,7 @@ case class ImportExternalTargetsFilePartialDependencyNodesReader(content: String
 
       PartialDependencyNode(Dependency(validatedCoordinates.coordinates, MavenScope.Compile, exclusions),
         compileDeps.flatMap(d => parseTargetDependency(d, MavenScope.Compile)) ++
-          runtimeDeps.flatMap(d => parseTargetDependency(d, MavenScope.Runtime)),
-        validatedCoordinates.checksum, validatedCoordinates.srcChecksum
+          runtimeDeps.flatMap(d => parseTargetDependency(d, MavenScope.Runtime))
       )
     })
   }
@@ -75,9 +74,7 @@ case class AllImportExternalFilesDependencyNodesReader(filesContent: Set[String]
     else
       Left(DependencyNode(
         partialNode.baseDependency,
-        maybeDependencies.flatten,
-        checksum = partialNode.checksum,
-        srcChecksum = partialNode.srcChecksum))
+        maybeDependencies.flatten))
   }
 
   private def transitiveDepFrom(partialDep: PartialDependency, baseDependencies: Set[Dependency], dependantArtifact: Coordinates):Either[Option[Dependency], String] = {
@@ -105,7 +102,7 @@ case class AllImportExternalFilesDependencyNodesReader(filesContent: Set[String]
   }
 }
 
-case class PartialDependencyNode(baseDependency: Dependency, targetDependencies: Set[PartialDependency], checksum: Option[String] = None, srcChecksum: Option[String] = None)
+case class PartialDependencyNode(baseDependency: Dependency, targetDependencies: Set[PartialDependency])
 
 trait PartialDependency {
   val ruleName: String
