@@ -84,6 +84,8 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
     log.info(s"calculate diff with managed deps and persist it (${aggregateNodes.size} local deps, ${managedNodes.size} managed deps)...")
     log.debug(s"aggregateNodes count: ${aggregateNodes.size}")
 
+    // comparison is done without taking checksums into account -> there could be checksum issues that will not be found
+    // This is done for correctness. otherwise there could be a situation where nodes will be considered different just because one of the checksums is missing
     val divergentLocalDependencies = aggregateNodes.forceCompileScopeIfNotProvided diff managedNodes
 
     log.info(s"started fetching sha256 checksums for (${divergentLocalDependencies.size}) divergent 3rd party dependencies from artifactory...")
