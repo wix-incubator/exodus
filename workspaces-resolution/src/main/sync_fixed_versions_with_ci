@@ -20,8 +20,7 @@ from python_utils.logger import set_logging_level
 sys.dont_write_bytecode = True
 workspace_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
-set_logging_level(logging_level)
+set_logging_level()
 
 
 def main():

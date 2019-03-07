@@ -6,8 +6,7 @@ import logging
 from python_utils.output_to_shell import OutputToShell, print_message
 from python_utils.logger import set_logging_level
 
-logging_level = logging.DEBUG if "DEBUG_2ND_PARTY_SCRIPT" in os.environ else logging.INFO
-set_logging_level(logging_level)
+set_logging_level()
 sys.dont_write_bytecode = True
 
 
