@@ -2,12 +2,12 @@ import sys
 import argparse
 import os
 import logging
+sys.dont_write_bytecode = True
 
 from python_utils.output_to_shell import OutputToShell, print_message
 from python_utils.logger import set_logging_level
 
 set_logging_level()
-sys.dont_write_bytecode = True
 
 
 def main():
