@@ -28,7 +28,6 @@ pipeline {
             steps {
                 echo "got commit hash: ${env.COMMIT_HASH}"
                 deleteDir()
-                delete
                 dir("wix-bazel-migrator") {
                     copyArtifacts flatten: true, projectName: '../Migrator-build', selector: lastSuccessful()
                 }
