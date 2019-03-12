@@ -9,7 +9,7 @@ object PrettyReportPrinter {
   def printReport(report: UserAddedDepsConflictReport): Unit = {
     headersLog.info("\n===== UPDATE REPORT =====")
     if (report.higherVersionConflicts.isEmpty && report.differentManagedVersionConflicts.isEmpty)
-      defaultColorLog.info("no noteworthy changes made.")
+      defaultColorLog.info("no conflicting changes made")
     if (report.differentManagedVersionConflicts.nonEmpty) {
       headersLog.info("===== NOTEWORTHY CHANGES TO MANAGED ARTIFACTS =====")
       defaultColorLog.info("managed artifacts can be found in https://github.com/wix-private/core-server-build-tools/tree/master/third_party")
@@ -19,6 +19,6 @@ object PrettyReportPrinter {
       headersLog.info("===== NOTEWORTHY CHANGES TO LOCAL ARTIFACTS =====")
       defaultColorLog.info(report.higherVersionConflicts.mkString("\n"))
     }
-    defaultColorLog.info("!!!Please review changed and added third_party files in the target repo!!!")
+    headersLog.info("!!! PLEASE, review changed and added third_party files in the target repo !!!")
   }
 }

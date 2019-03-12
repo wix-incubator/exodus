@@ -24,8 +24,6 @@ case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelReposit
 case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepository,
                      resolver: MavenDependencyResolver,
                      dependenciesRemoteStorage: DependenciesRemoteStorage) {
-  private val log = LoggerFactory.getLogger(getClass)
-
   def calculateDivergentDependencies(localNodes: Set[DependencyNode]): Set[BazelDependencyNode] = {
     val reader = new BazelDependenciesReader(bazelRepositoryWithManagedDependencies.localWorkspace())
     val managedDeps = reader.allDependenciesAsMavenDependencies()

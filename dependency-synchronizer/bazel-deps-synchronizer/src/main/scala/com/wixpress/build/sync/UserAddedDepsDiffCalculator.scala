@@ -37,7 +37,7 @@ trait DiffCalculatorAndAggregator {
 }
 
 class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManagedDependencies: BazelRepository,
-                                  ManagedDependenciesArtifact: Coordinates, aetherResolver: MavenDependencyResolver,
+                                  mavenManagedDependenciesArtifact: Coordinates, aetherResolver: MavenDependencyResolver,
                                   remoteStorage: DependenciesRemoteStorage,
                                   mavenModules: Set[SourceModule]) extends DiffCalculatorAndAggregator {
 
@@ -73,7 +73,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
   private def resolveUserAddedDependencyNodes(userAddedDependencies: Set[Dependency]) = {
     log.info("obtain managed Dependencies From Maven for userAddedDependencies closure calculation...")
     val managedDependenciesFromMaven = aetherResolver
-      .managedDependenciesOf(ManagedDependenciesArtifact)
+      .managedDependenciesOf(mavenManagedDependenciesArtifact)
       .forceCompileScope
 
     log.info("resolve userAddedDependencies full closure...")

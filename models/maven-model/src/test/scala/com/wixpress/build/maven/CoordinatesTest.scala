@@ -64,6 +64,12 @@ class CoordinatesTest extends SpecificationWithJUnit {
       Coordinates.deserialize(colonString) mustEqual extendedCoordinates
     }
 
+    "fail with erorr message for invalid deserialzie" in new baseCtx {
+      val badCoords = "group:artifact:"
+
+      Coordinates.deserialize(badCoords) must throwA[IllegalArgumentException](s"invalid coordinates: $badCoords")
+    }
+
     "check equality based on groupId and artifactId" in new equalityCtx {
       baseCoordinates.equalsOnGroupIdAndArtifactId(baseCoordinates.withDifferentGroupId) must beFalse
       baseCoordinates.equalsOnGroupIdAndArtifactId(baseCoordinates.withDifferentArtifactId) must beFalse

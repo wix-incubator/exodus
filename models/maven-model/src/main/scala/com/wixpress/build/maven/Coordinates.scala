@@ -34,17 +34,22 @@ case class Coordinates(groupId: String,
 
 object Coordinates {
 
-  def deserialize(serialized: String): Coordinates =
-    serialized.split(':') match {
-      case Array(groupId, artifactId, version) =>
-        Coordinates(groupId = groupId, artifactId = artifactId, version = version)
+  def deserialize(serialized: String): Coordinates = {
+    try {
+      serialized.split(':') match {
+        case Array(groupId, artifactId, version) =>
+          Coordinates(groupId = groupId, artifactId = artifactId, version = version)
 
-      case Array(groupId, artifactId, packaging, version) =>
-        Coordinates(groupId = groupId, artifactId = artifactId, version = version, packaging = Packaging(packaging))
+        case Array(groupId, artifactId, packaging, version) =>
+          Coordinates(groupId = groupId, artifactId = artifactId, version = version, packaging = Packaging(packaging))
 
-      case Array(groupId, artifactId, packaging, classifier, version) =>
-        Coordinates(groupId = groupId, artifactId = artifactId, version = version,
-          packaging = Packaging(packaging), classifier = Some(classifier))
+        case Array(groupId, artifactId, packaging, classifier, version) =>
+          Coordinates(groupId = groupId, artifactId = artifactId, version = version,
+            packaging = Packaging(packaging), classifier = Some(classifier))
+      }
+    } catch {
+      case _ => throw new IllegalArgumentException(s"invalid coordinates: $serialized")
     }
+  }
 
 }
