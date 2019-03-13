@@ -48,7 +48,7 @@ object Coordinates {
             packaging = Packaging(packaging), classifier = Some(classifier))
       }
     } catch {
-      case _ => throw new IllegalArgumentException(s"invalid coordinates: $serialized")
+      case _ : Throwable => throw new IllegalArgumentException(s"invalid coordinates: $serialized")
     }
   }
 
