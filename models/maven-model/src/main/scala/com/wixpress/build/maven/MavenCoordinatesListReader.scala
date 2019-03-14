@@ -1,8 +1,6 @@
-package com.wix.bazel.migrator.utils
+package com.wixpress.build.maven
 
 import java.nio.file.{Files, Path}
-
-import com.wixpress.build.maven.Coordinates
 
 import scala.io.Source
 

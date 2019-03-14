@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, NoSuchFileException, Path}
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
+import com.wixpress.build.maven.MavenCoordinatesListReader
 import com.wixpress.build.maven.MavenMakers.someCoordinates
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope

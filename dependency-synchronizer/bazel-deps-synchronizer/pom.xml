@@ -35,6 +35,13 @@
             </roles>
         </developer>
         <developer>
+            <name>Talya Gendler</name>
+            <email>talyag@wix.com</email>
+            <roles>
+                <role>maintainer</role>
+            </roles>
+        </developer>
+        <developer>
             <name>Elad Urson</name>
             <email>eladu@wix.com</email>
             <roles>

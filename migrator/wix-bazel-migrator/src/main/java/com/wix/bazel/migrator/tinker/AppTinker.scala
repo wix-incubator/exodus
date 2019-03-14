@@ -8,7 +8,7 @@ import better.files.{File, FileOps}
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.{DependencyCollectionCollisionsReport, Persister, RunConfiguration}
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
-import com.wix.bazel.migrator.utils.{DependenciesDifferentiator, MavenCoordinatesListReader}
+import com.wix.bazel.migrator.utils.DependenciesDifferentiator
 import com.wix.build.maven.analysis._
 import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
 import com.wixpress.build.bazel.repositories.WorkspaceName
