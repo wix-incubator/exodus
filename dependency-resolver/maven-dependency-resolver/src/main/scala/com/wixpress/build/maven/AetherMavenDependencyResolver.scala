@@ -59,9 +59,6 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     res
   }
 
-  private def artifactDescriptorOf(request: ArtifactDescriptorRequest): ArtifactDescriptorResult =
-    withSession(ignoreMissingDependencies = false, repositorySystem.readArtifactDescriptor(_, request))
-
   private def descriptorRequest(of: Artifact): ArtifactDescriptorRequest = {
     val artifactReq = new ArtifactDescriptorRequest
     artifactReq.setArtifact(of)
