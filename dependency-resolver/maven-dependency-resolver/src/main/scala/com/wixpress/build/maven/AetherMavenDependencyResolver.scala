@@ -30,8 +30,6 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
 
   private val repositorySystem = ManualRepositorySystemFactory.newRepositorySystem
 
-  private val forcedManagedDependencies = Set.empty[Dependency]
-
   private val artifactDescriptorStore = mutable.Map[Artifact, ArtifactDescriptorResult]() withDefault artifactDescriptorOf
 
   override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = {
@@ -144,7 +142,6 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
 
   private def collectRequestOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency]) = {
     val managedDeps = withManagedDependencies
-      .addOrOverride(forcedManagedDependencies)
       .map(_.asAetherDependency)
       .toList.asJava
     val dependencies = baseDependencies.map(_.asAetherDependency).toList.asJava
@@ -163,15 +160,6 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
 
     val repoList = remoteRepoURLs.zipWithIndex.map(mapper).asJava
     repoList
-  }
-
-  private implicit class DependencySetExtended(set: Set[Dependency]) {
-    def addOrOverride(otherSet: Set[Dependency]): Set[Dependency] = {
-      val filteredOriginalSet = set.filterNot(original =>
-        otherSet.exists(other =>
-          original.coordinates.equalsIgnoringVersion(other.coordinates)))
-      filteredOriginalSet ++ otherSet
-    }
   }
 
 }
