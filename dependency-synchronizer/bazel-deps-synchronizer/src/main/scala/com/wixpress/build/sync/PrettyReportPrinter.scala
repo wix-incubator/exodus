@@ -20,5 +20,6 @@ object PrettyReportPrinter {
       defaultColorLog.info(report.higherVersionConflicts.mkString("\n"))
     }
     headersLog.info("!!! PLEASE, review changed and added third_party files in the target repo !!!")
+    headersLog.info("run this - 'git status | grep third_party/' to make sure you don't miss new unstaged files!")
   }
 }

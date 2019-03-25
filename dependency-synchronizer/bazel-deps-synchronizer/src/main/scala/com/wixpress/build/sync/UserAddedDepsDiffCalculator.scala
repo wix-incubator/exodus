@@ -81,7 +81,6 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
       .forceCompileScope
 
     log.info("resolve userAddedDependencies full closure...")
-    //what will happen after mvn dies? why do we need 3rd.pom to figure out deps?
     aetherResolver.dependencyClosureOf(userAddedDependencies, managedDependenciesFromMaven)
   }
 
