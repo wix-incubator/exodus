@@ -192,10 +192,42 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
       val expectedImportExternalTargetsFile = createImportExternalTargetsFileWith(newJars)
       importExternalTargetsFileWith(newHead, importExternalTargetsFile).content mustEqual expectedImportExternalTargetsFile
     }
+
+    "remove requested jar import and leave 1 rule in file" in {
+      val fileWithAB = createImportExternalTargetsFileWith(List(artifactA, artifactB))
+      val fileWithA = createImportExternalTargetsFileWith(List(artifactA))
+
+      ImportExternalTargetsFileWriter(fileWithAB).withoutTarget(artifactB).content mustEqual fileWithA
+    }
+
+    "remove requested jar import and leave 2 rules in file" in {
+      val fileWithABC = createImportExternalTargetsFileWith(List(artifactA, artifactB, artifactC))
+      val fileWithAC = createImportExternalTargetsFileWith(List(artifactA, artifactC))
+
+      ImportExternalTargetsFileWriter(fileWithABC).withoutTarget(artifactB).content mustEqual fileWithAC
+    }
+
+    "do nothing if requested jar to remove doesn't exist" in {
+      val fileWithA = createImportExternalTargetsFileWith(List(artifactA))
+
+      ImportExternalTargetsFileWriter(fileWithA).withoutTarget(artifactB).content mustEqual fileWithA
+    }
+
+    "leave empty file if removing all it's targets" in {
+      val fileWithA = createImportExternalTargetsFileWith(List(artifactA))
+
+      ImportExternalTargetsFileWriter(fileWithA).withoutTarget(artifactA).content must beEmpty
+    }
+
+    "leave empty file if removing all it's targets even if it has whitespaces" in {
+      val fileWithA = createImportExternalTargetsFileWith(List(artifactA)) + " "
+
+      ImportExternalTargetsFileWriter(fileWithA).withoutTarget(artifactA).content must beEmpty
+    }
   }
 
   private def importExternalTargetsFileWith(newHead: Coordinates, importExternalTargetsFile: String) = {
-    ImportExternalTargetsFileWriter(importExternalTargetsFile).withMavenArtifact(newHead)
+    ImportExternalTargetsFileWriter(importExternalTargetsFile).withTarget(ImportExternalRule.of(newHead))
   }
 
   private def createImportExternalTargetsFileWith(coordinates: List[Coordinates]) = {
@@ -218,9 +250,7 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
        |
        |$firstJar
        |
-       |$rest
-       |
-       |### THE END""".stripMargin
+       |$rest""".stripMargin
   }
 
   val jars = List(artifactA, artifactB, artifactC)

@@ -2,12 +2,12 @@ package com.wixpress.build.sync
 
 import com.wixpress.build.maven.{BazelDependencyNode, Coordinates, DependencyNode}
 
-case class DiffResult(updatedBazelLocalNodes: Set[BazelDependencyNode], localNodes: Set[DependencyNode], managedNodes: Set[DependencyNode]) {
+case class DiffResult(updatedBazelLocalNodes: Set[BazelDependencyNode], preExistingLocalNodes: Set[DependencyNode], managedNodes: Set[DependencyNode], localDepsToDelete: Set[DependencyNode] = Set()) {
 
   def checkForDepsClosureError(): UserAddedDepsClosureError = {
     if (updatedBazelLocalNodes.nonEmpty) {
       val updatedLocalNodes = updatedBazelLocalNodes.map(_.toMavenNode)
-      val collectiveClosureCoordinates = (updatedLocalNodes ++ localNodes ++ managedNodes).map(_.baseDependency.coordinates)
+      val collectiveClosureCoordinates = (updatedLocalNodes ++ preExistingLocalNodes ++ managedNodes).map(_.baseDependency.coordinates)
 
       val nodesToDepsMissingFromClosure = updatedLocalNodes.map(n => {
         val depsCoordinates = n.dependencies.map(_.coordinates)

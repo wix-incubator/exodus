@@ -2,7 +2,7 @@ package com.wixpress.build.bazel
 
 import com.wixpress.build.bazel.ImportExternalTargetsFile.findTargetWithSameNameAs
 import com.wixpress.build.maven.Coordinates
-
+import com.wix.build.maven.translation.MavenToBazelTranslations._
 import scala.util.matching.Regex.Match
 
 case class ImportExternalTargetsFileWriter(content: String) {
@@ -11,6 +11,13 @@ case class ImportExternalTargetsFileWriter(content: String) {
       ImportExternalTargetsFileWriter(fileHeader).nonEmptyContentWithTarget(rule)
     else
       nonEmptyContentWithTarget(rule)
+  }
+
+  def withoutTarget(coordinates: Coordinates): ImportExternalTargetsFileWriter = {
+    findTargetWithSameNameAs(name = coordinates.workspaceRuleName, within = content) match {
+      case Some(matched) => removeMatched(matched)
+      case None => this
+    }
   }
 
   private def nonEmptyContentWithTarget(rule: ImportExternalRule) = {
@@ -35,14 +42,23 @@ case class ImportExternalTargetsFileWriter(content: String) {
     ImportExternalTargetsFileWriter(contentStart + contentMiddle + contentEnd)
   }
 
+  private def removeMatched(matched: Match): ImportExternalTargetsFileWriter = {
+    import NewLinesParser._
+
+    val contentStart = findFlexibleStartOfContent(matched)
+    val contentEnd = content.drop(matched.end).dropAllPrefixNewlines
+    val contentAfterRemoval = contentStart + contentEnd
+
+    contentAfterRemoval match {
+      case onlyHeader if contentAfterRemoval.drop(fileHeader.length).containsOnlyNewLinesOrWhitespaces => ImportExternalTargetsFileWriter("")
+      case _ => ImportExternalTargetsFileWriter(contentAfterRemoval)
+    }
+  }
+
   private def findFlexibleStartOfContent(matched: Match) = {
     val contentStartPlusSpaces = content.take(matched.start)
     val indexOfNewLine = contentStartPlusSpaces.lastIndexOf("\n")
     contentStartPlusSpaces.take(indexOfNewLine + 1)
-  }
-
-  def withMavenArtifact(artifact: Coordinates): ImportExternalTargetsFileWriter = {
-    withTarget(ImportExternalRule.of(artifact))
   }
 
   val fileHeader: String =

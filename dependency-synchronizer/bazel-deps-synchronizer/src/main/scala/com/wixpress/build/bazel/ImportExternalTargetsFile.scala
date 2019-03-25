@@ -35,6 +35,30 @@ object ImportExternalTargetsFile {
       case _ =>
     }
   }
+
+  def deleteTarget(coordsToDelete: Coordinates, localWorkspace: BazelLocalWorkspace): Unit = {
+    val thirdPartyGroup = ImportExternalRule.ruleLocatorFrom(coordsToDelete)
+    val importTargetsFileContent = localWorkspace.thirdPartyImportTargetsFileContent(thirdPartyGroup)
+    importTargetsFileContent.map { content =>
+      val importTargetsFileWriter = ImportExternalTargetsFileWriter(content).withoutTarget(coordsToDelete)
+      localWorkspace.overwriteThirdPartyImportTargetsFile(thirdPartyGroup, importTargetsFileWriter.content)
+    }
+  }
+
+}
+
+object NewLinesParser {
+
+  implicit class NewLinesParser(val s: String) {
+    def containsOnlyNewLinesOrWhitespaces: Boolean = {
+      s.dropWhile(_.isWhitespace).isEmpty
+    }
+
+    def dropAllPrefixNewlines = {
+      s.dropWhile(String.valueOf(_).equals("\n"))
+    }
+  }
+
 }
 
 object ImportExternalTargetsFileReader {

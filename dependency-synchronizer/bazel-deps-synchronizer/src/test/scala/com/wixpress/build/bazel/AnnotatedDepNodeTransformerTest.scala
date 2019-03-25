@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wixpress.build.maven.MavenMakers._
-import com.wixpress.build.maven.{BazelDependencyNode, Coordinates, DependencyNode}
+import com.wixpress.build.maven.{BazelDependencyNode, Coordinates}
 import org.specs2.matcher.{AlwaysMatcher, Matcher}
 import org.specs2.mutable.SpecificationWithJUnit
 

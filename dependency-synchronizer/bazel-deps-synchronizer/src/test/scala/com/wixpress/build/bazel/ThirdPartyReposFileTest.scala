@@ -102,6 +102,13 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
       val warDependnecy = MavenMakers.someCoordinates("some-dep", Packaging("war"))
       ThirdPartyReposFile.Builder("foo").fromCoordinates(warDependnecy) mustEqual Builder("foo")
     }
+
+    "delete load statement" in {
+      val thirdPartyRepos = createThirdPartyReposWithLoadStatementFor(List(artifactA, artifactB, artifactC))
+      val expectedThirdPartyRepos = createThirdPartyReposWithLoadStatementFor(List(artifactA, artifactB))
+
+      ThirdPartyReposFile.Builder(thirdPartyRepos).removeGroupIds(artifactC.groupId).content mustEqual expectedThirdPartyRepos
+    }
   }
 
   val jars = List(artifactA, artifactB, artifactC)

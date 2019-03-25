@@ -98,6 +98,21 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).thirdPartyImportTargetsFileContent(someGroup) must beSome(newContent)
     }
 
+    "delete a Third Party Import Targets File if writing empty content to it" in new blankWorkspaceCtx {
+      val emptyContent = ""
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).overwriteThirdPartyImportTargetsFile(someGroup, "whatever")
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).overwriteThirdPartyImportTargetsFile(someGroup, emptyContent)
+
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).thirdPartyImportTargetsFileContent(someGroup) must beNone
+    }
+
+    "not fail if deleting a non existent Third Party Import Targets File" in new blankWorkspaceCtx {
+      val emptyContent = ""
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).overwriteThirdPartyImportTargetsFile(someGroup, emptyContent)
+
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).thirdPartyImportTargetsFileContent(someGroup) must beNone
+    }
+
     "Get Empty Third Party Import Targets Files content" in new blankWorkspaceCtx {
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).allThirdPartyImportTargetsFilesContent() must be empty
     }
@@ -124,6 +139,8 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
 
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).localWorkspaceName mustEqual workspaceName
     }
+
+
   }
 
   trait blankWorkspaceCtx extends Scope {

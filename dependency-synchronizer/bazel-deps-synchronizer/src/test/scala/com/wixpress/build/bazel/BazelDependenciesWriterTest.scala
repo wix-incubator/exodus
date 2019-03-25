@@ -103,7 +103,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       "write target with runtime dependency" in new dependencyWithTransitiveDependencyofScope(MavenScope.Runtime) {
         writer.writeDependencies(dependencyNode)
 
-        localWorkspace.thirdPartyReposFileContent() must containLoadStatementFor(baseDependency.coordinates)
+        localWorkspace.thirdPartyReposFileContent() must containLoadStatementForGroupOf(baseDependency.coordinates)
 
         localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId) must containScalaImportExternalRuleFor(baseDependency.coordinates,
           s"""|runtime_deps = [
@@ -262,7 +262,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         val workspaceContent = localWorkspace.thirdPartyReposFileContent()
 
-        workspaceContent must containLoadStatementFor(newDependency.coordinates)
+        workspaceContent must containLoadStatementForGroupOf(newDependency.coordinates)
 
         localWorkspace.thirdPartyImportTargetsFileContent(dependencyGroupId) must containRootScalaImportExternalRuleFor(
           newDependency.coordinates)
@@ -340,8 +340,8 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         writeArtifactsAsRootDependencies(someArtifact, otherArtifact)
 
         val workspace = localWorkspace.thirdPartyReposFileContent()
-        workspace must containLoadStatementFor(someArtifact)
-        workspace must containLoadStatementFor(otherArtifact)
+        workspace must containLoadStatementForGroupOf(someArtifact)
+        workspace must containLoadStatementForGroupOf(otherArtifact)
       }
 
       "return list of all files that were written" in new multipleDependenciesCtx {
@@ -396,6 +396,56 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
       }
     }
+
+    "given a localDepToDelete" should {
+      trait depsToDeleteCtx extends emptyThirdPartyReposCtx {
+        val group1 = "some.group1"
+        val group2 = "some.group2"
+        val someArtifact = "artifact-one"
+        val someArtifactGroup1 = Coordinates(group1, someArtifact, "some-version")
+        val otherArtifactGroup1 = Coordinates(group1, "artifact-two", "some-version")
+        val otherArtifactGroup2 = Coordinates(group2, "artifact-three", "some-version")
+
+        def writeArtifactsAsRootDependencies(artifacts: Coordinates*) = {
+          val dependencyNodes = artifacts.map(a => aRootBazelDependencyNode(Dependency(a, MavenScope.Compile)))
+          writer.writeDependencies(dependencyNodes: _*)
+        }
+      }
+
+      "delete it's target in bzl file but keep it's repo rule if group still in use" in new depsToDeleteCtx {
+        writeArtifactsAsRootDependencies(someArtifactGroup1, otherArtifactGroup1)
+
+        writer.writeDependencies(Set(), Set(), localDepsToDelete = Set(someArtifactGroup1))
+
+        val workspace = localWorkspace.thirdPartyReposFileContent()
+        workspace must containLoadStatementForGroupOf(otherArtifactGroup1)
+
+        val importExternalFileContent = localWorkspace.thirdPartyImportTargetsFileContent(otherArtifactGroup1.groupIdForBazel)
+        importExternalFileContent must containRootScalaImportExternalRuleFor(otherArtifactGroup1)
+        importExternalFileContent must not(containRootScalaImportExternalRuleFor(someArtifactGroup1))
+      }
+
+      "delete it's bzl file if no targets left and also delete it's load statement" in new depsToDeleteCtx {
+        writeArtifactsAsRootDependencies(someArtifactGroup1, otherArtifactGroup2)
+
+        writer.writeDependencies(Set(), Set(), localDepsToDelete = Set(someArtifactGroup1))
+
+        val workspace = localWorkspace.thirdPartyReposFileContent()
+        workspace must not(containLoadStatementForGroupOf(someArtifactGroup1))
+        workspace must containLoadStatementForGroupOf(otherArtifactGroup2)
+
+        val importExternalFileContent = localWorkspace.thirdPartyImportTargetsFileContent(someArtifactGroup1.groupIdForBazel)
+        importExternalFileContent must beNone
+      }
+
+      "write 'pass' to third party file if left empty" in new depsToDeleteCtx{
+        writeArtifactsAsRootDependencies(someArtifactGroup1)
+
+        writer.writeDependencies(Set(), Set(), localDepsToDelete = Set(someArtifactGroup1))
+
+        localWorkspace.thirdPartyReposFileContent() must contain("pass")
+      }
+    }
   }
 
   private def containsExactlyOneRuleOfName(name: String): Matcher[String] = (countMatches(s"""name += +"$name"""".r, _: String)) ^^ equalTo(1)
@@ -404,7 +454,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
   private def countMatches(regex: Regex, string: String) = regex.findAllMatchIn(string).size
 
-  private def containLoadStatementFor(coordinates: Coordinates, thirdPartyFolderPath: String = "third_party") = {
+  private def containLoadStatementForGroupOf(coordinates: Coordinates, thirdPartyFolderPath: String = "third_party") = {
     val groupId = coordinates.groupIdForBazel
 
     contain(

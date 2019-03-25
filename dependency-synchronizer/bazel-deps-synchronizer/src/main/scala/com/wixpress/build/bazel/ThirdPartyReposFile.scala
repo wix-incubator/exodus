@@ -18,6 +18,22 @@ object ThirdPartyReposFile {
       }
     }
 
+    def removeGroupIds(groupIdForBazel: String): Builder = {
+      val contentWithoutLoadStatement = regexOfLoadRuleWithNameMatching(groupIdForBazel)
+        .findFirstMatchIn(content) match {
+        case Some(m) => removeMatched(content, m)
+        case None => content
+      }
+
+      val contentWithoutMethodCall = regexOfImportExternalTargetsFileMethodCall(groupIdForBazel)
+        .findFirstMatchIn(contentWithoutLoadStatement) match {
+        case Some(m) => removeMatched(contentWithoutLoadStatement, m)
+        case None => contentWithoutLoadStatement
+      }
+
+      Builder(contentWithoutMethodCall)
+    }
+
     def withLoadStatementsFor(coordinates: Coordinates): Builder =
     {
       val updatedContent = regexOfLoadRuleWithNameMatching(coordinates.groupIdForBazel)
@@ -55,6 +71,10 @@ object ThirdPartyReposFile {
     private def updateMavenArtifact(thirdPartyRepos: String, coordinates: Coordinates, matched: Regex.Match): String = {
       val newMavenJarRule = WorkspaceRule.of(coordinates).serialized
       thirdPartyRepos.take(matched.start - "  ".length) + newMavenJarRule + thirdPartyRepos.drop(matched.end)
+    }
+
+    private def removeMatched(thirdPartyRepos: String, matched: Regex.Match): String = {
+      thirdPartyRepos.take(matched.start - "  ".length) + thirdPartyRepos.drop(matched.end)
     }
 
     private def appendMavenArtifact(thirdPartyRepos: String, coordinates: Coordinates): String =
@@ -99,4 +119,9 @@ object ThirdPartyReposFile {
 
   private def regexOfLoadRuleWithNameMatching(pattern: String) =
     ("""(?s)load\("//:third_party/""" + pattern + """.bzl", """ + pattern + """_deps = "dependencies"\)""").r
+
+  private def regexOfImportExternalTargetsFileMethodCall(groupIdForBazel: String) = {
+    (s"  ${groupIdForBazel}_deps\\(\\)").r
+  }
+
 }

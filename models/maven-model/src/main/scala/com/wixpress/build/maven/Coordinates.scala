@@ -11,6 +11,8 @@ case class Coordinates(groupId: String,
       this.artifactId == otherCoordinates.artifactId
   }
 
+  def shortSerializedForm() = s"${groupId}:${artifactId}"
+
   def serialized: String = s"$groupId:$artifactId:" +
     serializeOptional(Option(packaging.value).filterNot(classifier.isEmpty && _ == "jar")) +
     serializeOptional(classifier) + version

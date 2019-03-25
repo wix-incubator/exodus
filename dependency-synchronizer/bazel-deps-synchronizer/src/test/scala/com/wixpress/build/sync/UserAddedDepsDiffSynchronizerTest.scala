@@ -32,6 +32,35 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
         targetRepoDriver.bazelExternalDependencyFor(artifactB).importExternalRule must beSome[ImportExternalRule]
       }
 
+      "remove local dep if requested is equal to managed version" in new ctx {
+        targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA.withVersion("0.3"))))
+        managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))
+
+        synchronizer.syncThirdParties(Set(artifactA).map(toDependency))
+
+        targetRepoDriver.bazelExternalDependencyFor(artifactA).importExternalRule must beNone
+      }
+
+      "update local dep if requested is NOT identical to managed" in new ctx {
+        targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA.withVersion("0.3"))))
+        managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))
+
+        val updatedArtifactButStillLowerThanManaged = artifactA.withVersion("0.4")
+        synchronizer.syncThirdParties(Set(updatedArtifactButStillLowerThanManaged).map(toDependency))
+
+        targetRepoDriver must includeImportExternalTargetWith(updatedArtifactButStillLowerThanManaged)
+      }
+
+      "remove all local deps with versions equal to managed versions" in new ctx {
+        targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))
+        managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))
+
+        val unrelatedArtifact = Coordinates("com.blah", "booya", "1.0.0")
+        synchronizer.syncThirdParties(Set(unrelatedArtifact).map(toDependency))
+
+        targetRepoDriver .bazelExternalDependencyFor(artifactA).importExternalRule must beNone
+      }
+
       "update dependency's version in local repo" in new ctx {
         targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))
 
@@ -67,7 +96,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
       "calculate difference from managed" in new ctx {
         val newArtifacts = Set(artifactA, artifactB)
 
-        private val nodes: Set[BazelDependencyNode] = newArtifacts.map(a => aRootBazelDependencyNode(asCompileDependency(a),checksum = None, srcChecksum = None))
+        val nodes: Set[BazelDependencyNode] = newArtifacts.map(a => aRootBazelDependencyNode(asCompileDependency(a),checksum = None, srcChecksum = None))
         userAddedDepsDiffCalculator.resolveUpdatedLocalNodes(newArtifacts.map(toDependency)) mustEqual DiffResult(nodes, Set(), Set())
       }
 
@@ -75,7 +104,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
         targetFakeLocalWorkspace.hasDependencies(BazelDependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
         managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactB)))
 
-        userAddedDepsDiffCalculator.resolveUpdatedLocalNodes(Set()).localNodes must contain(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
+        userAddedDepsDiffCalculator.resolveUpdatedLocalNodes(Set()).preExistingLocalNodes must contain(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
       }
     }
   }
@@ -118,7 +147,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
       val dependencyOfTheRootNode = aDependency("otherArtifactId")
 
       val updatedLocalNodes = Set(BazelDependencyNode(asCompileDependency(someCoordinates("someArtifactId")), dependencies = Set(dependencyOfTheRootNode)))
-      val diffResultWithNonFullClosure = DiffResult(updatedLocalNodes, localNodes = Set(), managedNodes = Set())
+      val diffResultWithNonFullClosure = DiffResult(updatedLocalNodes, preExistingLocalNodes = Set(), managedNodes = Set())
       diffResultWithNonFullClosure
     }
   }
@@ -126,7 +155,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
   class SpyDiffWriter extends DiffWriter {
     var timesCalled = 0
 
-    override def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit =
+    override def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode], localDepsToDelete: Set[DependencyNode]): Unit =
       timesCalled += 1
   }
 

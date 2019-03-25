@@ -19,8 +19,13 @@ class FakeLocalBazelWorkspace(sourceFiles: mutable.Map[String, String] = mutable
   override def overwriteThirdPartyReposFile(skylarkFileContent: String): Unit =
     sourceFiles.put(thirdPartyReposFilePath, skylarkFileContent)
 
-  override def overwriteThirdPartyImportTargetsFile(thirdPartyGroup: String, thirdPartyReposContent: String): Unit =
-    sourceFiles.put(s"$thirdPartyImportFilesPathRoot/$thirdPartyGroup.bzl" , thirdPartyReposContent)
+  override def overwriteThirdPartyImportTargetsFile(thirdPartyGroup: String, thirdPartyReposContent: String): Unit = {
+    val fileKey = s"$thirdPartyImportFilesPathRoot/$thirdPartyGroup.bzl"
+    thirdPartyReposContent match {
+      case "" => sourceFiles.remove(fileKey)
+      case _ => sourceFiles.put(fileKey, thirdPartyReposContent)
+    }
+  }
 
   override def buildFileContent(packageName: String): Option[String] =
     sourceFiles.get(packageName + "/BUILD.bazel")

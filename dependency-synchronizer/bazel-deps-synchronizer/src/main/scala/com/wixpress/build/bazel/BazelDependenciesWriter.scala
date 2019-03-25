@@ -13,18 +13,33 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
     writeDependencies(dependencyNodes.toSet)
 
   def writeDependencies(dependencyNodes: Set[BazelDependencyNode]): Set[String] = {
-    writeThirdPartyReposFile(dependencyNodes)
     writeThirdPartyFolderContent(dependencyNodes)
-    computeAffectedFilesBy(dependencyNodes)
+    writeThirdPartyReposFile(dependencyNodes, noLongerUsedGroupIds = Set())
+    computeAffectedFilesBy(dependencyNodes.map(_.toMavenNode))
   }
 
-  private def writeThirdPartyReposFile(dependencyNodes: Set[BazelDependencyNode]): Unit = {
+  def writeDependencies(dependenciesForThirdPartyReposFile: Set[BazelDependencyNode], dependenciesForThirdPartyFolder: Set[BazelDependencyNode], localDepsToDelete: Set[Coordinates]) = {
+    writeThirdPartyFolderContent(dependenciesForThirdPartyFolder)
+    localDepsToDelete.foreach(overwriteThirdPartyFolderFilesWithDeletedContent)
+
+    val noLongerUsedGroupIds = localDepsToDelete.filter(depToDelete => localWorkspace.thirdPartyImportTargetsFileContent(ImportExternalRule.ruleLocatorFrom(depToDelete)).isEmpty)
+    writeThirdPartyReposFile(dependenciesForThirdPartyReposFile, noLongerUsedGroupIds.map(_.groupIdForBazel))
+  }
+
+  def computeAffectedFilesBy(dependencyNodes: Set[DependencyNode]) = {
+    val affectedFiles = dependencyNodes.map(_.baseDependency.coordinates).flatMap(findFilesAccordingToPackagingOf)
+    affectedFiles + thirdPartyReposFilePath
+  }
+
+  private def writeThirdPartyReposFile(dependencyNodes: Set[BazelDependencyNode], noLongerUsedGroupIds: Set[String]): Unit = {
     val actual = dependencyNodes.toList.sortBy(_.baseDependency.coordinates.workspaceRuleName)
     val existingThirdPartyReposFile = localWorkspace.thirdPartyReposFileContent()
     val thirdPartyReposBuilder = actual.map(_.baseDependency.coordinates)
       .foldLeft(ThirdPartyReposFile.Builder(existingThirdPartyReposFile))(_.fromCoordinates(_))
 
-    val content = thirdPartyReposBuilder.content
+    val thirdPartyReposBuilderWithDeletions = noLongerUsedGroupIds.foldLeft(thirdPartyReposBuilder)(_.removeGroupIds(_))
+    val content = thirdPartyReposBuilderWithDeletions.content
+
     val nonEmptyContent = Option(content).filter(_.trim.nonEmpty).fold("  pass")(c => c)
     localWorkspace.overwriteThirdPartyReposFile(nonEmptyContent)
   }
@@ -76,9 +91,8 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
     ImportExternalTargetsFile.persistTarget(ruleToPersist, localWorkspace)
   }
 
-  private def computeAffectedFilesBy(dependencyNodes: Set[BazelDependencyNode]) = {
-    val affectedFiles = dependencyNodes.map(_.baseDependency.coordinates).flatMap(findFilesAccordingToPackagingOf)
-    affectedFiles + thirdPartyReposFilePath
+  private def overwriteThirdPartyFolderFilesWithDeletedContent(coordsToDelete: Coordinates): Unit = {
+    ImportExternalTargetsFile.deleteTarget(coordsToDelete, localWorkspace)
   }
 
   private def findFilesAccordingToPackagingOf(artifact: Coordinates) = {
@@ -87,13 +101,6 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
 
       case _ => LibraryRule.buildFilePathBy(artifact)
     }
-  }
-
-  def writeDependencies(dependenciesForThirdPartyReposFile: Set[BazelDependencyNode], dependenciesForThirdPartyFolder: Set[BazelDependencyNode]) = {
-    writeThirdPartyReposFile(dependenciesForThirdPartyReposFile)
-
-    writeThirdPartyFolderContent(dependenciesForThirdPartyFolder)
-    computeAffectedFilesBy(dependenciesForThirdPartyFolder)
   }
 }
 

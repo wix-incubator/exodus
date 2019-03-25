@@ -19,12 +19,13 @@ class UserAddedDepsDiffSynchronizer(calculator: DiffCalculatorAndAggregator,
     val setOfProblems = diffResult.checkForDepsClosureError().nodesWithMissingEdge
     if (setOfProblems.isEmpty){
       log.info(s"writes updates for ${diffResult.updatedBazelLocalNodes.size} dependency nodes...")
-      diffWriter.persistResolvedDependencies(diffResult.updatedBazelLocalNodes, diffResult.localNodes)
+      log.info(s"cleans local deps which were identical to managed deps - ${diffResult.localDepsToDelete.size} dependency nodes...")
+      diffWriter.persistResolvedDependencies(diffResult.updatedBazelLocalNodes, diffResult.preExistingLocalNodes, diffResult.localDepsToDelete)
       log.info(s"Finished writing updates.")
       PrettyReportPrinter.printReport(report)
     } else {
       PrettyReportPrinter.printReport(report)
-      log.info(s"!!!!!!!!!! NOT WRITING any dependency updates - something missing from calculated transitive closure. Contact #bazel-support NOW, we wanna know! !!!!!!!!!!")
+      log.info(s"!!!!!!!!!! ERROR - NOT WRITING any dependency updates - something missing from calculated transitive closure. Contact #bazel-support NOW, we wanna know! !!!!!!!!!!")
       throw new IllegalArgumentException(setOfProblems.map(k => s"DependencyNodeWithMissingDeps - ${k._1},\n MissingCoordinates - ${k._2}").mkString("\n\n"))
     }
 
@@ -39,19 +40,22 @@ trait DiffCalculatorAndAggregator {
 class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManagedDependencies: BazelRepository,
                                   mavenManagedDependenciesArtifact: Coordinates, aetherResolver: MavenDependencyResolver,
                                   remoteStorage: DependenciesRemoteStorage,
-                                  mavenModules: Set[SourceModule]) extends DiffCalculatorAndAggregator {
+                                  mavenModulesToTreatAsSourceDeps: Set[SourceModule]) extends DiffCalculatorAndAggregator {
 
-  val aggregator = new DependencyAggregator(mavenModules)
   private val log = LoggerFactory.getLogger(getClass)
 
-  def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency]): DiffResult = {
+  def resolveUpdatedLocalNodes(userAddedMavenDeps: Set[Dependency]): DiffResult = {
     val managedNodes = readManagedNodes()
-    val localNodes = readLocalDependencyNodes(externalDependencyNodes = managedNodes)
-    val addedNodes = resolveUserAddedDependencyNodes(userAddedDependencies)
-    val aggregateNodes = aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes = localNodes, userAddedDependencies, addedNodes = addedNodes)
-    val updatedLocalNodes = calculateDivergentLocalNodes(managedNodes, aggregateNodes)
+    val currentClosure = readCurrentClosure(externalDependencyNodes = managedNodes)
 
-    DiffResult(updatedLocalNodes, localNodes, managedNodes)
+    val addedClosure = resolveUserAddedDependencyNodes(userAddedMavenDeps)
+    val aggregateAffectedNodes = new DependencyAggregator(mavenModulesToTreatAsSourceDeps).collectAffectedLocalNodesAndUserAddedNodes(localNodes = currentClosure, userAddedMavenDeps, addedNodes = addedClosure)
+    val updatedLocalNodes = calculateAffectedDivergentFromManaged(managedNodes, aggregateAffectedNodes)
+
+    val depsToLazyClean = calculateNodesIdenticalToManaged(managedNodes, currentClosure)
+    val depsToClean = calculateNodesIdenticalToManaged(managedNodes, aggregateAffectedNodes)
+
+    DiffResult(updatedLocalNodes, currentClosure, managedNodes, depsToClean ++ depsToLazyClean)
   }
 
   private def readManagedNodes() = {
@@ -63,7 +67,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
     managedNodes
   }
 
-  private def readLocalDependencyNodes(externalDependencyNodes: Set[DependencyNode]) = {
+  private def readCurrentClosure(externalDependencyNodes: Set[DependencyNode]) = {
     log.info("read local dependencies from Bazel files...")
 
     val localRepoReader = new BazelDependenciesReader(bazelRepo.localWorkspace())
@@ -71,16 +75,21 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
   }
 
   private def resolveUserAddedDependencyNodes(userAddedDependencies: Set[Dependency]) = {
-    log.info("obtain managed Dependencies From Maven for userAddedDependencies closure calculation...")
+    log.info(s"obtain managed Dependencies From Maven for userAddedDependencies closure calculation... (requires VPN for access to ${mavenManagedDependenciesArtifact.shortSerializedForm()})")
     val managedDependenciesFromMaven = aetherResolver
       .managedDependenciesOf(mavenManagedDependenciesArtifact)
       .forceCompileScope
 
     log.info("resolve userAddedDependencies full closure...")
+    //what will happen after mvn dies? why do we need 3rd.pom to figure out deps?
     aetherResolver.dependencyClosureOf(userAddedDependencies, managedDependenciesFromMaven)
   }
 
-  private def calculateDivergentLocalNodes(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[BazelDependencyNode] = {
+  private def calculateNodesIdenticalToManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[DependencyNode] = {
+    aggregateNodes.forceCompileScopeIfNotProvided intersect managedNodes
+  }
+
+  private def calculateAffectedDivergentFromManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[BazelDependencyNode] = {
     log.info(s"calculate diff with managed deps and persist it (${aggregateNodes.size} local deps, ${managedNodes.size} managed deps)...")
     log.debug(s"aggregateNodes count: ${aggregateNodes.size}")
 
@@ -95,7 +104,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
   }
 }
 
-class DependencyAggregator(mavenModules: Set[SourceModule]) {
+class DependencyAggregator(mavenModulesToTreatAsSourceDeps: Set[SourceModule]) {
   private val log = LoggerFactory.getLogger(getClass)
 
 
@@ -122,7 +131,7 @@ class DependencyAggregator(mavenModules: Set[SourceModule]) {
   }
 
   private def filterNotLocalSourceModules(addedNodes: Set[DependencyNode]) = {
-    new GlobalExclusionFilterer(mavenModules.map(_.coordinates)).filterGlobalsFromDependencyNodes(addedNodes)
+    new GlobalExclusionFilterer(mavenModulesToTreatAsSourceDeps.map(_.coordinates)).filterGlobalsFromDependencyNodes(addedNodes)
   }
 
   private def newNodesWithLocalExclusionsFilteredOut(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode], addedDeps: Set[Dependency]) = {

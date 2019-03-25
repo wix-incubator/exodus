@@ -32,8 +32,13 @@ class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
 
   override def overwriteThirdPartyImportTargetsFile(thirdPartyGroup: String, content: String): Unit = {
     val targetsFile = root / s"$thirdPartyImportFilesPathRoot/$thirdPartyGroup.bzl"
-    targetsFile.createIfNotExists(createParents = true)
-    targetsFile.overwrite(content)
+    content match {
+      case "" => if (targetsFile.exists) targetsFile.delete()
+      case _ => {
+        targetsFile.createIfNotExists(createParents = true)
+        targetsFile.overwrite(content)
+      }
+    }
   }
 
   override def thirdPartyReposFileContent(): String = contentIfExistsOf(root / thirdPartyReposFilePath).getOrElse("")

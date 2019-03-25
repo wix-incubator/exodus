@@ -42,7 +42,7 @@ case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepositor
 
 
 trait DiffWriter {
-  def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit
+  def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode], localDepsToDelete: Set[DependencyNode] = Set()): Unit
 }
 
 case class DefaultDiffWriter(targetRepository: BazelRepository,
@@ -51,16 +51,22 @@ case class DefaultDiffWriter(targetRepository: BazelRepository,
   private val log = LoggerFactory.getLogger(getClass)
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
 
-  def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode]): Unit = {
+  def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode], localDepsToDelete: Set[DependencyNode]): Unit = {
     val localCopy = targetRepository.localWorkspace()
     val writer = new BazelDependenciesWriter(localCopy, neverLinkResolver = neverLinkResolver)
+    //can be removed at phase 2
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom").map(_.toBazelNode)
 
-    val modifiedFiles = writer.
-      writeDependencies(divergentLocalDependencies, divergentLocalDependencies ++ nodesWithPomPackaging)
+    writer.writeDependencies(divergentLocalDependencies, divergentLocalDependencies ++ nodesWithPomPackaging, localDepsToDelete.map(_.baseDependency.coordinates))
 
-    log.info(s"modifying ${modifiedFiles.size} files.")
+    val modifiedFilesToPersist = writer.computeAffectedFilesBy((divergentLocalDependencies ++ nodesWithPomPackaging).map(_.toMavenNode))
+    log.info(s"modifying ${modifiedFilesToPersist.size} files.")
+    persister.persistWithMessage(modifiedFilesToPersist, divergentLocalDependencies.map(_.baseDependency.coordinates))
 
-    persister.persistWithMessage(modifiedFiles, divergentLocalDependencies.map(_.baseDependency.coordinates))
+    // note - localDepsToDelete that resulted in deleted files NOT part of modifiedFiles.
+    // reason is that they are actually not used in the one case that uses GitBazelRepo (bcos the webapp only syncs core-server-build-tools and never deletes anything there)
+    // possible todo - implement Git delete command and fun and unify this split
+    val modifiedFilesNotToPersist = writer.computeAffectedFilesBy(localDepsToDelete)
+    log.info(s"cleaned deps from ${modifiedFilesNotToPersist.size} files.")
   }
 }
