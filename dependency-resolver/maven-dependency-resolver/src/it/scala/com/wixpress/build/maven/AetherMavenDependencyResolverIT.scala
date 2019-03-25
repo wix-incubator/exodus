@@ -1,7 +1,7 @@
 package com.wixpress.build.maven
 
 import com.wixpress.build.maven.ArtifactDescriptor.anArtifact
-import com.wixpress.build.maven.MavenMakers.aDependency
+import com.wixpress.build.maven.MavenMakers.{aDependency, randomDependency}
 import org.specs2.specification.AfterEach
 
 //noinspection TypeAnnotation
@@ -23,6 +23,14 @@ class AetherMavenDependencyResolverIT extends MavenDependencyResolverContract wi
     val nodes = mavenDependencyResolver.dependencyClosureOf(Set(dependency, transitiveRoot.withScope(MavenScope.Compile)), emptyManagedDependencies)
     nodes.filter(_.baseDependency == dependency) must have size 1
     nodes.filter(_.baseDependency.coordinates == transitiveRoot.coordinates) must have size 1
+  }
+
+  "given dependency that is not in remote repository must explode" in new ctx {
+    val notExistsDependency = randomDependency()
+
+    override def remoteArtifacts: Set[ArtifactDescriptor] = Set.empty
+
+    mavenDependencyResolver.dependencyClosureOf(Set(notExistsDependency), emptyManagedDependencies) must throwA[IllegalArgumentException]
   }
 
   trait singleDependencyWithSingleDependency extends ctx {

@@ -10,7 +10,7 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils
 import org.eclipse.aether.DefaultRepositorySystemSession
 import org.eclipse.aether.artifact.{Artifact, DefaultArtifact}
-import org.eclipse.aether.collection.{CollectRequest, CollectResult}
+import org.eclipse.aether.collection.{CollectRequest, CollectResult, DependencyCollectionException}
 import org.eclipse.aether.graph.{Dependency => AetherDependency, DependencyNode => AetherDependencyNode, Exclusion => AetherExclusion}
 import org.eclipse.aether.repository.LocalRepository
 import org.eclipse.aether.repository.RemoteRepository.{Builder => RemoteRepositoryBuilder}
@@ -25,7 +25,8 @@ import scala.collection.mutable
 import scala.util.Try
 
 class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
-                                    localRepoPath: File = AetherMavenDependencyResolver.tempLocalRepoPath()
+                                    localRepoPath: File = AetherMavenDependencyResolver.tempLocalRepoPath(),
+                                    ignoreMissingDependenciesFlag: Boolean = false
                                    ) extends MavenDependencyResolver {
 
   private val repositorySystem = ManualRepositorySystemFactory.newRepositorySystem
@@ -85,13 +86,23 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
   }
 
   override def dependencyClosureOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency]): Set[DependencyNode] = {
-    withSession(ignoreMissingDependencies = true , session => {
-      prioritizeManagedDeps(session)
-      val aetherResponse = repositorySystem.collectDependencies(session, collectRequestOf(baseDependencies, withManagedDependencies))
-      dependencyNodesOf(aetherResponse)
-        .map(fromAetherDependencyNode)
-        .toSet
-    })
+    try {
+      withSession(ignoreMissingDependencies = ignoreMissingDependenciesFlag, session => {
+        prioritizeManagedDeps(session)
+        val aetherResponse = repositorySystem.collectDependencies(session, collectRequestOf(baseDependencies, withManagedDependencies))
+        dependencyNodesOf(aetherResponse)
+          .map(fromAetherDependencyNode)
+          .toSet
+      })
+    }
+    catch {
+      case e: DependencyCollectionException =>
+        throw new IllegalArgumentException(s"""|${e.getCause()}
+                                               |===== Please double check that you have no typos.
+                                               |if you REALLY meant to reference this jar and you know it exists even though there IS NO pom,
+                                               |please rerun the tool with --ignoreMissingDependencies flag at the end =====
+                                               |""".stripMargin)
+    }
   }
 
   private def fromAetherDependencyNode(node: AetherDependencyNode): DependencyNode = {

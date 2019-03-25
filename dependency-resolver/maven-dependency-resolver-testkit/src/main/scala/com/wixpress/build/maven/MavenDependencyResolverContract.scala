@@ -1,6 +1,6 @@
 package com.wixpress.build.maven
 
-import com.wixpress.build.maven.ArtifactDescriptor.anArtifact
+import com.wixpress.build.maven.ArtifactDescriptor.{anArtifact, rootFor}
 import com.wixpress.build.maven.MavenMakers._
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -146,7 +146,8 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
         def directDependency = Dependency(someCoordinates("direct"), MavenScope.Compile)
 
-        override def remoteArtifacts = Set(anArtifact(interestingArtifact).withDependency(directDependency))
+        override def remoteArtifacts = Set(anArtifact(interestingArtifact).withDependency(directDependency),
+          rootFor(directDependency.coordinates))
 
         mavenDependencyResolver.allDependenciesOf(interestingArtifact) must contain(directDependency)
       }
@@ -412,15 +413,6 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
             DependencyNode(dependencies.head, Set.empty)
           )
         }
-      }
-
-      "given dependency that is not in remote repository must return root dependencyNode" in new ctx {
-        val notExistsDependency = randomDependency()
-
-        override def remoteArtifacts: Set[ArtifactDescriptor] = Set.empty
-
-        mavenDependencyResolver.dependencyClosureOf(Set(notExistsDependency), emptyManagedDependencies) must contain(
-          DependencyNode(notExistsDependency, Set.empty))
       }
 
     }
