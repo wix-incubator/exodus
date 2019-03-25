@@ -171,6 +171,9 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
         .withDependencyOn(someDependencyWithTestCoordinates))
 
 
+      fakeMavenRepository.addArtifacts(ArtifactDescriptor.rootFor(someCoordinates),
+        ArtifactDescriptor.rootFor(someCoordinatesWithClassifier),
+        ArtifactDescriptor.rootFor(someTestCoordinates))
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(
@@ -218,6 +221,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       def someDependency = Dependency(someCoordinates, MavenScope.Compile)
 
       lazy val repo = Repo(SomeCodeModule.withDependencyOn(someDependency))
+      fakeMavenRepository.addArtifacts(ArtifactDescriptor.rootFor(someCoordinates))
 
       val sourceModules = buildSystem.modules()
 
@@ -261,6 +265,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
 
       lazy val repo = Repo(SomeCodeModule.withDependencyOn(someDependency))
 
+      fakeMavenRepository.addArtifacts(ArtifactDescriptor.rootFor(someCoordinates))
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(
