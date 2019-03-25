@@ -4,7 +4,6 @@ import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.maven.{Coordinates, Packaging}
 
 import scala.util.matching.Regex
-import scala.util.matching.Regex.Match
 
 object ThirdPartyReposFile {
 
@@ -110,13 +109,8 @@ object ThirdPartyReposFile {
 
   }
 
-  private def extractFullMatchText(aMatch: Match): String = aMatch.group(0)
-
   private def splitToStringsWithMavenJarsInside(thirdPartyRepos: String) =
     for (m <- GeneralWorkspaceRuleRegex.findAllMatchIn(thirdPartyRepos)) yield m.group(0)
-
-  private def findMavenArtifactByName(name: String, within: String) =
-    regexOfWorkspaceRuleWithNameMatching(name).findFirstMatchIn(within)
 
   private val GeneralWorkspaceRuleRegex = regexOfWorkspaceRuleWithNameMatching(".+?")
 
