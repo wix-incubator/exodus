@@ -1,7 +1,6 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
 import com.wixpress.build.maven.{Coordinates, Packaging}
 
 import scala.util.matching.Regex
@@ -19,6 +18,8 @@ object ThirdPartyReposFile {
     }
 
     def removeGroupIds(groupIdForBazel: String): Builder = {
+      import NewLinesParser.removeMatched
+
       val contentWithoutLoadStatement = regexOfLoadRuleWithNameMatching(groupIdForBazel)
         .findFirstMatchIn(content) match {
         case Some(m) => removeMatched(content, m)
@@ -73,16 +74,22 @@ object ThirdPartyReposFile {
       thirdPartyRepos.take(matched.start - "  ".length) + newMavenJarRule + thirdPartyRepos.drop(matched.end)
     }
 
-    private def removeMatched(thirdPartyRepos: String, matched: Regex.Match): String = {
-      thirdPartyRepos.take(matched.start - "  ".length) + thirdPartyRepos.drop(matched.end)
-    }
-
     private def appendMavenArtifact(thirdPartyRepos: String, coordinates: Coordinates): String =
       s"""$thirdPartyRepos
          |
          |${WorkspaceRule.of(coordinates).serialized}
          |""".stripMargin
 
+  }
+
+  def serializedLoadImportExternalTargetsFile(fromCoordinates: Coordinates, thirdPartyPath: String = "third_party") = {
+    val groupId = fromCoordinates.groupIdForBazel
+    s"""load("//:$thirdPartyPath/${groupId}.bzl", ${groupId}_deps = "dependencies")"""
+  }
+
+  def serializedImportExternalTargetsFileMethodCall(fromCoordinates: Coordinates) = {
+    val groupId = fromCoordinates.groupIdForBazel
+    s"  ${groupId}_deps()"
   }
 
   case class Parser(content: String) {

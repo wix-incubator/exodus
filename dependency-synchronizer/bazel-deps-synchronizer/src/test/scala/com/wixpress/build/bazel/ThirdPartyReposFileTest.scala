@@ -1,8 +1,8 @@
 package com.wixpress.build.bazel
 
 import com.wixpress.build.bazel.CoordinatesTestBuilders._
-import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
 import com.wixpress.build.bazel.ThirdPartyReposFile.Builder
+import com.wixpress.build.bazel.ThirdPartyReposFile.{serializedLoadImportExternalTargetsFile, serializedImportExternalTargetsFileMethodCall}
 import com.wixpress.build.maven.{Coordinates, MavenMakers, Packaging}
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
@@ -109,6 +109,13 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
 
       ThirdPartyReposFile.Builder(thirdPartyRepos).removeGroupIds(artifactC.groupId).content mustEqual expectedThirdPartyRepos
     }
+
+    "delete 2 consecutive load statements which have no empty line in between them" in {
+      val thirdPartyRepos = createThirdPartyReposWithLoadStatementFor(List(artifactA, artifactB, artifactC, artifactD), insertOnlyOneNewLine = true)
+      val expectedThirdPartyRepos = createThirdPartyReposWithLoadStatementFor(List(artifactA, artifactD))
+
+      ThirdPartyReposFile.Builder(thirdPartyRepos).removeGroupIds(artifactB.groupId).removeGroupIds(artifactC.groupId).content mustEqual expectedThirdPartyRepos
+    }
   }
 
   val jars = List(artifactA, artifactB, artifactC)
@@ -130,12 +137,18 @@ class ThirdPartyReposFileTest extends SpecificationWithJUnit {
        |### THE END""".stripMargin
   }
 
-  private def createThirdPartyReposWithLoadStatementFor(coordinates: List[Coordinates]) = {
+
+  private def createThirdPartyReposWithLoadStatementFor(coordinates: List[Coordinates], insertOnlyOneNewLine: Boolean = false) = {
+    def insertOnlyOneNewLineIfRequired() = insertOnlyOneNewLine match {
+      case true => "\n"
+      case false => "\n\n"
+    }
+
     val firstJar: Coordinates = coordinates.head
     val restOfJars = coordinates.tail
 
-    val restLoads = restOfJars.map(serializedLoadImportExternalTargetsFile(_)).mkString("\n\n")
-    val restCalls = restOfJars.map(serializedImportExternalTargetsFileMethodCall).mkString("\n\n")
+    val restLoads = restOfJars.map(serializedLoadImportExternalTargetsFile(_)).mkString(insertOnlyOneNewLineIfRequired)
+    val restCalls = restOfJars.map(serializedImportExternalTargetsFileMethodCall).mkString(insertOnlyOneNewLineIfRequired)
 
 
     s"""load("@core_server_build_tools//:macros.bzl", "maven_archive", "maven_proto")
@@ -171,8 +184,12 @@ object CoordinatesTestBuilders {
   )
 
   val artifactC = Coordinates(
-    groupId = "groupId",
+    groupId = "groupIdC",
     artifactId = "artifactId",
     version = "version")
 
+  val artifactD = Coordinates(
+    groupId = "groupIdD",
+    artifactId = "artifactId",
+    version = "version")
 }

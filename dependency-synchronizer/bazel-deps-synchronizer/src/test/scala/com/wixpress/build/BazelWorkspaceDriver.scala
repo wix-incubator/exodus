@@ -1,7 +1,7 @@
 package com.wixpress.build
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.bazel.ImportExternalTargetsFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
+import com.wixpress.build.bazel.ThirdPartyReposFile.{serializedLoadImportExternalTargetsFile, serializedImportExternalTargetsFileMethodCall}
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.Coordinates._
 import com.wixpress.build.maven._

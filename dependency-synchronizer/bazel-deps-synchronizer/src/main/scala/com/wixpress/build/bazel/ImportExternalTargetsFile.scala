@@ -1,6 +1,5 @@
 package com.wixpress.build.bazel
 
-import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.ImportExternalTargetsFile.findTargetWithSameNameAs
 import com.wixpress.build.bazel.ImportExternalTargetsFileReader._
 import com.wixpress.build.maven._
@@ -9,16 +8,6 @@ import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
 
 object ImportExternalTargetsFile {
-
-  def serializedLoadImportExternalTargetsFile(fromCoordinates: Coordinates, thirdPartyPath: String = "third_party") = {
-    val groupId = fromCoordinates.groupIdForBazel
-    s"""load("//:$thirdPartyPath/${groupId}.bzl", ${groupId}_deps = "dependencies")"""
-  }
-
-  def serializedImportExternalTargetsFileMethodCall(fromCoordinates: Coordinates) = {
-    val groupId = fromCoordinates.groupIdForBazel
-    s"  ${groupId}_deps()"
-  }
 
   def findTargetWithSameNameAs(name: String, within: String): Option[Match] = {
     regexOfImportExternalRuleWithNameMatching(name).findFirstMatchIn(within)
@@ -48,6 +37,19 @@ object ImportExternalTargetsFile {
 }
 
 object NewLinesParser {
+
+  def findFlexibleStartOfContent(content: String, matched: Match) = {
+    val contentStartPlusSpaces = content.take(matched.start)
+    val indexOfNewLine = contentStartPlusSpaces.lastIndexOf("\n")
+    contentStartPlusSpaces.take(indexOfNewLine + 1)
+  }
+
+  def removeMatched(thirdPartyRepos: String, matched: Regex.Match): String = {
+    val contentStart = findFlexibleStartOfContent(thirdPartyRepos, matched)
+    val contentEnd = thirdPartyRepos.drop(matched.end).dropAllPrefixNewlines
+    val contentAfterRemoval = contentStart + contentEnd
+    contentAfterRemoval
+  }
 
   implicit class NewLinesParser(val s: String) {
     def containsOnlyNewLinesOrWhitespaces: Boolean = {

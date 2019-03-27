@@ -4,6 +4,7 @@ import com.wixpress.build.bazel.ImportExternalTargetsFile.findTargetWithSameName
 import com.wixpress.build.maven.Coordinates
 import com.wix.build.maven.translation.MavenToBazelTranslations._
 import scala.util.matching.Regex.Match
+import NewLinesParser._
 
 case class ImportExternalTargetsFileWriter(content: String) {
   def withTarget(rule: ImportExternalRule): ImportExternalTargetsFileWriter = {
@@ -15,7 +16,7 @@ case class ImportExternalTargetsFileWriter(content: String) {
 
   def withoutTarget(coordinates: Coordinates): ImportExternalTargetsFileWriter = {
     findTargetWithSameNameAs(name = coordinates.workspaceRuleName, within = content) match {
-      case Some(matched) => removeMatched(matched)
+      case Some(matched) => removeMatchedAndClearWhitespaces(matched)
       case None => this
     }
   }
@@ -36,29 +37,21 @@ case class ImportExternalTargetsFileWriter(content: String) {
   }
 
   private def replacedMatchedWithTarget(matched: Match, rule: ImportExternalRule): ImportExternalTargetsFileWriter = {
-    val contentStart = findFlexibleStartOfContent(matched)
+    val contentStart = findFlexibleStartOfContent(content, matched)
     val contentMiddle = rule.serialized
     val contentEnd = content.drop(matched.end)
     ImportExternalTargetsFileWriter(contentStart + contentMiddle + contentEnd)
   }
 
-  private def removeMatched(matched: Match): ImportExternalTargetsFileWriter = {
+  private def removeMatchedAndClearWhitespaces(matched: Match): ImportExternalTargetsFileWriter = {
     import NewLinesParser._
 
-    val contentStart = findFlexibleStartOfContent(matched)
-    val contentEnd = content.drop(matched.end).dropAllPrefixNewlines
-    val contentAfterRemoval = contentStart + contentEnd
+    val contentAfterRemoval = removeMatched(content, matched)
 
     contentAfterRemoval match {
       case onlyHeader if contentAfterRemoval.drop(fileHeader.length).containsOnlyNewLinesOrWhitespaces => ImportExternalTargetsFileWriter("")
       case _ => ImportExternalTargetsFileWriter(contentAfterRemoval)
     }
-  }
-
-  private def findFlexibleStartOfContent(matched: Match) = {
-    val contentStartPlusSpaces = content.take(matched.start)
-    val indexOfNewLine = contentStartPlusSpaces.lastIndexOf("\n")
-    contentStartPlusSpaces.take(indexOfNewLine + 1)
   }
 
   val fileHeader: String =
