@@ -224,6 +224,33 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
 
       ImportExternalTargetsFileWriter(fileWithA).withoutTarget(artifactA).content must beEmpty
     }
+
+    "leave empty file if header is funky" in {
+      val fileWithANormalHeader = s"""load("@core_server_build_tools//:import_external.bzl", import_external = "safe_wix_scala_maven_import_external")
+                         |
+                         |def dependencies():
+                         |
+                         |${importExternalRuleWith(artifactA).serialized}""".stripMargin
+
+      ImportExternalTargetsFileWriter(fileWithANormalHeader).withoutTarget(artifactA).content must beEmpty
+
+      val fileWithAnotherFunkyHeader = s"""load("@core_server_build_tools//:import_external.bzl", import_external = "wix_snapshot_scala_maven_import_external")
+                                    |def dependencies():
+                                    |
+                                    |${importExternalRuleWith(artifactA).serialized}""".stripMargin
+
+      ImportExternalTargetsFileWriter(fileWithAnotherFunkyHeader).withoutTarget(artifactA).content must beEmpty
+
+      val fileWithYetAnotherFunkyHeader = s"""load("@core_server_build_tools//:import_external.bzl", import_external = "wix_snapshot_scala_maven_import_external")
+                                        |load("@core_server_build_tools//:import_external.bzl", import_external_no_src = "safe_wix_scala_maven_import_external")
+                                        |
+                                        |def dependencies():
+                                        |
+                                        |${importExternalRuleWith(artifactA).serialized}""".stripMargin
+
+      ImportExternalTargetsFileWriter(fileWithYetAnotherFunkyHeader).withoutTarget(artifactA).content must beEmpty
+    }
+
   }
 
   private def importExternalTargetsFileWith(newHead: Coordinates, importExternalTargetsFile: String) = {
@@ -240,7 +267,7 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
   }
 
   private def serializeJars(jars: List[Coordinates]) = {
-    jars.map(jar => importExternalRuleWith(jar)).map(_.serialized).mkString("\n\n")
+    jars.map(jar => importExternalRuleWith(jar)).map(_.serialized).mkString("\n")
   }
 
   private def contentWith(firstJar: String, rest: String) = {

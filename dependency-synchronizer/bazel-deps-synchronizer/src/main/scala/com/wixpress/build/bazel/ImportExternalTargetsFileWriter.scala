@@ -3,8 +3,10 @@ package com.wixpress.build.bazel
 import com.wixpress.build.bazel.ImportExternalTargetsFile.findTargetWithSameNameAs
 import com.wixpress.build.maven.Coordinates
 import com.wix.build.maven.translation.MavenToBazelTranslations._
+
 import scala.util.matching.Regex.Match
 import NewLinesParser._
+import com.wixpress.build.bazel.ImportExternalTargetsFileReader.RegexOfAnyLoadStatement
 
 case class ImportExternalTargetsFileWriter(content: String) {
   def withTarget(rule: ImportExternalRule): ImportExternalTargetsFileWriter = {
@@ -48,11 +50,14 @@ case class ImportExternalTargetsFileWriter(content: String) {
 
     val contentAfterRemoval = removeMatched(content, matched)
 
-    contentAfterRemoval match {
-      case onlyHeader if contentAfterRemoval.drop(fileHeader.length).containsOnlyNewLinesOrWhitespaces => ImportExternalTargetsFileWriter("")
+    removeHeader(contentAfterRemoval) match {
+      case onlyHeader if onlyHeader.containsOnlyNewLinesOrWhitespaces => ImportExternalTargetsFileWriter("")
       case _ => ImportExternalTargetsFileWriter(contentAfterRemoval)
     }
   }
+
+  def removeHeader(content: String) =
+    RegexOfAnyLoadStatement.replaceAllIn(content, "").replaceFirst("def dependencies\\(\\):", "")
 
   val fileHeader: String =
     s"""load("@core_server_build_tools//:import_external.bzl", import_external = "safe_wix_scala_maven_import_external")

@@ -109,6 +109,8 @@ object ImportExternalTargetsFileReader {
     ("(?s)([^\\s]+)" + """\(\s*?name\s*?=\s*?"""" + pattern +"""",[\s#]*?artifact.*?\)""").r
   }
 
+  val RegexOfAnyLoadStatement = """load\(.*\)""".r
+
   val ArtifactFilter = """(?s)artifact\s*?=\s*?"(.+?)"""".r("artifact")
   val BracketsContentGroup = "bracketsContent"
   val ExportsFilter = """(?s)exports\s*?=\s*?\[(.+?)\]""".r(BracketsContentGroup)
