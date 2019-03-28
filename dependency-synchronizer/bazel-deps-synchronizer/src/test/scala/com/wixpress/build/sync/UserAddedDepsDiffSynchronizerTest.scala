@@ -7,11 +7,11 @@ import com.wixpress.build.bazel.{FakeLocalBazelWorkspace, ImportExternalRule, In
 import com.wixpress.build.maven.FakeMavenDependencyResolver._
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven.{DependencyNode, _}
-import org.specs2.mutable.SpecificationWithJUnit
+import org.specs2.mutable.SpecWithJUnit
 import org.specs2.specification.Scope
 
 //noinspection TypeAnnotation
-class UserAddedDepsDiffSynchronizerTest extends SpecificationWithJUnit {
+class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
   "UserAddedDepsDiffSynchronizer" >> {
     "when persisting changes" should {
@@ -39,7 +39,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecificationWithJUnit {
         synchronizer.syncThirdParties(Set(artifactA).map(toDependency))
 
         targetRepoDriver.bazelExternalDependencyFor(artifactA).importExternalRule must beNone
-      }.pendingUntilFixed()
+      }
 
       "update local dep if requested is NOT identical to managed" in new ctx {
         targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA.withVersion("0.3"))))
@@ -59,7 +59,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecificationWithJUnit {
         synchronizer.syncThirdParties(Set(unrelatedArtifact).map(toDependency))
 
         targetRepoDriver .bazelExternalDependencyFor(artifactA).importExternalRule must beNone
-      }.pendingUntilFixed()
+      }
 
       "update dependency's version in local repo" in new ctx {
         targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))

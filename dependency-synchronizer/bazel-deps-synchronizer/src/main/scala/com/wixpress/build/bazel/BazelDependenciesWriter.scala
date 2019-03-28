@@ -20,10 +20,9 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
 
   def writeDependencies(dependenciesForThirdPartyReposFile: Set[BazelDependencyNode], dependenciesForThirdPartyFolder: Set[BazelDependencyNode], localDepsToDelete: Set[Coordinates]) = {
     writeThirdPartyFolderContent(dependenciesForThirdPartyFolder)
-    //localDepsToDelete.foreach(overwriteThirdPartyFolderFilesWithDeletedContent)
+    localDepsToDelete.foreach(overwriteThirdPartyFolderFilesWithDeletedContent)
 
-    //val noLongerUsedGroupIds = localDepsToDelete.filter(depToDelete => localWorkspace.thirdPartyImportTargetsFileContent(ImportExternalRule.ruleLocatorFrom(depToDelete)).isEmpty)
-    val noLongerUsedGroupIds = Set[Coordinates]()
+    val noLongerUsedGroupIds = localDepsToDelete.filter(depToDelete => localWorkspace.thirdPartyImportTargetsFileContent(ImportExternalRule.ruleLocatorFrom(depToDelete)).isEmpty)
     writeThirdPartyReposFile(dependenciesForThirdPartyReposFile, noLongerUsedGroupIds.map(_.groupIdForBazel))
   }
 

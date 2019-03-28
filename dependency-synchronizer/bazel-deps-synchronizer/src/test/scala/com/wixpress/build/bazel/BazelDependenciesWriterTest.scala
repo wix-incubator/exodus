@@ -423,7 +423,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val importExternalFileContent = localWorkspace.thirdPartyImportTargetsFileContent(otherArtifactGroup1.groupIdForBazel)
         importExternalFileContent must containRootScalaImportExternalRuleFor(otherArtifactGroup1)
         importExternalFileContent must not(containRootScalaImportExternalRuleFor(someArtifactGroup1))
-      }.pendingUntilFixed()
+      }
 
       "delete it's bzl file if no targets left and also delete it's load statement" in new depsToDeleteCtx {
         writeArtifactsAsRootDependencies(someArtifactGroup1, otherArtifactGroup2)
@@ -436,7 +436,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         val importExternalFileContent = localWorkspace.thirdPartyImportTargetsFileContent(someArtifactGroup1.groupIdForBazel)
         importExternalFileContent must beNone
-      }.pendingUntilFixed()
+      }
 
       "write 'pass' to third party file if left empty" in new depsToDeleteCtx{
         writeArtifactsAsRootDependencies(someArtifactGroup1)
@@ -444,7 +444,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         writer.writeDependencies(Set(), Set(), localDepsToDelete = Set(someArtifactGroup1))
 
         localWorkspace.thirdPartyReposFileContent() must contain("pass")
-      }.pendingUntilFixed()
+      }
     }
   }
 
