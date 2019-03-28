@@ -1,6 +1,6 @@
 package com.wixpress.build.maven
 
-case class Dependency(coordinates: Coordinates, scope: MavenScope, exclusions: Set[Exclusion] = Set.empty) {
+case class Dependency(coordinates: Coordinates, scope: MavenScope, isNeverLink: Boolean = false, exclusions: Set[Exclusion] = Set.empty) {
 
   def withExclusions(exclusions: Set[Exclusion]): Dependency = this.copy(exclusions = exclusions)
 
@@ -8,7 +8,9 @@ case class Dependency(coordinates: Coordinates, scope: MavenScope, exclusions: S
 
   def withVersion(version: String): Dependency = this.copy(coordinates = this.coordinates.copy(version = version))
 
-  def withScope(scope:MavenScope) : Dependency = this.copy(scope = scope)
+  def withScope(scope: MavenScope): Dependency = this.copy(scope = scope)
+
+  def withIsNeverLink(isNeverLink: Boolean): Dependency = this.copy(isNeverLink = isNeverLink)
 
   def equalsOnCoordinatesIgnoringVersion(dependency: Dependency): Boolean = dependency.coordinates.equalsIgnoringVersion(coordinates)
 

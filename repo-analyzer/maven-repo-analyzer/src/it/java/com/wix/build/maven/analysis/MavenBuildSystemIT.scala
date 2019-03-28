@@ -257,7 +257,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
     }
 
     "SourceModules with exclusion in dependencies" in new ctx {
-      def someDependency = Dependency(someCoordinates, MavenScope.Compile, Set(Exclusion("excluded.group", "excluded-artifact")))
+      def someDependency = Dependency(someCoordinates, MavenScope.Compile, false, Set(Exclusion("excluded.group", "excluded-artifact")))
 
       lazy val repo = Repo(SomeCodeModule.withDependencyOn(someDependency))
 

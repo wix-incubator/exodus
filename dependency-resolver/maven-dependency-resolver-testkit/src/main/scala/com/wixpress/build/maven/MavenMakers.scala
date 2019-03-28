@@ -34,23 +34,23 @@ object MavenMakers {
                         index: Int = Random.nextInt(),
                         withExclusions: Set[Exclusion] = Set.empty
                       ): Dependency =
-    Dependency(randomCoordinates(withVersion, artifactIdPrefix, index), withScope, withExclusions)
+    Dependency(randomCoordinates(withVersion, artifactIdPrefix, index), withScope, false, withExclusions)
 
   def someCoordinates(artifactId: String, packaging: Packaging = Packaging("jar")): Coordinates = Coordinates("some.group", artifactId, "some-version", packaging)
 
   def someProtoCoordinates(artifactId: String): Coordinates = Coordinates("some.group", artifactId, "some-version", packaging = Packaging("zip"), classifier = Some("proto"))
 
   def aDependency(artifactId:String,scope:MavenScope = MavenScope.Compile, exclusions: Set[Exclusion] = Set.empty) =
-    Dependency(someCoordinates(artifactId),scope, exclusions)
+    Dependency(someCoordinates(artifactId),scope, false, exclusions)
 
   def aPomArtifactDependency(artifactId:String,scope:MavenScope = MavenScope.Compile, exclusions: Set[Exclusion] = Set.empty) =
-    Dependency(someCoordinates(artifactId).copy(packaging = Packaging("pom")),scope, exclusions)
+    Dependency(someCoordinates(artifactId).copy(packaging = Packaging("pom")),scope, false, exclusions)
 
   def asCompileDependency(artifact: Coordinates, exclusions: Set[Exclusion] = Set.empty): Dependency =
-    Dependency(artifact, MavenScope.Compile, exclusions)
+    Dependency(artifact, MavenScope.Compile, false, exclusions)
 
   def asRuntimeDependency(artifact: Coordinates, exclusions: Set[Exclusion] = Set.empty): Dependency =
-    Dependency(artifact, MavenScope.Runtime, exclusions)
+    Dependency(artifact, MavenScope.Runtime, false, exclusions)
 
   def aTestArchiveTarDependency(artifactId: String): Dependency = Dependency(someCoordinates(artifactId).copy(packaging = Packaging("tar.gz")), MavenScope.Test)
 

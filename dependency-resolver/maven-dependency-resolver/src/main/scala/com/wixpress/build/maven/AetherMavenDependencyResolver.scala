@@ -196,6 +196,7 @@ object AetherDependencyConversions {
       Dependency(
         coordinates = aetherDependency.getArtifact.asCoordinates,
         scope = MavenScope.of(aetherDependency.getScope),
+        isNeverLink = false,
         exclusions = aetherDependency.getExclusions.asScala.map(_.asExclusion).toSet
       )
 

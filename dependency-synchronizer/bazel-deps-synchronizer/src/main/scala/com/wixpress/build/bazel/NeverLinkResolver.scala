@@ -20,7 +20,8 @@ class NeverLinkResolver(globalPotentiallyNeverLinkDependencies: Set[Coordinates]
                         localNeverlinkDependencies: Set[Coordinates] = Set.empty) {
   def isNeverLink(dependency: Dependency): Boolean = {
     globalPotentiallyNeverLinkDependencies.exists(dependency.coordinates.equalsIgnoringVersion) ||
-      dependency.scope == MavenScope.Provided
+      dependency.scope == MavenScope.Provided ||
+      dependency.isNeverLink
   }
 
   def isLinkable(artifact: Coordinates): Boolean = {

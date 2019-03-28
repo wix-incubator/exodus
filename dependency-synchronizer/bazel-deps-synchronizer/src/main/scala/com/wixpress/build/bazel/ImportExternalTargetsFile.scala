@@ -105,6 +105,12 @@ object ImportExternalTargetsFileReader {
     stillMaybeMatch.map(_.group("ruleName"))
   }
 
+  def extractNeverlink(ruleText: String) = {
+    val maybeMatch = NeverlinkFilter.findFirstMatchIn(ruleText)
+    maybeMatch.map(_.group("neverlink")).contains("1")
+  }
+
+
   def regexOfImportExternalRuleWithNameMatching(pattern: String) = {
     ("(?s)([^\\s]+)" + """\(\s*?name\s*?=\s*?"""" + pattern +"""",[\s#]*?artifact.*?\)""").r
   }
@@ -158,11 +164,6 @@ case class ImportExternalTargetsFileReader(content: String) {
   private def extractSrcChecksum(ruleText: String) = {
     val maybeMatch = SrcSha256Filter.findFirstMatchIn(ruleText)
     maybeMatch.map(_.group("src_checksum"))
-  }
-
-  private def extractNeverlink(ruleText: String) = {
-    val maybeMatch = NeverlinkFilter.findFirstMatchIn(ruleText)
-    maybeMatch.map(_.group("neverlink")).contains("1")
   }
 
   def findCoordinatesByName(name: String): Option[ValidatedCoordinates] = {

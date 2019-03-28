@@ -15,8 +15,9 @@ case class ImportExternalTargetsFilePartialDependencyNodesReader(content: String
       val exclusions = extractExclusions(importExternalTarget)
       val compileDeps = extractListByAttribute(CompileTimeDepsFilter, importExternalTarget)
       val runtimeDeps = extractListByAttribute(RunTimeDepsFilter, importExternalTarget)
+      val isNeverLink = ImportExternalTargetsFileReader.extractNeverlink(importExternalTarget)
 
-      PartialDependencyNode(Dependency(validatedCoordinates.coordinates, MavenScope.Compile, exclusions),
+      PartialDependencyNode(Dependency(validatedCoordinates.coordinates, MavenScope.Compile, isNeverLink, exclusions),
         compileDeps.flatMap(d => parseTargetDependency(d, MavenScope.Compile)) ++
           runtimeDeps.flatMap(d => parseTargetDependency(d, MavenScope.Runtime))
       )
@@ -80,7 +81,8 @@ case class AllImportExternalFilesDependencyNodesReader(filesContent: Set[String]
   private def transitiveDepFrom(partialDep: PartialDependency, baseDependencies: Set[Dependency], dependantArtifact: Coordinates):Either[Option[Dependency], String] = {
     def lookupDep: Option[Dependency] = {
       partialDep match {
-        case _: PartialPomAggregateDependency => pomAggregatesCoordinates.find(_.workspaceRuleName == partialDep.ruleName).map(Dependency(_, partialDep.scope))
+        //TODO - is this a bug?
+        case _: PartialPomAggregateDependency => pomAggregatesCoordinates.find(_.workspaceRuleName == partialDep.ruleName).map(Dependency(_, partialDep.scope, false))
         case _ => val maybeDependency = baseDependencies.find(_.coordinates.workspaceRuleName == partialDep.ruleName)
           maybeDependency.fold(externalDeps.find(_.coordinates.workspaceRuleName == partialDep.ruleName))(x => Option(x))
       }

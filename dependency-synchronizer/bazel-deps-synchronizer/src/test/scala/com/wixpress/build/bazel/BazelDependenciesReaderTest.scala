@@ -180,7 +180,7 @@ class BazelDependenciesReaderTest extends SpecificationWithJUnit {
     val reader = new BazelDependenciesReader(localWorkspace)
 
     def defaultDependency(groupId: String, artifactId: String, version: String, exclusion: Set[Exclusion] = Set.empty) =
-      Dependency(Coordinates(groupId, artifactId, version), MavenScope.Compile, exclusion)
+      Dependency(Coordinates(groupId, artifactId, version), MavenScope.Compile, false, exclusion)
 
     val artifact = someCoordinates("some-dep")
     val artifact2 = someCoordinates("some-dep2")
