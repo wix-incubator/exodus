@@ -14,6 +14,12 @@ case class Dependency(coordinates: Coordinates, scope: MavenScope, isNeverLink: 
 
   def equalsOnCoordinatesIgnoringVersion(dependency: Dependency): Boolean = dependency.coordinates.equalsIgnoringVersion(coordinates)
 
+  def equalsIgnoringNeverlink(dependency: Dependency): Boolean = {
+    this.coordinates == dependency.coordinates &&
+      this.scope == dependency.scope &&
+      this.exclusions == dependency.exclusions
+  }
+
   def shortSerializedForm() = s"${coordinates.groupId}:${coordinates.artifactId}"
 }
 

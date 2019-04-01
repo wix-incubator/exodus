@@ -32,6 +32,15 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
         targetRepoDriver.bazelExternalDependencyFor(artifactB).importExternalRule must beSome[ImportExternalRule]
       }
 
+      "only add unmanaged dependencies to local repo - neverlink in managed wins" in new ctx {
+        managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA).withIsNeverLink(true)))
+
+        synchronizer.syncThirdParties(Set(artifactA, artifactB).map(toDependency))
+
+        targetRepoDriver.bazelExternalDependencyFor(artifactA).importExternalRule must beNone
+        targetRepoDriver.bazelExternalDependencyFor(artifactB).importExternalRule must beSome[ImportExternalRule]
+      }
+
       "remove local dep if requested is equal to managed version" in new ctx {
         targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA.withVersion("0.3"))))
         managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))
@@ -39,6 +48,15 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
         synchronizer.syncThirdParties(Set(artifactA).map(toDependency))
 
         targetRepoDriver.bazelExternalDependencyFor(artifactA).importExternalRule must beNone
+      }
+
+      "don't remove local dep if requested has neverlink and managed does not" in new ctx {
+        targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA.withVersion("0.3")).withIsNeverLink(true)))
+        managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))
+
+        synchronizer.syncThirdParties(Set(artifactA).map(toDependency))
+
+        targetRepoDriver.bazelExternalDependencyFor(artifactA).importExternalRule must beSome[ImportExternalRule]
       }
 
       "update local dep if requested is NOT identical to managed" in new ctx {
