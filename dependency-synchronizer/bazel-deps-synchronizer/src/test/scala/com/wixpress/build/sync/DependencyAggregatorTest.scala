@@ -3,6 +3,7 @@ package com.wixpress.build.sync
 import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
+import com.wixpress.build.sync.DependencyAggregator.collectAffectedLocalNodesAndUserAddedNodes
 import org.specs2.mutable.SpecWithJUnit
 import org.specs2.specification.Scope
 
@@ -16,7 +17,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val localNodes = Set(aRootDependencyNode(localDependency.copy(exclusions = Set(Exclusion(transitiveDependency)))))
       val userAddedDeps = Set(localDependency)
       val userAddedNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
     }
 
     "include user-added node even though it is excluded by local node" in new ctx {
@@ -25,7 +26,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val localNodes = Set(aRootDependencyNode(localDependency.copy(exclusions = Set(Exclusion(excludedDependency)))))
       val userAddedDeps = Set(excludedDependency)
       val userAddedNodes = Set(aRootDependencyNode(excludedDependency))
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(excludedDependency))
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(excludedDependency))
     }
 
     "update to user-added versions for both base dependency and transitive dependencies if base dep has higher version" in new ctx {
@@ -37,7 +38,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(DependencyNode(addedDependency, Set(addedTransitiveDependency)), aRootDependencyNode(addedTransitiveDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
     "update snapshot version" in new ctx {
@@ -47,7 +48,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(localDependency)
       val userAddedNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
     "do not update to user-added versions if base dep has lower version" in new ctx {
@@ -59,7 +60,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(DependencyNode(addedDependency, Set(addedTransitiveDependency)), aRootDependencyNode(addedTransitiveDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual localNodes
     }
 
     "do not update to user-added versions if dep have the same version" in new ctx {
@@ -68,7 +69,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val localNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
       val addedTransitiveDependency = transitiveDependency.withVersion("2.0.1")
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, Set(localDependency), localNodes) mustEqual localNodes
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, Set(localDependency), localNodes) mustEqual localNodes
     }
 
     "remove local unique transitive deps on added base depndency with new version" in new ctx {
@@ -79,7 +80,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(aRootDependencyNode(addedDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
     "keep local unique transitive deps on added base depdendency with same version while not touching transitive root node" in new ctx {
@@ -91,7 +92,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(aRootDependencyNode(addedDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(localNode)
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual Set(localNode)
     }
 
     "keep identical transitive deps" in new ctx {
@@ -102,7 +103,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(addedDependency)
       val userAddedNodes = Set(DependencyNode(addedDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual userAddedNodes
     }
 
     // TODO can be removed in phase 2
@@ -117,7 +118,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(localDependency)
       val userAddedNodes = Set(DependencyNode(localDependency, Set(transitiveDependency)), aRootDependencyNode(transitiveDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
+      collectAffectedLocalNodesAndUserAddedNodes(sourceModules, localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
     }
 
     // TODO can be removed in phase 2
@@ -130,7 +131,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(localDependency)
       val userAddedNodes = Set(aRootDependencyNode(localDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
+      collectAffectedLocalNodesAndUserAddedNodes(sourceModules, localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
 
     }
 
@@ -144,7 +145,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(warDependency, localDependency)
       val userAddedNodes = Set(DependencyNode(warDependency, Set(localDependency)), aRootDependencyNode(localDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
     }
 
     "filter our transitive dep with 'war' packaging" in new ctx {
@@ -157,7 +158,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(localDependency, warDependency)
       val userAddedNodes = Set(DependencyNode(localDependency, Set(warDependency)), aRootDependencyNode(warDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual Set(aRootDependencyNode(localDependency))
     }
 
     "filter our direct dep with 'WAR' packaging" in new ctx {
@@ -168,7 +169,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       val userAddedDeps = Set(warDependency)
       val userAddedNodes = Set(aRootDependencyNode(warDependency))
 
-      aggregator.collectAffectedLocalNodesAndUserAddedNodes(localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
+      collectAffectedLocalNodesAndUserAddedNodes(Set(), localNodes, userAddedDeps, userAddedNodes) mustEqual Set()
     }
   }
 
@@ -177,12 +178,9 @@ class DependencyAggregatorTest extends SpecWithJUnit {
 
     val artifactA = Coordinates("com.aaa", "A-direct", "1.0.0")
     val artifactB = Coordinates("com.bbb", "B-direct", "2.0.0")
-
-    def aggregator = new DependencyAggregator(Set[SourceModule]())
   }
 
   trait sourceModulesCtx extends ctx {
     def sourceModules: Set[SourceModule]
-    override def aggregator = new DependencyAggregator(sourceModules)
   }
 }

@@ -4,6 +4,7 @@ import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository}
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksum
+import com.wixpress.build.sync.DependencyAggregator.collectAffectedLocalNodesAndUserAddedNodes
 import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
 
@@ -49,7 +50,8 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
     val currentClosure = readCurrentClosure(externalDependencyNodes = managedNodes)
 
     val addedClosure = resolveUserAddedDependencyNodes(userAddedMavenDeps)
-    val aggregateAffectedNodes = new DependencyAggregator(mavenModulesToTreatAsSourceDeps).collectAffectedLocalNodesAndUserAddedNodes(localNodes = currentClosure, userAddedMavenDeps, addedNodes = addedClosure)
+
+    val aggregateAffectedNodes = collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps, currentClosure, userAddedMavenDeps, addedClosure)
     val updatedLocalNodes = calculateAffectedDivergentFromManaged(managedNodes, aggregateAffectedNodes)
 
     val depsToLazyClean = calculateNodesIdenticalToManaged(managedNodes, currentClosure)
@@ -117,17 +119,22 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
   }
 }
 
-class DependencyAggregator(mavenModulesToTreatAsSourceDeps: Set[SourceModule]) {
+object DependencyAggregator {
   private val log = LoggerFactory.getLogger(getClass)
 
 
-  def collectAffectedLocalNodesAndUserAddedNodes(localNodes: Set[DependencyNode], addedDeps: Set[Dependency], addedNodes: Set[DependencyNode]): Set[DependencyNode] = {
+  def collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps: Set[SourceModule],
+                                                 localClosure: Set[DependencyNode],
+                                                 addedDeps: Set[Dependency],
+                                                 addedClosure: Set[DependencyNode]
+                                                ): Set[DependencyNode] = {
     log.info("combine userAddedDependencies with local dependencies...")
 
-    val nonWarNodes = filterNotWarDeps(addedNodes)
-    val externalAddedNodes = filterNotLocalSourceModules(nonWarNodes)
-    val newAddedNodesThatAreNotExcludedLocally = newNodesWithLocalExclusionsFilteredOut(externalAddedNodes, localNodes, addedDeps)
-    val updatedLocalNodes = updateLocalNodesWithAddedDepsVersions(externalAddedNodes, localNodes)
+    val nonWarNodes = filterNotWarDeps(addedClosure)
+    val actualClosureToAdd = filterNotLocalSourceModules(mavenModulesToTreatAsSourceDeps, nonWarNodes)
+
+    val newAddedNodesThatAreNotExcludedLocally = newNodesWithLocalExclusionsFilteredOut(actualClosureToAdd, localClosure, addedDeps)
+    val updatedLocalNodes = updateLocalNodesWithAddedDepsVersions(actualClosureToAdd, localClosure)
 
     updatedLocalNodes ++ newAddedNodesThatAreNotExcludedLocally
   }
@@ -143,16 +150,16 @@ class DependencyAggregator(mavenModulesToTreatAsSourceDeps: Set[SourceModule]) {
       })
   }
 
-  private def filterNotLocalSourceModules(addedNodes: Set[DependencyNode]) = {
+  private def filterNotLocalSourceModules(mavenModulesToTreatAsSourceDeps: Set[SourceModule], addedNodes: Set[DependencyNode]) = {
     new GlobalExclusionFilterer(mavenModulesToTreatAsSourceDeps.map(_.coordinates)).filterGlobalsFromDependencyNodes(addedNodes)
   }
 
-  private def newNodesWithLocalExclusionsFilteredOut(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode], addedDeps: Set[Dependency]) = {
-    val newNodes = addedNodes.filterNot(n => {
-      localNodes.exists(l => l.baseDependency.coordinates.equalsIgnoringVersion(n.baseDependency.coordinates))
+  private def newNodesWithLocalExclusionsFilteredOut(addedClosure: Set[DependencyNode], localClosure: Set[DependencyNode], addedDeps: Set[Dependency]) = {
+    val newNodes = addedClosure.filterNot(n => {
+      localClosure.exists(l => l.baseDependency.coordinates.equalsIgnoringVersion(n.baseDependency.coordinates))
     })
     val newNonExcludedNodes = newNodes.filterNot(n => {
-      localNodes.exists(l =>
+      localClosure.exists(l =>
         l.baseDependency.exclusions.exists(e => e.equalsCoordinates(n.baseDependency.coordinates)) &&
           !addedDeps.contains(n.baseDependency))
     })
@@ -160,7 +167,7 @@ class DependencyAggregator(mavenModulesToTreatAsSourceDeps: Set[SourceModule]) {
     newNonExcludedNodes
   }
 
-  private def updateLocalNodesWithAddedDepsVersions(addedNodes: Set[DependencyNode], localNodes: Set[DependencyNode]) = {
+  private def updateLocalNodesWithAddedDepsVersions(addedClosure: Set[DependencyNode], localClosure: Set[DependencyNode]) = {
     def resolveHighestVersion(node: Dependency*) = {
       node.toSet.maxBy{d: Dependency => new ComparableVersion(d.coordinates.version)}
     }
@@ -173,27 +180,26 @@ class DependencyAggregator(mavenModulesToTreatAsSourceDeps: Set[SourceModule]) {
     }
 
     def updateDependencies(localNode: DependencyNode, addedNode: DependencyNode, depWithHighestVersion: Dependency) = {
-      val addedIncludedDependencies = addedNode.dependencies.filterNot(node => {
-        localNode.baseDependency.exclusions.exists(e => e.equalsCoordinates(node.coordinates))
-      })
-
-
-      if ((localNode.baseDependency.coordinates == addedNode.baseDependency.coordinates ||
-        depWithHighestVersion == localNode.baseDependency) && !addedNode.baseDependency.version.contains("-SNAPSHOT"))
+      if (
+        (localNode.baseDependency.coordinates == addedNode.baseDependency.coordinates || depWithHighestVersion == localNode.baseDependency) &&
+          !addedNode.baseDependency.version.contains("-SNAPSHOT")
+      )
         localNode.dependencies
       else {
-        addedIncludedDependencies
+        addedNode.dependencies.filterNot(node => {
+          localNode.baseDependency.exclusions.exists(e => e.equalsCoordinates(node.coordinates))
+        })
       }
     }
 
-    localNodes.flatMap(l => {
-      val nodeToAdd = addedNodes.find(n => n.baseDependency.coordinates.equalsIgnoringVersion(l.baseDependency.coordinates))
-      nodeToAdd.map(n => {
-        val depWithHighestVersion: Dependency = resolveHighestVersion(l.baseDependency, n.baseDependency)
+    localClosure.flatMap(localNode => {
+      val nodeToAdd = addedClosure.find(n => n.baseDependency.coordinates.equalsIgnoringVersion(localNode.baseDependency.coordinates))
+      nodeToAdd.map(node => {
+        val depWithHighestVersion: Dependency = resolveHighestVersion(localNode.baseDependency, node.baseDependency)
 
-        l.copy(
-          baseDependency = updateBaseDependency(l, n, depWithHighestVersion),
-          dependencies = updateDependencies(l, n, depWithHighestVersion))
+        localNode.copy(
+          baseDependency = updateBaseDependency(localNode, node, depWithHighestVersion),
+          dependencies = updateDependencies(localNode, node, depWithHighestVersion))
       })
     })
   }
