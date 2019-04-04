@@ -54,12 +54,15 @@ class MavenRepoRemoteStorage(baseUrls: List[String])extends DependenciesRemoteSt
   }
 
   private def getJarArtifactIOFor(artifact: Coordinates, baseUrl: String) = {
+    val url = s"$baseUrl/${artifact.toArtifactPath}"
     Try {
-      val url = s"$baseUrl/${artifact.toArtifactPath}"
       Http(url).asBytes
     } match {
       case Success(response) => Success(response)
-      case Failure(ex) => printAndFail(ex)
+      case Failure(ex) => {
+        log.warn(s"~~~~${url}")
+        printAndFail(ex)
+      }
     }
   }
 
