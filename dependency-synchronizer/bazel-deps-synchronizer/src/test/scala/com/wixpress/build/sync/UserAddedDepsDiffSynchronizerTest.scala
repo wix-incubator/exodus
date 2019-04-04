@@ -14,7 +14,7 @@ import org.specs2.specification.Scope
 class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
   "UserAddedDepsDiffSynchronizer" should {
-    //"when persisting changes" should {
+    "when persisting changes" should {
       "add third party dependencies to repo" in new ctx {
         val newArtifacts = Set(artifactA, artifactB)
 
@@ -106,8 +106,8 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
         spyDiffWriter.timesCalled must_==(0)
       }
-    //}
-/*
+    }
+
     "when calculating diff" should {
 
       //TODO - these 2 tests to be extracted to a new UserAddedDepsDiffCalculatorTest
@@ -124,7 +124,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
         userAddedDepsDiffCalculator.resolveUpdatedLocalNodes(Set()).preExistingLocalNodes must contain(DependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))))
       }
-    }*/
+    }
   }
 
   trait ctx extends Scope {
@@ -149,14 +149,14 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
     val resolver = givenFakeResolverForDependencies(rootDependencies = Set(asCompileDependency(dependencyManagementCoordinates)))
     val userAddedDepsDiffCalculator = new UserAddedDepsDiffCalculator(targetFakeBazelRepository, managedDepsFakeBazelRepository,
-      dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule]())
+      resolver, _ => None, Set[SourceModule]())
 
     def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver()))
   }
 
   trait linkableCtx extends ctx {
     def synchronizerWithLinkableArtifact(artifact: Coordinates) = new UserAddedDepsDiffSynchronizer(new UserAddedDepsDiffCalculator(
-      targetFakeBazelRepository, managedDepsFakeBazelRepository, dependencyManagementCoordinates, resolver, _ => None, Set[SourceModule]()),
+      targetFakeBazelRepository, managedDepsFakeBazelRepository, resolver, _ => None, Set[SourceModule]()),
       DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact))))
   }
 

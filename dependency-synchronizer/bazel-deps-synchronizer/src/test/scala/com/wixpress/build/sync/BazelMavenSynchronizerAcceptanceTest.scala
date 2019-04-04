@@ -206,7 +206,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         synchronizer.sync(dependencyManagementCoordinates,Set(baseDependency))
 
         bazelWorkspace must includeImportExternalTargetWith(artifact = baseDependency.coordinates,
-          compileTimeDependencies = Set(transitiveDependency.coordinates),
+          compileTimeDependenciesIgnoringVersion = Set(transitiveDependency.coordinates),
           runtimeDependencies = Set.empty
         )
       }

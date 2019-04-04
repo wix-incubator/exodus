@@ -39,7 +39,7 @@ trait DiffCalculatorAndAggregator {
 }
 
 class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManagedDependencies: BazelRepository,
-                                  mavenManagedDependenciesArtifact: Coordinates, aetherResolver: MavenDependencyResolver,
+                                  aetherResolver: MavenDependencyResolver,
                                   remoteStorage: DependenciesRemoteStorage,
                                   mavenModulesToTreatAsSourceDeps: Set[SourceModule]) extends DiffCalculatorAndAggregator {
 
@@ -49,9 +49,9 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
     val managedNodes = readManagedNodes()
     val currentClosure = readCurrentClosure(externalDependencyNodes = managedNodes)
 
-    val addedClosure = resolveUserAddedDependencyNodes(userAddedMavenDeps)
+    val addedMavenClosure = resolveMavenUserAddedDependencyNodes(userAddedMavenDeps, currentClosure, managedNodes)
 
-    val aggregateAffectedNodes = collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps, currentClosure, userAddedMavenDeps, addedClosure)
+    val aggregateAffectedNodes = collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps, currentClosure, userAddedMavenDeps, addedMavenClosure)
     val updatedLocalNodes = calculateAffectedDivergentFromManaged(managedNodes, aggregateAffectedNodes)
 
     val depsToLazyClean = calculateNodesIdenticalToManaged(managedNodes, currentClosure)
@@ -76,14 +76,13 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
     localRepoReader.allDependenciesAsMavenDependencyNodes(externalDependencyNodes.map(_.baseDependency))
   }
 
-  private def resolveUserAddedDependencyNodes(userAddedDependencies: Set[Dependency]) = {
-    log.info(s"obtain managed Dependencies From Maven for userAddedDependencies closure calculation... (requires VPN for access to ${mavenManagedDependenciesArtifact.shortSerializedForm()})")
-    val managedDependenciesFromMaven = aetherResolver
-      .managedDependenciesOf(mavenManagedDependenciesArtifact)
-      .forceCompileScope
+  private def resolveMavenUserAddedDependencyNodes(userAddedDependencies: Set[Dependency], currentClosure: Set[DependencyNode], managedNodes: Set[DependencyNode]) = {
+    val currentClosureFiltered = currentClosure.map(_.baseDependency).filterNot(_.version.contains("-SNAPSHOT"))
+    val managedNodesThatAreNotPresentLocally = managedNodes.filterNot(man => currentClosureFiltered.exists(_.equalsOnCoordinatesIgnoringVersion(man.baseDependency))).map(_.baseDependency)
+    val addedMavenClosureLocalOverManaged = managedNodesThatAreNotPresentLocally ++ currentClosureFiltered
 
     log.info("resolve userAddedDependencies full closure...")
-    aetherResolver.dependencyClosureOf(userAddedDependencies, managedDependenciesFromMaven)
+    aetherResolver.dependencyClosureOf(userAddedDependencies, addedMavenClosureLocalOverManaged)
   }
 
   private def calculateNodesIdenticalToManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[DependencyNode] = {

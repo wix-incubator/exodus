@@ -108,7 +108,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       localWorkspace must includeImportExternalTargetWith(
         artifact = divergentDependency.coordinates,
-        compileTimeDependencies = Set(divergentTransitiveDependency.coordinates))
+        compileTimeDependenciesIgnoringVersion = Set(divergentTransitiveDependency.coordinates))
 
       localWorkspace must includeImportExternalTargetWith(divergentTransitiveDependency.coordinates)
     }
@@ -129,7 +129,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
       localWorkspace must includeImportExternalTargetWith(
         artifact = managedDependency.coordinates,
-        compileTimeDependencies = Set(divergentTransitiveDependency.coordinates))
+        compileTimeDependenciesIgnoringVersion = Set(divergentTransitiveDependency.coordinates))
 
       localWorkspace must includeImportExternalTargetWith(divergentTransitiveDependency.coordinates)
     }

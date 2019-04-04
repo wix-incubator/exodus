@@ -108,7 +108,7 @@ object BazelWorkspaceDriver {
 
   def includeImportExternalTargetWith(artifact: Coordinates,
                                       runtimeDependencies: Set[Coordinates] = Set.empty,
-                                      compileTimeDependencies: Set[Coordinates] = Set.empty,
+                                      compileTimeDependenciesIgnoringVersion: Set[Coordinates] = Set.empty,
                                       exclusions: Set[Exclusion] = Set.empty,
                                       checksum: Option[String] = None,
                                       coordinatesToDep: Coordinates => BazelDep = resolveDepBy,
@@ -119,7 +119,7 @@ object BazelWorkspaceDriver {
       importExternalRule = Some(importExternalRuleWith(
         artifact = artifact,
         runtimeDependencies = runtimeDependencies,
-        compileTimeDependencies = compileTimeDependencies,
+        compileTimeDependencies = compileTimeDependenciesIgnoringVersion,
         exclusions = exclusions,
         checksum = checksum,
         coordinatesToDep,
