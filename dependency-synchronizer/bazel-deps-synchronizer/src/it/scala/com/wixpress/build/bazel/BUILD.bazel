@@ -1,0 +1,30 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_mixed_test(
+    name = "bazel",
+    srcs = [
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/it/scala/com/wixpress/build/bazel:sources",
+    ],
+    data = ["//dependency-synchronizer/bazel-deps-synchronizer:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //dependency-synchronizer/bazel-deps-synchronizer:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
+        "//dependency-synchronizer/bazel-deps-synchronizer:tests_dependencies",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/it/scala/com/wixpress/build/sync/e2e",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/sync",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/bazel",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "@com_fasterxml_jackson_core_jackson_annotations",
+        "@com_fasterxml_jackson_core_jackson_core",
+        "@com_fasterxml_jackson_core_jackson_databind",
+        "@com_github_pathikrit_better_files_2_12",
+    ],
+)
+
+sources()

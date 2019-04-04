@@ -1,0 +1,42 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "main_dependencies",
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver:main_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-api:main_dependencies",
+        "//migrator/bazel-migrator-model:main_dependencies",
+        "//models/maven-bazel-model-translation:main_dependencies",
+        "//models/maven-model:main_dependencies",
+        "//wix-bazel-repositories/bazel-repositories-core:main_dependencies",
+        "@com_fasterxml_jackson_core_jackson_core",
+        "@com_fasterxml_jackson_core_jackson_databind",
+        "@com_fasterxml_jackson_module_jackson_module_scala_2_12",
+        "@com_github_pathikrit_better_files_2_12",
+        "@org_apache_maven_maven_artifact",
+        "@org_codehaus_plexus_plexus_container_default",
+        "@org_eclipse_jgit_org_eclipse_jgit",
+        "@org_scala_lang_scala_library",
+        "@org_scalaj_scalaj_http_2_12",
+    ],
+)
+
+scala_library(
+    name = "tests_dependencies",
+    testonly = 1,
+    runtime_deps = [
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/it/resources",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/resources",
+    ],
+    deps = [
+        "main_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
+        "@com_gitblit_gitblit",
+        "@com_github_tomakehurst_wiremock",
+    ],
+)
+
+filegroup(
+    name = "coordinates",
+    srcs = ["MANIFEST.MF"],
+)

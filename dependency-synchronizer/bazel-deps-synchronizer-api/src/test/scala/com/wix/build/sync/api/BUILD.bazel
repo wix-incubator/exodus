@@ -1,0 +1,19 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "api",
+    srcs = [
+        "//dependency-synchronizer/bazel-deps-synchronizer-api/src/test/scala/com/wix/build/sync/api:sources",
+    ],
+    data = ["//dependency-synchronizer/bazel-deps-synchronizer-api:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //dependency-synchronizer/bazel-deps-synchronizer-api:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-synchronizer/bazel-deps-synchronizer-api:tests_dependencies",
+        "//dependency-synchronizer/bazel-deps-synchronizer-api/src/main/scala/com/wix/build/sync/api",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+sources()
