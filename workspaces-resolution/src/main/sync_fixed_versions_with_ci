@@ -5,6 +5,8 @@ import os
 import logging
 from shutil import copyfile
 
+sys.dont_write_bytecode = True
+
 from resolving_lib.resolving_utils import read_current_branch, write_symlink_to_path, run_process
 from resolving_lib.resolving_files_paths import (does_non_empty_file_exist,
                                                  git_tracked_starlark_file_partial_path,
@@ -17,7 +19,6 @@ from resolving_lib.resolving_from_server import create_versions_files_from_serve
 from python_utils.output_to_shell import (OutputToShell, print_message)
 from python_utils.logger import set_logging_level
 
-sys.dont_write_bytecode = True
 workspace_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 set_logging_level()
@@ -35,17 +36,16 @@ def main():
             output = ("Local versions file synced to CI for branch {branch_name}\n"
                       "Please push the created versions file to branch {branch_name}\n"
                       "To detach local versions from CI, please delete the created versions file and git push the change") \
-                .format(branch_name=read_current_branch())
+                .format(branch_name=read_current_branch(original_name=True))
         else:
             create_local_cache_folder_if_needed()
-            current_branch = read_current_branch()
+            current_branch = read_current_branch(original_name=True)
             output = ("Git tracked versions file already exists for branch {branch_name}\n"
                       "Rebuilding local cache pointers to git tracked versions file {file_path}\n"
                       "Make sure you pushed the git tracked versions file to branch {branch_name}")\
                 .format(file_path=git_tracked_starlark_file_partial_path(current_branch), branch_name=current_branch)
     except Exception as error:
-        print_message("Oops... something went wrong: {}. Please contact CI team for support".format(error))
-        sys.exit(1)
+        sys.exit("Oops... something went wrong: {}. Please contact CI team for support".format(error))
     write_local_cache_symlinks()
     logging.debug("Versions files synced!!!")
     stage_versions_file_if_needed()
