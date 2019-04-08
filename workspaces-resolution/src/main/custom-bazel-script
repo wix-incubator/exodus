@@ -9,10 +9,9 @@ while [[ "${WORKSPACE_DIR}" != / ]]; do
 done
 
 ARGUMENTS=$@
-function contains() {
+function contains_quiet_command() {
     QUERY_COMMAND="query"
     INFO_COMMAND="info"
-    CLEAN_COMMAND="clean"
     for ARG in ${ARGUMENTS[@]}
     do
         if [ "$ARG" = "$QUERY_COMMAND" -o "$ARG" = "$INFO_COMMAND" -o "$ARG" = "$CLEAN_COMMAND" ]; then
@@ -22,7 +21,18 @@ function contains() {
     return 1
 }
 
-if contains; then
+function contains_preventing_command() {
+    CLEAN_COMMAND="clean"
+    for ARG in ${ARGUMENTS[@]}
+    do
+        if [ "$ARG" = "$CLEAN_COMMAND" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+if contains_quiet_command; then
     SUPPRESS_PRINTS=True
 else
     SUPPRESS_PRINTS=False
@@ -36,6 +46,8 @@ if [ -f $LOAD_THIRD_PARTIES_FILE ]; then
     python $LOAD_THIRD_PARTIES_FILE ${WORKSPACE_DIR}
 fi
 
-python ${WORKSPACE_DIR}/tools/resolve_2nd_party_repositories.py ${WORKSPACE_DIR} ${SUPPRESS_PRINTS}
+if ! contains_preventing_command; then
+    python ${WORKSPACE_DIR}/tools/resolve_2nd_party_repositories.py ${WORKSPACE_DIR} ${SUPPRESS_PRINTS}
+fi
 
 exec -a "bazel-after-workspace-resolve" "${BAZEL_REAL}" "$@"
