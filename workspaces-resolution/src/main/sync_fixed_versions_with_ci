@@ -9,10 +9,10 @@ from resolving_lib.resolving_utils import read_current_branch, write_symlink_to_
 from resolving_lib.resolving_files_paths import (does_non_empty_file_exist,
                                                  git_tracked_starlark_file_partial_path,
                                                  local_cache_symlink_path,
-                                                 tools_relative_path,
-                                                 starlark_file_name_postfix,
-                                                 git_tracked_versions_folder,
-                                                 local_cache_versions_folder)
+                                                 TOOLS_RELATIVE_PATH,
+                                                 STARLARK_FILE_NAME_POSTFIX,
+                                                 GIT_TRACKED_VERSIONS_FOLDER,
+                                                 LOCAL_CACHE_VERSIONS_FOLDER)
 from resolving_lib.resolving_from_server import create_versions_files_from_server
 from python_utils.output_to_shell import (OutputToShell, print_message)
 from python_utils.logger import set_logging_level
@@ -99,24 +99,24 @@ def create_paths():
     global local_cache_versions_file_path, git_tracked_versions_file_path, git_tracked_folder_path, local_cache_folder_path
     local_cache_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
         workspace_dir=workspace_dir,
-        tools=tools_relative_path,
-        versions_folder=local_cache_versions_folder,
+        tools=TOOLS_RELATIVE_PATH,
+        versions_folder=LOCAL_CACHE_VERSIONS_FOLDER,
         branch=current_branch,
-        postfix=starlark_file_name_postfix)
+        postfix=STARLARK_FILE_NAME_POSTFIX)
     git_tracked_versions_file_path = "{workspace_dir}{tools}{versions_folder}/{branch}{postfix}".format(
         workspace_dir=workspace_dir,
-        tools=tools_relative_path,
-        versions_folder=git_tracked_versions_folder,
+        tools=TOOLS_RELATIVE_PATH,
+        versions_folder=GIT_TRACKED_VERSIONS_FOLDER,
         branch=current_branch,
-        postfix=starlark_file_name_postfix)
+        postfix=STARLARK_FILE_NAME_POSTFIX)
     git_tracked_folder_path = "{workspace_dir}{tools}{versions_folder}".format(
         workspace_dir=workspace_dir,
-        tools=tools_relative_path,
-        versions_folder=git_tracked_versions_folder)
+        tools=TOOLS_RELATIVE_PATH,
+        versions_folder=GIT_TRACKED_VERSIONS_FOLDER)
     local_cache_folder_path = "{workspace_dir}{tools}{versions_folder}".format(
         workspace_dir=workspace_dir,
-        tools=tools_relative_path,
-        versions_folder=local_cache_versions_folder)
+        tools=TOOLS_RELATIVE_PATH,
+        versions_folder=LOCAL_CACHE_VERSIONS_FOLDER)
 
 
 if __name__ == "__main__":
