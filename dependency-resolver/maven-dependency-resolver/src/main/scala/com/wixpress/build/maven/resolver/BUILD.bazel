@@ -1,0 +1,22 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "resolver",
+    srcs = [
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven/resolver:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver:main_dependencies",
+        "@org_apache_maven_maven_resolver_provider",
+        "@org_apache_maven_resolver_maven_resolver_api",
+        "@org_apache_maven_resolver_maven_resolver_connector_basic",
+        "@org_apache_maven_resolver_maven_resolver_impl",
+        "@org_apache_maven_resolver_maven_resolver_spi",
+        "@org_apache_maven_resolver_maven_resolver_transport_file",
+        "@org_apache_maven_resolver_maven_resolver_transport_http",
+    ],
+)
+
+sources()

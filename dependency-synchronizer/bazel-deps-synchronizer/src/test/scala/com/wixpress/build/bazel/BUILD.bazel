@@ -1,0 +1,22 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "bazel",
+    srcs = [
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/test/scala/com/wixpress/build/bazel:sources",
+    ],
+    data = ["//dependency-synchronizer/bazel-deps-synchronizer:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //dependency-synchronizer/bazel-deps-synchronizer:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//dependency-synchronizer/bazel-deps-synchronizer:tests_dependencies",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+sources()

@@ -1,0 +1,20 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "registry",
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/test/scala/com/wix/bazel/migrator/external/registry:sources",
+    ],
+    data = ["//migrator/wix-bazel-migrator:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/wix-bazel-migrator:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//migrator/wix-bazel-migrator:tests_dependencies",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/external/registry",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+sources()

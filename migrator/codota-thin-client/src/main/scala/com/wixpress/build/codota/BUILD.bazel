@@ -1,0 +1,22 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "codota",
+    srcs = [
+        "//migrator/codota-thin-client/src/main/scala/com/wixpress/build/codota:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/codota-thin-client:main_dependencies",
+        "@com_fasterxml_jackson_core_jackson_annotations",
+        "@com_fasterxml_jackson_core_jackson_core",
+        "@com_fasterxml_jackson_core_jackson_databind",
+        "@com_fasterxml_jackson_module_jackson_module_scala_2_12",
+        "@org_scala_lang_scala_reflect",
+        "@org_scalaj_scalaj_http_2_12",
+        "@org_slf4j_slf4j_api",
+    ],
+)
+
+sources()

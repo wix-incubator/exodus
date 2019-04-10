@@ -1,0 +1,1 @@
+git checkout origin/exploration-tests-phase2 -- exploration_tests

@@ -1,0 +1,139 @@
+
+:toc: macro
+:toc-title:
+:toclevels: 99
+= Running bazel locally
+
+So Jenkins created a beautiful migration branch and you want to feel it locally.
+
+.Checklist
+* Checkout the migration branch
+* Verify you have bazel installed (with version `0.20.0)
+* Clean any `BUILD.bazel` files from maven output folders:
+```
+find . -path "*/target/*BUILD.bazel" -exec rm -f {} \;
+```
+
+.Important note
+[NOTE]
+==========================
+Any `bazel build` / `bazel test` command should be run somewhere inside the project folder
+==========================
+
+toc::[]
+
+== FAQ
+
+
+=== which version of bazel do I have?
+Run `bazel version`
+++++
+<div><pre>
+$> bazel version
+..................
+Build label: <font color="blue"><b>0.20.0</b></font>
+Build target: bazel-out/k8-opt/bin/src/main/java/com/google/devtools/build/lib/bazel/BazelServer_deploy.jar
+Build time: Fri Nov 30 14:39:01 2018 (1543588741)
+Build timestamp: 1543588741
+Build timestamp as int: 1543588741
+</pre></div>
+++++
+=== how to install/upgrade bazel?
+To install:
+++++
+<div><pre>
+    - $> brew tap bazelbuild/tap
+    - $> brew tap-pin bazelbuild/tap
+    - $> brew install bazelbuild/tap/bazel
+    - $> mkdir -p /usr/local/lib/jvm
+    - $> ln -fs $JAVA_HOME /usr/local/lib/jvm/java-8-latest
+</pre></div>
+++++
+To upgrade:
+    $> brew upgrade bazelbuild/tap/bazel
+
+=== What is the "migration branch" you are talking about?
+Upon successful migration - jenkins creates a migration branch with the name `bazel-mig-N` where N is the run number in Jenkins of the `migrate` job.
+
+=== How to compile locally?
+You can compile everything, some subproject or specific target (What is label and what is target? - link)
+++++
+<div><pre>
+# whole project
+bazel build //...
+<br/>
+# sub-project
+bazel build //path/prefix/...
+<br/>
+# specific unit test target
+bazel build <font color="blue">((label))</font>
+</pre></div>
+++++
+When you build sub-project or specific label - bazel would build any dependency you need
+
+=== how to test project locally?
+Unfortunately we need to split test run to UT and IT and each has different set of flags (see why in the next FAQ).<br>
+See [more documentation on this](troubleshooting-sandbox-failures.md#what-is-sandboxing)
+
+==== to run unit tests
+++++
+<div><pre>
+# whole project
+bazel test --test_tag_filters=UT,-IT //...
+<br/>
+# sub-project
+bazel test --test_tag_filters=UT,-IT //subproject/...
+<br/>
+# specific unit test target
+bazel test ((label))
+</pre></div>
+++++
+
+==== to run integration tests
+++++
+<div><pre>
+# whole project
+bazel test --test_tag_filters=IT --strategy=TestRunner=standalone --jobs=1 //...
+<br/>
+# sub-project
+bazel test --test_tag_filters=IT --strategy=TestRunner=standalone --jobs=1 //subproject/...
+<br/>
+# specific unit test target
+bazel test --strategy=TestRunner=standalone --jobs=1 <font color="blue">((label))</font>
+</pre></div>
+++++
+
+==== alternitavely run with 1 command:
+`bazel test //... --local_test_jobs=1`
+This will run only 1 test at a given time. Useful for example if you're running a target with few unit tests and many e2e's.
+
+=== For Linux developers - how to test project locally?
+All you need to do is activate user namespaces. 
+This will give you sandboxing capabilities, and then you can already start using `bazel test //...`
+
+-  To check - `cat /proc/sys/kernel/unprivileged_userns_clone` - should output 1. 
+-  If not run the command: `sudo sysctl kernel.unprivileged_userns_clone=1`
+-  If you are running on Debian or value was reset to 0 after reboot:
+    ** sudo echo 'kernel.unprivileged_userns_clone=1' > /etc/sysctl.d/00-local-userns.conf
+    ** service procps restart
+-  If you want to verify sandbox is actually working:
+     ** git clone git@github.com:ittaiz/bazel-port-isolation.git
+     ** run `bazel test //...` - it should pass
+
+
+=== Why do I need all these flags???!
+The ideal way to tell bazel to run all tests in your project is `bazel test //...`
+This would parallelize the execution and run each test in hermetic sandbox
+But bazel cannot reach to full network isolation on mac (due to OS limitation) and unfortunately our IT and E2E tests use the same common ports
+So when running IT we tell bazel to run sequentially (`--jobs=1`). Disabling the sandbox (`--strategy=TestRunner=standalone`) is due to a a few hermeticity problems we're investigating currently (sockets and docker).  
+
+=== Don't you have a script that does it all?
+Yes we do. Implemented in framework [repository](https://github.com/wix-platform/wix-framework/blob/master/bazel-run.sh)
+Since we're actively working on having you be able to use `bazel test //...` without the script we prefer you get familiar with bazel native CLI.
+In any case you are welcomed to copy that script to your repository.
+
+---
+
+
+== Missing from this guide
+- how to build / test from intellij

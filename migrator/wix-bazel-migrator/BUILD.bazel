@@ -1,0 +1,48 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "main_dependencies",
+    runtime_deps = [
+        "//migrator/wix-bazel-migrator/src/main/resources",
+    ],
+    deps = [
+        "//dependency-synchronizer/bazel-deps-synchronizer:main_dependencies",
+        "//migrator/bazel-external-graph-transformer:main_dependencies",
+        "//migrator/bazel-migrator:main_dependencies",
+        "//migrator/codota-thin-client:main_dependencies",
+        "//repo-analyzer/maven-repo-analyzer:main_dependencies",
+        # "//wix-bazel-repositories/bazel-repositories-core:main_dependencies",
+        "@ch_qos_logback_logback_classic",
+        "@com_codota_codota_sdk_java",
+        "@com_fasterxml_jackson_core_jackson_annotations",
+        "@com_fasterxml_jackson_core_jackson_databind",
+        "@com_fasterxml_jackson_module_jackson_module_scala_2_12",
+        "@com_github_scopt_scopt_2_12",
+        "@org_scalaj_scalaj_http_2_12",
+    ],
+)
+
+scala_library(
+    name = "tests_dependencies",
+    testonly = 1,
+    deps = [
+        "main_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
+        "//migrator/bazel-migrator-model-testkit:main_dependencies",
+        "//test-utils:main_dependencies",
+        #"//third_party/com/wixpress/hoopoe:hoopoe_specs2",
+        "@com_gitblit_gitblit",
+        "@com_github_marschall_memoryfilesystem",
+    ],
+)
+
+filegroup(
+    name = "coordinates",
+    srcs = ["MANIFEST.MF"],
+)
+
+java_binary(
+    name = "migrator_cli",
+    main_class = "com.wix.bazel.migrator.Migrator",
+    runtime_deps = ["//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/tinker_bazel/migrator/transform_build/maven/analysis"],
+)

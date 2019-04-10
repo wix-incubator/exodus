@@ -1,0 +1,18 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "git",
+    srcs = [
+        "//test-utils/src/main/scala/com/wixpress/build/git:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//test-utils:main_dependencies",
+        "@com_gitblit_gitblit",
+        "@com_github_pathikrit_better_files_2_12",
+        "@org_eclipse_jgit_org_eclipse_jgit",
+    ],
+)
+
+sources()

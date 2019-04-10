@@ -1,0 +1,22 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "main_dependencies",
+    deps = [
+        "@com_gitblit_gitblit",
+        "@com_github_pathikrit_better_files_2_12",
+    ],
+)
+
+scala_library(
+    name = "tests_dependencies",
+    testonly = 1,
+    deps = [
+        "main_dependencies",
+    ],
+)
+
+filegroup(
+    name = "coordinates",
+    srcs = ["MANIFEST.MF"],
+)

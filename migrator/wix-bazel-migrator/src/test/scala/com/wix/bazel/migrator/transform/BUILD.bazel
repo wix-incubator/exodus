@@ -1,0 +1,29 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "transform",
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/test/scala/com/wix/bazel/migrator/transform:sources",
+    ],
+    data = ["//migrator/wix-bazel-migrator:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/wix-bazel-migrator:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/wix-bazel-migrator:tests_dependencies",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/tinker_bazel/migrator/transform_build/maven/analysis",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/external/registry",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
+        "//migrator/wix-bazel-migrator/src/test/scala/com/wix/bazel/migrator/external/registry",
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+sources()

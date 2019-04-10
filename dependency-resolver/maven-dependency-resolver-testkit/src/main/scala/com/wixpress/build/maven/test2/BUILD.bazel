@@ -1,0 +1,16 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "test2",
+    srcs = [
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven/test2:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven/test1",
+    ],
+)
+
+sources()

@@ -1,0 +1,23 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "analysis",
+    srcs = [
+        "//repo-analyzer/maven-repo-analyzer/src/test/java/com/wix/build/maven/analysis:sources",
+    ],
+    data = ["//repo-analyzer/maven-repo-analyzer:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //repo-analyzer/maven-repo-analyzer:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//repo-analyzer/maven-repo-analyzer:tests_dependencies",
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
+    ],
+)
+
+sources()

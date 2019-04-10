@@ -1,0 +1,19 @@
+build_bazel_integration_testing_version="404010b3763262526d3a0e09073d8a8f22ed3d4b" # update this as needed
+http_archive(
+  name = "build_bazel_integration_testing",
+  url = "https://github.com/bazelbuild/bazel-integration-testing/archive/%s.zip" % build_bazel_integration_testing_version,
+  strip_prefix = "bazel-integration-testing-%s" % build_bazel_integration_testing_version,
+  sha256 = "9561123fbef215f949e086067069f9dc6fa2cff31a7896c8cf16757cddd78b1f",
+)
+
+load("@build_bazel_integration_testing//tools:repositories.bzl", "bazel_binaries")
+bazel_binaries(versions = ["0.16.1"])
+
+load("@build_bazel_integration_testing//tools:bazel_java_integration_test.bzl", "bazel_java_integration_test_deps")
+bazel_java_integration_test_deps()
+
+load("@core_server_build_tools//dependencies/rules_scala:rules_scala.bzl", "rules_scala_version", "rules_scala_version_sha256")
+load("@core_server_build_tools//dependencies/rules_docker:rules_docker.bzl", "rules_docker_version", "rules_docker_version_sha256")
+load(":integration_testing.bzl", "bazel_external_dependencies")
+bazel_external_dependencies(rules_scala_version, rules_scala_version_sha256, rules_docker_version, rules_docker_version_sha256)
+

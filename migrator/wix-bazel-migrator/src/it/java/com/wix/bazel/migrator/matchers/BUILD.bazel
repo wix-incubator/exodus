@@ -1,0 +1,17 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "matchers",
+    testonly = 1,
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/wix-bazel-migrator:tests_dependencies",
+        "//third_party/com/wixpress/hoopoe:hoopoe_specs2",
+    ],
+)
+
+sources()

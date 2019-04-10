@@ -1,0 +1,21 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_ite2e_test(
+    name = "workspace",
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/workspace:sources",
+    ],
+    data = ["//migrator/wix-bazel-migrator:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/wix-bazel-migrator:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/wix-bazel-migrator:tests_dependencies",
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator",
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/workspace",
+        "@com_github_pathikrit_better_files_2_12",
+    ],
+)
+
+sources()

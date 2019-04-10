@@ -1,0 +1,16 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "api",
+    srcs = [
+        "//dependency-synchronizer/bazel-deps-synchronizer-api/src/main/scala/com/wix/build/sync/api:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-synchronizer/bazel-deps-synchronizer-api:main_dependencies",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+sources()

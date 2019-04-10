@@ -1,0 +1,15 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "resolution",
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/workspace/resolution:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/wix-bazel-migrator:main_dependencies",
+    ],
+)
+
+sources()

@@ -1,0 +1,1 @@
+../../../../../external_third_parties/src/main/load_third_parties_of_external_wix_repositories.py

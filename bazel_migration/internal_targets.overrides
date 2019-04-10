@@ -1,0 +1,12 @@
+{
+   "targetOverrides": [
+    {
+      "label": "//dependency-synchronizer/bazel-deps-synchronizer-webapp/src/it/scala/com/wixpress/build/sync/e2e:e2e",
+      "testSize": "large"
+    },
+    {
+      "label": "//exploration_tests/manual/avivbh-nothing-to-prod-server/src/main/scala/com/wixpress/aviv:aviv_container",
+      "dockerImagesDeps":["docker-repo.wixpress.com/java:latest"]
+    }
+  ]
+}

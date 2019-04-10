@@ -1,0 +1,15 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "maven",
+    srcs = [
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//models/maven-model:main_dependencies",
+    ],
+)
+
+sources()
