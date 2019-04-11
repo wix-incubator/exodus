@@ -1,6 +1,8 @@
 - link: /index.html
   name: Exodus
+- link: /Exodus-intro.html
+  name: Exodus - Migration from Maven to Bazel
+- link: /bazel-intro.html
+  name: Bazel Basics
 - link: /how-it-works.html
   name: How It Works
-- link: /bazel-intro.html
-  name: Bazel Intro
