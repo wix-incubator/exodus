@@ -1,16 +1,16 @@
 - link: /index.html
   name: Exodus Home
 - link: /exodus-intro.html
-  name: Exodus - Migration from Maven to Bazel
+  name: Migration from Maven to Bazel
 - link: /bazel-intro.html
   name: Bazel Basics
 - link: /how-it-works.html
   name: How It Works
 - link: /how-to-run-bazel-locally.html
-  name: How to Run Bazel Locally
+  name: Run Migration Locally
 - link: /how-to-run-migration-jenkins.html
-  name: How to Run Migration on Jenkins
+  name: Run Migration on Jenkins
 - link: /overrides.html
   name: Override Mechanism
-- link: Troubleshooting
-  name: /troubleshooting.html
+- link: /troubleshooting.html 
+  name: Troubleshooting
