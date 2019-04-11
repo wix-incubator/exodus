@@ -1,0 +1,25 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "transform",
+    srcs = [
+        "//migrator/bazel-external-graph-transformer/src/test/scala/com/wix/bazel/migrator/transform:sources",
+    ],
+    data = ["//migrator/bazel-external-graph-transformer:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/bazel-external-graph-transformer:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
+        "//migrator/bazel-external-graph-transformer:tests_dependencies",
+        "//migrator/bazel-external-graph-transformer/src/main/scala/com/wix/bazel/migrator/transform",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+sources()

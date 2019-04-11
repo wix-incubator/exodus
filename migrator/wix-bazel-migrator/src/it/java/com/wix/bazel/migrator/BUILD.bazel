@@ -1,0 +1,24 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_ite2e_test(
+    name = "migrator",
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator:sources",
+    ],
+    data = [
+        "//migrator/wix-bazel-migrator:coordinates",
+        "//workspaces-resolution/src/main:tools_bazel_scripts",
+    ],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/wix-bazel-migrator:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/wix-bazel-migrator:tests_dependencies",
+        "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/tinker_bazel/migrator/transform_build/maven/analysis",
+        "@com_github_marschall_memoryfilesystem",
+        "@com_github_pathikrit_better_files_2_12",
+    ],
+)
+
+sources()

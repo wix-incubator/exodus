@@ -1,0 +1,16 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "workspace",
+    srcs = [
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/workspace:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/wix-bazel-migrator:main_dependencies",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
+    ],
+)
+
+sources()

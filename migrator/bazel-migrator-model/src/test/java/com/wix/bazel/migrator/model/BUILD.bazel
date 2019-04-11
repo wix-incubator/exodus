@@ -1,0 +1,18 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "model",
+    srcs = [
+        "//migrator/bazel-migrator-model/src/test/java/com/wix/bazel/migrator/model:sources",
+    ],
+    data = ["//migrator/bazel-migrator-model:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/bazel-migrator-model:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/bazel-migrator-model:tests_dependencies",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+    ],
+)
+
+sources()

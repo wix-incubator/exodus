@@ -1,0 +1,23 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "transform",
+    srcs = [
+        "//migrator/bazel-migrator/src/test/java/com/wix/bazel/migrator/transform:sources",
+    ],
+    data = ["//migrator/bazel-migrator:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //migrator/bazel-migrator:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/bazel-migrator:tests_dependencies",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/transform",
+        "//migrator/bazel-migrator/src/test/java/com/wix/bazel/migrator/transform/makers",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+sources()

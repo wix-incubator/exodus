@@ -1,0 +1,21 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "makers",
+    testonly = 1,
+    srcs = [
+        "//migrator/bazel-migrator/src/test/java/com/wix/bazel/migrator/transform/makers:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/bazel-migrator:tests_dependencies",
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/transform",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "@junit_junit",
+    ],
+)
+
+sources()
