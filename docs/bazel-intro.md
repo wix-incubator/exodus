@@ -34,3 +34,5 @@ Scala_project
 
 ### Advantage over Maven
 In contrast, Maven used one `pom.xml` file that controlled an entire build process. The way Bazel divides the build process into these distinct packages, makes the build process more efficient because you control the granularity of the package to be built. 
+
+## 
