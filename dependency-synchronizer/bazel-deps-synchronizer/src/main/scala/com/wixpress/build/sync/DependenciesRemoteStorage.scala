@@ -173,15 +173,17 @@ object ArtifactoryRemoteStorage {
 
   implicit class DependencyNodeExtensions(node: DependencyNode) {
     def updateChecksumFrom(dependenciesRemoteStorage: DependenciesRemoteStorage):BazelDependencyNode = {
-      val maybeChecksum = if (node.baseDependency.coordinates.version.endsWith("-SNAPSHOT")) None
-      else
+
+      val maybeChecksum = if (node.isSnapshot) None else
         dependenciesRemoteStorage.checksumFor(node)
 
-      val maybeSrcChecksum = if (node.baseDependency.coordinates.version.endsWith("-SNAPSHOT")) None
-      else
-        dependenciesRemoteStorage.checksumFor(node.asSourceNode)
+      // TODO - should add a dependenciesRemoteStorage.doSourcesExist which will only check sources.jar existence
+      // instead of downloading the whole jar to calculate the sha
+      val maybeSrcChecksum = dependenciesRemoteStorage.checksumFor(node.asSourceNode)
+      val snapshotSources = node.isSnapshot && maybeSrcChecksum.isDefined
+      val maybeSrcChecksumIfRelevant = if (node.isSnapshot) None else maybeSrcChecksum
 
-      BazelDependencyNode(node.baseDependency, node.dependencies, maybeChecksum, maybeSrcChecksum)
+      BazelDependencyNode(node.baseDependency, node.dependencies, maybeChecksum, maybeSrcChecksumIfRelevant, snapshotSources)
     }
 
     def asSourceNode = {

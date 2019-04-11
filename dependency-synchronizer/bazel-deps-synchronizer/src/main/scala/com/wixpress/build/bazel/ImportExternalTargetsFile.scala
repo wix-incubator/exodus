@@ -110,6 +110,16 @@ object ImportExternalTargetsFileReader {
     maybeMatch.map(_.group("neverlink")).contains("1")
   }
 
+  private def extractsSnapshotSources(ruleText: String) = {
+    val maybeMatch = SnapshotSourcesFilter.findFirstMatchIn(ruleText)
+    maybeMatch.map(_.group("snapshot_sources")).contains("1")
+  }
+
+  private def extractSrcChecksum(ruleText: String) = {
+    val maybeMatch = SrcSha256Filter.findFirstMatchIn(ruleText)
+    maybeMatch.map(_.group("src_checksum"))
+  }
+
 
   def regexOfImportExternalRuleWithNameMatching(pattern: String) = {
     ("(?s)([^\\s]+)" + """\(\s*?name\s*?=\s*?"""" + pattern +"""",[\s#]*?artifact.*?\)""").r
@@ -132,6 +142,7 @@ object ImportExternalTargetsFileReader {
   val ImportExternalDepFilter = """@(.*)""".r("ruleName")
 
   val SrcSha256Filter = """(?s)srcjar_sha256\s*?=\s*?"(.+?)"""".r("src_checksum")
+  val SnapshotSourcesFilter = """(?s)snapshot_sources\s*=\s*([0-1])""".r("snapshot_sources")
   val NeverlinkFilter = """(?s)neverlink\s*=\s*([0-1])""".r("neverlink")
 }
 
@@ -158,13 +169,9 @@ case class ImportExternalTargetsFileReader(content: String) {
       exclusions = extractExclusions(ruleText),
       checksum = extractChecksum(ruleText),
       srcChecksum = extractSrcChecksum(ruleText),
+      snapshotSources = extractsSnapshotSources(ruleText),
       neverlink = extractNeverlink(ruleText)))
     }
-
-  private def extractSrcChecksum(ruleText: String) = {
-    val maybeMatch = SrcSha256Filter.findFirstMatchIn(ruleText)
-    maybeMatch.map(_.group("src_checksum"))
-  }
 
   def findCoordinatesByName(name: String): Option[ValidatedCoordinates] = {
     findTargetWithSameNameAs(name = name, within = content)
