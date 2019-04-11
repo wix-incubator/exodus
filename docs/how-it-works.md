@@ -49,3 +49,8 @@ Bazel does not currently support transitive dependencies of external dependencie
 1. Write the above graph out in Bazel-specific form.  
 
 External dependencies are declared in the `WORKSPACE` file in the root of the project and in `BUILD.bazel` files in the `third_party` directory.
+
+## Override Mechanisms
+
+Exodus does a good job at automating the migration process but false positives and negatives exist, which is why we have [override mechanisms](overrides.md) in place.
+
