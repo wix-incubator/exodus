@@ -16,7 +16,7 @@ During this phase, Exodus analyzes:
   + `it\resources`
   + `e2e\resources`
 
-## Internal Code graph
+## Internal Code Graph
 
 Based on the analysis described above, Exodus creates an internal, fine-grained, code graph using the following process:
 

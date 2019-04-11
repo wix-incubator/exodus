@@ -67,7 +67,7 @@ File contents:
 
 - `label` - The fully qualified label of the problematic target in Bazel.
 
-#### Optional Attributes:
+#### Optional Attributes
 
 - `testOnly` - Set to `true` if you have testkit code which sits under `src/main` and depends on some test target.
 - `testType`- Changes the type of test target. This is needed if there is a mismatch between the filename and classes in it. 
