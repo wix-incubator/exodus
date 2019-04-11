@@ -1,0 +1,22 @@
+package(default_visibility = ["//visibility:public"])
+
+scala_library(
+    name = "analysis",
+    srcs = [
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis:sources",
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//repo-analyzer/maven-repo-analyzer:main_dependencies",
+        "@com_github_pathikrit_better_files_2_12",
+        "@org_apache_maven_maven_model",
+        "@org_codehaus_plexus_plexus_utils",
+    ],
+)
+
+sources()

@@ -1,0 +1,19 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "translation",
+    srcs = [
+        "//models/maven-bazel-model-translation/src/test/scala/com/wix/build/maven/translation:sources",
+    ],
+    data = ["//models/maven-bazel-model-translation:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //models/maven-bazel-model-translation:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//models/maven-bazel-model-translation:tests_dependencies",
+        "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+sources()

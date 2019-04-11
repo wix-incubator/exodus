@@ -1,0 +1,18 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "maven",
+    srcs = [
+        "//models/maven-model/src/test/scala/com/wixpress/build/maven:sources",
+    ],
+    data = ["//models/maven-model:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //models/maven-model:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//models/maven-model:tests_dependencies",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+    ],
+)
+
+sources()
