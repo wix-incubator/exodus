@@ -173,8 +173,13 @@ object ArtifactoryRemoteStorage {
 
   implicit class DependencyNodeExtensions(node: DependencyNode) {
     def updateChecksumFrom(dependenciesRemoteStorage: DependenciesRemoteStorage):BazelDependencyNode = {
-      val maybeChecksum = dependenciesRemoteStorage.checksumFor(node)
-      val maybeSrcChecksum = dependenciesRemoteStorage.checksumFor(node.asSourceNode)
+      val maybeChecksum = if (node.baseDependency.coordinates.version.endsWith("-SNAPSHOT")) None
+      else
+        dependenciesRemoteStorage.checksumFor(node)
+
+      val maybeSrcChecksum = if (node.baseDependency.coordinates.version.endsWith("-SNAPSHOT")) None
+      else
+        dependenciesRemoteStorage.checksumFor(node.asSourceNode)
 
       BazelDependencyNode(node.baseDependency, node.dependencies, maybeChecksum, maybeSrcChecksum)
     }

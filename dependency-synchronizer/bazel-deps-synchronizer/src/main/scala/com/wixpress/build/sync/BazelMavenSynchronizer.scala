@@ -3,7 +3,6 @@ package com.wixpress.build.sync
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven._
 import BazelMavenSynchronizer._
-import com.wixpress.build.sync.ArtifactoryRemoteStorage.DependencyNodeExtensions
 import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
 
@@ -21,6 +20,8 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
   }
 
   def calcDepNodesToSync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]) = {
+    import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksum
+
     logger.info(s"starting sync with managed dependencies in $dependencyManagementSource")
     val localCopy = targetRepository.localWorkspace()
 
@@ -31,8 +32,12 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
     if (dependenciesToUpdate.isEmpty)
       Set[BazelDependencyNode]()
-    else
-      decorateNodesWithChecksum(dependenciesToUpdate)
+    else {
+      logger.info("started fetching sha256 checksums for 3rd party dependencies from artifactory...")
+      val nodes = decorateNodesWithChecksum(dependenciesToUpdate)(dependenciesRemoteStorage)
+      logger.info("completed fetching sha256 checksums.")
+      nodes
+    }
   }
 
   private def newDependencyNodes(dependencyManagementSource: Coordinates,
@@ -57,13 +62,6 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
   private def uniqueDependenciesFrom(possiblyConflictedDependencySet: Set[Dependency]) = {
     conflictResolution.resolve(possiblyConflictedDependencySet).forceCompileScope
-  }
-
-  private def decorateNodesWithChecksum(divergentLocalDependencies: Set[DependencyNode]) = {
-    logger.info("started fetching sha256 checksums for 3rd party dependencies from artifactory...")
-    val nodes = divergentLocalDependencies.map(_.updateChecksumFrom(dependenciesRemoteStorage))
-    logger.info("completed fetching sha256 checksums.")
-    nodes
   }
 
   def persist(dependenciesToUpdate: Set[BazelDependencyNode]) = {
