@@ -1,6 +1,8 @@
 # Exodus - Maven to Bazel Migration
 
-## Maven has been good to us
+Thinking about migrating from Maven or similar to another build system? This is our story at Wix. For some more background info, take a look at our [blog articles on Medium](https://medium.com/wix-engineering/migrating-to-bazel-from-maven-or-gradle-5-crucial-questions-you-should-ask-yourself-f23ac6bca070).
+
+## Maven had been good to us...for a time
 
 Like many developers, you have probably been using Apache Maven to build your projects. We got used to managing those POM (project object model) files and waiting for our projects to build, hoping we had no errors and those pesky dependencies would all work out. 
 
@@ -22,7 +24,7 @@ It uses:
 * Hermeticity - builds can access only what is declared and pre-fetched, so they run 'hermetically' without unnecesary noise from additional files. 
 
 ### Multi-language environment
-Here at Wix, we support 19 languages and it's a huge advantage to be able to build multiple languages simultaneously. 
+Here at Wix, we support different software languages and it's a huge advantage to be able to build multiple languages simultaneously. 
 
 ### Scalability
 Bazel can handle multiple repositories or any size mono-repo. We are able to scale our codebase and our continuous integration system.
