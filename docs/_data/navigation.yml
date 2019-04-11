@@ -6,3 +6,6 @@
   name: Bazel Basics
 - link: /how-it-works.html
   name: How It Works
+- link: /overrides.html
+  name: Override Mechanism
+
