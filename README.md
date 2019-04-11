@@ -1,3 +1,5 @@
 # EXODUS
 
-Easily migrate your jvm code from Maven to Bazel build tool
+Easily migrate your JVM code from Maven to Bazel.
+
+See the documentation [here](https://wix-incubator.github.io/exodus/). 
