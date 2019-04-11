@@ -1,6 +1,6 @@
 - link: /index.html
   name: Exodus
-- link: /Exodus-intro.html
+- link: /exodus-intro.html
   name: Exodus - Migration from Maven to Bazel
 - link: /bazel-intro.html
   name: Bazel Basics
@@ -8,4 +8,3 @@
   name: How It Works
 - link: /overrides.html
   name: Override Mechanism
-
