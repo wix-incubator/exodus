@@ -7,7 +7,9 @@ import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.{MavenSourceModules, SourceModulesOverrides}
 import com.wixpress.build.maven.Coordinates
 
+import scala.collection.mutable
 import scala.util.Try
+import scala.util.matching.Regex
 
 case class ZincSourceModule(moduleName: String, coordinates: Coordinates)
 case class ZincCodePath(module: ZincSourceModule, relativeSourceDirPathFromModuleRoot: String, filePath: String)
@@ -23,33 +25,80 @@ class ZincAnalysisParser(repoRoot: Path,
 }
 
 class ModuleParser(repoRoot: Path, sourceModules: Set[SourceModule]) {
+  type FilePath = String
+  type PackageName = String
+  // TODO: expand index to all modules
+  val classNames: mutable.Map[PackageName, FilePath] = mutable.Map.empty
+
   def readModule(module: SourceModule):(Coordinates,List[ZincModuleAnalysis]) = {
     val prodFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/compile.relations")
     val testFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/test-compile.relations")
+
+    classNames ++= (fillCache(module, prodFile) ++ fillCache(module, testFile))
     module.coordinates -> (analysisOf(module, prodFile) ++ analysisOf(module, testFile))
+  }
+
+  private def fillCache(module: SourceModule, analysisFile: File): Map[PackageName, FilePath] = {
+    val content = Try {
+      new String(Files.readAllBytes(analysisFile.toPath))
+    }.getOrElse("")
+    val exp = s"(?s)products:.*binary dependencies:.*source dependencies:.*external dependencies:.*class names:(.*)".r("class-names")
+
+    exp.findFirstMatchIn(content) match {
+      case Some(matched) => {
+        val names = parseClassNames(matched)
+        names.toMap
+      }
+      case None => Map.empty[PackageName, FilePath]
+    }
+  }
+
+  private def parseClassNames(matched: Regex.Match) = {
+    val classNames = matched.group("class-names")
+    val className = classNames.trim.split("\n")
+    className.filterNot(_.trim.isEmpty).map(d => {
+      val tokens = d.trim.split(" -> ")
+      (tokens(1), tokens(0))
+    })
   }
 
   private def analysisOf(module: SourceModule, analysisFile: File) = {
     val content = Try {
       new String(Files.readAllBytes(analysisFile.toPath))
     }.getOrElse("")
-    val exp = s"(?s)products:.*binary dependencies:.*source dependencies:(.*)external dependencies:.*".r("source")
+    val exp = s"(?s)products:.*binary dependencies:.*source dependencies:(.*)external dependencies:(.*)class names:.*".r("source","external")
 
     exp.findFirstMatchIn(content) match {
       case Some(matched) => {
-        val sourceDeps = matched.group("source")
-        val dep = sourceDeps.trim.split("\n")
-        val dependencies = dep.filterNot(_.trim.isEmpty).map(d => {
-          val tokens = d.trim.split(" -> ")
-          (tokens(0), tokens(1))
-        })
-        val analysesResult = dependencies.groupBy(k => k._1).map { case (key, value) =>
+        val sourceDependencies = parseSourceDependencies(matched)
+        val externalDependencies = parseExternalDeps(matched)
+
+        val analysesResult = (sourceDependencies ++ externalDependencies).groupBy(k => k._1).map { case (key, value) =>
           parseCodePath(key).map(ZincModuleAnalysis(_, value.flatMap(v => parseCodePath(v._2)).toList))
         }
         analysesResult.toList.flatten
       }
       case None => Nil
     }
+  }
+
+  private def parseSourceDependencies(matched: Regex.Match) = {
+    val sourceDeps = matched.group("source")
+    val sourceDepsList = sourceDeps.trim.split("\n")
+    sourceDepsList.filterNot(_.trim.isEmpty).map(d => {
+      val tokens = d.trim.split(" -> ")
+      (tokens(0), tokens(1))
+    })
+  }
+
+  private def parseExternalDeps(matched: Regex.Match) = {
+    val externalDeps = matched.group("external")
+    val externalDepsList = externalDeps.trim.split("\n")
+    externalDepsList.filterNot(_.trim.isEmpty).flatMap(e => {
+      val tokens = e.trim.split(" -> ")
+      val maybeFilePath = classNames.get(tokens(1))
+      maybeFilePath.map((tokens(0), _))
+    })
   }
 
   private def parseCodePath(inputValue: String): Option[ZincCodePath] = {
