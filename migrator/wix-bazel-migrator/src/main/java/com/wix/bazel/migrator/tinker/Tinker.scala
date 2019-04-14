@@ -37,7 +37,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
     registry = new CompositeExternalSourceModuleRegistry(
       new ConstantExternalSourceModuleRegistry(),
-      new CodotaExternalSourceModuleRegistry(configuration.codotaToken)))
+      new CodotaExternalSourceModuleRegistry(configuration.codotaToken.get)))
 
   lazy val mavenArchiveTargetsOverrides = MavenArchiveTargetsOverridesReader.from(repoRoot)
 
@@ -132,7 +132,7 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   }
 
   private def dependencyAnalyzer = {
-    val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
+    val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(sourceDependencyAnalyzer)
     val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
     if (wixFrameworkMigration)
       new CompositeDependencyAnalyzer(

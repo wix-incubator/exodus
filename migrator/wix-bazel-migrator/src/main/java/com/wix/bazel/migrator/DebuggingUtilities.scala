@@ -18,8 +18,8 @@ import scala.util.{Failure, Success, Try}
 object FindMisAnalyzedInternalDependencies extends DebuggingMigratorApp {
   val codotaArtifacts = tinker.codeModules.map(artifact => artifact.coordinates.groupId + "." + artifact.coordinates.artifactId)
   val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
-  codotaClient.setDefaultCodePack("wix_enc")
-  codotaClient.setToken(tinker.codotaToken)
+  codotaClient.setDefaultCodePack(configuration.codotaCodePack.get)
+  codotaClient.setToken(configuration.codotaToken.get)
 
   val map = codotaArtifacts.flatMap { artifactName =>
     codotaClient.allFilesForArtifact(artifactName).asScala.toList.flatMap { filePath: String =>
@@ -57,8 +57,8 @@ trait CodotaClientDebuggingMigratorApp extends DebuggingMigratorApp {
   protected def codotaClient = {
     ConnectorSettings.setHost(ConnectorSettings.Host.GATEWAY)
     val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
-    codotaClient.setDefaultCodePack("wix_enc")
-    codotaClient.setToken(tinker.codotaToken)
+    codotaClient.setDefaultCodePack(configuration.codotaCodePack.get)
+    codotaClient.setToken(configuration.codotaToken.get)
     codotaClient
   }
 
@@ -91,7 +91,7 @@ object PrintAllSourceModules extends DebuggingMigratorApp {
 }
 
 object PrintAllCodeForSpecificModule extends DebuggingMigratorApp {
-  val dependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(tinker.codotaDependencyAnalyzer)
+  val dependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(tinker.sourceDependencyAnalyzer)
   val code = dependencyAnalyzer.allCodeForModule(requestedModule())
 
   writer.writeValue(System.out, code)
@@ -101,7 +101,7 @@ object FlushOutCodeAnalysisIssuesPerModule extends DebuggingMigratorApp {
   val outputs = tinker.codeModules.par.map { sourceModule =>
     println(s"starting ${sourceModule.coordinates.serialized} (${sourceModule.relativePathFromMonoRepoRoot})")
     val outcome = Try {
-      tinker.codotaDependencyAnalyzer.allCodeForModule(sourceModule)
+      tinker.sourceDependencyAnalyzer.allCodeForModule(sourceModule)
       sourceModule
     } match {
       case Success(_) => "PASSED"

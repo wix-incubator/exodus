@@ -22,7 +22,6 @@ class AppTinker(configuration: RunConfiguration) {
   val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
   val repoRoot: Path = configuration.repoRoot.toPath
   val managedDepsRepoRoot: io.File = configuration.managedDepsRepo
-  val codotaToken: String = configuration.codotaToken
   val localWorkspaceName: String = WorkspaceName.by(configuration.repoUrl)
   val artifactoryRemoteStorage = newRemoteStorage
   val sourceDependenciesWhitelist = readSourceDependenciesWhitelist()
@@ -31,9 +30,18 @@ class AppTinker(configuration: RunConfiguration) {
   lazy val codeModules: Set[SourceModule] = sourceModules.codeModules
   lazy val directDependencies: Set[Dependency] = collectExternalDependenciesUsedByRepoModules()
   lazy val externalDependencies: Set[Dependency] = dependencyCollector.dependencySet()
-  lazy val codotaDependencyAnalyzer = new ZincDepednencyAnalyzer()//new CodotaDependencyAnalyzer(repoRoot, codeModules, codotaToken, configuration.interRepoSourceDependency, dependenciesDifferentiator)
+  lazy val sourceDependencyAnalyzer = getDependencyAnalyzer
   lazy val externalSourceDependencies: Set[Dependency] = sourceDependencies
   lazy val externalBinaryDependencies: Set[Dependency] = binaryDependencies
+
+  private def getDependencyAnalyzer = {
+    (configuration.codotaToken, configuration.codotaCodePack) match {
+      case (Some(token), Some(codePack)) =>
+        new CodotaDependencyAnalyzer(repoRoot, codeModules, token, codePack,
+          configuration.interRepoSourceDependency, dependenciesDifferentiator)
+      case _ => new ZincDepednencyAnalyzer(repoRoot)
+    }
+  }
 
   private def readSourceDependenciesWhitelist() =
     (configuration.interRepoSourceDependency, configuration.sourceDependenciesWhitelist) match {

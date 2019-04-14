@@ -26,8 +26,8 @@ import scala.collection.{GenIterable, GenTraversableOnce, mutable}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
-class ZincDepednencyAnalyzer() extends DependencyAnalyzer {
-  private val modules = new ZincAnalysisParser(Paths.get("/Users/natans/hackathon/java-design-patterns")).readModules()
+class ZincDepednencyAnalyzer(repoPath: Path) extends DependencyAnalyzer {
+  private val modules = new ZincAnalysisParser(Paths.get(repoPath.toAbsolutePath.toString)).readModules()
 
   override def allCodeForModule(module: SourceModule): List[Code] = {
     modules.flatMap {
@@ -51,6 +51,7 @@ class ZincDepednencyAnalyzer() extends DependencyAnalyzer {
 class CodotaDependencyAnalyzer(repoRoot: Path,
                                modules: Set[SourceModule],
                                codotaToken: String,
+                               codePack: String,
                                interRepoSourceDependency: Boolean = false,
                                dependenciesDifferentiator: DependenciesDifferentiator = new DependenciesDifferentiator(Set.empty)) extends DependencyAnalyzer {
 
@@ -73,9 +74,8 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
   ConnectorSettings.setHost(ConnectorSettings.Host.GATEWAY)
   private val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
   assert(codotaClient != null)
-  //TODO - move to configuration
-  codotaClient.setDefaultCodePack("github_square_okhttp_560dae058b9d0b03006e7e97")
-  codotaClient.setToken(null)
+  codotaClient.setDefaultCodePack("wix_enc")
+  codotaClient.setToken(codotaToken)
 
   private def extensionSupported(filePath: String) = filePath.endsWith("java") || filePath.endsWith("scala") || filePath.endsWith("proto")
 
