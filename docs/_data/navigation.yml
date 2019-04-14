@@ -5,7 +5,7 @@
 - link: /bazel-intro.html
   name: Bazel Basics
 - link: /how-it-works.html
-  name: How It Works
+  name: How Exodus Works
 - link: /prerequisites.html
   name: Prerequistes
 - link: /how-to-run-bazel-locally.html
