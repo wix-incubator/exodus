@@ -34,7 +34,7 @@ object RunConfiguration {
       .validate(f => if (Files.isDirectory(Paths.get(f))) success else failure(s"repo $f must be existing directory"))
       .action { case (f, cfg) => cfg.copy(repoRoot = new File(f)) }
 
-    opt[String]('r', "managed-deps-repo")
+    opt[String]('m', "managed-deps-repo")
       .required()
       .withFallback(() => sys.props.get("managed.deps.repo")
         .getOrElse(throw new IllegalArgumentException("no managed deps repo defined")))

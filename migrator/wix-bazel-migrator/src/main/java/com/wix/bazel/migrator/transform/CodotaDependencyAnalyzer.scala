@@ -15,6 +15,7 @@ import com.wix.bazel.migrator.transform.AnalyzeFailure.MissingAnalysisInCodota
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer._
 import com.wix.bazel.migrator.transform.FailureMetadata.InternalDepMissingExtended
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
+import com.wix.build.zinc.analysis.{ZincAnalysisParser, ZincCodePath, ZincModuleAnalysis}
 import com.wixpress.build.maven
 import com.wixpress.build.maven.{Coordinates, MavenScope}
 import org.slf4j.LoggerFactory
@@ -24,6 +25,34 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.{GenIterable, GenTraversableOnce, mutable}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
+
+class ZincDepednencyAnalyzer() extends DependencyAnalyzer {
+  private val modules = new ZincAnalysisParser(Paths.get("/Users/natans/hackathon/java-design-patterns")).readModules()
+
+  override def allCodeForModule(module: SourceModule): List[Code] = {
+    modules.flatMap {
+      case (key, value) => value.map {
+        // TODO: figure out dep module, runtime deps!!!!!!!
+        v => Code(toCodePath(module, v.codePath), v.dependencies.map(d => Dependency(toCodePath(SourceModule("", Coordinates("", "", "")), d), isCompileDependency = true)))
+      }
+    }.toList
+
+//    if (module.relativePathFromMonoRepoRoot == "visitor")
+//      List(
+//        Code(CodePath(module, "src/main/java", "com/iluwatar/visitor/App.java"),
+//          List(
+//            Dependency(CodePath(module, "src/main/java", "com/iluwatar/visitor/App.java"), isCompileDependency = true),
+//            Dependency(CodePath(module, "src/main/java", "com/iluwatar/visitor/CommanderVisitor.java"), isCompileDependency = true),
+//            Dependency(CodePath(module, "src/main/java", "com/iluwatar/visitor/Sergeant.java"), isCompileDependency = true),
+//          )))
+//    else
+//      List()
+  }
+
+  private def toCodePath(module: SourceModule, v: ZincCodePath) = {
+    CodePath(module, v.relativeSourceDirPathFromModuleRoot, v.filePath)
+  }
+}
 
 class CodotaDependencyAnalyzer(repoRoot: Path,
                                modules: Set[SourceModule],

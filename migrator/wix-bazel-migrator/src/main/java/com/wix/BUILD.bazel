@@ -30,6 +30,7 @@ scala_library(
         "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/zinc/analysis:analysis",
         #"//wix-bazel-repositories/bazel-repositories-core/src/main/scala/com/wixpress/build/bazel/repositories",
         "@com_codota_codota_sdk_java",
         "@com_fasterxml_jackson_core_jackson_annotations",

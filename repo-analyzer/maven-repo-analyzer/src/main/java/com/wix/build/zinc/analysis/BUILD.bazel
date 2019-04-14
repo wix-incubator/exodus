@@ -1,0 +1,15 @@
+package(default_visibility = ["//visibility:public"])
+
+sources()
+scala_library(
+    name = "analysis",
+    srcs = [
+        ":sources",
+    ],
+)
+
+java_binary(
+    name = "zinc_analysis_cli",
+    main_class = "com.wix.build.zinc.analysis.ZincAnalysisParser",
+    deps = [":analysis"],
+)

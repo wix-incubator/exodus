@@ -4,6 +4,8 @@ import java.nio.file.{Files, Path}
 
 import com.wix.bazel.migrator.overrides.InternalTargetsOverrides
 
+import scala.util.Try
+
 class DockerImagesWriter(repoRoot: Path, overrides: InternalTargetsOverrides) {
 
   private val dockerImagesRootPath = repoRoot.resolve("third_party/docker_images")
@@ -18,7 +20,7 @@ class DockerImagesWriter(repoRoot: Path, overrides: InternalTargetsOverrides) {
   private def writeToDisk(fileName: String, contents: String): Unit = {
     val filePath = dockerImagesRootPath.resolve(fileName)
     Files.createDirectories(dockerImagesRootPath)
-    Files.createFile(filePath)
+    Try{Files.createFile(filePath)}
     Files.write(filePath, contents.getBytes)
   }
 

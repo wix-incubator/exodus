@@ -7,7 +7,7 @@ import java.time.temporal.ChronoUnit
 import better.files.{File, FileOps}
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator._
-import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
+import com.wix.bazel.migrator.transform.{CodotaDependencyAnalyzer, ZincDepednencyAnalyzer}
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
 import com.wix.build.maven.analysis._
 import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
@@ -31,7 +31,7 @@ class AppTinker(configuration: RunConfiguration) {
   lazy val codeModules: Set[SourceModule] = sourceModules.codeModules
   lazy val directDependencies: Set[Dependency] = collectExternalDependenciesUsedByRepoModules()
   lazy val externalDependencies: Set[Dependency] = dependencyCollector.dependencySet()
-  lazy val codotaDependencyAnalyzer = new CodotaDependencyAnalyzer(repoRoot, codeModules, codotaToken, configuration.interRepoSourceDependency, dependenciesDifferentiator)
+  lazy val codotaDependencyAnalyzer = new ZincDepednencyAnalyzer()//new CodotaDependencyAnalyzer(repoRoot, codeModules, codotaToken, configuration.interRepoSourceDependency, dependenciesDifferentiator)
   lazy val externalSourceDependencies: Set[Dependency] = sourceDependencies
   lazy val externalBinaryDependencies: Set[Dependency] = binaryDependencies
 
