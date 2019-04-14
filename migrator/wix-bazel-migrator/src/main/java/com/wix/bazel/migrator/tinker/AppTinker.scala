@@ -48,7 +48,11 @@ class AppTinker(configuration: RunConfiguration) {
   }
 
   private def newRemoteStorage = {
-    new StaticDependenciesRemoteStorage(new ArtifactoryRemoteStorage("repo.dev.wixpress.com:80", configuration.artifactoryToken))
+    if (configuration.artifactoryToken.nonEmpty && configuration.artifactoryUrl.nonEmpty)
+      new StaticDependenciesRemoteStorage(
+        new ArtifactoryRemoteStorage(configuration.artifactoryToken.get, configuration.artifactoryToken.get))
+    else
+      NoopDependenciesRemoteStorage
   }
 
   private def readSourceModules() = {

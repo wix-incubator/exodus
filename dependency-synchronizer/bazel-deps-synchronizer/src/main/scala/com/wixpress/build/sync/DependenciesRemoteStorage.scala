@@ -15,6 +15,10 @@ trait DependenciesRemoteStorage {
   def checksumFor(node: DependencyNode): Option[String]
 }
 
+object NoopDependenciesRemoteStorage extends DependenciesRemoteStorage {
+  override def checksumFor(node: DependencyNode): Option[String] = None
+}
+
 class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends DependenciesRemoteStorage {
   private val mapper = new ObjectMapper()
     .registerModule(DefaultScalaModule)

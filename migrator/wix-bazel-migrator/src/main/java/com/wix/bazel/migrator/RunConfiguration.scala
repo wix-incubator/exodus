@@ -12,7 +12,8 @@ case class RunConfiguration(repoRoot: File,
                             performTransformation: Boolean = true,
                             failOnSevereConflicts: Boolean = false,
                             interRepoSourceDependency: Boolean = false,
-                            artifactoryToken: String = "",
+                            artifactoryToken: Option[String] = None,
+                            artifactoryUrl: Option[String] = None,
                             sourceDependenciesWhitelist: Option[Path] = None,
                             additionalDepsByMavenDeps: Option[Path] = None,
                             includeServerInfraInSocialModeSet: Boolean = false,
@@ -73,9 +74,19 @@ object RunConfiguration {
 
     opt[String]("artifactory-token")
       .required()
-      .withFallback(() => sys.props.get("artifactory.token")
-        .getOrElse(throw new IllegalArgumentException("no artifactory token defined")))
-      .action { case (token, cfg) => cfg.copy(artifactoryToken = token) }
+      .withFallback(() => sys.props.getOrElse("artifactory.token", ""))
+        .action {
+          case (token, cfg) if Option(token).exists(_.nonEmpty) => cfg.copy(artifactoryToken = Some(token))
+          case (_, cfg) =>  cfg.copy(artifactoryToken = None)
+        }
+
+    opt[String]("artifactory-url")
+      .required()
+      .withFallback(() => sys.props.getOrElse("artifactory.url", ""))
+        .action {
+          case (url, cfg) if Option(url).exists(_.nonEmpty) => cfg.copy(artifactoryUrl = Some(url))
+          case (_, cfg) =>  cfg.copy(artifactoryUrl = None)
+        }
 
     opt[String]("source-dependencies-whitelist")
       .withFallback(() => sys.props.getOrElse("source.dependencies.whitelist", ""))

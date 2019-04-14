@@ -11,7 +11,6 @@ class LocalMavenRepository(m2Path: String) {
   private val mavenRepoManager = init()
 
   def init(): FileSystemServer = {
-    System.out.print("==============>>>>>>>>>>>>> " + m2Path)
     val repoLocation = new File(m2Path)
     val diskFileSystem = new DiskFileSystem(repoLocation, true)
 
