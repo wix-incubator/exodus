@@ -1,7 +1,7 @@
 package com.wix.build.zinc.analysis
 
 import java.io.File
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.{MavenSourceModules, SourceModulesOverrides}
@@ -9,9 +9,6 @@ import com.wixpress.build.maven.Coordinates
 
 import scala.util.Try
 
-object ZincAnalysisParser extends App {
-    new ZincAnalysisParser(Paths.get("/Users/natans/hackathon/java-design-patterns")).readModules()
-}
 case class ZincSourceModule(moduleName: String, coordinates: Coordinates)
 case class ZincCodePath(module: ZincSourceModule, relativeSourceDirPathFromModuleRoot: String, filePath: String)
 case class ZincModuleAnalysis(codePath: ZincCodePath, dependencies: List[ZincCodePath])
@@ -49,7 +46,6 @@ class ModuleParser(repoRoot: Path, sourceModules: Set[SourceModule]) {
         val analysesResult = dependencies.groupBy(k => k._1).map { case (key, value) =>
           parseCodePath(key).map(ZincModuleAnalysis(_, value.flatMap(v => parseCodePath(v._2)).toList))
         }
-        println(analysesResult)
         analysesResult.toList.flatten
       }
       case None => Nil

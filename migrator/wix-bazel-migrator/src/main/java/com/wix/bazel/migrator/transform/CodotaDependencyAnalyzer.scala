@@ -30,8 +30,15 @@ class ZincDepednencyAnalyzer(repoPath: Path) extends DependencyAnalyzer {
   private val modules: Map[Coordinates, List[ZincModuleAnalysis]] = new ZincAnalysisParser(Paths.get(repoPath.toAbsolutePath.toString)).readModules()
 
   override def allCodeForModule(module: SourceModule): List[Code] = {
-    modules.getOrElse(module.coordinates, Nil).map { moduleAnalysis =>
-      Code(toCodePath(module, moduleAnalysis.codePath), toDependencies(moduleAnalysis))
+    val emptyDependencies = module.dependencies.copy(directDependencies = Set(), allDependencies = Set())
+    val strippedModule = module.copy(dependencies = emptyDependencies)
+
+    allCodeForStrippedModule(strippedModule)
+  }
+
+  private def allCodeForStrippedModule(strippedModule: SourceModule) = {
+    modules.getOrElse(strippedModule.coordinates, Nil).map { moduleAnalysis =>
+      Code(toCodePath(strippedModule, moduleAnalysis.codePath), toDependencies(moduleAnalysis))
     }
   }
 

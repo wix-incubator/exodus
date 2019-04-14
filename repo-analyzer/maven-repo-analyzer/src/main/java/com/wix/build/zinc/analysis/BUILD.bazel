@@ -13,9 +13,3 @@ scala_library(
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
     ],
 )
-
-java_binary(
-    name = "zinc_analysis_cli",
-    main_class = "com.wix.build.zinc.analysis.ZincAnalysisParser",
-    runtime_deps = [":analysis"],
-)
