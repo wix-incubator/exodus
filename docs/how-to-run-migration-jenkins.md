@@ -101,5 +101,45 @@ Configure the following Jenkins Jobs:
 
 ![Jenkins Jobs](assets/img/jenkins-jobs.png "Jenkins Jobs")
 
+- 00-Run all Migration steps
+    - Script: migrator/scripts/e2e.groovy
+- 01-migrate
+    - Script: migrator/scripts/migrate.groovy
+    - Parameters:
+        - TRIGGER_BUILD - Default: true - Should it trigger run-bazel job on finish.
+        - COMMIT_HASH - Default: master
+    - Build Triggers:
+        - Build after other projects are built > Projects to watch > `../Migrate-All` > Trigger only if build is stable. 
+- 02-(intermediate) fix strict deps
+    - Script: migrator/scripts/fix-strict-deps.groovy
+    - Parameters:
+        - BRANCH_NAME - Default: master
+        - CLEAN - Default: false - Clean Bazel before running, allowing for re-evaluation of warnings, but slowing down build time.
+       - TRIGGER_BUILD - Default: true - Should it trigger run-bazel job on finish.
+- 03-run-bazel
+    - Script: migrator/scripts/run-bazel.groovy
+    - Parameters:
+        - BRANCH_NAME - REQUIRED - The latest migrated branch or any other branch.
+        - CLEAN - Default: false - Clean Bazel before running, allowing for re-evaluation of warnings, but slowing down build time.   
+- 04-run-bazel-sandboxed
+    - Script: migrator/scripts/run-bazel-sandboxed.groovy
+    - Parameters:
+        - BRANCH_NAME - REQUIRED - The latest migrated branch or any other branch.
+        - CLEAN - Default: false - Clean Bazel before running, allowing for re-evaluation of warnings, but slowing down build time.
+- 05-compare-tests-with-maven
+    - Script: migrator/scripts/compare.groovy
+    - Parameters:
+        - BAZEL_COMPARE_JOB - Default: 02-run-bazel - The number of bazel-run-* job (local, RBE, etc) to take results from.
+        - BAZEL_RUN_NUMBER - Default: change-me - The number of bazel-run-* to take results from.
+        - MAVEN_RUN_NUMBER - Default: change-me - The number of run-maven to take results from.
+        - BRANCH_NAME - Default: master - The name of the migration branch.
+        - ALLOW_MERGE - Default: false - Whether to allow auto-merge to master.
+        - MAVEN_SUCCESS - Default: false - Whether or not the maven run was successful.
+- 06-run-bazel (remote execution of google)
+    - Optional
+    - Script: migrator/scripts/run-bazel-rbe.groovy
+    - Parameters:
+        - BRANCH_NAME - REQUIRED - The latest migrated branch or any other branch.
+        - CLEAN - Default: false - Clean Bazel before running, allowing for re-evaluation of warnings, but slowing down build time.
 
 
