@@ -1,4 +1,4 @@
-# How It Works
+# How Exodus Works
 
 This doc gives a high-level overview of how the migrator turns your Maven project into a Bazel project.
 
@@ -22,7 +22,7 @@ Based on the analysis described above, Exodus creates an internal, fine-grained,
 
 1. Query a code index for a list of files and their dependencies for each code module to form a file graph.
 
-1. Transform the graphs created above to a package-level graph since we don't want to maintain targets for specific files but aim for package level granularity in the [1:1:1](one target per directory, representing a single package) form. 
+1. Transform the graphs created above to a package-level graph since we don't want to maintain targets for specific files. Rather we're aiming for package level granularity as 1:1:1 meaning one target per one directory that represents one single package. 
 
 1. Remove cycles from the package graph, so it can actually be built, by finding strongly connected components and aggregating cycles to targets of the form `agg=sub_package+other_sub_package`. The aggregator targets are declared in the first shared ancestor.  
 
