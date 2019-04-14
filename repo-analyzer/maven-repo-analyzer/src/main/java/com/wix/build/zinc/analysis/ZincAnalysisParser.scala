@@ -25,7 +25,12 @@ class ZincAnalysisParser(repoRoot: Path,
   }
 
   private def readModule(module: SourceModule):(SourceModule,List[ZincModuleAnalysis]) = {
-    val analysisFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/compile.relations")
+    val prodFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/compile.relations")
+    val testFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/test-compile.relations")
+    module -> (analysisOf(module, prodFile) ++ analysisOf(module, testFile))
+  }
+
+  private def analysisOf(module: SourceModule, analysisFile: File) = {
     val content = Try {
       new String(Files.readAllBytes(analysisFile.toPath))
     }.getOrElse("")
@@ -43,9 +48,9 @@ class ZincAnalysisParser(repoRoot: Path,
           parseCodePath(key).map(ZincModuleAnalysis(_, value.flatMap(v => parseCodePath(v._2)).toList))
         }
         println(analysesResult)
-        module -> analysesResult.toList.flatten
+        analysesResult.toList.flatten
       }
-      case None => module -> Nil
+      case None => Nil
     }
   }
 
