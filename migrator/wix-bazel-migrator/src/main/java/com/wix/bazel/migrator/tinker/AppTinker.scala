@@ -15,6 +15,8 @@ import com.wixpress.build.maven
 import com.wixpress.build.maven._
 import com.wixpress.build.sync._
 
+import scala.io.Source
+
 class AppTinker(configuration: RunConfiguration) {
   val maybeLocalMavenRepository = configuration.m2Path.map(p => new LocalMavenRepository(p.toString))
   val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
@@ -116,16 +118,14 @@ class AppTinker(configuration: RunConfiguration) {
     }
   }
 
-  // hack to add hoopoe-specs2 (and possibly other needed dependencies)
   def constantDependencies: Set[Dependency] = {
-    aetherResolver.managedDependenciesOf(AppTinker.ThirdPartyDependencySource)
-      .filter(_.coordinates.artifactId == "hoopoe-specs2")
-      .filter(_.coordinates.packaging.value == "pom") +
-      //proto dependencies
-      maven.Dependency(Coordinates.deserialize("com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT"), MavenScope.Compile) +
-      maven.Dependency(Coordinates.deserialize("com.wixpress.grpc:generator:1.0.0-SNAPSHOT"), MavenScope.Compile) +
-      //core-server-build-tools dependency
-      maven.Dependency(Coordinates.deserialize("com.google.jimfs:jimfs:1.1"), MavenScope.Compile)
+    configuration.constantDependenciesPath
+      .map(_.toAbsolutePath.toString)
+      .map(f => Source.fromFile(f).getLines())
+      .map(lines => lines.map(l => Coordinates.deserialize(l)))
+      .getOrElse(Set.empty)
+      .map(c => maven.Dependency(c, MavenScope.Compile))
+      .toSet
   }
 
   implicit class DependencySetExtensions(dependencies: Set[Dependency]) {
@@ -177,9 +177,6 @@ class AppTinker(configuration: RunConfiguration) {
 }
 
 object AppTinker {
-  val ThirdPartyDependencySource: Coordinates =
-    Coordinates.deserialize("com.wixpress.common:third-party-dependencies:pom:100.0.0-SNAPSHOT")
-
   val ManagedDependenciesArtifact: Coordinates =
     Coordinates.deserialize("com.wixpress.common:wix-base-parent-ng:pom:100.0.0-SNAPSHOT")
 }
