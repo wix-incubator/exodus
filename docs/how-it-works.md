@@ -10,8 +10,8 @@ During this phase, Exodus analyzes:
 
 + The code modules found in your project, ignoring `pom` modules.
 + The dependencies between these code modules. 
-+ The resource folders these code modules contain. Out of the default hardcoded: XXX What does this mean? XXX
-  + `main/resources`
++ The resource folders these code modules contain. Out of the default hardcoded: 
+  + `main\resources`
   + `test\resources`
   + `it\resources`
   + `e2e\resources`
@@ -21,8 +21,6 @@ During this phase, Exodus analyzes:
 Based on the analysis described above, Exodus creates an internal, fine-grained, code graph using the following process:
 
 1. Query a code index for a list of files and their dependencies for each code module to form a file graph.
-
-    XXX Dependencies here mean other **source files** at Wix<sup>1</sup> your code depends on (i.e. already abstracted over classes to files). XXX  
 
 1. Transform the graphs created above to a package-level graph since we don't want to maintain targets for specific files but aim for package level granularity in the [1:1:1](one target per directory, representing a single package) form. 
 
