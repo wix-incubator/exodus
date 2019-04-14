@@ -30,20 +30,11 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |load("@io_bazel_rules_scala//scala:scala.bzl", "scala_repositories")
          |scala_repositories()
          |
-         |protobuf_version="66dc42d891a4fc8e9190c524fd67961688a37bbe"
-         |protobuf_version_sha256="983975ab66113cbaabea4b8ec9f3a73406d89ed74db9ae75c74888e685f956f8"
+         |load("@io_bazel_rules_scala//specs2:specs2_junit.bzl", "specs2_junit_repositories")
+         |specs2_junit_repositories()
          |
-         |http_archive(
-         |    name = "com_google_protobuf",
-         |    url = "https://github.com/protocolbuffers/protobuf/archive/%s.tar.gz" % protobuf_version,
-         |    strip_prefix = "protobuf-%s" % protobuf_version,
-         |    sha256 = protobuf_version_sha256,
-         |)
-         |
-         |maven_server(
-         |    name = "default",
-         |    url = "http://repo.dev.wixpress.com/artifactory/libs-snapshots",
-         |)
+         |load("@io_bazel_rules_scala//scala_proto:scala_proto.bzl", "scala_proto_repositories")
+         |scala_proto_repositories()
          |
          |load("//:third_party.bzl", "third_party_dependencies")
          |
