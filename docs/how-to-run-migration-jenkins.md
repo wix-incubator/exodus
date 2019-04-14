@@ -110,6 +110,12 @@ Configure the following Jenkins Jobs:
         - COMMIT_HASH - Default: master
     - Build Triggers:
         - Build after other projects are built > Projects to watch > `../Migrate-All` > Trigger only if build is stable. 
+- 02-run-maven
+    - Script: migrator/scripts/run-maven.groovy
+    - Parameters: 
+        - BRANCH_NAME - REQUIRED - The latest migrated branch or any other branch.
+        - CLEAN - Default: false - Clean Bazel before running, allowing for re-evaluation of warnings, but slowing down build time.
+        - COMMIT_HASH - Default: master
 - 02-(intermediate) fix strict deps
     - Script: migrator/scripts/fix-strict-deps.groovy
     - Parameters:
