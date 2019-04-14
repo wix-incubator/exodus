@@ -33,11 +33,12 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
     } finally maybeLocalMavenRepository.foreach(_.stop)
   }
 
+  //TODO - Natan and Igal you missed a spot...
   lazy val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
     externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
     registry = new CompositeExternalSourceModuleRegistry(
       new ConstantExternalSourceModuleRegistry(),
-      new CodotaExternalSourceModuleRegistry(configuration.codotaToken.get)))
+      new CodotaExternalSourceModuleRegistry(configuration.codotaToken.getOrElse(""))))
 
   lazy val mavenArchiveTargetsOverrides = MavenArchiveTargetsOverridesReader.from(repoRoot)
 
