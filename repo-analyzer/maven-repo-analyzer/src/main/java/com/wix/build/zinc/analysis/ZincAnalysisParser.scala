@@ -19,15 +19,17 @@ case class ZincModuleAnalysis(codePath: ZincCodePath, dependencies: List[ZincCod
 class ZincAnalysisParser(repoRoot: Path,
                          sourceModulesOverrides: SourceModulesOverrides = SourceModulesOverrides.empty) {
   private val mavenSourceModules: MavenSourceModules = new MavenSourceModules(repoRoot, sourceModulesOverrides)
-
-  def readModules(): Map[SourceModule, List[ZincModuleAnalysis]] = {
-    mavenSourceModules.modules().map(module => readModule(module)).toMap
+  private val moduleParser = new ModuleParser(repoRoot, mavenSourceModules.modules())
+  def readModules(): Map[Coordinates, List[ZincModuleAnalysis]] = {
+    mavenSourceModules.modules().map(module => moduleParser.readModule(module)).toMap
   }
+}
 
-  private def readModule(module: SourceModule):(SourceModule,List[ZincModuleAnalysis]) = {
+class ModuleParser(repoRoot: Path, sourceModules: Set[SourceModule]) {
+  def readModule(module: SourceModule):(Coordinates,List[ZincModuleAnalysis]) = {
     val prodFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/compile.relations")
     val testFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/test-compile.relations")
-    module -> (analysisOf(module, prodFile) ++ analysisOf(module, testFile))
+    module.coordinates -> (analysisOf(module, prodFile) ++ analysisOf(module, testFile))
   }
 
   private def analysisOf(module: SourceModule, analysisFile: File) = {
@@ -58,15 +60,11 @@ class ZincAnalysisParser(repoRoot: Path,
     val exp = s"(.*)/(src/.*/(?:java|scala))/(.*)".r("module", "relative", "file")
     exp.findFirstMatchIn(inputValue) match {
       case Some(matched) =>
-        Some(ZincCodePath(ZincSourceModule(matched.group("module"), Coordinates("","","")), matched.group("relative"), matched.group("file")))
+        val moduleName = matched.group("module")
+        val coordinates = sourceModules.find(_.relativePathFromMonoRepoRoot == moduleName).map(_.coordinates).getOrElse(Coordinates("","",""))
+        val filePath = matched.group("file")
+        Some(ZincCodePath(ZincSourceModule(moduleName, coordinates), matched.group("relative"), filePath))
       case None => None
     }
-  }
-
-  def getListOfSubDirectories(directoryName: String): List[String] = {
-    new File(directoryName)
-      .listFiles
-      .filter(_.isDirectory)
-      .map(_.getName).toList
   }
 }

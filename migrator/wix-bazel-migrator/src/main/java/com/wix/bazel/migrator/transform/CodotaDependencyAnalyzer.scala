@@ -15,7 +15,7 @@ import com.wix.bazel.migrator.transform.AnalyzeFailure.MissingAnalysisInCodota
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer._
 import com.wix.bazel.migrator.transform.FailureMetadata.InternalDepMissingExtended
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
-import com.wix.build.zinc.analysis.{ZincAnalysisParser, ZincCodePath, ZincSourceModule}
+import com.wix.build.zinc.analysis.{ZincAnalysisParser, ZincCodePath, ZincModuleAnalysis, ZincSourceModule}
 import com.wixpress.build.maven
 import com.wixpress.build.maven.{Coordinates, MavenScope}
 import org.slf4j.LoggerFactory
@@ -27,25 +27,27 @@ import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
 class ZincDepednencyAnalyzer(repoPath: Path) extends DependencyAnalyzer {
-  private val modules = new ZincAnalysisParser(Paths.get(repoPath.toAbsolutePath.toString)).readModules()
+  private val modules: Map[Coordinates, List[ZincModuleAnalysis]] = new ZincAnalysisParser(Paths.get(repoPath.toAbsolutePath.toString)).readModules()
 
   override def allCodeForModule(module: SourceModule): List[Code] = {
-    modules.flatMap {
-      case (key, value) => value.map {
-        // TODO: figure out runtime deps!!!!!!!
-        v => Code(toCodePath(module, v.codePath), v.dependencies.map(d => {
-          Dependency(toCodePath(moduleFrom(d.module), d), isCompileDependency = true)
-        }))
-      }
-    }.toList
+    modules.getOrElse(module.coordinates, Nil).map { moduleAnalysis =>
+      Code(toCodePath(module, moduleAnalysis.codePath), toDependencies(moduleAnalysis))
+    }
   }
-
-  private def moduleFrom(m: ZincSourceModule) =
-    SourceModule(m.moduleName, m.coordinates)
 
   private def toCodePath(module: SourceModule, v: ZincCodePath) = {
     CodePath(module, v.relativeSourceDirPathFromModuleRoot, v.filePath)
   }
+
+  private def toDependencies( analysis: ZincModuleAnalysis) = {
+    // TODO: figure out runtime deps!!!!!!!
+    analysis.dependencies.map(d => {
+      Dependency(toCodePath(moduleFrom(d.module), d), isCompileDependency = true)
+    })
+  }
+
+  private def moduleFrom(m: ZincSourceModule) =
+    SourceModule(m.moduleName, m.coordinates)
 }
 
 class CodotaDependencyAnalyzer(repoRoot: Path,

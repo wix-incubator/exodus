@@ -23,6 +23,9 @@ class CodeAnalysisTransformer(dependencyAnalyzer: DependencyAnalyzer) {
     val keyToCodes = newCodesMap
     val graph = CodeGraph.empty
     modules.foreach(addModuleTo(graph, keyToCodes))
+    keyToCodes.foreach{
+      case (key, value) => println(s"========\n${key.codeDirPath.module.coordinates}+${key.resourcePackage}")
+    }
     GraphAndCodes(graph, asImmutableMap(keyToCodes))
   }
 
@@ -30,7 +33,10 @@ class CodeAnalysisTransformer(dependencyAnalyzer: DependencyAnalyzer) {
                           keyToCodes: mutable.MultiMap[Vertex, Code])(module: SourceModule): Unit = {
     dependencyAnalyzer.allCodeForModule(module).foreach { code =>
       val resourceKey = ResourceKey.fromCodePath(code.codePath)
-
+      val coordinates = resourceKey.codeDirPath.module.coordinates
+      val str = resourceKey.resourcePackage
+      println(s"========\n${coordinates}+${str}")
+      
       keyToCodes.addBinding(resourceKey, code)
 
       graph.addVertex(resourceKey)
