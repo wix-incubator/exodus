@@ -6,10 +6,6 @@
   name: Bazel Basics
 - link: /how-it-works.html
   name: How It Works
-- link: Migrate Locally
-  name: run-locally.html
-- link: Migrate on Jenkins
-  name: run-jenkins.html
 - link: /how-to-run-bazel-locally.html
   name: Run Migration Locally
 - link: /how-to-run-migration-jenkins.html
