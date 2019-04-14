@@ -15,79 +15,29 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
          |
-         |load("//:tools/load_2nd_party_repositories.bzl", "load_2nd_party_repositories")
-         |load_2nd_party_repositories()
+         |rules_scala_version="6a9f81aa29563a07cc69a2555e54ac3cdfd396ed"
          |
-         |load("@core_server_build_tools//dependencies/rules_scala:rules_scala.bzl", "rules_scala")
-         |rules_scala()
+         |http_archive(
+         |    name = "io_bazel_rules_scala",
+         |    strip_prefix = "rules_scala-%s" % rules_scala_version,
+         |    type = "zip",
+         |    url = "https://github.com/bazelbuild/rules_scala/archive/%s.zip" % rules_scala_version,
+         |)
          |
-         |load("@core_server_build_tools//:repositories.bzl", "scala_repositories")
+         |load("@io_bazel_rules_scala//scala:toolchains.bzl", "scala_register_toolchains")
+         |scala_register_toolchains()
+         |
+         |load("@io_bazel_rules_scala//scala:scala.bzl", "scala_repositories")
          |scala_repositories()
-         |
-         |load("@core_server_build_tools//dependencies/rules_docker:rules_docker.bzl", "rules_docker")
-         |rules_docker()
-         |
-         |load("@core_server_build_tools//dependencies/google_protobuf:google_protobuf.bzl", "google_protobuf")
-         |google_protobuf()
-         |
-         |load("@core_server_build_tools//toolchains:toolchains_defs.bzl","toolchains_repositories")
-         |toolchains_repositories()
          |
          |maven_server(
          |    name = "default",
          |    url = "http://repo.dev.wixpress.com/artifactory/libs-snapshots",
          |)
          |
-         |load("@$frameworkWSName//test-infrastructures-modules/mysql-testkit/downloader:mysql_installer.bzl", "mysql_default_version", "mysql")
-         |mysql_default_version()
-         |mysql("5.6", "latest")
-         |maven_jar(
-         |    name = "com_wix_wix_embedded_mysql_download_and_extract_jar_with_dependencies",
-         |    artifact = "com.wix:wix-embedded-mysql-download-and-extract:jar:jar-with-dependencies:4.1.2",
-         |)
-         |load("@$frameworkWSName//test-infrastructures-modules/mongo-test-kit/downloader:mongo_installer.bzl", "mongo_default_version", "mongo")
-         |mongo_default_version()
-         |mongo("3.3.1")
-         |maven_jar(
-         |    name = "de_flapdoodle_embed_mongo_download_and_extract_jar_with_dependencies",
-         |    artifact = "de.flapdoodle.embed:de.flapdoodle.embed.mongo.download-and-extract:jar:jar-with-dependencies:2.0.0",
-         |)
-         |
-         |
-         |register_toolchains("@core_server_build_tools//toolchains:wix_defaults_global_toolchain")
-         |
-         |register_execution_platforms("@core_server_build_tools//platforms:my_host_platform")
-         |
-         |${loadGrpcRepos(workspaceName)}
-         |
-         |load("@server_infra//:proto_repos.bzl", "scala_proto_repositories")
-         |scala_proto_repositories()
-         |
          |load("//:third_party.bzl", "third_party_dependencies")
          |
          |third_party_dependencies()
-         |
-         |load("@core_server_build_tools//:third_party.bzl", "managed_third_party_dependencies")
-         |
-         |managed_third_party_dependencies()
-         |${externalWixReposThirdParties(interRepoSourceDependency)}
-         |
-         |load("//third_party/docker_images:docker_images.bzl", "docker_images")
-         |
-         |docker_images()
-         |
-         |git_repository(
-         |    name="com_github_johnynek_bazel_jar_jar",
-         |    remote = "git@github.com:johnynek/bazel_jar_jar.git",
-         |    commit = "4005d99473e86120c55c878309456c644202ebec"
-         |)
-         |
-         |load("@com_github_johnynek_bazel_jar_jar//:jar_jar.bzl", "jar_jar_repositories")
-         |
-         |jar_jar_repositories()
-         |
-         |load("@core_server_build_tools//dependencies/kube:kube_repositories.bzl", "kube_repositories")
-         |kube_repositories()
          |
          |${workspaceSuffixOverride()}
          |

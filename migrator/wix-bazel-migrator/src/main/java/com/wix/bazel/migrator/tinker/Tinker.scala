@@ -1,5 +1,8 @@
 package com.wix.bazel.migrator.tinker
 
+import java.io.PrintWriter
+import java.nio.file.Files
+
 import com.wix.bazel.migrator._
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
 import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, InternalTargetOverridesReader, MavenArchiveTargetsOverridesReader}
@@ -9,11 +12,14 @@ import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NeverLinkResolver._
 
+import scala.io.Source
+
 class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
   def migrate(): Unit = {
     try {
       failOnConflictsIfNeeded()
 
+      copyMacros()
       writeBazelRc()
       writeBazelRcManagedDevEnv()
       writePrelude()
@@ -90,6 +96,16 @@ class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
       "build --javabase=@core_server_build_tools//toolchains/jdk:wix_remote_jdk"
     )
     new BazelRcManagedDevEnvWriter(repoRoot).appendLines(jdk8CustomFlags)
+  }
+
+  private def copyMacros() = {
+    val macros = Source.fromInputStream(Migrator.getClass.getResourceAsStream("/macros.bzl")).mkString
+    val tests = Source.fromInputStream(Migrator.getClass.getResourceAsStream("/tests.bzl")).mkString
+    val importExternal = Source.fromInputStream(Migrator.getClass.getResourceAsStream("/import_external.bzl")).mkString
+
+    Files.write(repoRoot.resolve("macros.bzl"), macros.getBytes())
+    Files.write(repoRoot.resolve("tests.bzl"), tests.getBytes())
+    Files.write(repoRoot.resolve("import_external.bzl"), importExternal.getBytes())
   }
 
   private def cleanGitIgnore(): Unit =
