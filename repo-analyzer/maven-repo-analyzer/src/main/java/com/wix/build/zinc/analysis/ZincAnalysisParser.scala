@@ -3,13 +3,16 @@ package com.wix.build.zinc.analysis
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
 
+import com.wixpress.build.maven.Coordinates
+
 import scala.io.Source
 import scala.util.Try
 
 object ZincAnalysisParser extends App {
     new ZincAnalysisParser(Paths.get("/Users/natans/hackathon/java-design-patterns")).readModules()
 }
-case class ZincCodePath(module: String, relativeSourceDirPathFromModuleRoot: String, filePath: String)
+case class ZincSourceModule(moduleName: String, coordinates: Coordinates)
+case class ZincCodePath(module: ZincSourceModule, relativeSourceDirPathFromModuleRoot: String, filePath: String)
 case class ZincModuleAnalysis(codePath: ZincCodePath, dependencies: List[ZincCodePath])
 
 class ZincAnalysisParser(repoRoot: Path) {
@@ -52,8 +55,8 @@ class ZincAnalysisParser(repoRoot: Path) {
     val exp = s"(.*)/(.*/.*/.*)/(.*)".r("module", "relative", "file")
     exp.findFirstMatchIn(inputValue) match {
       case Some(matched) =>
-        ZincCodePath(matched.group("module"), matched.group("relative"), matched.group("file"))
-      case None => ZincCodePath("", "", "")
+        ZincCodePath(ZincSourceModule(matched.group("module"), Coordinates("","","")), matched.group("relative"), matched.group("file"))
+      case None => ZincCodePath(ZincSourceModule("", Coordinates("","","")), "", "")
     }
   }
 

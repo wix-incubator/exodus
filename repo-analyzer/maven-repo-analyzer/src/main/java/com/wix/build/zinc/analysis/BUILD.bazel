@@ -1,11 +1,13 @@
 package(default_visibility = ["//visibility:public"])
 
 sources()
+
 scala_library(
     name = "analysis",
     srcs = [
         ":sources",
     ],
+    deps = ["//models/maven-model/src/main/scala/com/wixpress/build/maven"],
 )
 
 java_binary(

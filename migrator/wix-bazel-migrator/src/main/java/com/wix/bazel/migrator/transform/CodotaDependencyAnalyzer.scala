@@ -36,17 +36,6 @@ class ZincDepednencyAnalyzer() extends DependencyAnalyzer {
         v => Code(toCodePath(module, v.codePath), v.dependencies.map(d => Dependency(toCodePath(SourceModule("", Coordinates("", "", "")), d), isCompileDependency = true)))
       }
     }.toList
-
-//    if (module.relativePathFromMonoRepoRoot == "visitor")
-//      List(
-//        Code(CodePath(module, "src/main/java", "com/iluwatar/visitor/App.java"),
-//          List(
-//            Dependency(CodePath(module, "src/main/java", "com/iluwatar/visitor/App.java"), isCompileDependency = true),
-//            Dependency(CodePath(module, "src/main/java", "com/iluwatar/visitor/CommanderVisitor.java"), isCompileDependency = true),
-//            Dependency(CodePath(module, "src/main/java", "com/iluwatar/visitor/Sergeant.java"), isCompileDependency = true),
-//          )))
-//    else
-//      List()
   }
 
   private def toCodePath(module: SourceModule, v: ZincCodePath) = {
