@@ -7,7 +7,11 @@ scala_library(
     srcs = [
         ":sources",
     ],
-    deps = ["//models/maven-model/src/main/scala/com/wixpress/build/maven"],
+    deps = [
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
+    ],
 )
 
 java_binary(

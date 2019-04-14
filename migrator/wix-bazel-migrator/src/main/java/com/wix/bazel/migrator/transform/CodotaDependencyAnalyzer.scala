@@ -15,7 +15,7 @@ import com.wix.bazel.migrator.transform.AnalyzeFailure.MissingAnalysisInCodota
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer._
 import com.wix.bazel.migrator.transform.FailureMetadata.InternalDepMissingExtended
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
-import com.wix.build.zinc.analysis.{ZincAnalysisParser, ZincCodePath, ZincModuleAnalysis}
+import com.wix.build.zinc.analysis.{ZincAnalysisParser, ZincCodePath, ZincSourceModule}
 import com.wixpress.build.maven
 import com.wixpress.build.maven.{Coordinates, MavenScope}
 import org.slf4j.LoggerFactory
@@ -32,11 +32,16 @@ class ZincDepednencyAnalyzer() extends DependencyAnalyzer {
   override def allCodeForModule(module: SourceModule): List[Code] = {
     modules.flatMap {
       case (key, value) => value.map {
-        // TODO: figure out dep module, runtime deps!!!!!!!
-        v => Code(toCodePath(module, v.codePath), v.dependencies.map(d => Dependency(toCodePath(SourceModule("", Coordinates("", "", "")), d), isCompileDependency = true)))
+        // TODO: figure out runtime deps!!!!!!!
+        v => Code(toCodePath(module, v.codePath), v.dependencies.map(d => {
+          Dependency(toCodePath(moduleFrom(d.module), d), isCompileDependency = true)
+        }))
       }
     }.toList
   }
+
+  private def moduleFrom(m: ZincSourceModule) =
+    SourceModule(m.moduleName, m.coordinates)
 
   private def toCodePath(module: SourceModule, v: ZincCodePath) = {
     CodePath(module, v.relativeSourceDirPathFromModuleRoot, v.filePath)

@@ -3,9 +3,10 @@ package com.wix.build.zinc.analysis
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
 
+import com.wix.bazel.migrator.model.SourceModule
+import com.wix.build.maven.analysis.{MavenSourceModules, SourceModulesOverrides}
 import com.wixpress.build.maven.Coordinates
 
-import scala.io.Source
 import scala.util.Try
 
 object ZincAnalysisParser extends App {
@@ -15,18 +16,16 @@ case class ZincSourceModule(moduleName: String, coordinates: Coordinates)
 case class ZincCodePath(module: ZincSourceModule, relativeSourceDirPathFromModuleRoot: String, filePath: String)
 case class ZincModuleAnalysis(codePath: ZincCodePath, dependencies: List[ZincCodePath])
 
-class ZincAnalysisParser(repoRoot: Path) {
-  def readModules(): Map[String, List[ZincModuleAnalysis]] = {
-    val modules = getListOfSubDirectories(repoRoot.toString)
-    modules.map(module => readModule(module)).toMap
+class ZincAnalysisParser(repoRoot: Path,
+                         sourceModulesOverrides: SourceModulesOverrides = SourceModulesOverrides.empty) {
+  private val mavenSourceModules: MavenSourceModules = new MavenSourceModules(repoRoot, sourceModulesOverrides)
+
+  def readModules(): Map[SourceModule, List[ZincModuleAnalysis]] = {
+    mavenSourceModules.modules().map(module => readModule(module)).toMap
   }
 
-  //read maven data strucutres - only relevant modules - populate coordiantes
-  private def readModule(module: String):(String,List[ZincModuleAnalysis]) = {
-    // read all target/analysis/compile.relations files
-    //    deserialize each file
-
-    val analysisFile = new File(s"$repoRoot/$module/target/analysis/compile.relations")
+  private def readModule(module: SourceModule):(SourceModule,List[ZincModuleAnalysis]) = {
+    val analysisFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/compile.relations")
     val content = Try {
       new String(Files.readAllBytes(analysisFile.toPath))
     }.getOrElse("")
@@ -41,23 +40,21 @@ class ZincAnalysisParser(repoRoot: Path) {
           (tokens(0), tokens(1))
         })
         val analysesResult = dependencies.groupBy(k => k._1).map { case (key, value) =>
-          ZincModuleAnalysis(parseCodePath(key), value.map(v => parseCodePath(v._2)).toList)
+          parseCodePath(key).map(ZincModuleAnalysis(_, value.flatMap(v => parseCodePath(v._2)).toList))
         }
         println(analysesResult)
-        module -> analysesResult.toList
+        module -> analysesResult.toList.flatten
       }
       case None => module -> Nil
     }
-
-
   }
 
-  private def parseCodePath(inputValue: String) = {
+  private def parseCodePath(inputValue: String): Option[ZincCodePath] = {
     val exp = s"(.*)/(src/.*/(?:java|scala))/(.*)".r("module", "relative", "file")
     exp.findFirstMatchIn(inputValue) match {
       case Some(matched) =>
-        ZincCodePath(ZincSourceModule(matched.group("module"), Coordinates("","","")), matched.group("relative"), matched.group("file"))
-      case None => ZincCodePath(ZincSourceModule("", Coordinates("","","")), "", "")
+        Some(ZincCodePath(ZincSourceModule(matched.group("module"), Coordinates("","","")), matched.group("relative"), matched.group("file")))
+      case None => None
     }
   }
 
