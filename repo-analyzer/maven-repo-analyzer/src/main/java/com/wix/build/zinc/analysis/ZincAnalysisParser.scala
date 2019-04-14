@@ -21,6 +21,7 @@ class ZincAnalysisParser(repoRoot: Path) {
     modules.map(module => readModule(module)).toMap
   }
 
+  //read maven data strucutres - only relevant modules - populate coordiantes
   private def readModule(module: String):(String,List[ZincModuleAnalysis]) = {
     // read all target/analysis/compile.relations files
     //    deserialize each file
@@ -35,7 +36,7 @@ class ZincAnalysisParser(repoRoot: Path) {
       case Some(matched) => {
         val sourceDeps = matched.group("source")
         val dep = sourceDeps.trim.split("\n")
-        val dependencies = dep.map(d => {
+        val dependencies = dep.filterNot(_.trim.isEmpty).map(d => {
           val tokens = d.trim.split(" -> ")
           (tokens(0), tokens(1))
         })
@@ -52,7 +53,7 @@ class ZincAnalysisParser(repoRoot: Path) {
   }
 
   private def parseCodePath(inputValue: String) = {
-    val exp = s"(.*)/(.*/.*/.*)/(.*)".r("module", "relative", "file")
+    val exp = s"(.*)/(src/.*/(?:java|scala))/(.*)".r("module", "relative", "file")
     exp.findFirstMatchIn(inputValue) match {
       case Some(matched) =>
         ZincCodePath(ZincSourceModule(matched.group("module"), Coordinates("","","")), matched.group("relative"), matched.group("file"))
