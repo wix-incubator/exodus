@@ -50,8 +50,9 @@ class CodotaDependencyAnalyzer(repoRoot: Path,
   ConnectorSettings.setHost(ConnectorSettings.Host.GATEWAY)
   private val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
   assert(codotaClient != null)
-  codotaClient.setDefaultCodePack("wix_enc")
-  codotaClient.setToken(codotaToken)
+  //TODO - move to configuration
+  codotaClient.setDefaultCodePack("github_square_okhttp_560dae058b9d0b03006e7e97")
+  codotaClient.setToken(null)
 
   private def extensionSupported(filePath: String) = filePath.endsWith("java") || filePath.endsWith("scala") || filePath.endsWith("proto")
 

@@ -6,10 +6,9 @@ import java.time.temporal.ChronoUnit
 
 import better.files.{File, FileOps}
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.bazel.migrator.{DependencyCollectionCollisionsReport, Persister, RunConfiguration}
+import com.wix.bazel.migrator._
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
-import com.wix.bazel.migrator.WorkspaceName
 import com.wix.build.maven.analysis._
 import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
 import com.wixpress.build.maven
@@ -17,6 +16,7 @@ import com.wixpress.build.maven._
 import com.wixpress.build.sync._
 
 class AppTinker(configuration: RunConfiguration) {
+  val maybeLocalMavenRepository = configuration.m2Path.map(p => new LocalMavenRepository(p.toString))
   val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
   val repoRoot: Path = configuration.repoRoot.toPath
   val managedDepsRepoRoot: io.File = configuration.managedDepsRepo
@@ -40,9 +40,10 @@ class AppTinker(configuration: RunConfiguration) {
     }
 
   private def aetherMavenDependencyResolver = {
-    new AetherMavenDependencyResolver(List(
-      "http://repo.dev.wixpress.com:80/artifactory/libs-releases",
-      "http://repo.dev.wixpress.com:80/artifactory/libs-snapshots"),
+    val repoUrl =
+      maybeLocalMavenRepository.map(r => s"http://localhost:${r.port}") getOrElse WixMavenBuildSystem.RemoteRepo
+
+    new AetherMavenDependencyResolver(List(repoUrl),
       resolverRepo)
   }
 
@@ -53,7 +54,7 @@ class AppTinker(configuration: RunConfiguration) {
   private def readSourceModules() = {
     val sourceModules = if (configuration.performMavenClasspathResolution ||
       Persister.mavenClasspathResolutionIsUnavailableOrOlderThan(staleFactorInHours, ChronoUnit.HOURS)) {
-      val modules = SourceModules.of(repoRoot)
+      val modules = SourceModules.of(repoRoot, aetherResolver)
       Persister.persistMavenClasspathResolution(modules)
       modules
     } else {
@@ -90,7 +91,9 @@ class AppTinker(configuration: RunConfiguration) {
   private def staleFactorInHours = sys.props.getOrElse("num.hours.classpath.cache.is.fresh", "24").toInt
 
   def checkConflictsInThirdPartyDependencies(resolver: MavenDependencyResolver = aetherResolver): ThirdPartyConflicts = {
-    val managedDependencies = aetherResolver.managedDependenciesOf(AppTinker.ThirdPartyDependencySource).map(_.coordinates)
+    val managedDependencies =
+      configuration.thirdPartCords.map(x =>
+        aetherResolver.managedDependenciesOf(Coordinates.deserialize(x)).map(_.coordinates)) getOrElse Set.empty
     val thirdPartyConflicts = new ThirdPartyValidator(codeModules, managedDependencies).checkForConflicts()
     print(thirdPartyConflicts)
     thirdPartyConflicts
