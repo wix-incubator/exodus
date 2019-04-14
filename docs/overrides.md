@@ -12,7 +12,7 @@ Excludes specific source files from migration.
 Override the following files:
 
 + Java/Scala files without any bytecode.
-+ Unsupported files. XXX Like what XXX
++ Unsupported files.
 
 ### Structure
 
