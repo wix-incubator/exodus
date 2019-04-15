@@ -8,20 +8,32 @@ Here's the info you need to run it locally.
 Clone the following repository:
 https://github.com/wix-incubator/exodus
 
-### Build the Exodus migration project
+### Build the Exodus migration cli
 
-Use this command line:  `bazel build //migrator/wix-bazel-migrator:migrator_cli_deploy.jar`
+Use this command line:  
+```
+cd [exodus path]
+bazel build //migrator/wix-bazel-migrator:migrator_cli_deploy.jar
+```
+
+### perform your code analysis
+Zinc / Codota 
+link to pre-requsites
 
 ### Build your target Maven repository
-<Anything to say here?>
+```
+$ cd [target repo path]
+$ mvn clean install
+```
+* this action populates local .m2 repository that is used by exodus to undestand the structure of the modules 
+** if you chose zinc the maven output will include dependency analysis used by exodus to create bazel targets
 
-### Zinc / Codota
-<Add content here.>
 
-### Run XXXX
+### Run Exodus
 
 Run this command line:
 
 ```
- java -Xmx12G -Dcodota.token=<YOUR TOKEN> -Dartifactory.token=<YOUR TOKEN> -Dskip.classpath=false -Dskip.transformation=false -Dmanaged.deps.repo=<<path to core-server-build-ttols>> -Dlocal.maven.repository.path=<<path to ~/.m2/repository>>  -Dfail.on.severe.conflicts=true -Drepo.root=<<okhttp path>> -Drepo.url=git@github.com:square/okhttp.git -jar bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar
+$ cd [exodus path]
+$ java -Xmx12G -Dskip.classpath=false -Dskip.transformation=false -Dlocal.maven.repository.path=[path to local .m2 repository]  -Dfail.on.severe.conflicts=true -Drepo.root=[target-repo] -Drepo.url=git@github.com:your-org/target-repo.git -jar bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar
 ```
