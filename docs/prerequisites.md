@@ -1,40 +1,37 @@
-# Prerequisites to consider
-
+# Assumptions
 The migration tool assumes you have the following:
-* Java and or Scala GitHub repositority currently being build by Maven 
-* Bazel 
+* Java and/or Scala git repositority currently being built by Maven 
 
-With the Exodus tool you can either:
-* [Run migration locally](how-to-run-bazel-locally.md) 
-* [Run the migration on Jenkins](how-to-run-migration-jenkins.md)
+# Prerequisites
+* Install Bazel https://docs.bazel.build/versions/master/install.html
+
+
 
 ## Code Analysis
-Maven runs builds in large packages which is partly what slows down the build process. A build run's one POM file determines the dependencies for the whole build run. Bazel is able to run builds in smaller packages of code incrementally and in parallel which makes it much faster. But to fully take advantage of Bazel's speed and efficiency, your code has to be broken down into smaller packages. You 
+Maven runs builds of coarse-grained code units ("modules") which is partly what slows down the build process. Bazel is able to run builds of finer-grained code units ("packages") of code incrementally and in parallel which makes it much faster. To fully take advantage of Bazel's speed and efficiency, your maven code units have to be broken down into smaller packages.
 
-You have to use a tool to analyze the code to determine all the dependencies between packages. Different code bases will need different tweaks.
+~Exodus creates these smaller packages using a depdnency analsys tool.~
+/You have to use a tool to analyze the code to determine all the dependencies between packages. 
 
-These are the options we've discovered so far. As this is an open source project, we'd be happy to hear from you regarding any other options.
-
-### Codota (paid path)
-At Wix, we used a licensed product called Codota. The advantage of using Codota is that you get full support from their team and can ______. The disadvantage is that that it's not open source and must be licensed.
+These are the avialble tools we have so far. As this is an open source project, we'd be happy to hear from you regarding any other options.
 
 ### Scala-Maven-Plugin with Zinc (open source path)
-We want this migration tool to be completely open source, so we are working on an alternative to Codota using a [Scala-Maven-plugin](http://davidb.github.io/scala-maven-plugin/index.html) used in incremental mode with Zinc as the [incremental compiler](http://davidb.github.io/scala-maven-plugin/example_incremental.html). Zinc provides dependency files as its output.
+Exodus can use Zinc's dependency analysis output. all you have to do is configure a [Scala-Maven-plugin](http://davidb.github.io/scala-maven-plugin/index.html) to use incremental mode with Zinc as the [incremental compiler](http://davidb.github.io/scala-maven-plugin/example_incremental.html). Zinc provides dependency files as its output.
 
 The Scala-Maven plugin version has to correlate with the Maven version you've been using to build the project. 
 Here is an example of the plugin version to add:
-```
+```xml
  <build>
-        <pluginManagement>	        <pluginManagement>
-            <plugins>	            <plugins>
-            	<plugin>
-					<groupId>net.alchim31.maven</groupId>
-					<artifactId>scala-maven-plugin</artifactId>
-					<version>3.2.2</version>
-                    <configuration>
-                        <recompileMode>incremental</recompileMode>
-                    </configuration>
-				</plugin>
+     <pluginManagement>	       
+         <plugins>	            
+             <plugin>
+			<groupId>net.alchim31.maven</groupId>
+			<artifactId>scala-maven-plugin</artifactId>
+			<version>3.2.2</version>
+		       <configuration>
+			  <recompileMode>incremental</recompileMode>
+		    </configuration>
+				
 ```
 You also have to add Scala library dependency and that version also depends on Maven version.
 Here is an example of the dependency code for the Scala library:
@@ -52,3 +49,6 @@ Here is an example of the dependency code for the Scala library:
             <artifactId>slf4j-api</artifactId>	 
             <artifactId>slf4j-api</artifactId>
 ```
+
+### Codota (paid path)
+At Wix, we used a licensed product called Codota. The advantage of using Codota is that you get full support from their team and have them help you with any special edge cases you may have. The disadvantage is that that it's not open source and must be licensed.
