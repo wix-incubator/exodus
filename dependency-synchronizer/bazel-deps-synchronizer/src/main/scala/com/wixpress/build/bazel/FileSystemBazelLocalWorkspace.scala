@@ -48,10 +48,14 @@ class FileSystemBazelLocalWorkspace(root: File) extends BazelLocalWorkspace {
   override def thirdPartyImportTargetsFileContent(thirdPartyGroup: String): Option[String] = contentIfExistsOf(root / thirdPartyImportFilesPathRoot / s"$thirdPartyGroup.bzl")
 
   override def allThirdPartyImportTargetsFilesContent(): Set[String] = {
+    allThirdPartyImportTargetsFiles().values.toSet
+  }
+
+  override def allThirdPartyImportTargetsFiles(): Map[File, String] = {
     val thirdPartyLocation = root / thirdPartyImportFilesPathRoot
     thirdPartyLocation.createIfNotExists(asDirectory = true, createParents = true)
     val files = thirdPartyLocation.glob("**/*.bzl")
-    files.flatMap(contentIfExistsOf).toSet
+    files.map(f => f -> contentIfExistsOf(f).get) toMap
   }
 
   override def thirdPartyOverrides(): ThirdPartyOverrides = {

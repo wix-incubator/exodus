@@ -25,6 +25,20 @@ object ImportExternalTargetsFile {
     }
   }
 
+  def persistTargetAndCleanHeaders(ruleToPersist: ImportExternalRule, localWorkspace: BazelLocalWorkspace): Unit = {
+    val thirdPartyGroup =  ImportExternalRule.ruleLocatorFrom(Coordinates.deserialize(ruleToPersist.artifact))
+    val importTargetsFileContent =
+      localWorkspace.thirdPartyImportTargetsFileContent(thirdPartyGroup).getOrElse("")
+    val importTargetsFileWriter = ImportExternalTargetsFileWriter(importTargetsFileContent).withTarget(ruleToPersist)
+    val newContent = importTargetsFileWriter.content
+
+    val withNoHeaders = importTargetsFileWriter.removeHeader(newContent).dropWhile(_.isWhitespace)
+    val withSingleHeader = ImportExternalTargetsFileWriter(s"""${ImportExternalTargetsFileWriter.fileHeader}
+                                                              |
+                                                              |  $withNoHeaders""".stripMargin)
+    localWorkspace.overwriteThirdPartyImportTargetsFile(thirdPartyGroup, withSingleHeader.content)
+  }
+
   def deleteTarget(coordsToDelete: Coordinates, localWorkspace: BazelLocalWorkspace): Unit = {
     val thirdPartyGroup = ImportExternalRule.ruleLocatorFrom(coordsToDelete)
     val importTargetsFileContent = localWorkspace.thirdPartyImportTargetsFileContent(thirdPartyGroup)
@@ -105,6 +119,11 @@ object ImportExternalTargetsFileReader {
     stillMaybeMatch.map(_.group("ruleName"))
   }
 
+  def parseImportExternalName(ruleText: String) = {
+    val maybeMatch = NameFilter.findFirstMatchIn(ruleText)
+    maybeMatch.map(_.group("name"))
+  }
+
   def extractNeverlink(ruleText: String) = {
     val maybeMatch = NeverlinkFilter.findFirstMatchIn(ruleText)
     maybeMatch.map(_.group("neverlink")).contains("1")
@@ -127,6 +146,10 @@ object ImportExternalTargetsFileReader {
 
   val RegexOfAnyLoadStatement = """load\(.*\)""".r
 
+  def wixSnapshotHeaderExists(content: String) =
+    RegexOfAnyLoadStatement.findAllIn(content).exists(_.contains("wix_snapshot_scala_maven_import_external"))
+
+  val NameFilter = """(?s)name\s*?=\s*?"(.+?)"""".r("name")
   val ArtifactFilter = """(?s)artifact\s*?=\s*?"(.+?)"""".r("artifact")
   val BracketsContentGroup = "bracketsContent"
   val ExportsFilter = """(?s)exports\s*?=\s*?\[(.+?)\]""".r(BracketsContentGroup)
@@ -159,7 +182,7 @@ case class ImportExternalTargetsFileReader(content: String) {
 
   private def extractFullMatchText(aMatch: Match): String = aMatch.group(0)
 
-  private def parseTargetText(ruleName:String)(ruleText: String): Option[ImportExternalRule] = {
+  private def parseTargetText(ruleName: String)(ruleText: String): Option[ImportExternalRule] = {
     Some(new ImportExternalRule(
       name = ruleName,
       artifact = extractArtifact(ruleText),
@@ -171,7 +194,12 @@ case class ImportExternalTargetsFileReader(content: String) {
       srcChecksum = extractSrcChecksum(ruleText),
       snapshotSources = extractsSnapshotSources(ruleText),
       neverlink = extractNeverlink(ruleText)))
-    }
+  }
+
+
+  def parseTargetTextAndName(ruleText: String): Option[ImportExternalRule] = {
+    parseTargetText(parseImportExternalName(ruleText).get)(ruleText)
+  }
 
   def findCoordinatesByName(name: String): Option[ValidatedCoordinates] = {
     findTargetWithSameNameAs(name = name, within = content)
