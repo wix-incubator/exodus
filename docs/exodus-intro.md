@@ -30,12 +30,10 @@ Here at Wix, we support different software languages and it's a huge advantage t
 Bazel can handle multiple repositories or any size mono-repo. We are able to scale our codebase and our continuous integration system. We use a build workers farm (read about Bazel remote execution) and can scale out build actions to hunderds of workers simultaneously. This means we have room to grow our code which is already at around 10 million lines of code in JVM languages
 
 ### Extend languages and platforms
-Bazel enables us to extend to more languages and platforms using Bazel's familiar extension language. Because there is a growing community of Bazel uses, we can share and re-use language rules written by other teams. We maintain and contribute to [rules_scala](https://github.com/bazelbuild/rules_scala), a large thriving community of rules contributers.
+Bazel enables us to extend to more languages and platforms using Bazel's familiar extension language. Because there is a growing community of Bazel users, we can share and re-use language rules written by other teams. We maintain and contribute to [rules_scala](https://github.com/bazelbuild/rules_scala), a large thriving community of rules contributers.
 
 ## How to migrate
 So now that you're considering migrating from Maven to Bazel, you may be intimated by the manual migration provided in the Bazel [documentation](https://docs.bazel.build/versions/master/migrate-maven.html). 
 
 Good news! We at Wix have created Exodus, an automated migration tool, and are providing you the files and documentation you need to more easily perform the migration.
-
-Links to repo & How to docs.
 
