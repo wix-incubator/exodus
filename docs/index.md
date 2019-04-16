@@ -5,10 +5,11 @@ Considering migrating from Maven to Bazel?
 Here's [why](exodus-intro.md) you should.
 
 Here's how you can using our automated migration tool:
-* Clone our repo.
-* Run data analysis.
+* Add the Zinc Maven plugin to your root pom.xml.
+* Re-build your Maven repo. 
+* Clone our repo.	
 * Run the migration tool.
-* Test your results.
+* Enjoy faster Bazel builds.
 
 For details, read these docs.
 
