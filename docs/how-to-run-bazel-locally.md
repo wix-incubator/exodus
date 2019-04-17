@@ -26,7 +26,7 @@ You can use either the Zinc Maven plugin, an open source option, or Codota, whic
 $ cd <path to your Maven target repo>
 $ mvn clean install
 ```
-Running your Maven build populates the local .m2 repository that is used by Exodus to undestand the structure of the build modules.
+Running your Maven build populates the local .m2 repository that is used by Exodus to understand the structure of the build modules.
 If you chose Zinc to analyze the code, the Maven output includes the dependency analysis used by Exodus to create the Bazel targets.
 
 
@@ -36,8 +36,8 @@ Run this command line in the directory where you cloned the Exodus repo.
 Be sure to replace the following path locations where indicated:
 * Path to the local .m2 repository
 * Path to the target repository
-Also change the `Drepo.urg` to your own organization name.
+Also change the `Drepo.url` to your target repository.
 
 ```
-$ java -Xmx12G -Dskip.classpath=false -Dskip.transformation=false -Dlocal.maven.repository.path=PATH TO LOCAL .m2 REPO  -Dfail.on.severe.conflicts=true -Drepo.root=TARGET-REPO -Drepo.url=git@github.com:YOUR-ORG/target-repo.git -jar bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar
+$ java -Xmx12G -Dskip.classpath=false -Dskip.transformation=false -Dlocal.maven.repository.path=<PATH-TO-LOCAL> .m2 REPO  -Dfail.on.severe.conflicts=true -Drepo.root=<TARGET-REPO> -Drepo.url=git@github.com:YOUR-ORG/target-repo.git -jar bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar
 ```
