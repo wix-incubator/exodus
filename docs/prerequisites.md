@@ -3,14 +3,14 @@ The migration tool assumes you have:
 * Java and/or Scala Git repositority currently being built by Maven. 
 
 # Prerequisites
-* Install Bazel https://docs.bazel.build/versions/master/install.html
+* Install [Bazel](https://docs.bazel.build/versions/master/install.html).
 
 ## Code Analysis
-Maven runs builds of coarse-grained code units ("modules") which is partly what slows down the build process. Bazel is able to run builds of finer-grained code units ("packages") incrementally and in parallel which makes it much faster. To fully take advantage of Bazel's speed and efficiency, your Maven code units have to be broken down into smaller packages.
+Maven runs builds of coarse-grained code units ("modules"), which is partly what slows down the build process. Bazel is able to run builds of finer-grained code units ("packages") incrementally and in parallel which makes it much faster. To fully take advantage of Bazel's speed and efficiency, your Maven code units have to be broken down into smaller packages.
 
 Exodus creates these smaller packages using a dependency analysis index. But first you have to use a tool to analyze the code to determine all the dependencies between the code units. 
 
-These are the avialble tools we have so far. As this is an open source project, we'd be happy to hear from you regarding any other options.
+These are the avialable tools we have so far. As this is an open source project, we'd be happy to hear from you regarding any other options.
 
 ### Scala-Maven-Plugin with Zinc (open source path)
 Exodus can use Zinc's dependency analysis output. All you have to do is configure a [Scala-Maven-plugin](http://davidb.github.io/scala-maven-plugin/index.html) to use incremental mode with Zinc as the [incremental compiler](http://davidb.github.io/scala-maven-plugin/example_incremental.html). Zinc provides dependency files as its output.
