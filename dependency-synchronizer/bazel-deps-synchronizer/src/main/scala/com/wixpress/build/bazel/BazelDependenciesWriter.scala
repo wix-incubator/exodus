@@ -79,7 +79,8 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
       exclusions = dependencyNode.baseDependency.exclusions,
       checksum = dependencyNode.checksum,
       srcChecksum = dependencyNode.srcChecksum,
-      snapshotSources = dependencyNode.snapshotSources,
+      // TODO - switch back once macro knows to read this field
+      snapshotSources = false,//dependencyNode.snapshotSources,
       neverlink = dependencyNode.neverlink
     )
 
