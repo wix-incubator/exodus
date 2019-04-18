@@ -13,7 +13,7 @@ https://github.com/wix-incubator/exodus
 
 Use this command line:  
 ```
-cd [exodus path]
+cd <PATH TO YOUR LOCAL EXODUS REPO>
 bazel build //migrator/wix-bazel-migrator:migrator_cli_deploy.jar
 ```
 
@@ -23,7 +23,7 @@ You can use either the Zinc Maven plugin, an open source option, or Codota, whic
 ### Build your target Maven repository
 
 ```
-$ cd <path to your Maven target repo>
+$ cd <PATH TO YOUR MAVEN TARGET REPO>
 $ mvn clean install
 ```
 Running your Maven build populates the local .m2 repository that is used by Exodus to understand the structure of the build modules.
@@ -36,6 +36,7 @@ Run this command line in the directory where you cloned the Exodus repo.
 Be sure to replace the following path locations where indicated:
 * Path to the local .m2 repository
 * Path to the target repository
+
 Also change the `Drepo.url` to your target repository.
 
 ```
