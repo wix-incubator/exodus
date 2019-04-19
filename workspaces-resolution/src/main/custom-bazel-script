@@ -1,0 +1,53 @@
+#!/bin/bash
+
+WORKSPACE_DIR="${PWD}"
+while [[ "${WORKSPACE_DIR}" != / ]]; do
+    if [[ -e "${WORKSPACE_DIR}/WORKSPACE" ]]; then
+      break;
+    fi
+    WORKSPACE_DIR="$(dirname "${WORKSPACE_DIR}")"
+done
+
+ARGUMENTS=$@
+function contains_quiet_command() {
+    QUERY_COMMAND="query"
+    INFO_COMMAND="info"
+    for ARG in ${ARGUMENTS[@]}
+    do
+        if [ "$ARG" = "$QUERY_COMMAND" -o "$ARG" = "$INFO_COMMAND" -o "$ARG" = "$CLEAN_COMMAND" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+function contains_preventing_command() {
+    CLEAN_COMMAND="clean"
+    for ARG in ${ARGUMENTS[@]}
+    do
+        if [ "$ARG" = "$CLEAN_COMMAND" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+if contains_quiet_command; then
+    SUPPRESS_PRINTS=True
+else
+    SUPPRESS_PRINTS=False
+fi
+
+LOAD_THIRD_PARTIES_FILE="${WORKSPACE_DIR}/tools/load_third_parties_of_external_wix_repositories.py"
+
+if [ -f $LOAD_THIRD_PARTIES_FILE ]; then
+    export REPO_LIST=phase2
+    export TRACKING_BRANCH=social-master
+    python $LOAD_THIRD_PARTIES_FILE ${WORKSPACE_DIR}
+fi
+
+if ! contains_preventing_command; then
+    python ${WORKSPACE_DIR}/tools/resolve_2nd_party_repositories.py ${WORKSPACE_DIR} ${SUPPRESS_PRINTS}
+fi
+
+exec -a "bazel-after-workspace-resolve" "${BAZEL_REAL}" "$@"
