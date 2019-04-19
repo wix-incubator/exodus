@@ -27,7 +27,6 @@ scala_library(
     deps = [
         "main_dependencies",
         "@com_wix_http_testkit_2_12",
-        "@com_wixpress_framework_wix_http_test_commons",
     ],
 )
 

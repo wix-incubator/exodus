@@ -10,7 +10,7 @@ import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
 import com.wix.bazel.migrator.{DependencyCollectionCollisionsReport, Persister, RunConfiguration}
 import com.wix.build.maven.analysis._
-import com.wixpress.build.bazel.repositories.WorkspaceName
+import com.wixpress.build.bazel.workspaces.WorkspaceName
 import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
 import com.wixpress.build.maven
 import com.wixpress.build.maven._
