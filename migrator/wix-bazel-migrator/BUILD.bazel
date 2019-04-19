@@ -11,7 +11,6 @@ scala_library(
         "//migrator/bazel-migrator:main_dependencies",
         "//migrator/codota-thin-client:main_dependencies",
         "//repo-analyzer/maven-repo-analyzer:main_dependencies",
-        "//wix-bazel-repositories/bazel-repositories-core:main_dependencies",
         "@ch_qos_logback_logback_classic",
         "@com_codota_codota_sdk_java",
         "@com_fasterxml_jackson_core_jackson_annotations",
