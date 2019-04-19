@@ -65,7 +65,7 @@ class ModuleDependenciesTransformer(repoModules: Set[SourceModule],
   }
 
   private def extractDependenciesOfScope(module: SourceModule, scopes: MavenScope*) =
-    module.dependencies.directDependencies.filter(dep => scopes.contains(dep.scope))
+    module.dependencies.directDependencies.filter(dep => scopes.contains(dep.scope)).filterNot(_.coordinates.artifactId == "scala-library")
 
   private def extractProdResourcesDependencies(module: SourceModule) =
     module.resourcesPaths.filter(prodResources).map(asResourceLabel(module))
