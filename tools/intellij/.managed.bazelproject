@@ -1,0 +1,22 @@
+### DO NOT EDIT ###
+
+#
+# To import this file to your project add the following line to your main '.bazelproject' file ('.ijwb/.bazelproject'):
+#
+# 'import tools/intellij/.managed.bazelproject' 
+#
+
+additional_languages:
+  scala
+
+test_sources:
+  */src/test/java/*
+  */src/test/scala/*
+  */src/test/resources/*
+  */src/it/java/*
+  */src/it/scala/*
+  */src/it/resources/*
+  */src/e2e/java/*
+  */src/e2e/scala/*
+  */src/e2e/resources/*
+  
