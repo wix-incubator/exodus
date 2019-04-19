@@ -6,12 +6,12 @@ import java.time.temporal.ChronoUnit
 
 import better.files.{File, FileOps}
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.bazel.migrator.{DependencyCollectionCollisionsReport, Persister, RunConfiguration}
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
+import com.wix.bazel.migrator.{DependencyCollectionCollisionsReport, Persister, RunConfiguration}
 import com.wix.build.maven.analysis._
-import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
 import com.wixpress.build.bazel.repositories.WorkspaceName
+import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
 import com.wixpress.build.maven
 import com.wixpress.build.maven._
 import com.wixpress.build.sync._
@@ -47,7 +47,7 @@ class AppTinker(configuration: RunConfiguration) {
   }
 
   private def newRemoteStorage = {
-    new StaticDependenciesRemoteStorage(new ArtifactoryRemoteStorage("repo.dev.wixpress.com:80", configuration.artifactoryToken))
+    new ArtifactoryRemoteStorage("repo.dev.wixpress.com:80", configuration.artifactoryToken)
   }
 
   private def readSourceModules() = {

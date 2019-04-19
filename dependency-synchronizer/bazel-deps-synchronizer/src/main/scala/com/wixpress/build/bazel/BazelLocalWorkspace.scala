@@ -1,5 +1,7 @@
 package com.wixpress.build.bazel
 
+import better.files.File
+
 trait BazelLocalWorkspace {
 
   def overwriteBuildFile(packageName: String, content: String): Unit
@@ -15,6 +17,8 @@ trait BazelLocalWorkspace {
   def thirdPartyImportTargetsFileContent(thirdPartyGroup: String): Option[String]
 
   def allThirdPartyImportTargetsFilesContent(): Set[String]
+
+  def allThirdPartyImportTargetsFiles(): Map[File, String]
 
   def thirdPartyOverrides(): ThirdPartyOverrides
 

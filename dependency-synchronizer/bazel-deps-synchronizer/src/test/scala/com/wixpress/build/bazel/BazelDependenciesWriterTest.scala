@@ -50,6 +50,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     "given one new root dependency" should {
       trait newRootDependencyNodeCtx extends emptyThirdPartyReposCtx {
         val baseDependency = aDependency("some-dep")
+        val baseSnapshotDependency = aDependency("some-dep-SNAPSHOT")
         val providedDependency = aDependency(artifactId = "some-dep", scope = MavenScope.Provided)
         val matchingGroupId = baseDependency.coordinates.groupIdForBazel
       }
@@ -60,6 +61,13 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
           containRootScalaImportExternalRuleFor(baseDependency.coordinates,"checksum","srcChecksum")
       }
+
+      "write import_external rule with snapshotSources=1 to third party repos file " in new newRootDependencyNodeCtx {
+        writer.writeDependencies(aRootBazelSnapshotDependencyNode(baseSnapshotDependency))
+
+        localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
+          containRootSnapshotScalaImportExternalRuleFor(baseSnapshotDependency.coordinates)
+      }.pendingUntilFixed("waiting for the macro to know this flag")
 
       "write import_external rule with neverlink and linkable rule name to third party repos file " in new newRootDependencyNodeCtx {
         writer.writeDependencies(aRootBazelDependencyNode(providedDependency))
@@ -470,6 +478,18 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
             |  artifact = "${coordinates.serialized}",
             |  jar_sha256 = "$checksum",
             |  srcjar_sha256 = "$srcChecksum",
+            |)""".stripMargin
+      )
+    )
+  }
+
+  private def containRootSnapshotScalaImportExternalRuleFor(coordinates: Coordinates) = {
+    beSome(
+      containsIgnoringSpaces(
+        s"""|import_external(
+            |  name = "${coordinates.workspaceRuleName}",
+            |  artifact = "${coordinates.serialized}",
+            |  snapshot_sources = 1,
             |)""".stripMargin
       )
     )

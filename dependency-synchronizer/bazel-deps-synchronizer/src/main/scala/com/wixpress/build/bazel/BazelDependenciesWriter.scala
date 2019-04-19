@@ -79,6 +79,8 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
       exclusions = dependencyNode.baseDependency.exclusions,
       checksum = dependencyNode.checksum,
       srcChecksum = dependencyNode.srcChecksum,
+      // TODO - switch back once macro knows to read this field
+      snapshotSources = false,//dependencyNode.snapshotSources,
       neverlink = dependencyNode.neverlink
     )
 
@@ -105,10 +107,11 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
 }
 
 case class AnnotatedDependencyNode(baseDependency: Dependency,
-                              runtimeDependencies: Set[BazelDep],
-                              compileTimeDependencies: Set[BazelDep],
-                              checksum: Option[String] = None,
-                              srcChecksum: Option[String] = None,
+                                   runtimeDependencies: Set[BazelDep],
+                                   compileTimeDependencies: Set[BazelDep],
+                                   checksum: Option[String] = None,
+                                   srcChecksum: Option[String] = None,
+                                   snapshotSources: Boolean = false,
                                    neverlink: Boolean = false)
 
 
@@ -121,6 +124,7 @@ class AnnotatedDependencyNodeTransformer(neverLinkResolver: NeverLinkResolver = 
       compileTimeDependencies = dependencyNode.compileTimeDependencies.filterNot(_.isProtoArtifact).map(resolveDepBy),
       checksum = dependencyNode.checksum,
       srcChecksum = dependencyNode.srcChecksum,
+      snapshotSources = dependencyNode.snapshotSources,
       neverlink = neverLinkResolver.isNeverLink(dependencyNode.baseDependency))
   }
 

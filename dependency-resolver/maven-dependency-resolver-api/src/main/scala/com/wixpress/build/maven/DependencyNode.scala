@@ -13,6 +13,8 @@ case class DependencyNode(baseDependency: Dependency,
   def toBazelNode: BazelDependencyNode = {
     BazelDependencyNode(baseDependency = baseDependency, dependencies = dependencies)
   }
+
+  def isSnapshot: Boolean = baseDependency.coordinates.version.endsWith("-SNAPSHOT")
 }
 
 object DependencyNode {
@@ -31,7 +33,8 @@ object DependencyNode {
 case class BazelDependencyNode(baseDependency: Dependency,
                                dependencies: Set[Dependency],
                                checksum: Option[String] = None,
-                               srcChecksum: Option[String] = None){
+                               srcChecksum: Option[String] = None,
+                               snapshotSources: Boolean = false){
   val runtimeDependencies: Set[Coordinates] = coordinatesByScopeFromDependencies(MavenScope.Runtime)
   val compileTimeDependencies: Set[Coordinates] = coordinatesByScopeFromDependencies(MavenScope.Compile)
 

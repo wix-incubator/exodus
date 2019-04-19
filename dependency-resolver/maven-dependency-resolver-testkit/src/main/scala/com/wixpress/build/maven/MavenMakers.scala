@@ -60,6 +60,8 @@ object MavenMakers {
 
   def aRootBazelDependencyNode(dependency: Dependency, checksum: Option[String] = Some(defaultChecksum), srcChecksum: Option[String] = Some(defaultSrcChecksum)) = BazelDependencyNode(dependency,Set.empty, checksum = checksum, srcChecksum = srcChecksum)
 
+  def aRootBazelSnapshotDependencyNode(dependency: Dependency) = BazelDependencyNode(dependency, Set.empty, snapshotSources = true)
+
   def aBazelDependencyNode(dependency: Dependency, dependencies: Set[Dependency]) = BazelDependencyNode(dependency, dependencies, Some(defaultChecksum), Some(defaultSrcChecksum))
 
   def dependencyNodesFrom(singleDependency: SingleDependency): Set[DependencyNode] =

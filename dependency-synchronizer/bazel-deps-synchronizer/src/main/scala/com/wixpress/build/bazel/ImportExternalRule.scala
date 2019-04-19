@@ -13,11 +13,12 @@ case class ImportExternalRule(name: String,
                               testOnly: Boolean = false,
                               checksum: Option[String] = None,
                               srcChecksum: Option[String] = None,
+                              snapshotSources: Boolean = false,
                               neverlink: Boolean = false) extends RuleWithDeps {
   def serialized: String = {
     s"""  $RuleType(
        |      name = "$name",
-       |      $serializedArtifact$serializedTestOnly$serializedChecksum$serializedSrcChecksum$serializedAttributes$serializedExclusions$serializedNeverlink
+       |      $serializedArtifact$serializedTestOnly$serializedChecksum$serializedSrcChecksum$serializedSnapshotSources$serializedAttributes$serializedExclusions$serializedNeverlink
        |  )""".stripMargin
   }
 
@@ -35,6 +36,11 @@ case class ImportExternalRule(name: String,
   private def serializedSrcChecksum =
     srcChecksum.fold("")(sha256 => s"""
                     |      srcjar_sha256 = "$sha256",""".stripMargin)
+
+  private def serializedSnapshotSources =
+    if (snapshotSources) """
+                    |      snapshot_sources = 1,""".stripMargin else ""
+
 
   private def serializedAttributes =
     toListEntry("exports", exports) +
@@ -80,6 +86,7 @@ object ImportExternalRule {
          exclusions: Set[Exclusion] = Set.empty,
          checksum: Option[String] = None,
          srcChecksum: Option[String] = None,
+         snapshotSources: Boolean = false,
          neverlink: Boolean = false): ImportExternalRule = {
     ImportExternalRule(
       name = artifact.workspaceRuleName,
@@ -89,6 +96,7 @@ object ImportExternalRule {
       exclusions = exclusions,
       checksum = checksum,
       srcChecksum = srcChecksum,
+      snapshotSources = snapshotSources,
       neverlink = neverlink
     )
   }

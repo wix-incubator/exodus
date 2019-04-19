@@ -10,6 +10,7 @@ class RuleResolver(localWorkspaceName: String) {
              exclusions: Set[Exclusion] = Set.empty,
              checksum: Option[String] = None,
              srcChecksum: Option[String] = None,
+             snapshotSources: Boolean = false,
              neverlink: Boolean = false): RuleToPersist =
     artifact.packaging match {
       case Packaging("jar") => RuleToPersist(
@@ -19,6 +20,7 @@ class RuleResolver(localWorkspaceName: String) {
           exclusions,
           checksum,
           srcChecksum,
+          snapshotSources,
           neverlink = neverlink),
         ImportExternalRule.ruleLocatorFrom(artifact))
       case Packaging("pom") => RuleToPersist(

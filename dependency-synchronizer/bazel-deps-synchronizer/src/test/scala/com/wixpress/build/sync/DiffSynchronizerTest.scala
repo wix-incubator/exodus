@@ -236,6 +236,21 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
         checksum = None)
     }
 
+    "persist SNAPSHOT jar import with snapshot sources True" in new resolvedCtx {
+      val divergentSnapshotDependency = managedDependency.withVersion("2.1193.0-SNAPSHOT")
+
+      val synchronizer = givenSynchornizerFor(resolver,
+        remoteStorageWillReturn(checksum = Some("checksum"), srcChecksum = Some("src_checksum")))
+
+      synchronizer.sync(Set(aRootDependencyNode(divergentSnapshotDependency)))
+
+      localWorkspace must includeImportExternalTargetWith(
+        artifact = divergentSnapshotDependency.coordinates,
+        checksum = None,
+        srcChecksum = None,
+        snapshotSources = true)
+    }.pendingUntilFixed("waiting for the macro to know this flag")
+
     "persist jar import with source jar" in new resolvedCtx {
       val synchronizer = givenSynchornizerFor(resolver,
         remoteStorageWillReturn(checksum = Some("checksum"), srcChecksum = Some("src_checksum")))
