@@ -16,7 +16,6 @@ scala_library(
     testonly = 1,
     deps = [
         "main_dependencies",
-        "@com_wixpress_common_wix_framework_scala_test_dependencies",
     ],
 )
 
