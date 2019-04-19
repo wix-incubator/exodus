@@ -8,7 +8,6 @@ scala_library(
         "//migrator/bazel-migrator-model:main_dependencies",
         "//models/maven-bazel-model-translation:main_dependencies",
         "//models/maven-model:main_dependencies",
-        "//wix-bazel-repositories/bazel-repositories-core:main_dependencies",
         "@com_fasterxml_jackson_core_jackson_core",
         "@com_fasterxml_jackson_core_jackson_databind",
         "@com_fasterxml_jackson_module_jackson_module_scala_2_12",
