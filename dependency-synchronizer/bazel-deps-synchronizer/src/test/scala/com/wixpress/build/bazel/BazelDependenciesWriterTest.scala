@@ -67,7 +67,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         localWorkspace.thirdPartyImportTargetsFileContent(matchingGroupId) must
           containRootSnapshotScalaImportExternalRuleFor(baseSnapshotDependency.coordinates)
-      }.pendingUntilFixed("waiting for the macro to know this flag")
+      }
 
       "write import_external rule with neverlink and linkable rule name to third party repos file " in new newRootDependencyNodeCtx {
         writer.writeDependencies(aRootBazelDependencyNode(providedDependency))
