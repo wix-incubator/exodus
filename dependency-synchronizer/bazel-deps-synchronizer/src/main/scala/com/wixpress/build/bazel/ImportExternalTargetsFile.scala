@@ -2,6 +2,7 @@ package com.wixpress.build.bazel
 
 import com.wixpress.build.bazel.ImportExternalTargetsFile.findTargetWithSameNameAs
 import com.wixpress.build.bazel.ImportExternalTargetsFileReader._
+import com.wixpress.build.bazel.ImportExternalTargetsFileWriter.removeHeader
 import com.wixpress.build.maven._
 
 import scala.util.matching.Regex
@@ -32,7 +33,7 @@ object ImportExternalTargetsFile {
     val importTargetsFileWriter = ImportExternalTargetsFileWriter(importTargetsFileContent).withTarget(ruleToPersist)
     val newContent = importTargetsFileWriter.content
 
-    val withNoHeaders = importTargetsFileWriter.removeHeader(newContent).dropWhile(_.isWhitespace)
+    val withNoHeaders = removeHeader(newContent).dropWhile(_.isWhitespace)
     val withSingleHeader = ImportExternalTargetsFileWriter(s"""${ImportExternalTargetsFileWriter.fileHeader}
                                                               |
                                                               |  $withNoHeaders""".stripMargin)

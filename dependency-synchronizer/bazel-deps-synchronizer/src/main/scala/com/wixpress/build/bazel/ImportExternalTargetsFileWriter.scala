@@ -6,8 +6,7 @@ import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 import scala.util.matching.Regex.Match
 import NewLinesParser._
-import com.wixpress.build.bazel.ImportExternalTargetsFileReader.RegexOfAnyLoadStatement
-import com.wixpress.build.bazel.ImportExternalTargetsFileWriter.fileHeader
+import com.wixpress.build.bazel.ImportExternalTargetsFileWriter.{fileHeader, removeHeader}
 
 case class ImportExternalTargetsFileWriter(content: String) {
   def withTarget(rule: ImportExternalRule): ImportExternalTargetsFileWriter = {
@@ -57,12 +56,12 @@ case class ImportExternalTargetsFileWriter(content: String) {
     }
   }
 
-  def removeHeader(content: String) =
-    RegexOfAnyLoadStatement.replaceAllIn(content, "").replaceFirst("def dependencies\\(\\):", "")
-
 }
 
 object ImportExternalTargetsFileWriter {
+
+  def removeHeader(content: String) =
+    content.split("def dependencies\\(\\):").last
 
   val fileHeader: String =
     s"""load("@core_server_build_tools//:import_external.bzl", import_external = "safe_wix_scala_maven_import_external")
