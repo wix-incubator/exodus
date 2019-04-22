@@ -249,7 +249,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
         checksum = None,
         srcChecksum = None,
         snapshotSources = true)
-    }.pendingUntilFixed("waiting for the macro to know this flag")
+    }
 
     "persist jar import with source jar" in new resolvedCtx {
       val synchronizer = givenSynchornizerFor(resolver,
