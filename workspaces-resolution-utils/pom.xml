@@ -13,6 +13,16 @@
         <relativePath></relativePath>
     </parent>
 
+    <developers>
+        <developer>
+            <name>Natan Silintsky</name>
+            <email>natans@wix.com</email>
+            <roles>
+                <role>maintainer</role>
+            </roles>
+        </developer>
+    </developers>
+
     <dependencies>
         <dependency>
             <groupId>com.wixpress.common</groupId>
