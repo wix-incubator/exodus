@@ -53,6 +53,11 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.wixpress.build</groupId>
+            <artifactId>maven-dependency-resolver-api-proto</artifactId>
+        </dependency>
+
     </dependencies>
 </project>
 
