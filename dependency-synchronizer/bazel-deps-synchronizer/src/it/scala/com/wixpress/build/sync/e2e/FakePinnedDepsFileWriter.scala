@@ -2,11 +2,13 @@ package com.wixpress.build.sync.e2e
 
 import java.nio.file.{Files, Path}
 
+import com.wixpress.build.maven.Coordinates
+
 class FakePinnedDepsFileWriter(repoRoot: Path) {
-  def write(pinnedBVersion: String): Unit = {
+  def write(pinnedArtifact: Coordinates): Unit = {
     val pinnedDepsFileContents =
       s"""
-         |com.bbb:B-direct:${pinnedBVersion}
+         |${pinnedArtifact.serialized}
       """.stripMargin
 
     writeToDisk(pinnedDepsFileContents)
