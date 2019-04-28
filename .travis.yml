@@ -1,0 +1,16 @@
+language: java
+
+env:
+  - V=0.18.0
+
+before_install:
+    URL="https://github.com/bazelbuild/bazel/releases/download/${V}/bazel-${V}-installer-linux-x86_64.sh"
+    wget -O install.sh "${URL}"
+    chmod +x install.sh
+    ./install.sh --user
+    rm -f install.sh
+
+script:
+    bazel \
+    test \
+    //...
