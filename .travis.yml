@@ -15,4 +15,4 @@ before_install:
 install: true
 
 script:
-    bazel test //...
+    bazel test //... -k
