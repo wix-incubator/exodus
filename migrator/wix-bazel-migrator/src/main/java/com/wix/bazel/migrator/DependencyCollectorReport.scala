@@ -1,7 +1,6 @@
 package com.wix.bazel.migrator
 
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.bazel.migrator.tinker.MigratorInputs
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.HighestVersionConflictResolution
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion

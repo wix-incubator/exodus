@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator.tinker
+package com.wix.bazel.migrator
 
 import java.io
 import java.nio.file.{Files, Path}
@@ -8,7 +8,6 @@ import better.files.{File, FileOps}
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
-import com.wix.bazel.migrator.{DependencyCollectionCollisionsReport, Persister, RunConfiguration}
 import com.wix.build.maven.analysis._
 import com.wixpress.build.bazel.workspaces.WorkspaceName
 import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}

@@ -1,3 +1,0 @@
-sources(
-    visibility = ["//migrator/wix-bazel-migrator/src/main/java/com/wix:__pkg__"],
-)
