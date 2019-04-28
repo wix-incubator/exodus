@@ -1,10 +1,9 @@
 package(default_visibility = ["//visibility:public"])
 
 scala_library(
-    name = "agg=bazel/migrator_bazel/migrator/tinker_bazel/migrator/transform_build/maven/analysis",
+    name = "agg=bazel/migrator_bazel/migrator/transform_build/maven/analysis",
     srcs = [
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator:sources",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/tinker:sources",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform:sources",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/build/maven/analysis:sources",
     ],

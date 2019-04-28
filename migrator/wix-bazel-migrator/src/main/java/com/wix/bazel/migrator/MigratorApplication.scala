@@ -1,7 +1,5 @@
 package com.wix.bazel.migrator
 
-import com.wix.bazel.migrator.tinker.Migrator
-
 import scala.io.Source
 
 /*
