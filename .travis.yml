@@ -11,9 +11,8 @@ before_install:
     ./install.sh --user
     rm -f install.sh
 
+#avoid running `mvn install` by default
 install: true
 
 script:
-    bazel \
-    test \
-    //...
+    bazel test //...
