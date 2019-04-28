@@ -13,7 +13,7 @@ class MavenBuildSystem(repoRoot: Path,
                        remoteMavenRepositoryUrls: List[String],
                        sourceModulesOverrides: SourceModulesOverrides = SourceModulesOverrides.empty) {
 
-  private val dependencyResolver: MavenDependencyResolver = new AetherMavenDependencyResolver(remoteMavenRepositoryUrls)
+  private val dependencyResolver: MavenDependencyResolver = new AetherMavenDependencyResolver(remoteMavenRepositoryUrls, ignoreMissingDependenciesFlag = true)
   private val mavenSourceModules: MavenSourceModules = new MavenSourceModules(repoRoot, sourceModulesOverrides)
   def modules(): Set[SourceModule] = {
     mavenSourceModules.modules()
