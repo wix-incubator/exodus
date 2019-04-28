@@ -15,7 +15,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
          |load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
          |
-         |load("//:tools/load_2nd_party_repositories.bzl", "load_2nd_party_repositories")
+         |load("//tools:load_2nd_party_repositories.bzl", "load_2nd_party_repositories")
          |load_2nd_party_repositories()
          |
          |load("@core_server_build_tools//dependencies/rules_scala:rules_scala.bzl", "rules_scala")
@@ -98,7 +98,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, interRepoSourceDepe
 
   private def externalWixReposThirdParties(interRepoSourceDependency: Boolean) = {
     if (interRepoSourceDependency)
-      s"""load("//:tools/third_party_deps_of_external_wix_repositories.bzl", "third_party_deps_of_external_wix_repositories")
+      s"""load("//tools:third_party_deps_of_external_wix_repositories.bzl", "third_party_deps_of_external_wix_repositories")
           |
           |third_party_deps_of_external_wix_repositories()
           |
