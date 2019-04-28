@@ -15,7 +15,7 @@ object MigratorApplication extends MigratorApp {
 
   def migrate(): Unit = {
     printHeader()
-    new Migrator(configuration).migrate()
+    new PublicMigrator(configuration).migrate()
   }
 
   private def printHeader(): Unit = {
