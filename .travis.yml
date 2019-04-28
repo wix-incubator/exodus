@@ -11,6 +11,8 @@ before_install:
     ./install.sh --user
     rm -f install.sh
 
+install: true
+
 script:
     bazel \
     test \
