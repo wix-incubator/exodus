@@ -16,7 +16,7 @@ import com.wixpress.build.maven
 import com.wixpress.build.maven._
 import com.wixpress.build.sync._
 
-class AppTinker(configuration: RunConfiguration) {
+class MigratorInputs(configuration: RunConfiguration) {
   val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
   val repoRoot: Path = configuration.repoRoot.toPath
   val managedDepsRepoRoot: io.File = configuration.managedDepsRepo
@@ -90,7 +90,7 @@ class AppTinker(configuration: RunConfiguration) {
   private def staleFactorInHours = sys.props.getOrElse("num.hours.classpath.cache.is.fresh", "24").toInt
 
   def checkConflictsInThirdPartyDependencies(resolver: MavenDependencyResolver = aetherResolver): ThirdPartyConflicts = {
-    val managedDependencies = aetherResolver.managedDependenciesOf(AppTinker.ThirdPartyDependencySource).map(_.coordinates)
+    val managedDependencies = aetherResolver.managedDependenciesOf(MigratorInputs.ThirdPartyDependencySource).map(_.coordinates)
     val thirdPartyConflicts = new ThirdPartyValidator(codeModules, managedDependencies).checkForConflicts()
     print(thirdPartyConflicts)
     thirdPartyConflicts
@@ -111,7 +111,7 @@ class AppTinker(configuration: RunConfiguration) {
 
   // hack to add hoopoe-specs2 (and possibly other needed dependencies)
   def constantDependencies: Set[Dependency] = {
-    aetherResolver.managedDependenciesOf(AppTinker.ThirdPartyDependencySource)
+    aetherResolver.managedDependenciesOf(MigratorInputs.ThirdPartyDependencySource)
       .filter(_.coordinates.artifactId == "hoopoe-specs2")
       .filter(_.coordinates.packaging.value == "pom") +
       //proto dependencies
@@ -150,7 +150,7 @@ class AppTinker(configuration: RunConfiguration) {
     )
 
     val managedDependenciesFromMaven = aetherResolver
-      .managedDependenciesOf(AppTinker.ManagedDependenciesArtifact)
+      .managedDependenciesOf(MigratorInputs.ManagedDependenciesArtifact)
       .forceCompileScope
 
     val providedDeps = externalBinaryDependencies
@@ -169,7 +169,7 @@ class AppTinker(configuration: RunConfiguration) {
   }
 }
 
-object AppTinker {
+object MigratorInputs {
   val ThirdPartyDependencySource: Coordinates =
     Coordinates.deserialize("com.wixpress.common:third-party-dependencies:pom:100.0.0-SNAPSHOT")
 

@@ -9,7 +9,7 @@ import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
 import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NeverLinkResolver._
 
-class Tinker(configuration: RunConfiguration) extends AppTinker(configuration) {
+class Migrator(configuration: RunConfiguration) extends MigratorInputs(configuration) {
   def migrate(): Unit = {
     failOnConflictsIfNeeded()
 

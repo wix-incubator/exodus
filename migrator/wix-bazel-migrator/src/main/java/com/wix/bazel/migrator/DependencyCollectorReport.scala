@@ -1,29 +1,29 @@
 package com.wix.bazel.migrator
 
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.bazel.migrator.tinker.AppTinker
+import com.wix.bazel.migrator.tinker.MigratorInputs
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.HighestVersionConflictResolution
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 
 object DependencyCollectorReport extends MigratorApp {
   println("[INFO]   STARTED DEPENDENCY COLLECTOR REPORT")
-  val modules = tinker.sourceModules.codeModules
+  val modules = migratorInputs.sourceModules.codeModules
   val repoCoordinates = modules.map(_.coordinates)
-  val ar = AppTinker.ManagedDependenciesArtifact
+  val ar = MigratorInputs.ManagedDependenciesArtifact
 
   val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
-    resolver = tinker.aetherResolver,
-    globalExcludes = repoCoordinates.union(tinker.sourceDependenciesWhitelist)
+    resolver = migratorInputs.aetherResolver,
+    globalExcludes = repoCoordinates.union(migratorInputs.sourceDependenciesWhitelist)
   )
 
   val directClosureCollector =  new CollectClosureFromDirectDeps(filteringResolver,
-    tinker.constantDependencies,
-    AppTinker.ManagedDependenciesArtifact)
-  val allDepsCollector =  new CollectAllDeps(filteringResolver, tinker.constantDependencies, AppTinker.ManagedDependenciesArtifact)
+    migratorInputs.constantDependencies,
+    MigratorInputs.ManagedDependenciesArtifact)
+  val allDepsCollector =  new CollectAllDeps(filteringResolver, migratorInputs.constantDependencies, MigratorInputs.ManagedDependenciesArtifact)
   val allDepsButPreferDirectCollector =  new CollectAllDepsButFavorDirect(filteringResolver,
-    tinker.constantDependencies,
-    AppTinker.ManagedDependenciesArtifact)
+    migratorInputs.constantDependencies,
+    MigratorInputs.ManagedDependenciesArtifact)
 
   printDiff("1-regular",directClosureCollector)
   println("")
