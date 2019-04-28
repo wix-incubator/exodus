@@ -10,7 +10,6 @@ scala_library(
     deps = [
         "//dependency-resolver/maven-dependency-resolver-api:main_dependencies",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-        "//dependency-resolver/maven-dependency-resolver-proto/src/main/proto:proto_scala",
     ],
 )
 
