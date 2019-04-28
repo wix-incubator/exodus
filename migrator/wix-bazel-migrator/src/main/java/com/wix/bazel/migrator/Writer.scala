@@ -28,7 +28,7 @@ object Writer extends MigratorApp {
     case "Mixed" => TestType.Mixed
   }
 
-  val writer = new Writer(tinker.repoRoot, tinker.codeModules, Persister.readTransformationResults())
+  val writer = new Writer(migratorInputs.repoRoot, migratorInputs.codeModules, Persister.readTransformationResults())
   writer.write()
 }
 

@@ -1,6 +1,6 @@
 package com.wix.bazel.migrator
 
-import com.wix.bazel.migrator.tinker.Tinker
+import com.wix.bazel.migrator.tinker.Migrator
 
 import scala.io.Source
 
@@ -12,16 +12,16 @@ import scala.io.Source
   later maybe also to add ability to reset the git repository, maybe also to clone the repo
   the first 3 will enable deleting the "Generator" object and just build a run configuration which does it
  */
-object Migrator extends MigratorApp {
+object MigratorApplication extends MigratorApp {
   migrate()
 
   def migrate(): Unit = {
     printHeader()
-    new Tinker(configuration).migrate()
+    new Migrator(configuration).migrate()
   }
 
   private def printHeader(): Unit = {
-    println(Source.fromInputStream(Migrator.getClass.getResourceAsStream("/banner.txt")).mkString)
+    println(Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/banner.txt")).mkString)
     println(s"starting migration with configuration [$configuration]")
   }
 }
