@@ -43,7 +43,7 @@ class AppTinker(configuration: RunConfiguration) {
     new AetherMavenDependencyResolver(List(
       "http://repo.dev.wixpress.com:80/artifactory/libs-releases",
       "http://repo.dev.wixpress.com:80/artifactory/libs-snapshots"),
-      resolverRepo)
+      resolverRepo, true)
   }
 
   private def newRemoteStorage = {
