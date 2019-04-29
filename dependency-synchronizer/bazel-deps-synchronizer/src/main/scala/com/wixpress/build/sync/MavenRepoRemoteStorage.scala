@@ -13,6 +13,7 @@ class MavenRepoRemoteStorage(baseUrls: List[String])extends DependenciesRemoteSt
 
   private val log = LoggerFactory.getLogger(getClass)
 
+  //TODO - optimize all of this! can access the jarUrl.sha256 directly (verify. seems maybe they exist only for our own snapshots and not for 3rd parties?)
   override def checksumFor(node: DependencyNode): Option[String] = {
     val artifact = node.baseDependency.coordinates
     calculateChecksum(artifact)
@@ -43,7 +44,7 @@ class MavenRepoRemoteStorage(baseUrls: List[String])extends DependenciesRemoteSt
         case _ => result
       }
     } else {
-      printAndFail(new RuntimeException("artifact not found in any of the given artifactory urls"))
+      printAndFail(new RuntimeException(s"""artifact $coordinates not found in any of the given artifactory urls"""))
     }
   }
 
@@ -60,7 +61,7 @@ class MavenRepoRemoteStorage(baseUrls: List[String])extends DependenciesRemoteSt
     } match {
       case Success(response) => Success(response)
       case Failure(ex) => {
-        log.warn(s"~~~~${url}")
+        log.warn(s"~~~~ ${url}")
         printAndFail(ex)
       }
     }
@@ -70,7 +71,7 @@ class MavenRepoRemoteStorage(baseUrls: List[String])extends DependenciesRemoteSt
     if (response.code != 404) {
       Success(response)
     } else {
-      printAndFail(new ArtifactNotFoundException(s"artifact: $artifact"))
+      Failure(new ArtifactNotFoundException(s"artifact: $artifact"))
     }
   }
 
@@ -85,7 +86,7 @@ class MavenRepoRemoteStorage(baseUrls: List[String])extends DependenciesRemoteSt
 
   private def printAndFail(ex: Throwable) = {
     log.warn(
-      s"""~~~~${ex.getMessage}
+      s"""~~~~ ${ex.getMessage}
          |""".stripMargin)
     Failure(ex)
   }

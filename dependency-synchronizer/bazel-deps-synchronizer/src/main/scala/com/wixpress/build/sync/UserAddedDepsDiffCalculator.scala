@@ -54,8 +54,8 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
     val aggregateAffectedNodes = collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps, currentClosure, userAddedMavenDeps, addedMavenClosure)
     val updatedLocalNodes = calculateAffectedDivergentFromManaged(managedNodes, aggregateAffectedNodes)
 
-    val depsToLazyClean = calculateNodesIdenticalToManaged(managedNodes, currentClosure)
-    val depsToClean = calculateNodesIdenticalToManaged(managedNodes, aggregateAffectedNodes)
+    val depsToLazyClean = compareDependencyNodesSets(managedNodes, currentClosure, returnIdentical = true)
+    val depsToClean = compareDependencyNodesSets(managedNodes, aggregateAffectedNodes, returnIdentical = true)
 
     DiffResult(updatedLocalNodes, currentClosure, managedNodes, depsToClean ++ depsToLazyClean)
   }
@@ -85,25 +85,28 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
     aetherResolver.dependencyClosureOf(userAddedDependencies, addedMavenClosureLocalOverManaged)
   }
 
-  private def calculateNodesIdenticalToManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[DependencyNode] = {
-    val elevatedAggreagteNodes = elevateLocalDepsToNeverLinkLevelOfManaged(managedNodes, aggregateNodes)
-    elevatedAggreagteNodes.forceCompileScopeIfNotProvided intersect managedNodes
-  }
-
   private def calculateAffectedDivergentFromManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[BazelDependencyNode] = {
     log.info(s"calculate diff with managed deps and persist it (${aggregateNodes.size} local deps, ${managedNodes.size} managed deps)...")
     log.debug(s"aggregateNodes count: ${aggregateNodes.size}")
 
-    val elevatedAggreagteNodes = elevateLocalDepsToNeverLinkLevelOfManaged(managedNodes, aggregateNodes)
-
     // comparison is done without taking checksums into account -> there could be checksum issues that will not be found
     // This is done for correctness. otherwise there could be a situation where nodes will be considered different just because one of the checksums is missing
-    val divergentLocalDependencies = elevatedAggreagteNodes.forceCompileScopeIfNotProvided diff managedNodes
+    val divergentLocalDependencies = compareDependencyNodesSets(managedNodes, aggregateNodes, returnIdentical = false)
 
     log.info(s"started fetching sha256 checksums for (${divergentLocalDependencies.size}) divergent 3rd party dependencies from artifactory...")
     val decoratedNodes = decorateNodesWithChecksum(divergentLocalDependencies)(remoteStorage)
     log.info("completed fetching sha256 checksums.")
     decoratedNodes
+  }
+
+  private def compareDependencyNodesSets(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode], returnIdentical: Boolean):Set[DependencyNode] = {
+    val elevatedAggregateNodes = elevateLocalDepsToNeverLinkLevelOfManaged(managedNodes, aggregateNodes).forceCompileScopeIfNotProvided
+    val equalsIgnoringExclusionsAndTransitiveVersions: DependencyNode => Boolean =
+      n => managedNodes.noTransitiveVersions.noExclusions.exists(_.equals(n.noTransitiveVersions.noExclusions))
+    returnIdentical match {
+      case true => elevatedAggregateNodes.filter(equalsIgnoringExclusionsAndTransitiveVersions)
+      case false => elevatedAggregateNodes.filterNot(equalsIgnoringExclusionsAndTransitiveVersions)
+    }
   }
 
   private def elevateLocalDepsToNeverLinkLevelOfManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[DependencyNode] = {
