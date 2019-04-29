@@ -15,7 +15,9 @@ case class RunConfiguration(repoRoot: File,
                             artifactoryToken: String = "",
                             sourceDependenciesWhitelist: Option[Path] = None,
                             additionalDepsByMavenDeps: Option[Path] = None,
-                            includeServerInfraInSocialModeSet: Boolean = false)
+                            includeServerInfraInSocialModeSet: Boolean = false,
+                            m2Path: Option[Path] = None,
+                            thirdPartyDependenciesSource: Option[String] = None)
 
 object RunConfiguration {
   private val Empty = RunConfiguration(null, null, null, null)
@@ -88,6 +90,20 @@ object RunConfiguration {
     opt[Boolean]("include-server-infra-in-social-mode-set")
       .withFallback(() => booleanProperty("include.server.infra.in.social.mode.set"))
       .action { case (include, cfg) => cfg.copy(includeServerInfraInSocialModeSet = include) }
+
+    opt[String]("local-maven-repository-path")
+      .withFallback(() => sys.props.getOrElse("local.maven.repository.path", ""))
+      .action {
+        case (path, cfg) if Option(path).exists(_.nonEmpty) => cfg.copy(m2Path = Some(Paths.get(path).toAbsolutePath))
+        case (_, cfg) =>  cfg.copy(m2Path = None)
+      }
+
+    opt[String]("third-party-dependencies-source")
+      .withFallback(() => sys.props.getOrElse("third.party.dependencies.source", ""))
+      .action {
+        case (coords, cfg) if Option(coords).exists(_.nonEmpty) => cfg.copy(thirdPartyDependenciesSource = Some(coords))
+        case (_, cfg) =>  cfg.copy(thirdPartyDependenciesSource = None)
+      }
   }
 
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)

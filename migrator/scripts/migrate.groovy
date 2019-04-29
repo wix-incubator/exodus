@@ -14,6 +14,7 @@ pipeline {
         REPO_NAME = find_repo_name()
         MANAGED_DEPS_REPO_NAME = "core-server-build-tools"
         MANAGED_DEPS_REPO_URL = "git@github.com:wix-private/core-server-build-tools.git"
+        THIRD_PARTY_DEPENDENCIES_SOURCE = "com.wixpress.common:third-party-dependencies:pom:100.0.0-SNAPSHOT"
         BRANCH_NAME = "bazel-mig-${env.BUILD_ID}"
         bazel_log_file = "bazel-build.log"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
@@ -64,6 +65,7 @@ pipeline {
                           |   -Dfail.on.severe.conflicts=true \\
                           |   -Drepo.root=../${repo_name}  \\
                           |   -Drepo.url=${env.repo_url} \\
+                          |   -Dthird.party.dependencies.source=${env.THIRD_PARTY_DEPENDENCIES_SOURCE} \\
                           |   -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar""".stripMargin()
                 }
             }
