@@ -16,6 +16,7 @@ import com.wixpress.build.maven._
 import com.wixpress.build.sync._
 
 class MigratorInputs(configuration: RunConfiguration) {
+  val maybeLocalMavenRepository = configuration.m2Path.map(p => new LocalMavenRepository(p.toString))
   val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
   val repoRoot: Path = configuration.repoRoot.toPath
   val managedDepsRepoRoot: io.File = configuration.managedDepsRepo
@@ -39,9 +40,11 @@ class MigratorInputs(configuration: RunConfiguration) {
     }
 
   private def aetherMavenDependencyResolver = {
-    new AetherMavenDependencyResolver(List(
-      "http://repo.dev.wixpress.com:80/artifactory/libs-releases",
-      "http://repo.dev.wixpress.com:80/artifactory/libs-snapshots"),
+    val repoUrl =
+      maybeLocalMavenRepository.map(r => List(r.url)) getOrElse List(
+        WixMavenBuildSystem.RemoteRepoReleases, WixMavenBuildSystem.RemoteRepo)
+
+    new AetherMavenDependencyResolver(repoUrl,
       resolverRepo, true)
   }
 
@@ -52,7 +55,7 @@ class MigratorInputs(configuration: RunConfiguration) {
   private def readSourceModules() = {
     val sourceModules = if (configuration.performMavenClasspathResolution ||
       Persister.mavenClasspathResolutionIsUnavailableOrOlderThan(staleFactorInHours, ChronoUnit.HOURS)) {
-      val modules = SourceModules.of(repoRoot)
+      val modules = SourceModules.of(repoRoot, aetherResolver)
       Persister.persistMavenClasspathResolution(modules)
       modules
     } else {
@@ -89,7 +92,7 @@ class MigratorInputs(configuration: RunConfiguration) {
   private def staleFactorInHours = sys.props.getOrElse("num.hours.classpath.cache.is.fresh", "24").toInt
 
   def checkConflictsInThirdPartyDependencies(resolver: MavenDependencyResolver = aetherResolver): ThirdPartyConflicts = {
-    val managedDependencies = aetherResolver.managedDependenciesOf(MigratorInputs.ThirdPartyDependencySource).map(_.coordinates)
+    val managedDependencies = maybeManagedDependencies.map(_.coordinates)
     val thirdPartyConflicts = new ThirdPartyValidator(codeModules, managedDependencies).checkForConflicts()
     print(thirdPartyConflicts)
     thirdPartyConflicts
@@ -110,7 +113,7 @@ class MigratorInputs(configuration: RunConfiguration) {
 
   // hack to add hoopoe-specs2 (and possibly other needed dependencies)
   def constantDependencies: Set[Dependency] = {
-    aetherResolver.managedDependenciesOf(MigratorInputs.ThirdPartyDependencySource)
+    maybeManagedDependencies
       .filter(_.coordinates.artifactId == "hoopoe-specs2")
       .filter(_.coordinates.packaging.value == "pom") +
       //proto dependencies
@@ -118,6 +121,11 @@ class MigratorInputs(configuration: RunConfiguration) {
       maven.Dependency(Coordinates.deserialize("com.wixpress.grpc:generator:1.0.0-SNAPSHOT"), MavenScope.Compile) +
       //core-server-build-tools dependency
       maven.Dependency(Coordinates.deserialize("com.google.jimfs:jimfs:1.1"), MavenScope.Compile)
+  }
+
+  private def maybeManagedDependencies = {
+    configuration.thirdPartyDependenciesSource.map(source =>
+      aetherResolver.managedDependenciesOf(Coordinates.deserialize(source))) getOrElse Set.empty
   }
 
   implicit class DependencySetExtensions(dependencies: Set[Dependency]) {
@@ -169,9 +177,6 @@ class MigratorInputs(configuration: RunConfiguration) {
 }
 
 object MigratorInputs {
-  val ThirdPartyDependencySource: Coordinates =
-    Coordinates.deserialize("com.wixpress.common:third-party-dependencies:pom:100.0.0-SNAPSHOT")
-
   val ManagedDependenciesArtifact: Coordinates =
     Coordinates.deserialize("com.wixpress.common:wix-base-parent-ng:pom:100.0.0-SNAPSHOT")
 }

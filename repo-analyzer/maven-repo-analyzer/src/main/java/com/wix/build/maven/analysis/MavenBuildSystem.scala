@@ -11,9 +11,10 @@ import scala.collection.JavaConverters._
 
 class MavenBuildSystem(repoRoot: Path,
                        remoteMavenRepositoryUrls: List[String],
-                       sourceModulesOverrides: SourceModulesOverrides = SourceModulesOverrides.empty) {
+                       sourceModulesOverrides: SourceModulesOverrides = SourceModulesOverrides.empty,
+                       maybeDependencyResolver: Option[AetherMavenDependencyResolver] = None) {
 
-  private val dependencyResolver: MavenDependencyResolver = new AetherMavenDependencyResolver(remoteMavenRepositoryUrls, ignoreMissingDependenciesFlag = true)
+  private val dependencyResolver: MavenDependencyResolver = maybeDependencyResolver.getOrElse(new AetherMavenDependencyResolver(remoteMavenRepositoryUrls, ignoreMissingDependenciesFlag = true))
   private val mavenSourceModules: MavenSourceModules = new MavenSourceModules(repoRoot, sourceModulesOverrides)
   def modules(): Set[SourceModule] = {
     mavenSourceModules.modules()

@@ -9,7 +9,13 @@ import com.wix.build.maven.analysis.ThirdPartyConflicts
 import com.wixpress.build.bazel.NeverLinkResolver._
 
 abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(configuration) {
-  def migrate(): Unit
+  def migrate(): Unit = {
+    try {
+      unSafeMigrate()
+    } finally maybeLocalMavenRepository.foreach(_.stop)
+  }
+
+  def unSafeMigrate(): Unit
 
   lazy val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
     externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
@@ -123,14 +129,14 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   private[migrator] def wixFrameworkMigration = configuration.repoUrl.contains("/wix-framework.git")
 
   private[migrator] def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {
-    if (conflicts.fail.nonEmpty) {
+    if (configuration.thirdPartyDependenciesSource.nonEmpty && conflicts.fail.nonEmpty) {
       throw new RuntimeException("Found failing third party conflicts (look for \"Found conflicts\" in log)")
     }
   }
 }
 
 class PublicMigrator(configuration: RunConfiguration) extends Migrator(configuration) {
-  override def migrate(): Unit = {
+  override def unSafeMigrate(): Unit = {
     failOnConflictsIfNeeded()
 
     writeBazelRc()
