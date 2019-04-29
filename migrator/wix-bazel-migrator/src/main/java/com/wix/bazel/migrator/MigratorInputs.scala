@@ -5,6 +5,7 @@ import java.nio.file.{Files, Path}
 import java.time.temporal.ChronoUnit
 
 import better.files.{File, FileOps}
+import com.wix.bazel.migrator.WixMavenBuildSystem.RemoteRepoBaseUrl
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
@@ -42,14 +43,20 @@ class MigratorInputs(configuration: RunConfiguration) {
   private def aetherMavenDependencyResolver = {
     val repoUrl =
       maybeLocalMavenRepository.map(r => List(r.url)) getOrElse List(
-        WixMavenBuildSystem.RemoteRepoReleases, WixMavenBuildSystem.RemoteRepo)
+        WixMavenBuildSystem.RemoteRepo, WixMavenBuildSystem.RemoteRepoReleases)
 
     new AetherMavenDependencyResolver(repoUrl,
       resolverRepo, true)
   }
 
   private def newRemoteStorage = {
-    new ArtifactoryRemoteStorage("repo.dev.wixpress.com:80", configuration.artifactoryToken)
+    configuration.artifactoryToken match {
+      case Some(token) => new ArtifactoryRemoteStorage(RemoteRepoBaseUrl, token)
+      case None => maybeLocalMavenRepository match {
+        case Some(localRepo) => new MavenRepoRemoteStorage(List(localRepo.url))
+        case None => NoopDependenciesRemoteStorage
+      }
+    }
   }
 
   private def readSourceModules() = {

@@ -12,7 +12,7 @@ case class RunConfiguration(repoRoot: File,
                             performTransformation: Boolean = true,
                             failOnSevereConflicts: Boolean = false,
                             interRepoSourceDependency: Boolean = false,
-                            artifactoryToken: String = "",
+                            artifactoryToken: Option[String] = None,
                             sourceDependenciesWhitelist: Option[Path] = None,
                             additionalDepsByMavenDeps: Option[Path] = None,
                             includeServerInfraInSocialModeSet: Boolean = false,
@@ -32,7 +32,7 @@ object RunConfiguration {
       .validate(f => if (Files.isDirectory(Paths.get(f))) success else failure(s"repo $f must be existing directory"))
       .action { case (f, cfg) => cfg.copy(repoRoot = new File(f)) }
 
-    opt[String]('r', "managed-deps-repo")
+    opt[String]('m', "managed-deps-repo")
       .required()
       .withFallback(() => sys.props.get("managed.deps.repo")
         .getOrElse(throw new IllegalArgumentException("no managed deps repo defined")))
@@ -73,9 +73,11 @@ object RunConfiguration {
 
     opt[String]("artifactory-token")
       .required()
-      .withFallback(() => sys.props.get("artifactory.token")
-        .getOrElse(throw new IllegalArgumentException("no artifactory token defined")))
-      .action { case (token, cfg) => cfg.copy(artifactoryToken = token) }
+      .withFallback(() => sys.props.getOrElse("artifactory.token", ""))
+      .action {
+        case (token, cfg) if Option(token).exists(_.nonEmpty) => cfg.copy(artifactoryToken = Some(token))
+        case (_, cfg) =>  cfg.copy(artifactoryToken = None)
+      }
 
     opt[String]("source-dependencies-whitelist")
       .withFallback(() => sys.props.getOrElse("source.dependencies.whitelist", ""))
