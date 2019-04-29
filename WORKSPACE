@@ -12,7 +12,7 @@ http_archive(
     sha256 = protobuf_version_sha256,
 )
 
-scala_version = "2.12.4"
+scala_version = "2.12.6"
 rules_scala_version="c904132da6bb421a9106c79dd02bb31f228994b9" # update this as needed
 rules_scala_version_sha256="1f287926bab41b95ef6757a3f4d5c935c8f0dbfcdd82c8e8e209859115385a3a"
 http_archive(
