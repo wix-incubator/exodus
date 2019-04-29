@@ -7,7 +7,7 @@ import java.nio.file.{Files, Path, Paths}
 case class RunConfiguration(repoRoot: File,
                             repoUrl: String,
                             managedDepsRepo: File,
-                            codotaToken: String,
+                            codotaToken: Option[String],
                             performMavenClasspathResolution: Boolean = true,
                             performTransformation: Boolean = true,
                             failOnSevereConflicts: Boolean = false,
@@ -48,9 +48,11 @@ object RunConfiguration {
 
     opt[String]("codota-token")
       .required()
-      .withFallback(() => sys.props.get("codota.token")
-        .getOrElse(throw new IllegalArgumentException("no codota token defined")))
-      .action { case (token, cfg) => cfg.copy(codotaToken = token) }
+      .withFallback(() => sys.props.getOrElse("codota.token", ""))
+      .action {
+        case (token, cfg) if Option(token).exists(_.nonEmpty) => cfg.copy(codotaToken = Some(token))
+        case (_, cfg) => cfg.copy(codotaToken = None)
+      }
 
     opt[Boolean]("skip-maven")
       .required()

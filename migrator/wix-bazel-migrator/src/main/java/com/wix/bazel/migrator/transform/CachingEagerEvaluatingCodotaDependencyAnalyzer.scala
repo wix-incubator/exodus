@@ -28,7 +28,7 @@ class CachingEagerEvaluatingCodotaDependencyAnalyzer(sourceModules: Set[SourceMo
     .addMixIn(classOf[MavenScope], classOf[TypeAddingMixin])
 
   private val collectionType = objectMapper.getTypeFactory.constructCollectionType(classOf[util.Collection[Code]], classOf[Code])
-  private val clean = sys.props.getOrElse("clean.codota.analysis.cache", "") == "true"
+  private val clean = sys.props.getOrElse("clean.dependency.analysis.cache", "") == "true"
 
   private def cachePathForSourceModule(m: SourceModule) = {
     cachePath.resolve(m.relativePathFromMonoRepoRoot + ".cache")
