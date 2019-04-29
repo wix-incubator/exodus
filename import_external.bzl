@@ -1,6 +1,7 @@
 load("@io_bazel_rules_scala//scala:scala_maven_import_external.bzl", "scala_maven_import_external", "scala_import_external")
 
 _default_server_urls = ["https://repo.maven.apache.org/maven2/",
+                        "https://mvnrepository.com/artifact",
                         "https://maven-central.storage.googleapis.com",]
 
 def safe_wix_scala_maven_import_external(name, artifact, **kwargs):
