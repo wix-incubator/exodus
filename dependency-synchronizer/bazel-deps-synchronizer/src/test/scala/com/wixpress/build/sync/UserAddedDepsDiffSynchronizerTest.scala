@@ -41,6 +41,47 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
         targetRepoDriver.bazelExternalDependencyFor(artifactB).importExternalRule must beSome[ImportExternalRule]
       }
 
+      "don't add local dep if managed has it and also maven central has other opinion with exclusions" in new ctx {
+        managedDepsLocalWorkspace.hasDependencies(BazelDependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))), aRootBazelDependencyNode(asCompileDependency(artifactB)))
+
+        val transitiveExcluded = Coordinates("com.tran", "C-tran", "2.0.0")
+        override val resolver = givenFakeResolverForDependencies(singleDependencies =
+          Set(SingleDependency(toDependency(artifactA), toDependency(artifactB.copy(version = "0.1")).withExclusions(Set(Exclusion(transitiveExcluded))))))
+
+        override val userAddedDepsDiffCalculator = new UserAddedDepsDiffCalculator(targetFakeBazelRepository, managedDepsFakeBazelRepository,
+          resolver, _ => None, Set[SourceModule]())
+        override def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver()))
+
+        synchronizer.syncThirdParties(Set(toDependency(artifactA)))
+        targetRepoDriver.bazelExternalDependencyFor(artifactA).importExternalRule must beNone
+      }
+
+      "don't add local dep if managed has it with exclusions" in new ctx {
+        managedDepsLocalWorkspace.hasDependencies(BazelDependencyNode(asCompileDependency(artifactA).withExclusions(Set(Exclusion(artifactB))), Set()))
+
+        synchronizer.syncThirdParties(Set(toDependency(artifactA))).updatedBazelLocalNodes must beEmpty
+      }
+
+      "remove local dep if managed has it with exclusions" in new ctx {
+        targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA.withVersion("0.3"))))
+        managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA).withExclusions(Set(Exclusion(artifactB)))))
+
+        synchronizer.syncThirdParties(Set(artifactA).map(toDependency))
+
+        targetRepoDriver.bazelExternalDependencyFor(artifactA).importExternalRule must beNone
+      }
+
+      "remove local dep if managed has it, even when versions of transitive deps differ" in new ctx {
+        managedDepsLocalWorkspace.hasDependencies(BazelDependencyNode(asCompileDependency(artifactA), Set(asCompileDependency(artifactB))), aRootBazelDependencyNode(asCompileDependency(artifactB)))
+        val artifactBWithOtherVersion: Dependency = asCompileDependency(artifactB).withVersion("0.3")
+        targetFakeLocalWorkspace.hasDependencies(BazelDependencyNode(asCompileDependency(artifactA), Set(artifactBWithOtherVersion)), aRootBazelDependencyNode(artifactBWithOtherVersion, checksum = None, srcChecksum = None))
+
+        synchronizer.syncThirdParties(Set(toDependency(artifactA)))
+
+        targetRepoDriver.bazelExternalDependencyFor(artifactA).importExternalRule must beNone
+        targetRepoDriver must includeImportExternalTargetWith(artifactBWithOtherVersion.coordinates)
+      }
+
       "remove local dep if requested is equal to managed version" in new ctx {
         targetFakeLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA.withVersion("0.3"))))
         managedDepsLocalWorkspace.hasDependencies(aRootBazelDependencyNode(asCompileDependency(artifactA)))

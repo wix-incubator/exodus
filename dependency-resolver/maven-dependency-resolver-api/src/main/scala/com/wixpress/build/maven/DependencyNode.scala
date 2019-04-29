@@ -27,6 +27,20 @@ object DependencyNode {
 
     private def forceCompileScopeForNotProvided(node: DependencyNode) =
       if (node.baseDependency.scope == MavenScope.Provided) node else node.copy(baseDependency = node.baseDependency.forceCompileScope)
+
+    def noExclusions: Set[DependencyNode] =
+      dependencyNodes.map(_.noExclusions)
+
+    def noTransitiveVersions: Set[DependencyNode] =
+      dependencyNodes.map(_.noTransitiveVersions)
+  }
+
+  implicit class DependencyNodeExtended(node: DependencyNode) {
+    def noExclusions: DependencyNode =
+      node.copy(baseDependency = node.baseDependency.withExclusions(Set()), dependencies = node.dependencies.map(_.withExclusions(Set())))
+
+    def noTransitiveVersions: DependencyNode =
+      node.copy(dependencies = node.dependencies.map(_.withVersion("n/a")))
   }
 }
 
