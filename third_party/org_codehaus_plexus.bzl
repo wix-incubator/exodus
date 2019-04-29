@@ -63,7 +63,6 @@ def dependencies():
       name = "org_codehaus_plexus_plexus_io",
       artifact = "org.codehaus.plexus:plexus-io:2.7.1",
       jar_sha256 = "20aa9dd74536ad9ce65d1253b5c4386747483a7a65c48008c9affb51854539cf",
-      srcjar_sha256 = "8ea896989277c82b0ec8f88aa54213d568fe80966da69227223ea5656b1d4316",
       deps = [
           "@commons_io_commons_io",
           "@org_codehaus_plexus_plexus_utils"
