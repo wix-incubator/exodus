@@ -19,7 +19,7 @@ object FindMisAnalyzedInternalDependencies extends DebuggingMigratorApp {
   val codotaArtifacts = migratorInputs.codeModules.map(artifact => artifact.coordinates.groupId + "." + artifact.coordinates.artifactId)
   val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
   codotaClient.setDefaultCodePack("wix_enc")
-  codotaClient.setToken(migratorInputs.codotaToken)
+  migratorInputs.codotaToken.foreach(codotaClient.setToken)
 
   val map = codotaArtifacts.flatMap { artifactName =>
     codotaClient.allFilesForArtifact(artifactName).asScala.toList.flatMap { filePath: String =>
@@ -58,7 +58,7 @@ trait CodotaClientDebuggingMigratorApp extends DebuggingMigratorApp {
     ConnectorSettings.setHost(ConnectorSettings.Host.GATEWAY)
     val codotaClient = SearchClient.client(ApacheServiceConnector.instance())
     codotaClient.setDefaultCodePack("wix_enc")
-    codotaClient.setToken(migratorInputs.codotaToken)
+    migratorInputs.codotaToken.foreach(codotaClient.setToken)
     codotaClient
   }
 
@@ -91,7 +91,7 @@ object PrintAllSourceModules extends DebuggingMigratorApp {
 }
 
 object PrintAllCodeForSpecificModule extends DebuggingMigratorApp {
-  val dependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(migratorInputs.codotaDependencyAnalyzer)
+  val dependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(migratorInputs.sourceDependencyAnalyzer)
   val code = dependencyAnalyzer.allCodeForModule(requestedModule())
 
   writer.writeValue(System.out, code)
@@ -101,7 +101,7 @@ object FlushOutCodeAnalysisIssuesPerModule extends DebuggingMigratorApp {
   val outputs = migratorInputs.codeModules.par.map { sourceModule =>
     println(s"starting ${sourceModule.coordinates.serialized} (${sourceModule.relativePathFromMonoRepoRoot})")
     val outcome = Try {
-      migratorInputs.codotaDependencyAnalyzer.allCodeForModule(sourceModule)
+      migratorInputs.sourceDependencyAnalyzer.allCodeForModule(sourceModule)
       sourceModule
     } match {
       case Success(_) => "PASSED"

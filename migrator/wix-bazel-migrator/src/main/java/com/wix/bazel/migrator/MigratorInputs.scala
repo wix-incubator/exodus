@@ -7,7 +7,7 @@ import java.time.temporal.ChronoUnit
 import better.files.{File, FileOps}
 import com.wix.bazel.migrator.WixMavenBuildSystem.RemoteRepoBaseUrl
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer
+import com.wix.bazel.migrator.transform.{CodotaDependencyAnalyzer, ZincDepednencyAnalyzer}
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
 import com.wix.build.maven.analysis._
 import com.wixpress.build.bazel.workspaces.WorkspaceName
@@ -21,7 +21,7 @@ class MigratorInputs(configuration: RunConfiguration) {
   val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
   val repoRoot: Path = configuration.repoRoot.toPath
   val managedDepsRepoRoot: io.File = configuration.managedDepsRepo
-  val codotaToken: String = configuration.codotaToken
+  val codotaToken: Option[String] = configuration.codotaToken
   val localWorkspaceName: String = WorkspaceName.by(configuration.repoUrl)
   val artifactoryRemoteStorage = newRemoteStorage
   val sourceDependenciesWhitelist = readSourceDependenciesWhitelist()
@@ -30,9 +30,18 @@ class MigratorInputs(configuration: RunConfiguration) {
   lazy val codeModules: Set[SourceModule] = sourceModules.codeModules
   lazy val directDependencies: Set[Dependency] = collectExternalDependenciesUsedByRepoModules()
   lazy val externalDependencies: Set[Dependency] = dependencyCollector.dependencySet()
-  lazy val codotaDependencyAnalyzer = new CodotaDependencyAnalyzer(repoRoot, codeModules, codotaToken, configuration.interRepoSourceDependency, dependenciesDifferentiator)
+  lazy val sourceDependencyAnalyzer = resolveDependencyAnalyzer
   lazy val externalSourceDependencies: Set[Dependency] = sourceDependencies
   lazy val externalBinaryDependencies: Set[Dependency] = binaryDependencies
+
+  private def resolveDependencyAnalyzer = {
+    configuration.codotaToken match {
+      case Some(token) =>
+        new CodotaDependencyAnalyzer(repoRoot, codeModules, token,
+          configuration.interRepoSourceDependency, dependenciesDifferentiator)
+      case _ => new ZincDepednencyAnalyzer(repoRoot)
+    }
+  }
 
   private def readSourceDependenciesWhitelist() =
     (configuration.interRepoSourceDependency, configuration.sourceDependenciesWhitelist) match {

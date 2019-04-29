@@ -1,7 +1,7 @@
 package com.wix.bazel.migrator
 
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
-import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, InternalTargetOverridesReader, MavenArchiveTargetsOverridesReader}
+import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, MavenArchiveTargetsOverridesReader}
 import com.wix.bazel.migrator.transform._
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
@@ -17,11 +17,14 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
 
   def unSafeMigrate(): Unit
 
-  lazy val externalSourceModuleRegistry = CachingEagerExternalSourceModuleRegistry.build(
-    externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
-    registry = new CompositeExternalSourceModuleRegistry(
-      new ConstantExternalSourceModuleRegistry(),
-      new CodotaExternalSourceModuleRegistry(configuration.codotaToken)))
+  lazy val externalSourceModuleRegistry = {
+    val maybeCodotaRegistry = configuration.codotaToken.map(t => new CodotaExternalSourceModuleRegistry(t)).toSeq
+    val registrySeq = Seq(new ConstantExternalSourceModuleRegistry()) ++ maybeCodotaRegistry
+    CachingEagerExternalSourceModuleRegistry.build(
+      externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
+      registry = new CompositeExternalSourceModuleRegistry(
+        registrySeq:_*))
+  }
 
   lazy val mavenArchiveTargetsOverrides = MavenArchiveTargetsOverridesReader.from(repoRoot)
 
@@ -113,7 +116,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   }
 
   private[migrator] def dependencyAnalyzer = {
-    val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(codotaDependencyAnalyzer)
+    val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(sourceDependencyAnalyzer)
     val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
     if (wixFrameworkMigration)
       new CompositeDependencyAnalyzer(
