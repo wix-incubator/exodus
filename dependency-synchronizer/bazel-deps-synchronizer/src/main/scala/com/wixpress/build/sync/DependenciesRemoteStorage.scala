@@ -214,3 +214,7 @@ object Utils {
     }
   }
 }
+
+object NoopDependenciesRemoteStorage extends DependenciesRemoteStorage {
+  override def checksumFor(node: DependencyNode): Option[String] = None
+}
