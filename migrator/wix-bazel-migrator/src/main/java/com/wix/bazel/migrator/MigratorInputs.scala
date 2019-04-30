@@ -129,9 +129,7 @@ class MigratorInputs(configuration: RunConfiguration) {
 
   // hack to add hoopoe-specs2 (and possibly other needed dependencies)
   def constantDependencies: Set[Dependency] = {
-    maybeManagedDependencies
-      .filter(_.coordinates.artifactId == "hoopoe-specs2")
-      .filter(_.coordinates.packaging.value == "pom") +
+      Set.empty[Dependency] +
       //proto dependencies
       maven.Dependency(Coordinates.deserialize("com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT"), MavenScope.Compile) +
       maven.Dependency(Coordinates.deserialize("com.wixpress.grpc:generator:1.0.0-SNAPSHOT"), MavenScope.Compile) +
