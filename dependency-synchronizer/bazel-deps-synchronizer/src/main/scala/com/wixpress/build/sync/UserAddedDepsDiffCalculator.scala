@@ -1,7 +1,7 @@
 package com.wixpress.build.sync
 
 import com.wix.bazel.migrator.model.SourceModule
-import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository}
+import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository, NeverLinkResolver}
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksum
 import com.wixpress.build.sync.DependencyAggregator.collectAffectedLocalNodesAndUserAddedNodes
@@ -41,7 +41,8 @@ trait DiffCalculatorAndAggregator {
 class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManagedDependencies: BazelRepository,
                                   aetherResolver: MavenDependencyResolver,
                                   remoteStorage: DependenciesRemoteStorage,
-                                  mavenModulesToTreatAsSourceDeps: Set[SourceModule]) extends DiffCalculatorAndAggregator {
+                                  mavenModulesToTreatAsSourceDeps: Set[SourceModule],
+                                  neverLinkResolver: NeverLinkResolver) extends DiffCalculatorAndAggregator {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -49,9 +50,9 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
     val managedNodes = readManagedNodes()
     val currentClosure = readCurrentClosure(externalDependencyNodes = managedNodes)
 
-    val addedMavenClosure = resolveMavenUserAddedDependencyNodes(userAddedMavenDeps, currentClosure, managedNodes)
+    val resolvedMavenClosure = resolveMavenUserAddedDependencyNodes(userAddedMavenDeps, currentClosure, managedNodes).map(neverLinkResolver.fixAllTransitiveNeverLinks)
 
-    val aggregateAffectedNodes = collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps, currentClosure, userAddedMavenDeps, addedMavenClosure)
+    val aggregateAffectedNodes = collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps, currentClosure, userAddedMavenDeps, resolvedMavenClosure)
     val updatedLocalNodes = calculateAffectedDivergentFromManaged(managedNodes, aggregateAffectedNodes)
 
     val depsToLazyClean = compareDependencyNodesSets(managedNodes, currentClosure, returnIdentical = true)
@@ -79,6 +80,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManag
   private def resolveMavenUserAddedDependencyNodes(userAddedDependencies: Set[Dependency], currentClosure: Set[DependencyNode], managedNodes: Set[DependencyNode]) = {
     val currentClosureFiltered = currentClosure.map(_.baseDependency).filterNot(_.version.contains("-SNAPSHOT"))
     val managedNodesThatAreNotPresentLocally = managedNodes.filterNot(man => currentClosureFiltered.exists(_.equalsOnCoordinatesIgnoringVersion(man.baseDependency))).map(_.baseDependency)
+
     val addedMavenClosureLocalOverManaged = managedNodesThatAreNotPresentLocally ++ currentClosureFiltered
 
     log.info("resolve userAddedDependencies full closure...")
