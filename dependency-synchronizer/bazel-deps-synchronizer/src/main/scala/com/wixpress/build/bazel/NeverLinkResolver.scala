@@ -1,7 +1,7 @@
 package com.wixpress.build.bazel
 
 import com.wixpress.build.bazel.NeverLinkResolver.globalNeverLinkDependencies
-import com.wixpress.build.maven.{Coordinates, Dependency, MavenScope}
+import com.wixpress.build.maven.{Coordinates, Dependency, DependencyNode, MavenScope}
 
 object NeverLinkResolver {
   val globalNeverLinkDependencies: Set[Coordinates] = Set(
@@ -23,6 +23,9 @@ class NeverLinkResolver(globalPotentiallyNeverLinkDependencies: Set[Coordinates]
       dependency.scope == MavenScope.Provided ||
       dependency.isNeverLink
   }
+
+  def fixAllTransitiveNeverLinks(node: DependencyNode): DependencyNode =
+    node.copy(dependencies = node.dependencies.map(dep => dep.copy(isNeverLink = isNeverLink(dep))))
 
   def isLinkable(artifact: Coordinates): Boolean = {
     globalPotentiallyNeverLinkDependencies.exists(_.equalsIgnoringVersion(artifact)) && !localNeverlinkDependencies.exists(_.equalsIgnoringVersion(artifact))
