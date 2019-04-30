@@ -41,6 +41,7 @@ pipeline {
     post {
         always {
             archiveArtifacts "wix-bazel-migrator/target/wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
+            archiveArtifacts "migrator/scripts/additional-external-dependencies.txt"
         }
     }
 }

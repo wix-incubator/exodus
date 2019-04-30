@@ -17,6 +17,7 @@ pipeline {
         THIRD_PARTY_DEPENDENCIES_SOURCE = "com.wixpress.common:third-party-dependencies:pom:100.0.0-SNAPSHOT"
         BRANCH_NAME = "bazel-mig-${env.BUILD_ID}"
         bazel_log_file = "bazel-build.log"
+        ADDITIONAL_EXTERNAL_DEPS = "additional-external-dependencies.txt"
         BAZEL_HOME = tool name: 'bazel', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         BUILDOZER_HOME = tool name: 'buildozer', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
         BUILDIFIER_HOME = tool name: 'buildifier', type: 'com.cloudbees.jenkins.plugins.customtools.CustomTool'
@@ -66,6 +67,7 @@ pipeline {
                           |   -Drepo.root=../${repo_name}  \\
                           |   -Drepo.url=${env.repo_url} \\
                           |   -Dthird.party.dependencies.source=${env.THIRD_PARTY_DEPENDENCIES_SOURCE} \\
+                          |   -Dadditional.dependencies.file.path=${env.ADDITIONAL_EXTERNAL_DEPS} \\
                           |   -jar wix-bazel-migrator-0.0.1-SNAPSHOT-jar-with-dependencies.jar""".stripMargin()
                 }
             }

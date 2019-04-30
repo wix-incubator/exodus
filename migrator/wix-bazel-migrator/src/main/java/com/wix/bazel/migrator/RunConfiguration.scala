@@ -17,7 +17,8 @@ case class RunConfiguration(repoRoot: File,
                             additionalDepsByMavenDeps: Option[Path] = None,
                             includeServerInfraInSocialModeSet: Boolean = false,
                             m2Path: Option[Path] = None,
-                            thirdPartyDependenciesSource: Option[String] = None)
+                            thirdPartyDependenciesSource: Option[String] = None,
+                            additionalExternalDependenciesPath: Option[Path] = None)
 
 object RunConfiguration {
   private val Empty = RunConfiguration(null, null, null, null)
@@ -107,6 +108,14 @@ object RunConfiguration {
       .action {
         case (coords, cfg) if Option(coords).exists(_.nonEmpty) => cfg.copy(thirdPartyDependenciesSource = Some(coords))
         case (_, cfg) =>  cfg.copy(thirdPartyDependenciesSource = None)
+      }
+
+    opt[String]("additional-dependencies-file-path")
+      .withFallback(() => sys.props.getOrElse("additional.dependencies.file.path", ""))
+      .action {
+        case (filePath, cfg) if Option(filePath).exists(_.nonEmpty) =>
+          cfg.copy(additionalExternalDependenciesPath = Some(Paths.get(filePath).toAbsolutePath))
+        case (_, cfg) =>  cfg.copy(additionalExternalDependenciesPath = None)
       }
   }
 

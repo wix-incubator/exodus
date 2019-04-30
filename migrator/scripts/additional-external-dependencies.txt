@@ -1,0 +1,5 @@
+//proto dependencies
+com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT
+com.wixpress.grpc:generator:1.0.0-SNAPSHOT
+//core-server-build-tools dependency
+com.google.jimfs:jimfs:1.1
