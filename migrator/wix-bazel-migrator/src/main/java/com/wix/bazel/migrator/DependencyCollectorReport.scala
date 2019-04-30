@@ -17,11 +17,11 @@ object DependencyCollectorReport extends MigratorApp {
   )
 
   val directClosureCollector =  new CollectClosureFromDirectDeps(filteringResolver,
-    migratorInputs.constantDependencies,
+    migratorInputs.additionalExternalDependencies,
     MigratorInputs.ManagedDependenciesArtifact)
-  val allDepsCollector =  new CollectAllDeps(filteringResolver, migratorInputs.constantDependencies, MigratorInputs.ManagedDependenciesArtifact)
+  val allDepsCollector =  new CollectAllDeps(filteringResolver, migratorInputs.additionalExternalDependencies, MigratorInputs.ManagedDependenciesArtifact)
   val allDepsButPreferDirectCollector =  new CollectAllDepsButFavorDirect(filteringResolver,
-    migratorInputs.constantDependencies,
+    migratorInputs.additionalExternalDependencies,
     MigratorInputs.ManagedDependenciesArtifact)
 
   printDiff("1-regular",directClosureCollector)

@@ -133,7 +133,3 @@ object CheckThirdPartyConflicts extends DebuggingMigratorApp {
     throw new RuntimeException("Conflicts is not empty")
   }
 }
-
-object DebugThirdPartySync extends DebuggingMigratorApp {
-  migratorInputs.syncLocalThirdPartyDeps()
-}

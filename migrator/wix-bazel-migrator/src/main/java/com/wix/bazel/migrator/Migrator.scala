@@ -1,12 +1,16 @@
 package com.wix.bazel.migrator
 
+import better.files.FileOps
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
 import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, MavenArchiveTargetsOverridesReader}
 import com.wix.bazel.migrator.transform._
 import com.wix.bazel.migrator.workspace.WorkspaceWriter
 import com.wix.bazel.migrator.workspace.resolution.GitIgnoreAppender
-import com.wix.build.maven.analysis.ThirdPartyConflicts
+import com.wix.build.maven.analysis.{RepoProvidedDeps, ThirdPartyConflicts}
 import com.wixpress.build.bazel.NeverLinkResolver._
+import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
+import com.wixpress.build.maven.{FilteringGlobalExclusionDependencyResolver, MavenScope}
+import com.wixpress.build.sync.DiffSynchronizer
 
 abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(configuration) {
   def migrate(): Unit = {
@@ -134,6 +138,47 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   private[migrator] def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {
     if (configuration.thirdPartyDependenciesSource.nonEmpty && conflicts.fail.nonEmpty) {
       throw new RuntimeException("Found failing third party conflicts (look for \"Found conflicts\" in log)")
+    }
+  }
+
+  private[migrator] def syncLocalThirdPartyDeps(): Unit = {
+    val bazelRepo = new NoPersistenceBazelRepository(repoRoot)
+
+    val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
+    val neverLinkResolver = NeverLinkResolver(localNeverlinkDependencies = RepoProvidedDeps(codeModules).repoProvidedArtifacts)
+    val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver,
+      artifactoryRemoteStorage, neverLinkResolver)
+
+    val localNodes = calcLocaDependencylNodes()
+
+    diffSynchronizer.sync(localNodes)
+
+    new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)
+  }
+
+  private[migrator] def calcLocaDependencylNodes() = {
+    val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies.map(_.coordinates)
+    val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
+      resolver = aetherResolver,
+      globalExcludes = internalCoordinates.union(sourceDependenciesWhitelist)
+    )
+
+    val managedDependenciesFromMaven = aetherResolver
+      .managedDependenciesOf(MigratorInputs.ManagedDependenciesArtifact)
+      .forceCompileScope
+
+    val providedDeps = externalBinaryDependencies
+      .filter(_.scope == MavenScope.Provided)
+      .map(_.shortSerializedForm())
+
+    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven)
+
+    localNodes.map {
+      localNode =>
+        if (providedDeps.contains(localNode.baseDependency.shortSerializedForm()))
+          localNode.copy(baseDependency = localNode.baseDependency.copy(scope = MavenScope.Provided))
+        else
+          localNode
     }
   }
 }

@@ -4,17 +4,18 @@ import java.io
 import java.nio.file.{Files, Path}
 import java.time.temporal.ChronoUnit
 
-import better.files.{File, FileOps}
+import better.files.File
 import com.wix.bazel.migrator.WixMavenBuildSystem.RemoteRepoBaseUrl
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.transform.{CodotaDependencyAnalyzer, ZincDepednencyAnalyzer}
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
 import com.wix.build.maven.analysis._
 import com.wixpress.build.bazel.workspaces.WorkspaceName
-import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
 import com.wixpress.build.maven
 import com.wixpress.build.maven._
 import com.wixpress.build.sync._
+
+import scala.io.Source
 
 class MigratorInputs(configuration: RunConfiguration) {
   val maybeLocalMavenRepository = configuration.m2Path.map(p => new LocalMavenRepository(p.toString))
@@ -29,7 +30,7 @@ class MigratorInputs(configuration: RunConfiguration) {
   lazy val sourceModules: SourceModules = readSourceModules()
   lazy val codeModules: Set[SourceModule] = sourceModules.codeModules
   lazy val directDependencies: Set[Dependency] = collectExternalDependenciesUsedByRepoModules()
-  lazy val externalDependencies: Set[Dependency] = dependencyCollector.dependencySet()
+  val externalDependencies: Set[Dependency] = dependencyCollector.dependencySet()
   lazy val sourceDependencyAnalyzer = resolveDependencyAnalyzer
   lazy val externalSourceDependencies: Set[Dependency] = sourceDependencies
   lazy val externalBinaryDependencies: Set[Dependency] = binaryDependencies
@@ -85,7 +86,7 @@ class MigratorInputs(configuration: RunConfiguration) {
 
   private def dependencyCollector = {
     new DependencyCollector()
-      .addOrOverrideDependencies(constantDependencies)
+      .addOrOverrideDependencies(additionalExternalDependencies)
       .addOrOverrideDependencies(new HighestVersionProvidedScopeConflictResolution().resolve(directDependencies))
       .mergeExclusionsOfSameCoordinates()
   }
@@ -127,14 +128,14 @@ class MigratorInputs(configuration: RunConfiguration) {
     }
   }
 
-  // hack to add hoopoe-specs2 (and possibly other needed dependencies)
-  def constantDependencies: Set[Dependency] = {
-      Set.empty[Dependency] +
-      //proto dependencies
-      maven.Dependency(Coordinates.deserialize("com.wixpress.grpc:dependencies:pom:1.0.0-SNAPSHOT"), MavenScope.Compile) +
-      maven.Dependency(Coordinates.deserialize("com.wixpress.grpc:generator:1.0.0-SNAPSHOT"), MavenScope.Compile) +
-      //core-server-build-tools dependency
-      maven.Dependency(Coordinates.deserialize("com.google.jimfs:jimfs:1.1"), MavenScope.Compile)
+  def additionalExternalDependencies: Set[Dependency] = {
+    configuration.additionalExternalDependenciesPath
+      .map(_.toAbsolutePath.toString)
+      .map(f => Source.fromFile(f).getLines())
+      .map(lines => lines.filterNot(_.startsWith("""//""")).map(l => Coordinates.deserialize(l)))
+      .getOrElse(Set.empty)
+      .map(c => maven.Dependency(c, MavenScope.Compile))
+      .toSet
   }
 
   private def maybeManagedDependencies = {
@@ -145,47 +146,6 @@ class MigratorInputs(configuration: RunConfiguration) {
   implicit class DependencySetExtensions(dependencies: Set[Dependency]) {
     def filterExternalDeps(repoCoordinates: Set[Coordinates]): Set[Dependency] = {
       dependencies.filterNot(dep => repoCoordinates.exists(_.equalsOnGroupIdAndArtifactId(dep.coordinates)))
-    }
-  }
-
-  def syncLocalThirdPartyDeps(): Unit = {
-    val bazelRepo = new NoPersistenceBazelRepository(repoRoot)
-
-    val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
-    val neverLinkResolver = NeverLinkResolver(localNeverlinkDependencies = RepoProvidedDeps(codeModules).repoProvidedArtifacts)
-    val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver,
-      artifactoryRemoteStorage, neverLinkResolver)
-
-    val localNodes = calcLocaDependencylNodes()
-
-    diffSynchronizer.sync(localNodes)
-
-    new DependencyCollectionCollisionsReport(codeModules).printDiff(externalDependencies)
-  }
-
-  private def calcLocaDependencylNodes() = {
-    val internalCoordinates = codeModules.map(_.coordinates) ++ externalSourceDependencies.map(_.coordinates)
-    val filteringResolver = new FilteringGlobalExclusionDependencyResolver(
-      resolver = aetherResolver,
-      globalExcludes = internalCoordinates.union(sourceDependenciesWhitelist)
-    )
-
-    val managedDependenciesFromMaven = aetherResolver
-      .managedDependenciesOf(MigratorInputs.ManagedDependenciesArtifact)
-      .forceCompileScope
-
-    val providedDeps = externalBinaryDependencies
-      .filter(_.scope == MavenScope.Provided)
-      .map(_.shortSerializedForm())
-
-    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven)
-
-    localNodes.map {
-      localNode =>
-        if (providedDeps.contains(localNode.baseDependency.shortSerializedForm()))
-          localNode.copy(baseDependency = localNode.baseDependency.copy(scope = MavenScope.Provided))
-        else
-          localNode
     }
   }
 }
