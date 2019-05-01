@@ -270,6 +270,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     val externalFakeBazelRepository = new InMemoryBazelRepository(externalFakeLocalWorkspace)
     private val targetFakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = localWorkspaceName)
     val targetFakeBazelRepository = new InMemoryBazelRepository(targetFakeLocalWorkspace)
+    val importExternalRulePath = "@some_workspace//:import_external.bzl"
 
     val localWorkspace = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
 
@@ -277,7 +278,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
     val transitiveDependency = aDependency("transitive").withScope(MavenScope.Runtime)
 
     def givenBazelWorkspaceWithManagedDependencies(managedDeps: DependencyNode*): Unit = {
-      new BazelDependenciesWriter(externalFakeLocalWorkspace).writeDependencies(managedDeps.map(_.toBazelNode).toSet)
+      new BazelDependenciesWriter(externalFakeLocalWorkspace, importExternalRulePath = importExternalRulePath).writeDependencies(managedDeps.map(_.toBazelNode).toSet)
     }
 
     def givenBazelWorkspaceWithManagedDependencies(managedDeps: Set[DependencyNode]): Unit = {
@@ -286,7 +287,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
     def givenSynchornizerFor(resolver: FakeMavenDependencyResolver, storage: DependenciesRemoteStorage = _ => None) = {
       val neverLinkResolver = NeverLinkResolver()
-      DiffSynchronizer(externalFakeBazelRepository, targetFakeBazelRepository, resolver, storage, neverLinkResolver)
+      DiffSynchronizer(externalFakeBazelRepository, targetFakeBazelRepository, resolver, storage, neverLinkResolver, importExternalRulePath)
     }
   }
 

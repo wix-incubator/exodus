@@ -9,10 +9,11 @@ import org.slf4j.LoggerFactory
 case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelRepository,
                             targetRepository: BazelRepository, resolver: MavenDependencyResolver,
                             dependenciesRemoteStorage: DependenciesRemoteStorage,
-                            neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) {
+                            neverLinkResolver: NeverLinkResolver = NeverLinkResolver(),
+                            importExternalRulePath: String) {
 
   private val diffCalculator = DiffCalculator(bazelRepositoryWithManagedDependencies, resolver, dependenciesRemoteStorage)
-  private val diffWriter = DefaultDiffWriter(targetRepository,neverLinkResolver)
+  private val diffWriter = DefaultDiffWriter(targetRepository,neverLinkResolver, importExternalRulePath)
 
   def sync(localNodes: Set[DependencyNode]) = {
     val updatedLocalNodes = diffCalculator.calculateDivergentDependencies(localNodes)
@@ -46,14 +47,14 @@ trait DiffWriter {
 }
 
 case class DefaultDiffWriter(targetRepository: BazelRepository,
-                             neverLinkResolver: NeverLinkResolver
-                      ) extends DiffWriter {
+                             neverLinkResolver: NeverLinkResolver,
+                             importExternalRulePath: String) extends DiffWriter {
   private val log = LoggerFactory.getLogger(getClass)
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
 
   def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode], localDepsToDelete: Set[DependencyNode]): Unit = {
     val localCopy = targetRepository.localWorkspace()
-    val writer = new BazelDependenciesWriter(localCopy, neverLinkResolver = neverLinkResolver)
+    val writer = new BazelDependenciesWriter(localCopy, neverLinkResolver, importExternalRulePath)
     //can be removed at phase 2
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom").map(_.toBazelNode)
 
