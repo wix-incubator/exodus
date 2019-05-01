@@ -61,8 +61,8 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   private[migrator] def writeInternal(): Unit =
     new Writer(repoRoot, codeModules, bazelPackages).write()
 
-  private[migrator] def writeExternal(): Unit =
-    new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot).write()
+  private[migrator] def writeExternal(mavenArchiveMacroPath: String): Unit =
+    new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot, mavenArchiveMacroPath).write()
 
   private[migrator] def cleanGitIgnore(): Unit =
     new GitIgnoreCleaner(repoRoot).clean()
@@ -189,6 +189,10 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     syncLocalThirdPartyDeps()
 
     cleanGitIgnore()
+  }
+
+  private def writeExternal(): Unit = {
+    writeExternal("//:macros.bzl")
   }
 
   override val importExternalRulePath: String = "//:import_external.bzl"
