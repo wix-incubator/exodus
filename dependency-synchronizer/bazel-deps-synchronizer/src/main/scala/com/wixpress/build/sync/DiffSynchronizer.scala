@@ -6,13 +6,13 @@ import com.wixpress.build.sync.ArtifactoryRemoteStorage._
 import com.wixpress.build.sync.BazelMavenSynchronizer.PersistMessageHeader
 import org.slf4j.LoggerFactory
 
-case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelRepository,
+case class DiffSynchronizer(maybeBazelRepositoryWithManagedDependencies: Option[BazelRepository],
                             targetRepository: BazelRepository, resolver: MavenDependencyResolver,
                             dependenciesRemoteStorage: DependenciesRemoteStorage,
                             neverLinkResolver: NeverLinkResolver = NeverLinkResolver(),
                             importExternalRulePath: String) {
 
-  private val diffCalculator = DiffCalculator(bazelRepositoryWithManagedDependencies, resolver, dependenciesRemoteStorage)
+  private val diffCalculator = DiffCalculator(maybeBazelRepositoryWithManagedDependencies, resolver, dependenciesRemoteStorage)
   private val diffWriter = DefaultDiffWriter(targetRepository,neverLinkResolver, importExternalRulePath)
 
   def sync(localNodes: Set[DependencyNode]) = {
@@ -22,14 +22,16 @@ case class DiffSynchronizer(bazelRepositoryWithManagedDependencies: BazelReposit
   }
 }
 
-case class DiffCalculator(bazelRepositoryWithManagedDependencies: BazelRepository,
-                     resolver: MavenDependencyResolver,
-                     dependenciesRemoteStorage: DependenciesRemoteStorage) {
+case class DiffCalculator(maybeBazelRepositoryWithManagedDependencies: Option[BazelRepository],
+                          resolver: MavenDependencyResolver,
+                          dependenciesRemoteStorage: DependenciesRemoteStorage) {
   def calculateDivergentDependencies(localNodes: Set[DependencyNode]): Set[BazelDependencyNode] = {
-    val reader = new BazelDependenciesReader(bazelRepositoryWithManagedDependencies.localWorkspace())
-    val managedDeps = reader.allDependenciesAsMavenDependencies()
+    val managedNodes = maybeBazelRepositoryWithManagedDependencies.map{ repoWithManaged =>
+      val reader = new BazelDependenciesReader(repoWithManaged.localWorkspace())
+      val managedDeps = reader.allDependenciesAsMavenDependencies()
 
-    val managedNodes = resolver.dependencyClosureOf(managedDeps, withManagedDependencies = managedDeps)
+      resolver.dependencyClosureOf(managedDeps, withManagedDependencies = managedDeps)
+    }.getOrElse(Set.empty)
 
     calculateDivergentDependencies(localNodes, managedNodes)
   }

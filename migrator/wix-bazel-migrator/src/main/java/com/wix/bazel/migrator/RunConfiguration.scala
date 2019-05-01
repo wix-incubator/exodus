@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path, Paths}
 
 case class RunConfiguration(repoRoot: File,
                             repoUrl: String,
-                            managedDepsRepo: File,
+                            managedDepsRepo: Option[File],
                             codotaToken: Option[String],
                             performMavenClasspathResolution: Boolean = true,
                             performTransformation: Boolean = true,
@@ -35,10 +35,12 @@ object RunConfiguration {
 
     opt[String]('m', "managed-deps-repo")
       .required()
-      .withFallback(() => sys.props.get("managed.deps.repo")
-        .getOrElse(throw new IllegalArgumentException("no managed deps repo defined")))
-      .validate(f => if (Files.isDirectory(Paths.get(f))) success else failure(s"repo $f must be existing directory"))
-      .action { case (f, cfg) => cfg.copy(managedDepsRepo = new File(f)) }
+      .withFallback(() => sys.props.getOrElse("managed.deps.repo", ""))
+      .validate(f => if ((f == "") || Files.isDirectory(Paths.get(f))) success else failure(s"repo $f must be existing directory"))
+      .action {
+        case (f, cfg) if Option(f).exists(_.nonEmpty) => cfg.copy(managedDepsRepo = Some(new File(f)))
+        case (_, cfg) => cfg.copy(managedDepsRepo = None)
+      }
 
     opt[String]("repo-git-url")
       .required()

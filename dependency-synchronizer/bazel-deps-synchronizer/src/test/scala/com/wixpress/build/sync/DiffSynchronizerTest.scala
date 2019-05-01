@@ -287,7 +287,7 @@ class DiffSynchronizerTest extends SpecificationWithJUnit {
 
     def givenSynchornizerFor(resolver: FakeMavenDependencyResolver, storage: DependenciesRemoteStorage = _ => None) = {
       val neverLinkResolver = NeverLinkResolver()
-      DiffSynchronizer(externalFakeBazelRepository, targetFakeBazelRepository, resolver, storage, neverLinkResolver, importExternalRulePath)
+      DiffSynchronizer(Some(externalFakeBazelRepository), targetFakeBazelRepository, resolver, storage, neverLinkResolver, importExternalRulePath)
     }
   }
 
