@@ -254,7 +254,8 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
   }
 
   private def importExternalTargetsFileWith(newHead: Coordinates, importExternalTargetsFile: String) = {
-    ImportExternalTargetsFileWriter(importExternalTargetsFile).withTarget(ImportExternalRule.of(newHead))
+    val content = ImportExternalTargetsFileWriter(importExternalTargetsFile).withTarget(ImportExternalRule.of(newHead)).content
+    HeadersAppender("@core_server_build_tools//:import_external.bzl").updateHeadersFor(content)
   }
 
   private def createImportExternalTargetsFileWith(coordinates: List[Coordinates]) = {

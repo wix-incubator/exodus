@@ -13,30 +13,27 @@ object ImportExternalTargetsFile {
   def findTargetWithSameNameAs(name: String, within: String): Option[Match] = {
     regexOfImportExternalRuleWithNameMatching(name).findFirstMatchIn(within)
   }
+}
 
-  def persistTarget(ruleToPersist: RuleToPersist, localWorkspace: BazelLocalWorkspace): Unit = {
+case class ImportExternalTargetsFile(importExternalRulePath: String, localWorkspace: BazelLocalWorkspace) {
+  val headersAppender = HeadersAppender(importExternalRulePath)
+
+  def persistTarget(ruleToPersist: RuleToPersist): Unit = {
     ruleToPersist.rule match {
       case rule: ImportExternalRule =>
-        val thirdPartyGroup = ruleToPersist.ruleTargetLocator
-        val importTargetsFileContent =
-          localWorkspace.thirdPartyImportTargetsFileContent(thirdPartyGroup).getOrElse("")
-        val importTargetsFileWriter = ImportExternalTargetsFileWriter(importTargetsFileContent).withTarget(rule)
-        localWorkspace.overwriteThirdPartyImportTargetsFile(thirdPartyGroup, importTargetsFileWriter.content)
+        persistTargetAndCleanHeaders(rule)
       case _ =>
     }
   }
 
-  def persistTargetAndCleanHeaders(ruleToPersist: ImportExternalRule, localWorkspace: BazelLocalWorkspace): Unit = {
+  def persistTargetAndCleanHeaders(ruleToPersist: ImportExternalRule): Unit = {
     val thirdPartyGroup =  ImportExternalRule.ruleLocatorFrom(Coordinates.deserialize(ruleToPersist.artifact))
     val importTargetsFileContent =
       localWorkspace.thirdPartyImportTargetsFileContent(thirdPartyGroup).getOrElse("")
     val importTargetsFileWriter = ImportExternalTargetsFileWriter(importTargetsFileContent).withTarget(ruleToPersist)
     val newContent = importTargetsFileWriter.content
 
-    val withNoHeaders = removeHeader(newContent).dropWhile(_.isWhitespace)
-    val withSingleHeader = ImportExternalTargetsFileWriter(s"""${ImportExternalTargetsFileWriter.fileHeader}
-                                                              |
-                                                              |  $withNoHeaders""".stripMargin)
+    val withSingleHeader = headersAppender.updateHeadersFor(newContent)
     localWorkspace.overwriteThirdPartyImportTargetsFile(thirdPartyGroup, withSingleHeader.content)
   }
 
@@ -49,6 +46,20 @@ object ImportExternalTargetsFile {
     }
   }
 
+}
+
+case class HeadersAppender(importExternalRulePath: String) {
+  final val fileHeader: String =
+    s"""load("$importExternalRulePath", import_external = "safe_wix_scala_maven_import_external")
+       |
+       |def dependencies():""".stripMargin
+
+  def updateHeadersFor(content: String) = {
+    val withNoHeaders = removeHeader(content).dropWhile(_.isWhitespace)
+    ImportExternalTargetsFileWriter(s"""$fileHeader
+                                       |
+                                        |  $withNoHeaders""".stripMargin)
+  }
 }
 
 object NewLinesParser {

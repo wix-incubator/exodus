@@ -1,7 +1,7 @@
 package com.wixpress.build
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
-import com.wixpress.build.bazel.ThirdPartyReposFile.{serializedLoadImportExternalTargetsFile, serializedImportExternalTargetsFileMethodCall}
+import com.wixpress.build.bazel.ThirdPartyReposFile.{serializedImportExternalTargetsFileMethodCall, serializedLoadImportExternalTargetsFile}
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.Coordinates._
 import com.wixpress.build.maven._
@@ -76,7 +76,7 @@ object BazelWorkspaceDriver {
 
   implicit class BazelWorkspaceDriverExtensions(w: BazelLocalWorkspace) {
     def hasDependencies(dependencyNodes: BazelDependencyNode*) = {
-      new BazelDependenciesWriter(w).writeDependencies(dependencyNodes.toSet)
+      new BazelDependenciesWriter(w, importExternalRulePath = "@some_workspace//:import_external.bzl").writeDependencies(dependencyNodes.toSet)
     }
   }
 

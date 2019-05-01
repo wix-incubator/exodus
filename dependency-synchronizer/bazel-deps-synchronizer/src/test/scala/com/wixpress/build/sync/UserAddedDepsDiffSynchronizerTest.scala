@@ -3,7 +3,7 @@ package com.wixpress.build.sync
 import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.BazelWorkspaceDriver
 import com.wixpress.build.BazelWorkspaceDriver._
-import com.wixpress.build.bazel.{FakeLocalBazelWorkspace, ImportExternalRule, InMemoryBazelRepository, NeverLinkResolver}
+import com.wixpress.build.bazel._
 import com.wixpress.build.maven.FakeMavenDependencyResolver._
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven.{DependencyNode, _}
@@ -50,7 +50,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
         override val userAddedDepsDiffCalculator = new UserAddedDepsDiffCalculator(targetFakeBazelRepository, managedDepsFakeBazelRepository,
           resolver, _ => None, Set[SourceModule](), NeverLinkResolver())
-        override def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver()))
+        override def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, writerFor(targetFakeBazelRepository))
 
         synchronizer.syncThirdParties(Set(toDependency(artifactA)))
         targetRepoDriver.bazelExternalDependencyFor(artifactA).importExternalRule must beNone
@@ -175,6 +175,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     val managedDepsWorkspaceName = "some_external_workspace_name"
     val managedDepsLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = managedDepsWorkspaceName)
     val managedDepsFakeBazelRepository = new InMemoryBazelRepository(managedDepsLocalWorkspace)
+    val importExternalRulePath = "@some_workspace//:import_external.bzl"
 
     val dependencyManagementCoordinates = Coordinates("some.group", "deps-management", "1.0", Packaging("pom"))
 
@@ -192,13 +193,17 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     val userAddedDepsDiffCalculator = new UserAddedDepsDiffCalculator(targetFakeBazelRepository, managedDepsFakeBazelRepository,
       resolver, _ => None, Set[SourceModule](), NeverLinkResolver())
 
-    def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver()))
+    def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(), importExternalRulePath))
+
+    def writerFor(bazelRepository: BazelRepository) = {
+      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(), importExternalRulePath)
+    }
   }
 
   trait linkableCtx extends ctx {
     def synchronizerWithLinkableArtifact(artifact: Coordinates) = new UserAddedDepsDiffSynchronizer(new UserAddedDepsDiffCalculator(
       targetFakeBazelRepository, managedDepsFakeBazelRepository, resolver, _ => None, Set[SourceModule](), NeverLinkResolver()),
-      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact))))
+      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)), importExternalRulePath))
   }
 
   class AlwaysFailsDiffCalculator extends DiffCalculatorAndAggregator {

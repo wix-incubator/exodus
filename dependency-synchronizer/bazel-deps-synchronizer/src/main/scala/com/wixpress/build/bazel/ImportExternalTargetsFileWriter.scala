@@ -6,14 +6,15 @@ import com.wix.build.maven.translation.MavenToBazelTranslations._
 
 import scala.util.matching.Regex.Match
 import NewLinesParser._
-import com.wixpress.build.bazel.ImportExternalTargetsFileWriter.{fileHeader, removeHeader}
+import com.wixpress.build.bazel.ImportExternalTargetsFileReader.RegexOfAnyLoadStatement
+import com.wixpress.build.bazel.ImportExternalTargetsFileWriter.removeHeader
 
 case class ImportExternalTargetsFileWriter(content: String) {
   def withTarget(rule: ImportExternalRule): ImportExternalTargetsFileWriter = {
-    if (content.isEmpty)
-      ImportExternalTargetsFileWriter(fileHeader).nonEmptyContentWithTarget(rule)
-    else
-      nonEmptyContentWithTarget(rule)
+    findTargetWithSameNameAs(name = rule.name, within = content) match {
+      case Some(matched) => replacedMatchedWithTarget(matched, rule)
+      case None => appendTarget(rule)
+    }
   }
 
   def withoutTarget(coordinates: Coordinates): ImportExternalTargetsFileWriter = {
@@ -23,19 +24,11 @@ case class ImportExternalTargetsFileWriter(content: String) {
     }
   }
 
-  private def nonEmptyContentWithTarget(rule: ImportExternalRule) = {
-    findTargetWithSameNameAs(name = rule.name, within = content) match {
-      case Some(matched) => replacedMatchedWithTarget(matched, rule)
-      case None => appendTarget(rule)
-    }
-  }
-
   private def appendTarget(rule: ImportExternalRule) = {
-    ImportExternalTargetsFileWriter(
-      s"""$content
-         |
-         |${rule.serialized}
-         |""".stripMargin)
+    ImportExternalTargetsFileWriter(s"""$content
+             |
+             |${rule.serialized}
+             |""".stripMargin)
   }
 
   private def replacedMatchedWithTarget(matched: Match, rule: ImportExternalRule): ImportExternalTargetsFileWriter = {
@@ -55,16 +48,9 @@ case class ImportExternalTargetsFileWriter(content: String) {
       case _ => ImportExternalTargetsFileWriter(contentAfterRemoval)
     }
   }
-
 }
 
 object ImportExternalTargetsFileWriter {
-
-  def removeHeader(content: String) =
-    content.split("def dependencies\\(\\):").last
-
-  val fileHeader: String =
-    s"""load("@core_server_build_tools//:import_external.bzl", import_external = "safe_wix_scala_maven_import_external")
-       |
-          |def dependencies():""".stripMargin
+  private[bazel] def removeHeader(content: String) =
+    RegexOfAnyLoadStatement.replaceAllIn(content, "").replaceFirst("def dependencies\\(\\):", "")
 }

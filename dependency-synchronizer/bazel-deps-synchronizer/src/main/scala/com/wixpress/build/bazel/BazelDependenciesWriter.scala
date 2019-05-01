@@ -5,7 +5,9 @@ import com.wixpress.build.maven._
 import ThirdPartyPaths._
 
 class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
-                              neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) {
+                              neverLinkResolver: NeverLinkResolver = NeverLinkResolver(),
+                              importExternalRulePath: String) {
+  val importExternalTargetsFile = ImportExternalTargetsFile(importExternalRulePath, localWorkspace)
   val ruleResolver = new RuleResolver(localWorkspace.localWorkspaceName)
   val annotatedDepNodeTransformer = new AnnotatedDependencyNodeTransformer(neverLinkResolver)
 
@@ -89,11 +91,11 @@ class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
 
   private def overwriteThirdPartyFolderFiles(ruleToPersist: RuleToPersist): Unit = {
     BazelBuildFile.persistTarget(ruleToPersist, localWorkspace)
-    ImportExternalTargetsFile.persistTarget(ruleToPersist, localWorkspace)
+    importExternalTargetsFile.persistTarget(ruleToPersist)
   }
 
   private def overwriteThirdPartyFolderFilesWithDeletedContent(coordsToDelete: Coordinates): Unit = {
-    ImportExternalTargetsFile.deleteTarget(coordsToDelete, localWorkspace)
+    importExternalTargetsFile.deleteTarget(coordsToDelete, localWorkspace)
   }
 
   private def findFilesAccordingToPackagingOf(artifact: Coordinates) = {

@@ -26,6 +26,8 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   def unSafeMigrate(): Unit
   def writeWorkspace(): Unit
 
+  val importExternalRulePath: String
+
   lazy val externalSourceModuleRegistry = {
     val maybeCodotaRegistry = configuration.codotaToken.map(t => new CodotaExternalSourceModuleRegistry(t)).toSeq
     val registrySeq = Seq(new ConstantExternalSourceModuleRegistry()) ++ maybeCodotaRegistry
@@ -130,7 +132,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
     val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
     val neverLinkResolver = NeverLinkResolver(localNeverlinkDependencies = RepoProvidedDeps(codeModules).repoProvidedArtifacts)
     val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver,
-      artifactoryRemoteStorage, neverLinkResolver)
+      artifactoryRemoteStorage, neverLinkResolver, importExternalRulePath)
 
     val localNodes = calcLocaDependencylNodes()
 
@@ -188,6 +190,8 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
 
     cleanGitIgnore()
   }
+
+  override val importExternalRulePath: String = "//:import_external.bzl"
 
   private def writeBazelRcManagedDevEnv: Unit = {
     writeBazelRcManagedDevEnv(defaultOptions)
