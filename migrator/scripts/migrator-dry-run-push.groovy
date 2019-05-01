@@ -14,6 +14,7 @@ pipeline {
         REPO_NAME = find_repo_name()
         MANAGED_DEPS_REPO_NAME = "core-server-build-tools"
         MANAGED_DEPS_REPO_URL = "git@github.com:wix-private/core-server-build-tools.git"
+        REMOTE_MAVEN_REPOS_URLS = "http://repo.dev.wixpress.com/artifactory/libs-releases,http://repo.dev.wixpress.com/artifactory/libs-snapshots"
         THIRD_PARTY_DEPENDENCIES_SOURCE = "com.wixpress.common:third-party-dependencies:pom:100.0.0-SNAPSHOT"
         BRANCH_NAME = "bazel-dry-mig-${env.BUILD_ID}"
         bazel_log_file = "bazel-build.log"
@@ -60,6 +61,7 @@ pipeline {
                           |   -Dskip.classpath=false \\
                           |   -Dskip.transformation=false \\
                           |   -Dmanaged.deps.repo=../${env.MANAGED_DEPS_REPO_NAME} \\
+                          |   -Dremote.maven.repository.urls=${env.REMOTE_MAVEN_REPOS_URLS} \\
                           |   -Dfail.on.severe.conflicts=true \\
                           |   -Drepo.root=../${repo_name}  \\
                           |   -Drepo.url=${env.repo_url} \\

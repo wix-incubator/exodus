@@ -54,7 +54,9 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
 
       val fakeMavenRepository = new FakeMavenRepository(0)
       fakeMavenRepository.start()
-      val buildSystem = new MavenBuildSystem(repo.root, List(fakeMavenRepository.url))
+
+      val resolver = new AetherMavenDependencyResolver(List(fakeMavenRepository.url), ignoreMissingDependenciesFlag = true)
+      val buildSystem = new MavenBuildSystem(repo.root, dependencyResolver = resolver)
 
       def repo: Repo
     }
@@ -282,8 +284,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       lazy val repo = Repo(MavenModule(gavPrefix = "parent").withModules(
         modules = Map("child1" -> MavenModule(gavPrefix = "child1"), "child2_to_mute" -> MavenModule(gavPrefix = "child2"))))
 
-      override val buildSystem = new MavenBuildSystem(repo.root, List(fakeMavenRepository.url),
-        sourceModulesOverrides = SourceModulesOverrides("child2_to_mute"))
+      override val buildSystem = new MavenBuildSystem(repo.root, sourceModulesOverrides = SourceModulesOverrides("child2_to_mute"), resolver)
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(
@@ -298,8 +299,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
         "sibling2" -> MavenModule(gavPrefix = "sibling2")
       )
 
-      override val buildSystem = new MavenBuildSystem(repo.root, List(fakeMavenRepository.url),
-        sourceModulesOverrides = SourceModulesOverrides("sibling1_to_mute"))
+      override val buildSystem = new MavenBuildSystem(repo.root, sourceModulesOverrides = SourceModulesOverrides("sibling1_to_mute"), resolver)
       val sourceModules = buildSystem.modules()
 
       sourceModules must contain(exactly(

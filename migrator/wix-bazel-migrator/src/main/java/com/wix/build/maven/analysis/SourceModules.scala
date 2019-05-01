@@ -14,10 +14,7 @@ case class SourceModules(codeModules: Set[SourceModule]) {
 
 object SourceModules {
   def apply(repoRoot: Path, dependencyResolver: AetherMavenDependencyResolver) = new SourceModules(
-    new MavenBuildSystem(repoRoot,
-      List(WixMavenBuildSystem.RemoteRepo),
-      SourceModulesOverridesReader.from(repoRoot),
-      Some(dependencyResolver))
+    new MavenBuildSystem(repoRoot, SourceModulesOverridesReader.from(repoRoot), dependencyResolver)
       .modules()
   )
   def of(repoRoot: Path, dependencyResolver: AetherMavenDependencyResolver) = apply(repoRoot, dependencyResolver)

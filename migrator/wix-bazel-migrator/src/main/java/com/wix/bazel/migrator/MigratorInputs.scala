@@ -19,7 +19,8 @@ import scala.io.Source
 
 class MigratorInputs(configuration: RunConfiguration) {
   val maybeLocalMavenRepository = configuration.m2Path.map(p => new LocalMavenRepository(p.toString))
-  val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
+  val maybeRemoteMavenRepostories: List[String] = configuration.remoteMavenRepositoriesUrls
+  val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver(maybeRemoteMavenRepostories)
   val repoRoot: Path = configuration.repoRoot.toPath
   val managedDepsRepoRoot: Option[io.File] = configuration.managedDepsRepo
   val codotaToken: Option[String] = configuration.codotaToken
@@ -50,12 +51,11 @@ class MigratorInputs(configuration: RunConfiguration) {
       case _ => Set.empty[Coordinates]
     }
 
-  private def aetherMavenDependencyResolver = {
-    val repoUrl =
-      maybeLocalMavenRepository.map(r => List(r.url)) getOrElse List(
-        WixMavenBuildSystem.RemoteRepo, WixMavenBuildSystem.RemoteRepoReleases)
+  private def aetherMavenDependencyResolver(remoteRepoUrls: List[String]) = {
+    val repoUrls =
+      maybeLocalMavenRepository.map(r => List(r.url)) getOrElse remoteRepoUrls
 
-    new AetherMavenDependencyResolver(repoUrl,
+    new AetherMavenDependencyResolver(repoUrls,
       resolverRepo, true)
   }
 

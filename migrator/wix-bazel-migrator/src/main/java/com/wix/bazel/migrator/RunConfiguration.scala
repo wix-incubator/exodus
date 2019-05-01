@@ -12,6 +12,7 @@ case class RunConfiguration(repoRoot: File,
                             performTransformation: Boolean = true,
                             failOnSevereConflicts: Boolean = false,
                             interRepoSourceDependency: Boolean = false,
+                            remoteMavenRepositoriesUrls: List[String] = List(),
                             artifactoryToken: Option[String] = None,
                             sourceDependenciesWhitelist: Option[Path] = None,
                             additionalDepsByMavenDeps: Option[Path] = None,
@@ -97,6 +98,15 @@ object RunConfiguration {
     opt[Boolean]("include-server-infra-in-social-mode-set")
       .withFallback(() => booleanProperty("include.server.infra.in.social.mode.set"))
       .action { case (include, cfg) => cfg.copy(includeServerInfraInSocialModeSet = include) }
+
+    opt[String](name = "remote-maven-repository-urls")
+      .withFallback(() => sys.props.getOrElse("remote.maven.repository.urls", ""))
+      .text("comma delimited list of remote maven repositories (like artifactory, nexus)")
+      .action {
+        case (repos, cfg) if Option(repos).exists(_.nonEmpty) =>
+          cfg.copy(remoteMavenRepositoriesUrls = repos.split(",").map(_.trim).filter(_.nonEmpty).toList)
+        case (_, cfg) => cfg.copy(remoteMavenRepositoriesUrls = List())
+      }
 
     opt[String]("local-maven-repository-path")
       .withFallback(() => sys.props.getOrElse("local.maven.repository.path", ""))
