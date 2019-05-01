@@ -1,8 +1,6 @@
 package com.wix.build.maven.analysis
 
 import java.nio.file.Path
-
-import com.wix.bazel.migrator.WixMavenBuildSystem
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.overrides.SourceModulesOverridesReader
 import com.wixpress.build.maven.AetherMavenDependencyResolver
