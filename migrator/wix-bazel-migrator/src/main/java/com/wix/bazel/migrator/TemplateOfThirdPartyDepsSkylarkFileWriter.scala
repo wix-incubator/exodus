@@ -2,12 +2,12 @@ package com.wix.bazel.migrator
 
 import java.nio.file.{Files, Path}
 
-class TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot: Path) {
+class TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot: Path, mavenArchiveMacroPath: String) {
 
   def write(): Unit = {
     val thirdPartyDepsSkylarkFileContents =
       s"""
-         |load("@core_server_build_tools//:macros.bzl", "maven_archive", "maven_proto")
+         |load("$mavenArchiveMacroPath", "maven_archive", "maven_proto")
          |
          |def third_party_dependencies():
       """.stripMargin
