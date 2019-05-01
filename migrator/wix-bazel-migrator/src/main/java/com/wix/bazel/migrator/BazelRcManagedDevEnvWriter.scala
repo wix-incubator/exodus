@@ -36,7 +36,6 @@ object BazelRcManagedDevEnvWriter {
     "# test",
     "test --test_tmpdir=/tmp",
     "test --test_output=errors",
-    "test --test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false",
     "",
     "# build",
     "build:bazel16uplocal --action_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_BW_CMPTBL",
