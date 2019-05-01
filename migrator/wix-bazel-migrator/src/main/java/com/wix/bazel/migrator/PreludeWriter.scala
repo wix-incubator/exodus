@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path}
 
 import com.wix.bazel.migrator.PreludeWriter._
 
-class PreludeWriter(repoRoot: Path, preludeContent: Seq[String] = Seq(ScalaLibraryImport, ScalaImport, TestImport, SourcesImport)) {
+class PreludeWriter(repoRoot: Path, preludeContent: Seq[String]) {
   def write(): Unit = {
     val path = repoRoot.resolve("tools/build_rules/")
     Files.createDirectories(path)
@@ -35,6 +35,6 @@ object PreludeWriter {
                               |)
                            """.stripMargin
   val ScalaImport = """load("@io_bazel_rules_scala//scala:scala_import.bzl", "scala_import",)"""
-  val TestImport = """load("@core_server_build_tools//:tests.bzl", "specs2_unit_test", "specs2_ite2e_test", "specs2_mixed_test")"""
-  val SourcesImport = """load("@core_server_build_tools//:macros.bzl", "sources")"""
+  val TestImport = """load("//:tests.bzl", "specs2_unit_test", "specs2_ite2e_test", "specs2_mixed_test")"""
+  val SourcesImport = """load("//:macros.bzl", "sources")"""
 }

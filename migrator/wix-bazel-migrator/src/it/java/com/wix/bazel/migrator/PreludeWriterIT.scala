@@ -13,7 +13,7 @@ class PreludeWriterIT extends BaseWriterIT {
       writer.write()
 
       path(withName = "prelude_bazel") must beRegularFile(withContentContaining =
-        Seq(PreludeWriter.ScalaLibraryImport, PreludeWriter.ScalaImport, PreludeWriter.TestImport))
+        statements)
     }
 
     //API for tests
@@ -28,7 +28,9 @@ class PreludeWriterIT extends BaseWriterIT {
   }
 
   abstract class ctx extends baseCtx {
-    val writer = new PreludeWriter(repoRoot)
+    val statements: Seq[String] = Seq(PreludeWriter.ScalaLibraryImport, PreludeWriter.ScalaImport, PreludeWriter.TestImport)
+
+    val writer = new PreludeWriter(repoRoot, statements)
 
     override def path(withName: String) = repoRoot.resolve(s"tools/build_rules/$withName")
   }

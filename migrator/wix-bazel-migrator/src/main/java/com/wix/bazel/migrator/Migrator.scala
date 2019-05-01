@@ -1,6 +1,9 @@
 package com.wix.bazel.migrator
 
+import java.nio.file.Files
+
 import better.files.FileOps
+import com.wix.bazel.migrator.PreludeWriter.{ScalaImport, ScalaLibraryImport, SourcesImport, TestImport}
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
 import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, MavenArchiveTargetsOverridesReader}
 import com.wix.bazel.migrator.transform._
@@ -9,6 +12,8 @@ import com.wixpress.build.bazel.NeverLinkResolver._
 import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
 import com.wixpress.build.maven.{FilteringGlobalExclusionDependencyResolver, MavenScope}
 import com.wixpress.build.sync.DiffSynchronizer
+
+import scala.io.Source
 
 abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(configuration) {
   def migrate(): Unit = {
@@ -40,8 +45,8 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   private[migrator] def writeBazelRcManagedDevEnv(): Unit =
     new BazelRcManagedDevEnvWriter(repoRoot).resetFileWithDefaultOptions()
 
-  private[migrator] def writePrelude(): Unit =
-    new PreludeWriter(repoRoot).write()
+  private[migrator] def writePrelude(preludeContent: Seq[String]): Unit =
+    new PreludeWriter(repoRoot, preludeContent).write()
 
   private[migrator] def writeBazelRemoteRc(): Unit =
     new BazelRcRemoteWriter(repoRoot).write()
@@ -168,6 +173,7 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
   override def unSafeMigrate(): Unit = {
     failOnConflictsIfNeeded()
 
+    copyMacros()
     writeBazelRc()
     writeBazelRcManagedDevEnv()
     writePrelude()
@@ -180,5 +186,19 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     syncLocalThirdPartyDeps()
 
     cleanGitIgnore()
+  }
+
+  private def writePrelude(): Unit = {
+    writePrelude(Seq(ScalaLibraryImport, ScalaImport, TestImport, SourcesImport))
+  }
+
+  private def copyMacros() = {
+    val macros = Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/macros.bzl")).mkString
+    val tests = Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/tests.bzl")).mkString
+    val importExternal = Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/import_external.bzl")).mkString
+
+    Files.write(repoRoot.resolve("macros.bzl"), macros.getBytes())
+    Files.write(repoRoot.resolve("tests.bzl"), tests.getBytes())
+    Files.write(repoRoot.resolve("import_external.bzl"), importExternal.getBytes())
   }
 }
