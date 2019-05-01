@@ -3,6 +3,7 @@ package com.wix.bazel.migrator
 import java.nio.file.Files
 
 import better.files.FileOps
+import com.wix.bazel.migrator.BazelRcManagedDevEnvWriter.defaultOptions
 import com.wix.bazel.migrator.PreludeWriter.{ScalaImport, ScalaLibraryImport, SourcesImport, TestImport}
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
 import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, MavenArchiveTargetsOverridesReader}
@@ -42,8 +43,8 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   private[migrator] def writeBazelRc(): Unit =
     new BazelRcWriter(repoRoot).write()
 
-  private[migrator] def writeBazelRcManagedDevEnv(): Unit =
-    new BazelRcManagedDevEnvWriter(repoRoot).resetFileWithDefaultOptions()
+  private[migrator] def writeBazelRcManagedDevEnv(defaultOptions: List[String]): Unit =
+    new BazelRcManagedDevEnvWriter(repoRoot, defaultOptions).resetFileWithDefaultOptions()
 
   private[migrator] def writePrelude(preludeContent: Seq[String]): Unit =
     new PreludeWriter(repoRoot, preludeContent).write()
@@ -175,7 +176,7 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
 
     copyMacros()
     writeBazelRc()
-    writeBazelRcManagedDevEnv()
+    writeBazelRcManagedDevEnv
     writePrelude()
     writeBazelRemoteRc()
     writeBazelRemoteSettingsRc()
@@ -186,6 +187,10 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     syncLocalThirdPartyDeps()
 
     cleanGitIgnore()
+  }
+
+  private def writeBazelRcManagedDevEnv: Unit = {
+    writeBazelRcManagedDevEnv(defaultOptions)
   }
 
   private def writePrelude(): Unit = {

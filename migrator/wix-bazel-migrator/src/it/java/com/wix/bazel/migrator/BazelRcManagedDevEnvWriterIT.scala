@@ -58,7 +58,7 @@ class BazelRcManagedDevEnvWriterIT extends BaseWriterIT {
 
   trait ctx extends baseCtx {
     val bazelRcManagedDevEnvPath: Path = path(withName = "tools/bazelrc/.bazelrc.managed.dev.env")
-    val bazelRcManagedDevEnvWriter: BazelRcManagedDevEnvWriter = new BazelRcManagedDevEnvWriter(repoRoot)
+    val bazelRcManagedDevEnvWriter: BazelRcManagedDevEnvWriter = new BazelRcManagedDevEnvWriter(repoRoot, BazelRcManagedDevEnvWriter.defaultOptions)
   }
 
   def contentContainsLine(line: String): Matcher[String] = contentContainsLines(List(line))
