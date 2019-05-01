@@ -129,7 +129,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   private[migrator] def syncLocalThirdPartyDeps(): Unit = {
     val bazelRepo = new NoPersistenceBazelRepository(repoRoot)
 
-    val bazelRepoWithManagedDependencies = new NoPersistenceBazelRepository(managedDepsRepoRoot.toScala)
+    val bazelRepoWithManagedDependencies = managedDepsRepoRoot.map(r => new NoPersistenceBazelRepository(r.toScala))
     val neverLinkResolver = NeverLinkResolver(localNeverlinkDependencies = RepoProvidedDeps(codeModules).repoProvidedArtifacts)
     val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver,
       artifactoryRemoteStorage, neverLinkResolver, importExternalRulePath)

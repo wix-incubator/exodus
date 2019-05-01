@@ -21,7 +21,7 @@ class MigratorInputs(configuration: RunConfiguration) {
   val maybeLocalMavenRepository = configuration.m2Path.map(p => new LocalMavenRepository(p.toString))
   val aetherResolver: AetherMavenDependencyResolver = aetherMavenDependencyResolver
   val repoRoot: Path = configuration.repoRoot.toPath
-  val managedDepsRepoRoot: io.File = configuration.managedDepsRepo
+  val managedDepsRepoRoot: Option[io.File] = configuration.managedDepsRepo
   val codotaToken: Option[String] = configuration.codotaToken
   val localWorkspaceName: String = WorkspaceName.by(configuration.repoUrl)
   val artifactoryRemoteStorage = newRemoteStorage
