@@ -3,13 +3,13 @@ package com.wix.bazel.migrator
 import java.nio.file.{Files, Path, StandardOpenOption}
 
 
-class BazelRcManagedDevEnvWriter(repoRoot: Path) {
+class BazelRcManagedDevEnvWriter(repoRoot: Path, defaultOptions: List[String]) {
 
   private val bazelRcManagedDevEnvPath = repoRoot.resolve("tools/bazelrc/.bazelrc.managed.dev.env")
 
   def resetFileWithDefaultOptions(): Unit = {
     deleteIfExists()
-    appendLines(BazelRcManagedDevEnvWriter.defaultOptions)
+    appendLines(defaultOptions)
   }
 
   def appendLine(line: String): Unit = appendLines(List(line))
@@ -37,12 +37,11 @@ object BazelRcManagedDevEnvWriter {
     "test --test_tmpdir=/tmp",
     "test --test_output=errors",
     "test --test_arg=--jvm_flags=-Dcom.google.testing.junit.runner.shouldInstallTestSecurityManager=false",
-    "test --test_arg=--jvm_flags=-Dwix.environment=CI",
     "",
     "# build",
     "build:bazel16uplocal --action_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_BW_CMPTBL",
     "build --strategy=Scalac=worker",
-    "build --strict_java_deps=error",
+    "build --strict_java_deps=off",
     "build --strict_proto_deps=off",
     "build --experimental_remap_main_repo=true",
     "build --experimental_multi_threaded_digest=true",
