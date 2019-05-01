@@ -1,11 +1,11 @@
 package com.wix.bazel.migrator
 
 import java.io
+import java.net.URL
 import java.nio.file.{Files, Path}
 import java.time.temporal.ChronoUnit
 
 import better.files.File
-import com.wix.bazel.migrator.WixMavenBuildSystem.RemoteRepoBaseUrl
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.transform.{CodotaDependencyAnalyzer, ZincDepednencyAnalyzer}
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
@@ -60,13 +60,17 @@ class MigratorInputs(configuration: RunConfiguration) {
   }
 
   private def newRemoteStorage = {
-    configuration.artifactoryToken match {
-      case Some(token) => new ArtifactoryRemoteStorage(RemoteRepoBaseUrl, token)
-      case None => maybeLocalMavenRepository match {
+    (configuration.artifactoryToken, maybeRemoteMavenRepoHost)  match {
+      case (Some(token), Some(host)) => new ArtifactoryRemoteStorage(host, token)
+      case (None, _) | (_, None) => maybeLocalMavenRepository match {
         case Some(localRepo) => new MavenRepoRemoteStorage(List(localRepo.url))
         case None => NoopDependenciesRemoteStorage
       }
     }
+  }
+
+  private def maybeRemoteMavenRepoHost = {
+    configuration.remoteMavenRepositoriesUrls.headOption.map(url => new URL(url).getHost)
   }
 
   private def readSourceModules() = {

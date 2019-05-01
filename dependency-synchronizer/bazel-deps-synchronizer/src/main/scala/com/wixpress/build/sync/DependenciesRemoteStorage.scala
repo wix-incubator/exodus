@@ -15,7 +15,7 @@ trait DependenciesRemoteStorage {
   def checksumFor(node: DependencyNode): Option[String]
 }
 
-class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends DependenciesRemoteStorage {
+class ArtifactoryRemoteStorage(host: String, token: String) extends DependenciesRemoteStorage {
   private val mapper = new ObjectMapper()
     .registerModule(DefaultScalaModule)
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -76,7 +76,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
   private def setArtifactChecksum(coordinates: Coordinates) = {
     val artifactPath: String = coordinates.toArtifactPath
 
-    Http(s"http://$baseUrl/artifactory/api/checksum/sha256")
+    Http(s"http://$host/artifactory/api/checksum/sha256")
       .header("Content-Type", "application/json")
       .header("X-JFrog-Art-Api", token)
       .postData(
@@ -114,7 +114,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
 
   private def getMetaArtifactIOFor(artifact: Coordinates) = {
     Try {
-      val url = s"http://$baseUrl/artifactory/api/storage/repo1-cache/${artifact.toArtifactPath}"
+      val url = s"http://$host/artifactory/api/storage/repo1-cache/${artifact.toArtifactPath}"
       Http(url).asString
     } match {
       case Success(response) => Success(response)
@@ -124,7 +124,7 @@ class ArtifactoryRemoteStorage(baseUrl: String, token: String) extends Dependenc
 
   private def getJarArtifactIOFor(artifact: Coordinates) = {
     Try {
-      val url = s"http://$baseUrl/artifactory/libs-snapshots/${artifact.toArtifactPath}"
+      val url = s"http://$host/artifactory/libs-snapshots/${artifact.toArtifactPath}"
       Http(url).asBytes
     } match {
       case Success(response) => Success(response)
