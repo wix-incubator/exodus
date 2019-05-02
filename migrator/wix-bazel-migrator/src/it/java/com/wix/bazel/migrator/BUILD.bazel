@@ -13,6 +13,7 @@ specs2_ite2e_test(
     runtime_deps = [
     ],
     deps = [
+        "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven:maven",
         "//migrator/wix-bazel-migrator:tests_dependencies",
         "//migrator/wix-bazel-migrator/src/it/java/com/wix/bazel/migrator/matchers",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/transform_build/maven/analysis",

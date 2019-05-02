@@ -2,7 +2,7 @@ package com.wix.bazel.migrator.matchers
 
 import java.nio.file.{Files, Path}
 
-import com.wix.bazel.migrator.matchers.InMemoryFilesHelpers.pathContent
+import com.wix.bazel.migrator.matchers.InMemoryFilesHelpers.{pathContent, pathContentList}
 import org.specs2.matcher.{Matcher, Matchers}
 
 import scala.io.Source.fromInputStream
@@ -16,6 +16,7 @@ trait InMemoryFilesMatchers {
   private def beEmpty: Matcher[Path] = equalTo(0) ^^ { (p: Path) => Files.readAllBytes(p).length }
 
   def beRegularFile(withContentContaining: Seq[String]): Matcher[Path] = beRegularFile and pathContaining(withContentContaining)
+  def beRegularFileWithPartialContent(withContentContaining: Seq[String]): Matcher[Path] = beRegularFile and pathContainingPartial(withContentContaining)
 
   def beRegularFile(withContentMatching: Matcher[String]): Matcher[Path] = beRegularFile and {pathContent(_:Path)} ^^ withContentMatching
 
@@ -25,6 +26,7 @@ trait InMemoryFilesMatchers {
     beRegularFile and withEqualContentsOfScriptInBaseFolder(withContentFromScript, scriptsBaseFolder)
 
   private def pathContaining(lines: Seq[String]): Matcher[Path] = contain(lines.mkString(System.lineSeparator)) ^^ { (p: Path) => pathContent(p) }
+  private def pathContainingPartial(lines: Seq[String]): Matcher[Path] = contain(atLeast(lines:_*)) ^^ { (p: Path) => pathContentList(p) }
 
   private def withEqualContentsOf(resourceName: String): Matcher[Path] =
     contain(fromInputStream(getClass.getResourceAsStream(s"/$resourceName")).mkString) ^^ { (p: Path) => pathContent(p) }
@@ -39,5 +41,8 @@ trait InMemoryFilesMatchers {
 object InMemoryFilesHelpers {
 
   def pathContent(p: Path): String = new String(Files.readAllBytes(p))
+  def pathContentList(p: Path): List[String] = {
+    new String(Files.readAllBytes(p)).split(System.lineSeparator()).map(_.trim).toList
+  }
 
 }

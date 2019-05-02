@@ -4,7 +4,7 @@ import java.nio.file.Files
 
 import better.files.FileOps
 import com.wix.bazel.migrator.BazelRcManagedDevEnvWriter.defaultOptions
-import com.wix.bazel.migrator.PreludeWriter.{ScalaImport, ScalaLibraryImport, SourcesImport, TestImport}
+import com.wix.bazel.migrator.PreludeWriter._
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
 import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, MavenArchiveTargetsOverridesReader}
 import com.wix.bazel.migrator.transform._
@@ -170,7 +170,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
 
 class PublicMigrator(configuration: RunConfiguration) extends Migrator(configuration) {
   override def writeWorkspace(): Unit = {
-    new WorkspaceWriter(repoRoot, localWorkspaceName).write()
+    new WorkspaceWriter(repoRoot, localWorkspaceName, configuration.keepJunit5Support).write()
   }
 
   override def unSafeMigrate(): Unit = {
@@ -202,7 +202,12 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
   }
 
   private def writePrelude(): Unit = {
-    writePrelude(Seq(ScalaLibraryImport, ScalaImport, TestImport, SourcesImport))
+    val basicImports = Seq(ScalaLibraryImport, ScalaImport, TestImport, SourcesImport)
+    val allImports = if(configuration.keepJunit5Support) {
+      basicImports :+ Junit5Import
+    } else
+      basicImports
+    writePrelude(allImports)
   }
 
   private def copyMacros() = {
@@ -213,5 +218,10 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     Files.write(repoRoot.resolve("macros.bzl"), macros.getBytes())
     Files.write(repoRoot.resolve("tests.bzl"), tests.getBytes())
     Files.write(repoRoot.resolve("import_external.bzl"), importExternal.getBytes())
+
+    if(configuration.keepJunit5Support) {
+      val junit5 = Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/junit5.bzl")).mkString
+      Files.write(repoRoot.resolve("junit5.bzl"), junit5.getBytes())
+    }
   }
 }

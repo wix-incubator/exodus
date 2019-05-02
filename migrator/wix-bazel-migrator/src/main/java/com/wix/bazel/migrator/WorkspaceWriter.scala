@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path}
 
 import com.wix.bazel.migrator.overrides.WorkspaceOverridesReader
 
-class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
+class WorkspaceWriter(repoRoot: Path, workspaceName: String, keepJunit5Support: Boolean) {
 
   def write(): Unit = {
     val workspaceFileContents =
@@ -45,6 +45,8 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
          |
          |third_party_dependencies()
          |
+         |${junit5Repositories()}
+         |
          |${workspaceSuffixOverride()}
          |
          |""".stripMargin
@@ -54,6 +56,26 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String) {
 
   private def workspaceSuffixOverride(): String = {
     WorkspaceOverridesReader.from(repoRoot).suffix
+  }
+
+  private def junit5Repositories(): String = {
+    if (keepJunit5Support)
+      """load(":junit5.bzl", "junit_jupiter_java_repositories", "junit_platform_java_repositories")
+        |
+        |JUNIT_JUPITER_VERSION = "5.4.2"
+        |
+        |JUNIT_PLATFORM_VERSION = "1.4.2"
+        |
+        |junit_jupiter_java_repositories(
+        |    version = JUNIT_JUPITER_VERSION,
+        |)
+        |
+        |junit_platform_java_repositories(
+        |    version = JUNIT_PLATFORM_VERSION,
+        |)
+      """.stripMargin
+    else
+      ""
   }
 
   private def writeToDisk(workspaceFileContents: String): Unit = {

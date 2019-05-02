@@ -6,10 +6,8 @@ import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target._
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Scope, SourceModule, Target, TestType}
 import com.wix.bazel.migrator.overrides.InternalTargetOverridesReader
-import com.wix.build.maven.translation.MavenToBazelTranslations._
 import com.wixpress.build.bazel.LibraryRule
 import com.wixpress.build.bazel.LibraryRule.ScalaLibraryRuleType
-import com.wixpress.build.maven.Coordinates
 
 object PrintJvmTargetsSources {
   def main(args: Array[String]) {
@@ -33,7 +31,6 @@ object Writer extends MigratorApp {
 }
 
 class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) {
-
   def write(): Unit = {
     //we're writing the resources targets first since they might get overridden by identified dependencies from the analysis
     //this can happen since we have partial analysis on resources folders
@@ -161,7 +158,7 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     protoDeps.filterNot(wixFWProtoDependencies)
   }
 
-  def writeModuleDeps(moduleDeps: ModuleDeps): String = {
+  private def writeModuleDeps(moduleDeps: ModuleDeps): String = {
     val libraryRule = new LibraryRule(
       name = moduleDeps.name,
       exports = moduleDeps.exports,
@@ -198,67 +195,8 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     //this is needed since jackson scala serialization sucks
     resources.codePurpose.toString.contains("Test")
 
-  //toString since case objects aren't well supported in jackson scala
-  private def testHeader(testType: TestType, tagsTestType: TestType, testSize: String, blockNetwork: Option[Boolean]): String = testType.toString match {
-    case "UT" =>
-      blockNetwork.foreach(_ => println("[WARN]  Block network override is not supported for unit tests"))
-      s"""specs2_unit_test(
-         |    $testSize
-         |    ${overrideTagsIfNeeded(testType, tagsTestType)}
-    """.stripMargin
-    case "ITE2E" =>
-      s"""specs2_ite2e_test(
-         |    $testSize
-         |    ${overrideTagsIfNeeded(testType, tagsTestType)}
-         |    ${overrideBlockNetworkIfNeeded(blockNetwork)}
-    """.stripMargin
-    case "Mixed" =>
-      s"""specs2_mixed_test(
-         |    $testSize
-         |    ${overrideTagsIfNeeded(testType, tagsTestType)}
-         |    ${overrideBlockNetworkIfNeeded(blockNetwork)}
-    """.stripMargin
-    case "None" =>
-      s"""scala_library(
-         |    testonly = 1,
-    """.stripMargin
-  }
-
-  private def tags(tagsTestType: TestType): String = tagsTestType.toString match {
-    case "UT" => """"UT""""
-    case "ITE2E" => """"IT", "E2E", "block-network""""
-    case "Mixed" => """"UT", "IT", "E2E", "block-network""""
-  }
-
-  private def overrideTagsIfNeeded(testType: TestType, tagsTestType: TestType): String =
-    if (testType != tagsTestType) s"tags = [${tags(tagsTestType)}]," else ""
-
-  private def overrideBlockNetworkIfNeeded(blockNetwork: Option[Boolean]): String = {
-    val blockNetworkPrefix = "block_network = "
-    blockNetwork match {
-      case None => ""
-      case Some(true) => blockNetworkPrefix + "True,"
-      case Some(false) => blockNetworkPrefix + "False,"
-    }
-  }
-
-  private def testFooter(
-                          testType: TestType,
-                          sourceModule: SourceModule,
-                          additionalJvmFlags: String,
-                          additionalDataDeps: String,
-                          dockerImagesDeps: String
-                        ) = testType.toString match {
-    case "None" => ""
-    case _ =>
-      val existingManifestLabel = s"//${sourceModule.relativePathFromMonoRepoRoot}:coordinates"
-      s"""
-         |    data = ["$existingManifestLabel"$additionalDataDeps$dockerImagesDeps],
-         |    jvm_flags = ["-Dexisting.manifest=$$(location $existingManifestLabel)"$additionalJvmFlags],
-     """.stripMargin
-  }
-
   private def writeJvm(target: Jvm) = {
+    val testWriter = testWriterAccordingTo(target.originatingSourceModule)
     val allDeps = combineDeps(target.dependencies.flatMap(writeDependency(target)))
 
     val compileTimeTargets =
@@ -281,8 +219,8 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
         val dockerImagesDeps = DockerImagesDeps(unAliasedLabelOf(target))
         val maybeOverriddenTestSize = ForceTestSize.getOrElse(unAliasedLabelOf(target), "")
         val overriddenBlockNetwork = BlockNetwork.get(unAliasedLabelOf(target))
-        (testHeader(maybeOverriddenTestType, maybeOverriddenTagsTestType, maybeOverriddenTestSize, overriddenBlockNetwork),
-          testFooter(maybeOverriddenTestType, target.originatingSourceModule, additionalJvmFlags, additionalDataDeps, dockerImagesDeps))
+        (testWriter.testHeader(maybeOverriddenTestType, maybeOverriddenTagsTestType, maybeOverriddenTestSize, overriddenBlockNetwork),
+          testWriter.testFooter(maybeOverriddenTestType, target.originatingSourceModule, additionalJvmFlags, additionalDataDeps, dockerImagesDeps, target.belongingPackageRelativePath))
     }
     header +
       s"""
@@ -291,6 +229,16 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
          |    deps = [${writeDependencies(compileTimeTargets)}],
          |    runtime_deps = [${writeDependencies(runtimeTargets)}],
     """.stripMargin + footer + "\n)\n"
+  }
+
+  private def testWriterAccordingTo(module: SourceModule): TestTargetsWriter = {
+    val maybeSourceModule = repoModules.find(_.coordinates == module.coordinates)
+    maybeSourceModule.map { module =>
+      if (module.dependencies.directDependencies.exists(_.coordinates.groupId == "org.junit.jupiter"))
+        JUnit5Writer
+      else
+        Specs2Writer
+    }.getOrElse(Specs2Writer)
   }
 
   private def combineDeps(scopeToDeps: Set[(Scope, Set[String])]*) = {
@@ -344,17 +292,8 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     }
   }
 
-  private def workspaceNameTargetName(originalTargetName: String, externalCoordinates: Coordinates): (String, String) = {
-    (externalCoordinates.workspaceRuleName, originalTargetName)
-  }
-
   private def writeDependencies(dependencies: Set[String]): String = {
     dependencies.toSeq.sorted.mkString("\n        ", " , \n        ", "\n    ")
-  }
-
-  private def neverLinkPotentialSuffix(scope: Scope, targetLabel: String) = scope match {
-    //    case Scope.PROVIDED => targetLabel + "_never_link"
-    case _ => targetLabel
   }
 
   private def writeDependency(scope: Scope)(dependency: Target): String = {
