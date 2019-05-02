@@ -19,7 +19,8 @@ case class RunConfiguration(repoRoot: File,
                             includeServerInfraInSocialModeSet: Boolean = false,
                             m2Path: Option[Path] = None,
                             thirdPartyDependenciesSource: Option[String] = None,
-                            additionalExternalDependenciesPath: Option[Path] = None)
+                            additionalExternalDependenciesPath: Option[Path] = None,
+                            keepJunit5Support: Boolean = true)
 
 object RunConfiguration {
   private val Empty = RunConfiguration(null, null, null, null)
@@ -129,6 +130,11 @@ object RunConfiguration {
           cfg.copy(additionalExternalDependenciesPath = Some(Paths.get(filePath).toAbsolutePath))
         case (_, cfg) =>  cfg.copy(additionalExternalDependenciesPath = None)
       }
+
+    opt[Boolean]("remove-junit5-support")
+      .required()
+      .withFallback(() => booleanProperty("remove.junit5.support"))
+      .action { case (remove, cfg) => cfg.copy(keepJunit5Support = !remove) }
   }
 
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)
