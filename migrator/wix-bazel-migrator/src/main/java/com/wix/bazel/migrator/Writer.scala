@@ -7,7 +7,7 @@ import com.wix.bazel.migrator.model.Target._
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Scope, SourceModule, Target, TestType}
 import com.wix.bazel.migrator.overrides.InternalTargetOverridesReader
 import com.wixpress.build.bazel.LibraryRule
-import com.wixpress.build.bazel.LibraryRule.ScalaLibraryRuleType
+import com.wixpress.build.bazel.LibraryRule.{JavaLibraryRuleType, LibraryRuleType, ScalaLibraryRuleType}
 
 object PrintJvmTargetsSources {
   def main(args: Array[String]) {
@@ -26,11 +26,11 @@ object Writer extends MigratorApp {
     case "Mixed" => TestType.Mixed
   }
 
-  val writer = new Writer(migratorInputs.repoRoot, migratorInputs.codeModules, Persister.readTransformationResults())
+  val writer = new ScalaWriter(migratorInputs.repoRoot, migratorInputs.codeModules, Persister.readTransformationResults())
   writer.write()
 }
 
-class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) {
+abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) {
   def write(): Unit = {
     //we're writing the resources targets first since they might get overridden by identified dependencies from the analysis
     //this can happen since we have partial analysis on resources folders
@@ -158,18 +158,11 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     protoDeps.filterNot(wixFWProtoDependencies)
   }
 
-  private def writeModuleDeps(moduleDeps: ModuleDeps): String = {
-    val libraryRule = new LibraryRule(
-      name = moduleDeps.name,
-      exports = moduleDeps.exports,
-      compileTimeDeps = moduleDeps.deps,
-      runtimeDeps = moduleDeps.runtimeDeps,
-      data = moduleDeps.data,
-      testOnly = moduleDeps.testOnly,
-      libraryRuleType = ScalaLibraryRuleType)
+  private[migrator] def libraryRuleFor(moduleDeps: ModuleDeps): LibraryRule
 
+  def writeModuleDeps(moduleDeps: ModuleDeps): String = {
     s"""
-       |${libraryRule.serialized}
+       |${libraryRuleFor(moduleDeps).serialized}
      """.stripMargin
   }
 
@@ -268,13 +261,15 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
     s""""//${target.originatingSourceModule.relativePathFromMonoRepoRoot}:$moduleDepsTarget""""
   }
 
+  private[migrator] val libraryRuleType: LibraryRuleType
+
   private def prodHeader(testOnly: Boolean) = {
     if (testOnly)
-      """scala_library(
+      s"""${libraryRuleType.name}(
         |    testonly = 1,
       """.stripMargin
     else
-      "scala_library(\n"
+      s"${libraryRuleType.name}(\n"
   }
 
 
@@ -423,4 +418,32 @@ class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[
 
   // We need this because of https://github.com/wix/wix-embedded-mysql/blob/5d0d1b4b90eb5316d5b4cdd796bd4d4fd7cb4af1/wix-embedded-mysql/src/main/java/com/wix/mysql/ScriptResolver.java#L54
   private def encodePluses(str: String): String = str.replace('+', '_')
+}
+
+class JavaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) extends Writer(repoRoot, repoModules, bazelPackages) {
+  override private[migrator] def libraryRuleFor(moduleDeps: ModuleDeps) =
+    new LibraryRule(
+      name = moduleDeps.name,
+      // java_library does not allow `deps` without `srcs`
+      exports = moduleDeps.exports ++ moduleDeps.deps,
+      runtimeDeps = moduleDeps.runtimeDeps,
+      data = moduleDeps.data,
+      testOnly = moduleDeps.testOnly,
+      libraryRuleType = libraryRuleType)
+
+  override private[migrator] val libraryRuleType = JavaLibraryRuleType
+}
+
+class ScalaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) extends Writer(repoRoot, repoModules, bazelPackages) {
+  override private[migrator] def libraryRuleFor(moduleDeps: ModuleDeps) =
+    new LibraryRule(
+      name = moduleDeps.name,
+      exports = moduleDeps.exports,
+      compileTimeDeps = moduleDeps.deps,
+      runtimeDeps = moduleDeps.runtimeDeps,
+      data = moduleDeps.data,
+      testOnly = moduleDeps.testOnly,
+      libraryRuleType = libraryRuleType)
+
+  override private[migrator] val libraryRuleType = ScalaLibraryRuleType
 }

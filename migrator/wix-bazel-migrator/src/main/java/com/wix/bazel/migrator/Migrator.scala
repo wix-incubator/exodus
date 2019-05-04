@@ -58,8 +58,11 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
     new BazelRcRemoteSettingsWriter(repoRoot).write()
 
 
-  private[migrator] def writeInternal(): Unit =
-    new Writer(repoRoot, codeModules, bazelPackages).write()
+  private[migrator] def writeInternal(supportScala: Boolean): Unit =
+    if (supportScala)
+      new ScalaWriter(repoRoot, codeModules, bazelPackages).write()
+    else
+      new JavaWriter(repoRoot, codeModules, bazelPackages).write()
 
   private[migrator] def writeExternal(mavenArchiveMacroPath: String): Unit =
     new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot, mavenArchiveMacroPath).write()
@@ -189,6 +192,10 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     syncLocalThirdPartyDeps()
 
     cleanGitIgnore()
+  }
+
+  private def writeInternal(): Unit = {
+    writeInternal(configuration.supportScala)
   }
 
   private def writeExternal(): Unit = {
