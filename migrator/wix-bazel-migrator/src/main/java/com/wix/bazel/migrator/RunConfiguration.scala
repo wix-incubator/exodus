@@ -20,7 +20,8 @@ case class RunConfiguration(repoRoot: File,
                             m2Path: Option[Path] = None,
                             thirdPartyDependenciesSource: Option[String] = None,
                             additionalExternalDependenciesPath: Option[Path] = None,
-                            keepJunit5Support: Boolean = true)
+                            keepJunit5Support: Boolean = true,
+                            supportScala: Boolean = false)
 
 object RunConfiguration {
   private val Empty = RunConfiguration(null, null, null, null)
@@ -135,6 +136,11 @@ object RunConfiguration {
       .required()
       .withFallback(() => booleanProperty("remove.junit5.support"))
       .action { case (remove, cfg) => cfg.copy(keepJunit5Support = !remove) }
+
+    opt[Boolean]("support-scala")
+      .required()
+      .withFallback(() => booleanProperty("support.scala"))
+      .action { case (supportScala, cfg) => cfg.copy(supportScala = supportScala) }
   }
 
   private def booleanProperty(prop: String) = sys.props.get(prop).exists(_.toBoolean)

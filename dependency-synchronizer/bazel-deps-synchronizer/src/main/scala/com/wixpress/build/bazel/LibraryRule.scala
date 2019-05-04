@@ -93,5 +93,6 @@ object LibraryRule {
 
   sealed trait LibraryRuleType { def name: String }
   case object ScalaLibraryRuleType extends LibraryRuleType { val name = "scala_library" }
+  case object JavaLibraryRuleType extends LibraryRuleType { val name = "java_library" }
   case object ScalaImportRuleType extends LibraryRuleType { val name = "scala_import" }
 }
