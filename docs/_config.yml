@@ -2,3 +2,5 @@ theme: jekyll-theme-cayman
 baseurl: /exodus
 heading: Exodus 
 logo: /assets/img/logo-white2.png
+description: Easily migrate JVM code from Maven to Bazel
+
