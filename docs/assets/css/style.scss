@@ -3,5 +3,36 @@
 
 @import "{{ site.theme }}";
 .page-header {
-    padding: 1rem 1rem;
+  padding: 1rem 1rem;
+}
+
+.nav-main-container {
+  display: flex;
+}
+
+.nav-menu {
+  min-width: 250px;
+}
+
+.nav-menu > ul {
+  list-style: none;
+}
+
+.main-content {
+    min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .nav-main-container {
+    flex-direction: column;
+  }
+
+  .nav-menu > ul {
+    position: initial;
+    padding: 1rem 2rem;
+  }
+
+  .main-content {
+    padding: 1rem 2rem;
+  }
 }
