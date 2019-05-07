@@ -9,6 +9,7 @@ scala_library(
     ],
     deps = [
         "//models/maven-model:main_dependencies",
+        "@com_fasterxml_jackson_core_jackson_annotations",
     ],
 )
 

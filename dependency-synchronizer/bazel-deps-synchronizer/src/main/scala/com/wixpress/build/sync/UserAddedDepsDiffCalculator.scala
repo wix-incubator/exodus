@@ -38,7 +38,8 @@ trait DiffCalculatorAndAggregator {
   def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency]): DiffResult
 }
 
-class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository, bazelRepoWithManagedDependencies: BazelRepository,
+class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
+                                  bazelRepoWithManagedDependencies: BazelRepository,
                                   aetherResolver: MavenDependencyResolver,
                                   remoteStorage: DependenciesRemoteStorage,
                                   mavenModulesToTreatAsSourceDeps: Set[SourceModule],
