@@ -15,9 +15,6 @@ specs2_unit_test(
         "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven",
         "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-         "//dependency-resolver/maven-dependency-resolver-proto/src/main/proto:proto_scala",
-       "@com_wixpress_hoopoe_hoopoe_scala",
-        "@org_mockito_mockito_core",
     ],
 )
 
