@@ -1,7 +1,7 @@
 package com.wix.build.zinc.analysis
 
 import java.io.File
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.{MavenSourceModules, SourceModulesOverrides}
@@ -31,16 +31,17 @@ class ModuleParser(repoRoot: Path, sourceModules: Set[SourceModule]) {
   val classNames: mutable.Map[PackageName, FilePath] = mutable.Map.empty
 
   def readModule(module: SourceModule):(Coordinates,List[ZincModuleAnalysis]) = {
-    val prodFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/compile.relations")
-    val testFile = new File(s"$repoRoot/${module.relativePathFromMonoRepoRoot}/target/analysis/test-compile.relations")
+    val relativePath = if(module.relativePathFromMonoRepoRoot.isEmpty) "" else s"${module.relativePathFromMonoRepoRoot}/"
+    val prodFile = repoRoot.resolve(s"${relativePath}target/analysis/compile.relations")
+    val testFile = repoRoot.resolve(s"${relativePath}target/analysis/test-compile.relations")
 
     classNames ++= (fillCache(module, prodFile) ++ fillCache(module, testFile))
     module.coordinates -> (analysisOf(module, prodFile) ++ analysisOf(module, testFile))
   }
 
-  private def fillCache(module: SourceModule, analysisFile: File): Map[PackageName, FilePath] = {
+  private def fillCache(module: SourceModule, analysisFile: Path): Map[PackageName, FilePath] = {
     val content = Try {
-      new String(Files.readAllBytes(analysisFile.toPath))
+      new String(Files.readAllBytes(analysisFile))
     }.getOrElse("")
     val exp = s"(?s)products:.*binary dependencies:.*source dependencies:.*external dependencies:.*class names:(.*)".r("class-names")
 
@@ -62,9 +63,9 @@ class ModuleParser(repoRoot: Path, sourceModules: Set[SourceModule]) {
     })
   }
 
-  private def analysisOf(module: SourceModule, analysisFile: File) = {
+  private def analysisOf(module: SourceModule, analysisFile: Path) = {
     val content = Try {
-      new String(Files.readAllBytes(analysisFile.toPath))
+      new String(Files.readAllBytes(analysisFile))
     }.getOrElse("")
     val exp = s"(?s)products:.*binary dependencies:.*source dependencies:(.*)external dependencies:(.*)class names:.*".r("source","external")
 
@@ -73,8 +74,8 @@ class ModuleParser(repoRoot: Path, sourceModules: Set[SourceModule]) {
         val sourceDependencies = parseSourceDependencies(matched)
         val externalDependencies = parseExternalDeps(matched)
 
-        val analysesResult = (sourceDependencies ++ externalDependencies).groupBy(k => k._1).map { case (key, value) =>
-          parseCodePath(key).map(ZincModuleAnalysis(_, value.flatMap(v => parseCodePath(v._2)).toList))
+        val analysesResult = (sourceDependencies ++ externalDependencies).groupBy(k => k._1).map { case (sourceFile, fileToDeps) =>
+          parseCodePath(sourceFile).map(ZincModuleAnalysis(_, fileToDeps.flatMap(fileToDep => parseCodePath(fileToDep._2)).toList))
         }
         analysesResult.toList.flatten
       }

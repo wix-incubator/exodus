@@ -59,8 +59,10 @@ class MavenSourceModules(repoRoot: Path,
     }
   }
 
-  private def readAggregatedModules(modulePath: Path, model: Model) =
-    model.getModules.asScala.map(modulePath.resolve).flatMap(readModule).toSet
+  private def readAggregatedModules(modulePath: Path, model: Model) = {
+    val paths = model.getModules.asScala.map(modulePath.resolve)
+    paths.flatMap(readModule).toSet
+  }
 
   private def isAggregator(model: Model) = model.getPackaging == "pom" && Option(model.getModules).exists(!_.isEmpty)
 

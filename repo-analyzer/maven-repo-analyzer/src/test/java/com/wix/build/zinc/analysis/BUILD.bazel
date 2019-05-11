@@ -1,0 +1,19 @@
+package(default_visibility = ["//visibility:public"])
+
+specs2_unit_test(
+    name = "analysis",
+    srcs = [
+        "//repo-analyzer/maven-repo-analyzer/src/test/java/com/wix/build/zinc/analysis:sources",
+    ],
+    data = ["//repo-analyzer/maven-repo-analyzer:coordinates"],
+    jvm_flags = ["-Dexisting.manifest=$(location //repo-analyzer/maven-repo-analyzer:coordinates)"],
+    runtime_deps = [
+    ],
+    deps = [
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/zinc/analysis:analysis",
+                "@com_github_marschall_memoryfilesystem",
+                "//repo-analyzer/maven-repo-analyzer/src/test/java/resources",
+    ],
+)
+
+sources()

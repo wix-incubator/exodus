@@ -1,0 +1,49 @@
+products:
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> target/test-classes/com/codecentric/sample/store/service/CustomerServiceTest$1.class
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> target/test-classes/com/codecentric/sample/store/service/CustomerServiceTest.class
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> target/test-classes/com/codecentric/sample/store/service/ItemServiceTest.class
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> target/test-classes/com/codecentric/sample/store/service/RateServiceTest.class
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/external/HostServiceTest.java -> target/test-classes/com/codecentric/sample/store/service/external/HostServiceTest.class
+binary dependencies:
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> /Library/Java/JavaVirtualMachines/jdk1.8.0_121.jdk/Contents/Home/jre/lib/rt.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> /Users/natans/.m2/repository/junit/junit/4.11/junit-4.11.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> /Users/natans/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> /Users/natans/.m2/repository/org/mockito/mockito-core/1.10.19/mockito-core-1.10.19.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> /Library/Java/JavaVirtualMachines/jdk1.8.0_121.jdk/Contents/Home/jre/lib/rt.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> /Users/natans/.m2/repository/junit/junit/4.11/junit-4.11.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> /Users/natans/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> /Users/natans/.m2/repository/org/mockito/mockito-core/1.10.19/mockito-core-1.10.19.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> /Users/natans/.m2/repository/org/powermock/powermock-api-mockito/1.6.4/powermock-api-mockito-1.6.4.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> /Library/Java/JavaVirtualMachines/jdk1.8.0_121.jdk/Contents/Home/jre/lib/rt.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> /Users/natans/.m2/repository/junit/junit/4.11/junit-4.11.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> /Users/natans/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> /Users/natans/.m2/repository/org/mockito/mockito-core/1.10.19/mockito-core-1.10.19.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> /Users/natans/.m2/repository/org/powermock/powermock-api-mockito/1.6.4/powermock-api-mockito-1.6.4.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/external/HostServiceTest.java -> /Library/Java/JavaVirtualMachines/jdk1.8.0_121.jdk/Contents/Home/jre/lib/rt.jar
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/external/HostServiceTest.java -> /Users/natans/.m2/repository/org/mockito/mockito-core/1.10.19/mockito-core-1.10.19.jar
+source dependencies:
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/external/HostServiceTest.java -> java-junit-sample/src/test/java/com/codecentric/sample/store/service/external/HostServiceTest.java
+external dependencies:
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> com.codecentric.sample.store.model.Customer
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> com.codecentric.sample.store.service.CustomerService
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> com.codecentric.sample.store.service.external.AddressService
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> com.codecentric.sample.store.service.external.HostService
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> com.codecentric.sample.store.model.Item
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> com.codecentric.sample.store.repository.ItemRepository
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> com.codecentric.sample.store.service.ItemService
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> com.codecentric.sample.store.service.tools.StaticService
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> com.codecentric.sample.store.model.Item
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> com.codecentric.sample.store.repository.ItemRepository
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> com.codecentric.sample.store.service.RateService
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> com.codecentric.sample.store.service.tools.StaticService
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/external/HostServiceTest.java -> com.codecentric.sample.store.service.external.ExternalSystemProxy
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/external/HostServiceTest.java -> com.codecentric.sample.store.service.external.HostService
+class names:
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> com.codecentric.sample.store.service.CustomerServiceTest
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/CustomerServiceTest.java -> com.codecentric.sample.store.service.CustomerServiceTest$1
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/ItemServiceTest.java -> com.codecentric.sample.store.service.ItemServiceTest
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/RateServiceTest.java -> com.codecentric.sample.store.service.RateServiceTest
+   java-junit-sample/src/test/java/com/codecentric/sample/store/service/external/HostServiceTest.java -> com.codecentric.sample.store.service.external.HostServiceTest
