@@ -1,6 +1,5 @@
 package com.wixpress.build.sync
 
-import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.maven.MavenMakers._
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.DependencyAggregator.collectAffectedLocalNodesAndUserAddedNodes
@@ -112,7 +111,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
       private val transitiveArtifact: Coordinates = someCoordinates("transitive")
       val transitiveDependency = asCompileDependency(transitiveArtifact)
 
-      val sourceModules = Set(SourceModule(relativePathFromMonoRepoRoot = "", coordinates = transitiveArtifact ))
+      val sourceModules = Set(transitiveArtifact)
 
       val localNodes = Set[DependencyNode](aRootDependencyNode(localDependency))
       val userAddedDeps = Set(localDependency)
@@ -125,7 +124,7 @@ class DependencyAggregatorTest extends SpecWithJUnit {
     "not include user-added node due to it already existing as source module in local repo" in new sourceModulesCtx {
       val localDependency: Dependency = asCompileDependency(artifactA)
 
-      val sourceModules = Set(SourceModule(relativePathFromMonoRepoRoot = "", coordinates = artifactA ))
+      val sourceModules = Set(artifactA)
 
       val localNodes = Set[DependencyNode]()
       val userAddedDeps = Set(localDependency)
@@ -181,6 +180,6 @@ class DependencyAggregatorTest extends SpecWithJUnit {
   }
 
   trait sourceModulesCtx extends ctx {
-    def sourceModules: Set[SourceModule]
+    def sourceModules: Set[Coordinates]
   }
 }

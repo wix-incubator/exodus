@@ -1,6 +1,5 @@
 package com.wixpress.build.sync
 
-import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.bazel.{BazelDependenciesReader, BazelRepository, NeverLinkResolver}
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksum
@@ -42,7 +41,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
                                   bazelRepoWithManagedDependencies: BazelRepository,
                                   aetherResolver: MavenDependencyResolver,
                                   remoteStorage: DependenciesRemoteStorage,
-                                  mavenModulesToTreatAsSourceDeps: Set[SourceModule],
+                                  mavenModulesToTreatAsSourceDeps: Set[Coordinates],
                                   neverLinkResolver: NeverLinkResolver) extends DiffCalculatorAndAggregator {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -128,7 +127,7 @@ object DependencyAggregator {
   private val log = LoggerFactory.getLogger(getClass)
 
 
-  def collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps: Set[SourceModule],
+  def collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps: Set[Coordinates],
                                                  localClosure: Set[DependencyNode],
                                                  addedDeps: Set[Dependency],
                                                  addedClosure: Set[DependencyNode]
@@ -155,8 +154,8 @@ object DependencyAggregator {
       })
   }
 
-  private def filterNotLocalSourceModules(mavenModulesToTreatAsSourceDeps: Set[SourceModule], addedNodes: Set[DependencyNode]) = {
-    new GlobalExclusionFilterer(mavenModulesToTreatAsSourceDeps.map(_.coordinates)).filterGlobalsFromDependencyNodes(addedNodes)
+  private def filterNotLocalSourceModules(mavenModulesToTreatAsSourceDeps: Set[Coordinates], addedNodes: Set[DependencyNode]) = {
+    new GlobalExclusionFilterer(mavenModulesToTreatAsSourceDeps).filterGlobalsFromDependencyNodes(addedNodes)
   }
 
   private def newNodesWithLocalExclusionsFilteredOut(addedClosure: Set[DependencyNode], localClosure: Set[DependencyNode], addedDeps: Set[Dependency]) = {

@@ -7,7 +7,11 @@ import scala.io.Source
 object MavenCoordinatesListReader {
   def coordinatesIn(filePath:Path):Set[Coordinates] = {
     val lines = Source.fromInputStream(Files.newInputStream(filePath)).getLines().toSet
-    lines
+    coordinatesInText(lines)
+  }
+
+  def coordinatesInText(content: Set[String]):Set[Coordinates] = {
+    content
       .map(_.trim)
       .filterNot(_.isEmpty)
       .filterNot(_.startsWith("#"))
