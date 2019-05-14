@@ -320,7 +320,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
     val fakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = "some_local_workspace_name")
     val fakeBazelRepository = new InMemoryBazelRepository(fakeLocalWorkspace)
     val bazelWorkspace = new BazelWorkspaceDriver(fakeLocalWorkspace)
-    val importExternalRulePath = "@some_workspace//:import_external.bzl"
+    val importExternalLoadStatement = ImportExternalLoadStatement(importExternalRulePath = "@some_workspace//:import_external.bzl", importExternalMacroName = "some_import_external")
 
     val baseDependency = aDependency("base")
     val transitiveDependency = aDependency("transitive")
@@ -341,11 +341,11 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
     }
 
     def bazelMavenSynchronizerFor(resolver: FakeMavenDependencyResolver, fakeBazelRepository: InMemoryBazelRepository, storage: DependenciesRemoteStorage = _ => None) = {
-      new BazelMavenSynchronizer(resolver, fakeBazelRepository, storage, importExternalRulePath)
+      new BazelMavenSynchronizer(resolver, fakeBazelRepository, storage, importExternalLoadStatement)
     }
 
     def syncBasedOn(resolver: FakeMavenDependencyResolver, dependencies: Set[Dependency], storage: DependenciesRemoteStorage = _ => None) = {
-      val synchronizer = new BazelMavenSynchronizer(resolver, fakeBazelRepository, storage, importExternalRulePath)
+      val synchronizer = new BazelMavenSynchronizer(resolver, fakeBazelRepository, storage, importExternalLoadStatement)
       synchronizer.sync(dependencyManagementCoordinates, dependencies)
     }
 

@@ -457,7 +457,8 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
   }
 
   private def writerFor(localWorkspace: BazelLocalWorkspace, neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) = {
-    new BazelDependenciesWriter(localWorkspace, neverLinkResolver, importExternalRulePath = "@some_workspace//:import_external.bzl")
+    val statement = ImportExternalLoadStatement(importExternalRulePath = "@some_workspace//:import_external.bzl", importExternalMacroName = "some_import_external")
+    new BazelDependenciesWriter(localWorkspace, neverLinkResolver, statement)
   }
 
   private def containsExactlyOneRuleOfName(name: String): Matcher[String] = (countMatches(s"""name += +"$name"""".r, _: String)) ^^ equalTo(1)
@@ -480,7 +481,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         s"""|import_external(
             |  name = "${coordinates.workspaceRuleName}",
             |  artifact = "${coordinates.serialized}",
-            |  jar_sha256 = "$checksum",
+            |  artifact_sha256 = "$checksum",
             |  srcjar_sha256 = "$srcChecksum",
             |)""".stripMargin
       )
@@ -521,7 +522,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         s"""|import_external(
             |  name = "${coordinates.workspaceRuleName}",
             |  artifact = "${coordinates.serialized}",
-            |  jar_sha256 = "$defaultChecksum",
+            |  artifact_sha256 = "$defaultChecksum",
             |  srcjar_sha256 = "$defaultSrcChecksum",
             |  $withExtraParams
             |)""".stripMargin

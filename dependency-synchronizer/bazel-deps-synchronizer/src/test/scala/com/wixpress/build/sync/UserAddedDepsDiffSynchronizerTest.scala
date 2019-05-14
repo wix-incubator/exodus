@@ -174,7 +174,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     val managedDepsWorkspaceName = "some_external_workspace_name"
     val managedDepsLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = managedDepsWorkspaceName)
     val managedDepsFakeBazelRepository = new InMemoryBazelRepository(managedDepsLocalWorkspace)
-    val importExternalRulePath = "@some_workspace//:import_external.bzl"
+    val importExternalLoadStatement = ImportExternalLoadStatement(importExternalRulePath = "@some_workspace//:import_external.bzl", importExternalMacroName = "some_import_external")
 
     val dependencyManagementCoordinates = Coordinates("some.group", "deps-management", "1.0", Packaging("pom"))
 
@@ -192,17 +192,17 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     val userAddedDepsDiffCalculator = new UserAddedDepsDiffCalculator(targetFakeBazelRepository, managedDepsFakeBazelRepository,
       resolver, _ => None, Set[Coordinates](), NeverLinkResolver())
 
-    def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(), importExternalRulePath))
+    def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(), importExternalLoadStatement))
 
     def writerFor() = {
-      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(), importExternalRulePath)
+      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(), importExternalLoadStatement)
     }
   }
 
   trait linkableCtx extends ctx {
     def synchronizerWithLinkableArtifact(artifact: Coordinates) = new UserAddedDepsDiffSynchronizer(new UserAddedDepsDiffCalculator(
       targetFakeBazelRepository, managedDepsFakeBazelRepository, resolver, _ => None, Set[Coordinates](), NeverLinkResolver()),
-      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)), importExternalRulePath))
+      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)), importExternalLoadStatement))
   }
 
   class AlwaysFailsDiffCalculator extends DiffCalculatorAndAggregator {

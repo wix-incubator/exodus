@@ -31,6 +31,15 @@ class WriterIT extends BaseWriterIT {
       ))
     }
 
+//    "write java_test when supportScala = false" in  new ctx {
+//      val writer = writerForModule(module, supportScala = false)
+//
+//      writer.write()
+//      path(s"$moduleName/$testSourcePath/$packagePath/BUILD.bazel")  must beRegularFileWithPartialContent(withContentContaining = Seq(
+//        "java_test(",
+//      ))
+//    }
+
     "write java_library for jvm target when supportScala = false" in new ctx {
       val writer = writerForModule(module, supportScala = false)
 

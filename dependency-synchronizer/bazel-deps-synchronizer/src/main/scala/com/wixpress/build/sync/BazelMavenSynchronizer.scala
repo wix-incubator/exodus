@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 
 class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, targetRepository: BazelRepository,
                              dependenciesRemoteStorage: DependenciesRemoteStorage,
-                             importExternalRulePath: String) {
+                             importExternalLoadStatement: ImportExternalLoadStatement) {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
@@ -69,7 +69,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     if (dependenciesToUpdate.nonEmpty) {
       val localCopy = targetRepository.localWorkspace()
 
-      val modifiedFiles = new BazelDependenciesWriter(localCopy, importExternalRulePath = importExternalRulePath).writeDependencies(dependenciesToUpdate)
+      val modifiedFiles = new BazelDependenciesWriter(localCopy, importExternalLoadStatement = importExternalLoadStatement).writeDependencies(dependenciesToUpdate)
       persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates))
     }
   }

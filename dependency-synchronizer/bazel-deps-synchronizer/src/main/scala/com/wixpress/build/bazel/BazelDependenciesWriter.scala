@@ -6,8 +6,8 @@ import ThirdPartyPaths._
 
 class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
                               neverLinkResolver: NeverLinkResolver = NeverLinkResolver(),
-                              importExternalRulePath: String) {
-  val importExternalTargetsFile = ImportExternalTargetsFile(importExternalRulePath, localWorkspace)
+                              importExternalLoadStatement: ImportExternalLoadStatement) {
+  val importExternalTargetsFile = ImportExternalTargetsFile(importExternalLoadStatement, localWorkspace)
   val ruleResolver = new RuleResolver(localWorkspace.localWorkspaceName)
   val annotatedDepNodeTransformer = new AnnotatedDependencyNodeTransformer(neverLinkResolver)
 

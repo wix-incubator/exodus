@@ -10,7 +10,7 @@ import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, Add
 import com.wix.bazel.migrator.transform._
 import com.wix.build.maven.analysis.{RepoProvidedDeps, ThirdPartyConflicts}
 import com.wixpress.build.bazel.NeverLinkResolver._
-import com.wixpress.build.bazel.{NeverLinkResolver, NoPersistenceBazelRepository}
+import com.wixpress.build.bazel.{ImportExternalLoadStatement, NeverLinkResolver, NoPersistenceBazelRepository}
 import com.wixpress.build.maven.{FilteringGlobalExclusionDependencyResolver, MavenScope}
 import com.wixpress.build.sync.DiffSynchronizer
 
@@ -26,7 +26,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   def unSafeMigrate(): Unit
   def writeWorkspace(): Unit
 
-  val importExternalRulePath: String
+  val importExternalLoadStatement: ImportExternalLoadStatement
 
   lazy val externalSourceModuleRegistry = {
     val maybeCodotaRegistry = configuration.codotaToken.map(t => new CodotaExternalSourceModuleRegistry(t)).toSeq
@@ -135,7 +135,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
     val bazelRepoWithManagedDependencies = managedDepsRepoRoot.map(r => new NoPersistenceBazelRepository(r.toScala))
     val neverLinkResolver = NeverLinkResolver(localNeverlinkDependencies = RepoProvidedDeps(codeModules).repoProvidedArtifacts)
     val diffSynchronizer = DiffSynchronizer(bazelRepoWithManagedDependencies, bazelRepo, aetherResolver,
-      artifactoryRemoteStorage, neverLinkResolver, importExternalRulePath)
+      artifactoryRemoteStorage, neverLinkResolver, importExternalLoadStatement)
 
     val localNodes = calcLocaDependencylNodes()
 
@@ -173,7 +173,8 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
 
 class PublicMigrator(configuration: RunConfiguration) extends Migrator(configuration) {
   override def writeWorkspace(): Unit = {
-    new WorkspaceWriter(repoRoot, localWorkspaceName, configuration.keepJunit5Support).write()
+    new WorkspaceWriter(repoRoot, localWorkspaceName,
+      supportScala = configuration.supportScala, keepJunit5Support = configuration.keepJunit5Support).write()
   }
 
   override def unSafeMigrate(): Unit = {
@@ -194,6 +195,10 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     cleanGitIgnore()
   }
 
+  private def writePrelude(): Unit = {
+    writePrelude(configuration.supportScala)
+  }
+
   private def writeInternal(): Unit = {
     writeInternal(configuration.supportScala)
   }
@@ -202,31 +207,48 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     writeExternal("//:macros.bzl")
   }
 
-  override val importExternalRulePath: String = "//:import_external.bzl"
+  override val importExternalLoadStatement =
+    ImportExternalLoadStatement(importExternalRulePath = "//:import_external.bzl", importExternalMacroName = "safe_exodus_maven_import_external")
 
   private def writeBazelRcManagedDevEnv: Unit = {
     writeBazelRcManagedDevEnv(defaultOptions)
   }
 
-  private def writePrelude(): Unit = {
-    val basicImports = Seq(ScalaLibraryImport, ScalaImport, TestImport, SourcesImport)
-    val allImports = if(configuration.keepJunit5Support) {
-      basicImports :+ Junit5Import
-    } else
+  private def writePrelude(supportScala: Boolean): Unit = {
+    val basicImports = Seq(SourcesImport)
+
+    val basicSupportScalaImports = if (supportScala)
+      basicImports ++ Seq(ScalaLibraryImport, ScalaImport, TestImport)
+    else
       basicImports
+
+    val allImports = if(configuration.keepJunit5Support) {
+      basicSupportScalaImports :+ Junit5Import
+    } else
+      basicSupportScalaImports
+
     writePrelude(allImports)
   }
 
   private def copyMacros() = {
     val macros = Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/macros.bzl")).mkString
     val tests = Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/tests.bzl")).mkString
-    val importExternal = Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/import_external.bzl")).mkString
+    val importExternalDefault = Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/import_external.bzl")).mkString
+
+    val importExternal = if (configuration.supportScala)
+      importExternalDefault
+        .replace(
+          """load("@bazel_tools//tools/build_defs/repo:jvm.bzl", "jvm_maven_import_external")""",
+          """load("@io_bazel_rules_scala//scala:scala_maven_import_external.bzl", "scala_maven_import_external", "scala_import_external")""")
+        .replace("jvm_maven_import_external", "scala_maven_import_external")
+    else
+      importExternalDefault
 
     Files.write(repoRoot.resolve("macros.bzl"), macros.getBytes())
     Files.write(repoRoot.resolve("tests.bzl"), tests.getBytes())
     Files.write(repoRoot.resolve("import_external.bzl"), importExternal.getBytes())
 
-    if(configuration.keepJunit5Support) {
+    if (configuration.keepJunit5Support) {
       val junit5 = Source.fromInputStream(MigratorApplication.getClass.getResourceAsStream("/junit5.bzl")).mkString
       Files.write(repoRoot.resolve("junit5.bzl"), junit5.getBytes())
     }

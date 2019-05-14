@@ -31,7 +31,7 @@ case class ImportExternalRule(name: String,
 
   private def serializedChecksum =
     checksum.fold("")(sha256 => s"""
-                    |      jar_sha256 = "$sha256",""".stripMargin)
+                    |      artifact_sha256 = "$sha256",""".stripMargin)
 
   private def serializedSrcChecksum =
     srcChecksum.fold("")(sha256 => s"""

@@ -114,7 +114,7 @@ class ImportExternalRuleTest extends SpecificationWithJUnit {
 
       val serialized = rule.serialized
       serialized must containIgnoringSpaces(
-        """jar_sha256 = "checksum",""".stripMargin)
+        """artifact_sha256 = "checksum",""".stripMargin)
     }
 
     "serialize rule with src checksum" in {

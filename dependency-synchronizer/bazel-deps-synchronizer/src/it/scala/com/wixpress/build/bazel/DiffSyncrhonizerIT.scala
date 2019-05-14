@@ -43,7 +43,7 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
     val externalFakeBazelRepository = new InMemoryBazelRepository(externalFakeLocalWorkspace)
     private val targetFakeLocalWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = "some_local_workspace_name")
     val targetFakeBazelRepository = new InMemoryBazelRepository(targetFakeLocalWorkspace)
-    val importExternalRulePath = "@some_workspace//:import_external.bzl"
+    val importExternalLoadStatement = ImportExternalLoadStatement(importExternalRulePath = "@some_workspace//:import_external.bzl", importExternalMacroName = "some_import_external")
 
     val bazelWorkspace = new BazelWorkspaceDriver(targetFakeLocalWorkspace)
 
@@ -55,7 +55,7 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
     }
 
     private def writerFor(localWorkspace: BazelLocalWorkspace, neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) = {
-      new BazelDependenciesWriter(localWorkspace, neverLinkResolver, importExternalRulePath = importExternalRulePath)
+      new BazelDependenciesWriter(localWorkspace, neverLinkResolver, importExternalLoadStatement = importExternalLoadStatement)
     }
 
     def givenAetherResolverForDependency(node: SingleDependency) = {
@@ -68,7 +68,7 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
     }
 
     def givenSynchornizerFor(resolver: MavenDependencyResolver) = {
-      DiffSynchronizer(Some(externalFakeBazelRepository), targetFakeBazelRepository, resolver, _ => None, NeverLinkResolver(), importExternalRulePath)
+      DiffSynchronizer(Some(externalFakeBazelRepository), targetFakeBazelRepository, resolver, _ => None, NeverLinkResolver(), importExternalLoadStatement)
     }
 
   }

@@ -255,7 +255,8 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
 
   private def importExternalTargetsFileWith(newHead: Coordinates, importExternalTargetsFile: String) = {
     val content = ImportExternalTargetsFileWriter(importExternalTargetsFile).withTarget(ImportExternalRule.of(newHead)).content
-    HeadersAppender("@core_server_build_tools//:import_external.bzl").updateHeadersFor(content)
+    val statement = ImportExternalLoadStatement(importExternalRulePath = "@core_server_build_tools//:import_external.bzl", importExternalMacroName = "safe_wix_scala_maven_import_external")
+    HeadersAppender(statement).updateHeadersFor(content)
   }
 
   private def createImportExternalTargetsFileWith(coordinates: List[Coordinates]) = {

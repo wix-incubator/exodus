@@ -76,7 +76,12 @@ object BazelWorkspaceDriver {
 
   implicit class BazelWorkspaceDriverExtensions(w: BazelLocalWorkspace) {
     def hasDependencies(dependencyNodes: BazelDependencyNode*) = {
-      new BazelDependenciesWriter(w, importExternalRulePath = "@some_workspace//:import_external.bzl").writeDependencies(dependencyNodes.toSet)
+      new BazelDependenciesWriter(w,
+        importExternalLoadStatement =
+          ImportExternalLoadStatement(
+            importExternalRulePath = "@some_workspace//:import_external.bzl",
+            importExternalMacroName = "some_import_external"))
+        .writeDependencies(dependencyNodes.toSet)
     }
   }
 

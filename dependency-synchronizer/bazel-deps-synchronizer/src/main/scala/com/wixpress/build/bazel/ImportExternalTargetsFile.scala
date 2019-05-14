@@ -15,8 +15,8 @@ object ImportExternalTargetsFile {
   }
 }
 
-case class ImportExternalTargetsFile(importExternalRulePath: String, localWorkspace: BazelLocalWorkspace) {
-  val headersAppender = HeadersAppender(importExternalRulePath)
+case class ImportExternalTargetsFile(importExternalLoadStatement: ImportExternalLoadStatement, localWorkspace: BazelLocalWorkspace) {
+  val headersAppender = HeadersAppender(importExternalLoadStatement)
 
   def persistTarget(ruleToPersist: RuleToPersist): Unit = {
     ruleToPersist.rule match {
@@ -48,16 +48,21 @@ case class ImportExternalTargetsFile(importExternalRulePath: String, localWorksp
 
 }
 
-case class HeadersAppender(importExternalRulePath: String) {
+case class ImportExternalLoadStatement(importExternalRulePath: String,
+                                       importExternalMacroName: String) {
+  val loadStatement = s"""load("$importExternalRulePath", import_external = "$importExternalMacroName")"""
+}
+
+case class HeadersAppender(importExternalLoadStatement: ImportExternalLoadStatement) {
   final val fileHeader: String =
-    s"""load("$importExternalRulePath", import_external = "safe_wix_scala_maven_import_external")
+    s"""${importExternalLoadStatement.loadStatement}
        |
        |def dependencies():""".stripMargin
 
   def updateHeadersFor(content: String) = {
     val withNoHeaders = removeHeader(content).dropWhile(_.isWhitespace)
     ImportExternalTargetsFileWriter(s"""$fileHeader
-                                       |
+                                        |
                                         |  $withNoHeaders""".stripMargin)
   }
 }
@@ -94,7 +99,7 @@ object ImportExternalTargetsFileReader {
     ArtifactFilter.findFirstMatchIn(jar)
       .map(_.group("artifact"))
       .map(Coordinates.deserialize)
-      .map(c => ValidatedCoordinates(c, Sha256Filter.findFirstMatchIn(jar).map(_.group("checksum")), None))
+      .map(c => ValidatedCoordinates(c, JarSha256Filter.findFirstMatchIn(jar).map(_.group("checksum")), None))
       .map(vc => vc.copy(srcChecksum = SrcSha256Filter.findFirstMatchIn(jar).map(_.group("src_checksum"))))
   }
 
@@ -109,8 +114,9 @@ object ImportExternalTargetsFileReader {
   }
 
   def extractChecksum(ruleText: String) = {
-    val maybeMatch = Sha256Filter.findFirstMatchIn(ruleText)
-    maybeMatch.map(_.group("checksum"))
+    val maybeMatch = JarSha256Filter.findFirstMatchIn(ruleText)
+    val stillMaybeMatch = maybeMatch.fold(ArtifactSha256Filter.findFirstMatchIn(ruleText))(m => Option(m))
+    stillMaybeMatch.map(_.group("checksum"))
   }
 
   def extractListByAttribute(filter: Regex, ruleText: String) = {
@@ -172,7 +178,8 @@ object ImportExternalTargetsFileReader {
 
   val StringsGroup = "Strings"
   val listOfStringsFilter = """"(.+?)"""".r(StringsGroup)
-  val Sha256Filter = """(?s)jar_sha256\s*?=\s*?"(.+?)"""".r("checksum")
+  val JarSha256Filter = """(?s)\sjar_sha256\s*?=\s*?"(.+?)"""".r("checksum")
+  val ArtifactSha256Filter = """(?s)artifact_sha256\s*?=\s*?"(.+?)"""".r("checksum")
   val ImportExternalDepDeprecateFilter = """@(.*?)//.*""".r("ruleName")
   val ImportExternalDepFilter = """@(.*)""".r("ruleName")
 
@@ -195,7 +202,7 @@ case class ImportExternalTargetsFileReader(content: String) {
   private def extractFullMatchText(aMatch: Match): String = aMatch.group(0)
 
   private def parseTargetText(ruleName: String)(ruleText: String): Option[ImportExternalRule] = {
-    Some(new ImportExternalRule(
+    val someRule = Some(new ImportExternalRule(
       name = ruleName,
       artifact = extractArtifact(ruleText),
       exports = extractListByAttribute(ExportsFilter, ruleText),
@@ -206,6 +213,7 @@ case class ImportExternalTargetsFileReader(content: String) {
       srcChecksum = extractSrcChecksum(ruleText),
       snapshotSources = extractsSnapshotSources(ruleText),
       neverlink = extractNeverlink(ruleText)))
+    someRule
   }
 
 
