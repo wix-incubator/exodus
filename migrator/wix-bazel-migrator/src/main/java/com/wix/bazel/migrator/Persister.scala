@@ -20,7 +20,7 @@ object Persister {
 
   private val transformedFile = new File("dag.bazel")
   private val mavenCache = Paths.get("classpathModules.cache")
-  private val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
+  val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
     .addMixIn(classOf[Target], classOf[TypeAddingMixin])
     .addMixIn(classOf[CodePurpose], classOf[TypeAddingMixin])
     .addMixIn(classOf[TestType], classOf[TypeAddingMixin])
