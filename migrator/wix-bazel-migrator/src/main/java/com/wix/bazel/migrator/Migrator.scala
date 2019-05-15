@@ -40,7 +40,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   lazy val mavenArchiveTargetsOverrides = MavenArchiveTargetsOverridesReader.from(repoRoot)
 
   private[migrator] def failOnConflictsIfNeeded(): Unit = if (configuration.failOnSevereConflicts)
-    failIfFoundSevereConflictsIn(checkConflictsInThirdPartyDependencies(aetherResolver))
+    failIfFoundSevereConflictsIn(checkConflictsInThirdPartyDependencies())
 
   private[migrator] def writeBazelRc(): Unit =
     new BazelRcWriter(repoRoot).write()

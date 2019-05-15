@@ -55,7 +55,7 @@ class MavenBuildSystemIT extends SpecificationWithJUnit {
       val fakeMavenRepository = new FakeMavenRepository(0)
       fakeMavenRepository.start()
 
-      val resolver = new AetherMavenDependencyResolver(List(fakeMavenRepository.url), ignoreMissingDependenciesFlag = true)
+      val resolver = new AetherMavenDependencyResolver(List(fakeMavenRepository.url))
       val buildSystem = new MavenBuildSystem(repo.root, dependencyResolver = resolver)
 
       def repo: Repo

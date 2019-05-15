@@ -55,8 +55,7 @@ class MigratorInputs(configuration: RunConfiguration) {
     val repoUrls =
       maybeLocalMavenRepository.map(r => List(r.url)) getOrElse remoteRepoUrls
 
-    new AetherMavenDependencyResolver(repoUrls,
-      resolverRepo, true)
+    new AetherMavenDependencyResolver(repoUrls, resolverRepo)
   }
 
   private def newRemoteStorage = {
@@ -112,7 +111,7 @@ class MigratorInputs(configuration: RunConfiguration) {
 
   private def staleFactorInHours = sys.props.getOrElse("num.hours.classpath.cache.is.fresh", "24").toInt
 
-  def checkConflictsInThirdPartyDependencies(resolver: MavenDependencyResolver = aetherResolver): ThirdPartyConflicts = {
+  def checkConflictsInThirdPartyDependencies(): ThirdPartyConflicts = {
     val managedDependencies = maybeManagedDependencies.map(_.coordinates)
     val thirdPartyConflicts = new ThirdPartyValidator(codeModules, managedDependencies).checkForConflicts()
     print(thirdPartyConflicts)

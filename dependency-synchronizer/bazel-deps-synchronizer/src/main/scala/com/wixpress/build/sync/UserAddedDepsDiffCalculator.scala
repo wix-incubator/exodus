@@ -40,6 +40,7 @@ trait DiffCalculatorAndAggregator {
 class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
                                   bazelRepoWithManagedDependencies: BazelRepository,
                                   aetherResolver: MavenDependencyResolver,
+                                  ignoreMissingDependenciesFlag: Boolean,
                                   remoteStorage: DependenciesRemoteStorage,
                                   mavenModulesToTreatAsSourceDeps: Set[Coordinates],
                                   neverLinkResolver: NeverLinkResolver) extends DiffCalculatorAndAggregator {
@@ -84,7 +85,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
     val addedMavenClosureLocalOverManaged = managedNodesThatAreNotPresentLocally ++ currentClosureFiltered
 
     log.info("resolve userAddedDependencies full closure...")
-    aetherResolver.dependencyClosureOf(userAddedDependencies, addedMavenClosureLocalOverManaged)
+    aetherResolver.dependencyClosureOf(userAddedDependencies, addedMavenClosureLocalOverManaged, ignoreMissingDependenciesFlag)
   }
 
   private def calculateAffectedDivergentFromManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[BazelDependencyNode] = {

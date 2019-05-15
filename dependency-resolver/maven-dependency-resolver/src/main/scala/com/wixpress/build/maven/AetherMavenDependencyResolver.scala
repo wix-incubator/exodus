@@ -25,8 +25,7 @@ import scala.collection.mutable
 import scala.util.Try
 
 class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
-                                    localRepoPath: File = AetherMavenDependencyResolver.tempLocalRepoPath(),
-                                    ignoreMissingDependenciesFlag: Boolean = false
+                                    localRepoPath: File = AetherMavenDependencyResolver.tempLocalRepoPath()
                                    ) extends MavenDependencyResolver {
 
   private val repositorySystem = ManualRepositorySystemFactory.newRepositorySystem
@@ -85,9 +84,9 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     Option(project.getParent).map(_.getVersion)
   }
 
-  override def dependencyClosureOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency]): Set[DependencyNode] = {
+  override def dependencyClosureOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency], ignoreMissingDependencies: Boolean = true): Set[DependencyNode] = {
     try {
-      withSession(ignoreMissingDependencies = ignoreMissingDependenciesFlag, session => {
+      withSession(ignoreMissingDependencies = ignoreMissingDependencies, session => {
         prioritizeManagedDeps(session)
         val aetherResponse = repositorySystem.collectDependencies(session, collectRequestOf(baseDependencies, withManagedDependencies))
         dependencyNodesOf(aetherResponse)

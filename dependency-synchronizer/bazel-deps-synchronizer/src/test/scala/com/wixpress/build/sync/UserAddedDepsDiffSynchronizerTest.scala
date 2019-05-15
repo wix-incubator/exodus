@@ -48,7 +48,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
           Set(SingleDependency(toDependency(artifactA), toDependency(artifactB.copy(version = "0.1")).withExclusions(Set(Exclusion(transitiveExcluded))))))
 
         override val userAddedDepsDiffCalculator = new UserAddedDepsDiffCalculator(targetFakeBazelRepository, managedDepsFakeBazelRepository,
-          resolver, _ => None, Set[Coordinates](), NeverLinkResolver())
+          resolver,false,  _ => None, Set[Coordinates](), NeverLinkResolver())
         override def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, writerFor())
 
         synchronizer.syncThirdParties(Set(toDependency(artifactA)))
@@ -190,7 +190,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
     val resolver = givenFakeResolverForDependencies(rootDependencies = Set(asCompileDependency(dependencyManagementCoordinates)))
     val userAddedDepsDiffCalculator = new UserAddedDepsDiffCalculator(targetFakeBazelRepository, managedDepsFakeBazelRepository,
-      resolver, _ => None, Set[Coordinates](), NeverLinkResolver())
+      resolver, false, _ => None, Set[Coordinates](), NeverLinkResolver())
 
     def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(), importExternalLoadStatement))
 
@@ -201,7 +201,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
 
   trait linkableCtx extends ctx {
     def synchronizerWithLinkableArtifact(artifact: Coordinates) = new UserAddedDepsDiffSynchronizer(new UserAddedDepsDiffCalculator(
-      targetFakeBazelRepository, managedDepsFakeBazelRepository, resolver, _ => None, Set[Coordinates](), NeverLinkResolver()),
+      targetFakeBazelRepository, managedDepsFakeBazelRepository, resolver, false, _ => None, Set[Coordinates](), NeverLinkResolver()),
       DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)), importExternalLoadStatement))
   }
 

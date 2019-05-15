@@ -8,7 +8,7 @@ class FakeMavenDependencyResolver(artifacts: Set[ArtifactDescriptor]) extends Ma
 
   override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = accumulateManagedDeps(artifact).map(validatedDependency)
 
-  override def dependencyClosureOf(baseArtifacts: Set[Dependency], withManagedDependencies: Set[Dependency]): Set[DependencyNode] =
+  override def dependencyClosureOf(baseArtifacts: Set[Dependency], withManagedDependencies: Set[Dependency], ignoreMissingDependencies: Boolean = true): Set[DependencyNode] =
     dependencyNodesFor(baseArtifacts, withManagedDependencies)
 
   @tailrec

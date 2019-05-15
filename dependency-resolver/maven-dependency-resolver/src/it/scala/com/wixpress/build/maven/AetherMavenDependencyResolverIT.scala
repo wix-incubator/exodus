@@ -25,12 +25,21 @@ class AetherMavenDependencyResolverIT extends MavenDependencyResolverContract wi
     nodes.filter(_.baseDependency.coordinates == transitiveRoot.coordinates) must have size 1
   }
 
-  "given dependency that is not in remote repository must explode" in new ctx {
+  "given dependency that is not in remote repository must not explode" in new ctx {
     val notExistsDependency = randomDependency()
 
     override def remoteArtifacts: Set[ArtifactDescriptor] = Set.empty
 
-    mavenDependencyResolver.dependencyClosureOf(Set(notExistsDependency), emptyManagedDependencies) must throwA[IllegalArgumentException]
+    mavenDependencyResolver.dependencyClosureOf(Set(notExistsDependency), emptyManagedDependencies) must contain(DependencyNode(notExistsDependency, Set()))
+  }
+
+  "given dependency that is not in remote repository must explode if ignoreMissingDependencies=false" in new ctx {
+    val notExistsDependency = randomDependency()
+
+    override def remoteArtifacts: Set[ArtifactDescriptor] = Set.empty
+
+    mavenDependencyResolver.dependencyClosureOf(Set(notExistsDependency), emptyManagedDependencies, ignoreMissingDependencies = false) must
+      throwA[IllegalArgumentException]
   }
 
   trait singleDependencyWithSingleDependency extends ctx {

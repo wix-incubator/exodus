@@ -8,7 +8,7 @@ class FilteringGlobalExclusionDependencyResolver(resolver: MavenDependencyResolv
 
   override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = resolver.managedDependenciesOf(artifact)
 
-  override def dependencyClosureOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency]): Set[DependencyNode] =
+  override def dependencyClosureOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency], ignoreMissingDependenciesFlag: Boolean = true): Set[DependencyNode] =
     filterer.filterGlobalsFromDependencyNodes(resolver.dependencyClosureOf(baseDependencies, withManagedDependencies))
 
   override def directDependenciesOf(coordinates: Coordinates): Set[Dependency] = {
