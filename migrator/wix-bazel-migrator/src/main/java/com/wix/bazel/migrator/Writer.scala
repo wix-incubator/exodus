@@ -25,12 +25,9 @@ object Writer extends MigratorApp {
     case "None" => TestType.None
     case "Mixed" => TestType.Mixed
   }
-
-  val writer = new ScalaWriter(migratorInputs.repoRoot, migratorInputs.codeModules, Persister.readTransformationResults())
-  writer.write()
 }
 
-abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) {
+abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package], macrosPath: String) {
   def write(): Unit = {
     //we're writing the resources targets first since they might get overridden by identified dependencies from the analysis
     //this can happen since we have partial analysis on resources folders
@@ -140,7 +137,7 @@ abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPacka
     }
   }
 
-  private def writeProtoLoadStatement = 
+  private def writeProtoLoadStatement =
       """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto.bzl", "wix_proto_library", "wix_scala_proto_library")"""
 
   private def writeJvmDeps(jvmDeps: Set[Target]) = {
@@ -354,7 +351,7 @@ abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPacka
   private val DefaultPublicVisibility =
     """package(default_visibility = ["//visibility:public"])
       |""".stripMargin
-  private val LoadResourcesMacro = """load("@core_server_build_tools//:macros.bzl","resources")""" + "\n"
+  private val LoadResourcesMacro: String = s"""load("$macrosPath","resources")""" + "\n"
 
   private def resourcesPackageFor(target: Target.Resources) =
     DefaultPublicVisibility + LoadResourcesMacro +
@@ -420,7 +417,8 @@ abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPacka
   private def encodePluses(str: String): String = str.replace('+', '_')
 }
 
-class JavaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) extends Writer(repoRoot, repoModules, bazelPackages) {
+class JavaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package], macrosPath: String)
+  extends Writer(repoRoot, repoModules, bazelPackages, macrosPath) {
   override private[migrator] def libraryRuleFor(moduleDeps: ModuleDeps) =
     new LibraryRule(
       name = moduleDeps.name,
@@ -434,7 +432,8 @@ class JavaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: 
   override private[migrator] val libraryRuleType = JavaLibraryRuleType
 }
 
-class ScalaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package]) extends Writer(repoRoot, repoModules, bazelPackages) {
+class ScalaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package], macrosPath: String)
+  extends Writer(repoRoot, repoModules, bazelPackages, macrosPath) {
   override private[migrator] def libraryRuleFor(moduleDeps: ModuleDeps) =
     new LibraryRule(
       name = moduleDeps.name,

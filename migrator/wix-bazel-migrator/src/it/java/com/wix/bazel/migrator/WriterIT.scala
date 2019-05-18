@@ -131,10 +131,11 @@ class WriterIT extends BaseWriterIT {
     }
 
     def writerForModule(module: SourceModule, supportScala: Boolean): Writer = {
+      val macrosPath = "//:macros.bzl"
       if (supportScala)
-        new ScalaWriter(repoRoot, Set(module), packagesFor(module))
+        new ScalaWriter(repoRoot, Set(module), packagesFor(module), macrosPath)
       else
-        new JavaWriter(repoRoot, Set(module), packagesFor(module))
+        new JavaWriter(repoRoot, Set(module), packagesFor(module), macrosPath)
     }
 
   }

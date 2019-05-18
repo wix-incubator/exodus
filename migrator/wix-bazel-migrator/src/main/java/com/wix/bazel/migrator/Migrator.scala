@@ -58,11 +58,11 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
     new BazelRcRemoteSettingsWriter(repoRoot).write()
 
 
-  private[migrator] def writeInternal(supportScala: Boolean): Unit =
+  private[migrator] def writeInternal(supportScala: Boolean, macrosPath: String): Unit =
     if (supportScala)
-      new ScalaWriter(repoRoot, codeModules, bazelPackages).write()
+      new ScalaWriter(repoRoot, codeModules, bazelPackages, macrosPath).write()
     else
-      new JavaWriter(repoRoot, codeModules, bazelPackages).write()
+      new JavaWriter(repoRoot, codeModules, bazelPackages, macrosPath).write()
 
   private[migrator] def writeExternal(mavenArchiveMacroPath: String): Unit =
     new TemplateOfThirdPartyDepsSkylarkFileWriter(repoRoot, mavenArchiveMacroPath).write()
@@ -199,12 +199,14 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     writePrelude(configuration.supportScala)
   }
 
+  private val macrosPath = "//:macros.bzl"
+
   private def writeInternal(): Unit = {
-    writeInternal(configuration.supportScala)
+    writeInternal(configuration.supportScala, macrosPath)
   }
 
   private def writeExternal(): Unit = {
-    writeExternal("//:macros.bzl")
+    writeExternal(macrosPath)
   }
 
   override val importExternalLoadStatement =
