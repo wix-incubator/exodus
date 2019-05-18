@@ -55,7 +55,8 @@ class MigratorInputs(configuration: RunConfiguration) {
     val repoUrls =
       maybeLocalMavenRepository.map(r => List(r.url)) getOrElse remoteRepoUrls
 
-    new AetherMavenDependencyResolver(repoUrls, resolverRepo)
+    // use temporary localRepoPath (default param) to allow updates of pom files by migrator user. e.g. adding a direct dependency
+    new AetherMavenDependencyResolver(repoUrls)
   }
 
   private def newRemoteStorage = {
@@ -101,13 +102,6 @@ class MigratorInputs(configuration: RunConfiguration) {
      Set.empty
 
   private def binaryDependencies = externalDependencies diff externalSourceDependencies
-
-  private def resolverRepo: File = {
-    val f = File("resolver-repo")
-    Files.createDirectories(f.path)
-    f
-  }
-
 
   private def staleFactorInHours = sys.props.getOrElse("num.hours.classpath.cache.is.fresh", "24").toInt
 
