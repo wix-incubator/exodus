@@ -2,6 +2,8 @@
 
 You can run the Exodus migration locally or on [Jenkins](how-to-run-migration-jenkins.md). 
 
+// recommend to run locally to get a feel for the Exodus migration tool OR if you have a small repo.
+
 Here's the info you need to run it locally.
 
 ### Clone the Exodus repo
@@ -37,8 +39,11 @@ Be sure to replace the following path locations where indicated:
 * Path to the local .m2 repository
 * Path to the target repository
 
+//add option to turn flag on for scala (Java is default) / 
+
 Also change the `Drepo.url` to your target repository.
 
+The main use case is to use Maven Java & local repository.
 ```
 $ java -Xmx12G -Dskip.classpath=false -Dskip.transformation=false -Dlocal.maven.repository.path=<PATH-TO-LOCAL> .m2 REPO  -Dfail.on.severe.conflicts=true -Drepo.root=<TARGET-REPO> -Drepo.url=git@github.com:YOUR-ORG/target-repo.git -jar bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar
 ```
