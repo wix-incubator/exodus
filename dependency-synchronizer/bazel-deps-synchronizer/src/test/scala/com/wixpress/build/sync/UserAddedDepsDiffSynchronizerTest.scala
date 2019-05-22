@@ -206,7 +206,7 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
   }
 
   class AlwaysFailsDiffCalculator extends DiffCalculatorAndAggregator {
-    override def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency]): DiffResult = {
+    override def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency], artifactIdToDebug: Option[String] = None): DiffResult = {
       val dependencyOfTheRootNode = aDependency("otherArtifactId")
 
       val updatedLocalNodes = Set(BazelDependencyNode(asCompileDependency(someCoordinates("someArtifactId")), dependencies = Set(dependencyOfTheRootNode)))

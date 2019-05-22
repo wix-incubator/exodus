@@ -12,8 +12,8 @@ class UserAddedDepsDiffSynchronizer(calculator: DiffCalculatorAndAggregator,
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  def syncThirdParties(userAddedDependencies: Set[Dependency]): DiffResult = {
-    val diffResult = calculator.resolveUpdatedLocalNodes(userAddedDependencies)
+  def syncThirdParties(userAddedDependencies: Set[Dependency], artifactIdToDebug: Option[String] = None): DiffResult = {
+    val diffResult = calculator.resolveUpdatedLocalNodes(userAddedDependencies, artifactIdToDebug)
     val report = new ConflictReportCreator().report(diffResult)
 
     val setOfProblems = diffResult.checkForDepsClosureError().nodesWithMissingEdge
@@ -34,7 +34,7 @@ class UserAddedDepsDiffSynchronizer(calculator: DiffCalculatorAndAggregator,
 }
 
 trait DiffCalculatorAndAggregator {
-  def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency]): DiffResult
+  def resolveUpdatedLocalNodes(userAddedDependencies: Set[Dependency], artifactIdToDebug: Option[String] = None): DiffResult
 }
 
 class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
@@ -47,17 +47,27 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  def resolveUpdatedLocalNodes(userAddedMavenDeps: Set[Dependency]): DiffResult = {
+  def resolveUpdatedLocalNodes(userAddedMavenDeps: Set[Dependency], artifactIdToDebug: Option[String] = None): DiffResult = {
     val managedNodes = readManagedNodes()
-    val currentClosure = readCurrentClosure(externalDependencyNodes = managedNodes)
+    debug1(managedNodes, "managed", artifactIdToDebug)
 
-    val resolvedMavenClosure = resolveMavenUserAddedDependencyNodes(userAddedMavenDeps, currentClosure, managedNodes).map(neverLinkResolver.fixAllTransitiveNeverLinks)
+    val currentClosure = readCurrentClosure(externalDependencyNodes = managedNodes)
+    debug1(currentClosure, "current closure", artifactIdToDebug)
+
+    val resolvedMavenClosure = resolveMavenUserAddedDependencyNodes(userAddedMavenDeps, currentClosure, managedNodes, artifactIdToDebug).map(neverLinkResolver.fixAllTransitiveNeverLinks)
+    debug1(resolvedMavenClosure, "resolved maven", artifactIdToDebug)
 
     val aggregateAffectedNodes = collectAffectedLocalNodesAndUserAddedNodes(mavenModulesToTreatAsSourceDeps, currentClosure, userAddedMavenDeps, resolvedMavenClosure)
+    debug1(aggregateAffectedNodes, "aggregateAffected", artifactIdToDebug)
+
     val updatedLocalNodes = calculateAffectedDivergentFromManaged(managedNodes, aggregateAffectedNodes)
+    debug1(updatedLocalNodes.map(_.toMavenNode), "updatedLocal", artifactIdToDebug)
 
     val depsToLazyClean = compareDependencyNodesSets(managedNodes, currentClosure, returnIdentical = true)
+    debug1(depsToLazyClean, "depsToLazyClean", artifactIdToDebug)
+
     val depsToClean = compareDependencyNodesSets(managedNodes, aggregateAffectedNodes, returnIdentical = true)
+    debug1(depsToClean, "depsToClean", artifactIdToDebug)
 
     DiffResult(updatedLocalNodes, currentClosure, managedNodes, depsToClean ++ depsToLazyClean)
   }
@@ -78,14 +88,16 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
     localRepoReader.allDependenciesAsMavenDependencyNodes(externalDependencyNodes.map(_.baseDependency))
   }
 
-  private def resolveMavenUserAddedDependencyNodes(userAddedDependencies: Set[Dependency], currentClosure: Set[DependencyNode], managedNodes: Set[DependencyNode]) = {
+  private def resolveMavenUserAddedDependencyNodes(userAddedDependencies: Set[Dependency], currentClosure: Set[DependencyNode], managedNodes: Set[DependencyNode], artifactIdToDebug: Option[String]) = {
     val currentClosureFiltered = currentClosure.map(_.baseDependency).filterNot(_.version.contains("-SNAPSHOT"))
-    val managedNodesThatAreNotPresentLocally = managedNodes.filterNot(man => currentClosureFiltered.exists(_.equalsOnCoordinatesIgnoringVersion(man.baseDependency))).map(_.baseDependency)
+    val managedBaseDepsThatAreNotPresentLocally = managedNodes.filterNot(man => currentClosureFiltered.exists(_.equalsOnCoordinatesIgnoringVersion(man.baseDependency))).map(_.baseDependency)
+    debug2(managedBaseDepsThatAreNotPresentLocally, "managedBaseDepsThatAreNotPresentLocally", artifactIdToDebug)
 
-    val addedMavenClosureLocalOverManaged = managedNodesThatAreNotPresentLocally ++ currentClosureFiltered
+    val addedMavenClosureLocalOverManaged = managedBaseDepsThatAreNotPresentLocally ++ currentClosureFiltered
+    debug2(addedMavenClosureLocalOverManaged, "addedMavenClosureLocalOverManaged", artifactIdToDebug)
 
     log.info("resolve userAddedDependencies full closure...")
-    aetherResolver.dependencyClosureOf(userAddedDependencies, addedMavenClosureLocalOverManaged, ignoreMissingDependenciesFlag)
+    aetherResolver.dependencyClosureOf(baseDependencies = userAddedDependencies, withManagedDependencies = addedMavenClosureLocalOverManaged, ignoreMissingDependenciesFlag)
   }
 
   private def calculateAffectedDivergentFromManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[BazelDependencyNode] = {
@@ -121,6 +133,20 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
         case Some(neverlinked) if neverlinked.baseDependency.isNeverLink => neverlinked
       }
     }}
+  }
+
+  private def debug1(depSet: Set[DependencyNode], msg: String, artifactIdToDebug: Option[String]) = {
+    artifactIdToDebug.map(id => {
+      println("!!!")
+      println(s"The $msg node - " + depSet.find(_.baseDependency.coordinates.artifactId.contains(id)).map(_.noTransitiveVersions.noExclusions))
+    })
+  }
+
+  private def debug2(depSet: Set[Dependency], msg: String, artifactIdToDebug: Option[String]) = {
+    artifactIdToDebug.map(id => {
+      println("!!!")
+      println(s"The $msg node - " + depSet.find(_.coordinates.artifactId.contains(id)))
+    })
   }
 }
 
