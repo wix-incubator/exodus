@@ -10,7 +10,8 @@ trait TestTargetsWriter {
                                     additionalJvmFlags: String,
                                     additionalDataDeps: String,
                                     dockerImagesDeps: String,
-                                    belongingPackageRelativePath: String
+                                    belongingPackageRelativePath: String,
+                                    targetName: String
                                   ): String
 }
 
@@ -26,7 +27,8 @@ object JUnit5Writer extends TestTargetsWriter {
                                             additionalJvmFlags: String,
                                             additionalDataDeps: String,
                                             dockerImagesDeps: String,
-                                            belongingPackageRelativePath: String) = {
+                                            belongingPackageRelativePath: String,
+                                            targetName: String) = {
     val exp = s"(.*)/(src/.*/(?:java|scala))/(.*)".r("module", "relative", "package")
     val packageName = exp.findFirstMatchIn(belongingPackageRelativePath) match {
       case Some(matched) => matched.group("package").replace("/",".")
@@ -35,6 +37,38 @@ object JUnit5Writer extends TestTargetsWriter {
     s"""
        |    test_package = "$packageName",
      """.stripMargin
+  }
+}
+
+object JavaTestDiscoveryWriter extends TestTargetsWriter {
+  override private[migrator] def testHeader(testType: TestType, tagsTestType: TestType, testSize: String, blockNetwork: Option[Boolean]) = {
+    """java_library("""
+  }
+
+  override private[migrator] def testFooter(testType: TestType,
+                                            sourceModule: SourceModule,
+                                            additionalJvmFlags: String,
+                                            additionalDataDeps: String,
+                                            dockerImagesDeps: String,
+                                            belongingPackageRelativePath: String,
+                                            targetName: String) = {
+    val prefixSuffix = testType.toString match {
+      case _ => """"Test", "Tests", "IT", "E2E""""
+    }
+
+    s"""    testonly = 1,
+      |)
+      |
+      |java_test_discovery(
+      |    name = "${targetName}_test_discovery",
+      |    tests_from = [":$targetName"],
+      |    size = "small",
+      |    print_discovered_classes = True,
+      |    suffixes = [$prefixSuffix],
+      |    prefixes = [$prefixSuffix],
+      |    data = ["//java-junit-sample:coordinates"],
+      |    jvm_flags = ["-Dexisting.manifest=$$(location //java-junit-sample:coordinates)"],
+      |    testonly = 1""".stripMargin
   }
 }
 
@@ -89,7 +123,8 @@ object Specs2Writer extends TestTargetsWriter{
                                     additionalJvmFlags: String,
                                     additionalDataDeps: String,
                                     dockerImagesDeps: String,
-                                    belongingPackageRelativePath: String
+                                    belongingPackageRelativePath: String,
+                                    targetName: String
                                   ) = testType.toString match {
     case "None" => ""
     case _ =>

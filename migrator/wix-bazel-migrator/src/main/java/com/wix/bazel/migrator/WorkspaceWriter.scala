@@ -13,7 +13,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, supportScala: Boole
          |load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
          |load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
          |
-         |$scalaRepositories
+         |$scalaOrJavaRepositories
          |
          |load("//:third_party.bzl", "third_party_dependencies")
          |
@@ -32,7 +32,7 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, supportScala: Boole
     WorkspaceOverridesReader.from(repoRoot).suffix
   }
 
-  private def scalaRepositories: String = {
+  private def scalaOrJavaRepositories: String = {
     if (supportScala)
       """rules_scala_version="8f006056990307cbd8320c97a59cd09c821011d8" # update this as needed
         |rules_scala_version_sha256="e85c1d64520554e0dcdfe828e16ff604de0774b0c68dbb0e90ffab1a6b045adf"
@@ -65,7 +65,15 @@ class WorkspaceWriter(repoRoot: Path, workspaceName: String, supportScala: Boole
         |)
       """.stripMargin
     else
-      ""
+      """git_repository(
+        |    name = "rules_jvm_test_discovery",
+        |    remote = "git@github.com:wix-incubator/rules_jvm_test_discovery.git",
+        |    commit = "4c1adcca5f0347704ddb6b16a7c7ad6e0e19ae29"
+        |)
+        |
+        |load("@rules_jvm_test_discovery//:junit.bzl", "junit_repositories")
+        |junit_repositories()
+      """.stripMargin
   }
 
   private def junit5Repositories(): String = {

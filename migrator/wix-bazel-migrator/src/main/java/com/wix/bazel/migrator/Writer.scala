@@ -27,7 +27,7 @@ object Writer extends MigratorApp {
   }
 }
 
-abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package], macrosPath: String) {
+abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package], macrosPath: String, testTargetsWriter: TestTargetsWriter) {
   def write(): Unit = {
     //we're writing the resources targets first since they might get overridden by identified dependencies from the analysis
     //this can happen since we have partial analysis on resources folders
@@ -210,7 +210,13 @@ abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPacka
         val maybeOverriddenTestSize = ForceTestSize.getOrElse(unAliasedLabelOf(target), "")
         val overriddenBlockNetwork = BlockNetwork.get(unAliasedLabelOf(target))
         (testWriter.testHeader(maybeOverriddenTestType, maybeOverriddenTagsTestType, maybeOverriddenTestSize, overriddenBlockNetwork),
-          testWriter.testFooter(maybeOverriddenTestType, target.originatingSourceModule, additionalJvmFlags, additionalDataDeps, dockerImagesDeps, target.belongingPackageRelativePath))
+          testWriter.testFooter(maybeOverriddenTestType,
+            target.originatingSourceModule,
+            additionalJvmFlags,
+            additionalDataDeps,
+            dockerImagesDeps,
+            target.belongingPackageRelativePath,
+            targetNameOrDefault(target)))
     }
     header +
       s"""
@@ -227,8 +233,8 @@ abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPacka
       if (module.dependencies.directDependencies.exists(_.coordinates.groupId == "org.junit.jupiter"))
         JUnit5Writer
       else
-        Specs2Writer
-    }.getOrElse(Specs2Writer)
+        testTargetsWriter
+    }.getOrElse(testTargetsWriter)
   }
 
   private def combineDeps(scopeToDeps: Set[(Scope, Set[String])]*) = {
@@ -418,7 +424,7 @@ abstract class Writer(repoRoot: Path, repoModules: Set[SourceModule], bazelPacka
 }
 
 class JavaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package], macrosPath: String)
-  extends Writer(repoRoot, repoModules, bazelPackages, macrosPath) {
+  extends Writer(repoRoot, repoModules, bazelPackages, macrosPath, JavaTestDiscoveryWriter) {
   override private[migrator] def libraryRuleFor(moduleDeps: ModuleDeps) =
     new LibraryRule(
       name = moduleDeps.name,
@@ -433,7 +439,7 @@ class JavaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: 
 }
 
 class ScalaWriter(repoRoot: Path, repoModules: Set[SourceModule], bazelPackages: Set[Package], macrosPath: String)
-  extends Writer(repoRoot, repoModules, bazelPackages, macrosPath) {
+  extends Writer(repoRoot, repoModules, bazelPackages, macrosPath, Specs2Writer) {
   override private[migrator] def libraryRuleFor(moduleDeps: ModuleDeps) =
     new LibraryRule(
       name = moduleDeps.name,

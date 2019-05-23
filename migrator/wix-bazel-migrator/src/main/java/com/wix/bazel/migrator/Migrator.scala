@@ -219,15 +219,15 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
   private def writePrelude(supportScala: Boolean): Unit = {
     val basicImports = Seq(SourcesImport)
 
-    val basicSupportScalaImports = if (supportScala)
+    val basicSupportWithScalaOrJava = if (supportScala)
       basicImports ++ Seq(ScalaLibraryImport, ScalaImport, TestImport)
     else
-      basicImports
+      basicImports :+ JavaTestImport
 
     val allImports = if(configuration.keepJunit5Support) {
-      basicSupportScalaImports :+ Junit5Import
+      basicSupportWithScalaOrJava :+ Junit5Import
     } else
-      basicSupportScalaImports
+      basicSupportWithScalaOrJava
 
     writePrelude(allImports)
   }
