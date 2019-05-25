@@ -66,8 +66,6 @@ object JavaTestDiscoveryWriter extends TestTargetsWriter {
       |    print_discovered_classes = True,
       |    suffixes = [$prefixSuffix],
       |    prefixes = [$prefixSuffix],
-      |    data = ["//java-junit-sample:coordinates"],
-      |    jvm_flags = ["-Dexisting.manifest=$$(location //java-junit-sample:coordinates)"],
       |    testonly = 1""".stripMargin
   }
 }
