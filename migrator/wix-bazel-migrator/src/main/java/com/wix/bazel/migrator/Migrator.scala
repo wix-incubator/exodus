@@ -11,6 +11,7 @@ import com.wix.bazel.migrator.transform._
 import com.wix.build.maven.analysis.{RepoProvidedDeps, ThirdPartyConflicts}
 import com.wixpress.build.bazel.NeverLinkResolver._
 import com.wixpress.build.bazel.{ImportExternalLoadStatement, NeverLinkResolver, NoPersistenceBazelRepository}
+import com.wixpress.build.maven
 import com.wixpress.build.maven.{FilteringGlobalExclusionDependencyResolver, MavenScope}
 import com.wixpress.build.sync.DiffSynchronizer
 
@@ -151,15 +152,11 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
       globalExcludes = internalCoordinates.union(sourceDependenciesWhitelist)
     )
 
-    val managedDependenciesFromMaven = aetherResolver
-      .managedDependenciesOf(MigratorInputs.ManagedDependenciesArtifact)
-      .forceCompileScope
-
     val providedDeps = externalBinaryDependencies
       .filter(_.scope == MavenScope.Provided)
       .map(_.shortSerializedForm())
 
-    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven)
+    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven())
 
     localNodes.map {
       localNode =>
@@ -169,6 +166,8 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
           localNode
     }
   }
+
+  private[migrator] def managedDependenciesFromMaven(): Set[maven.Dependency]
 }
 
 class PublicMigrator(configuration: RunConfiguration) extends Migrator(configuration) {
@@ -255,4 +254,7 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
       Files.write(repoRoot.resolve("junit5.bzl"), junit5.getBytes())
     }
   }
+
+  // TODO: allow to provide managed dependencies from configuration
+  override private[migrator] def managedDependenciesFromMaven(): Set[maven.Dependency] = Set.empty
 }

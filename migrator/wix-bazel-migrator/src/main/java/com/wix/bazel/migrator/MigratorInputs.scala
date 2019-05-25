@@ -146,8 +146,3 @@ class MigratorInputs(configuration: RunConfiguration) {
     }
   }
 }
-
-object MigratorInputs {
-  val ManagedDependenciesArtifact: Coordinates =
-    Coordinates.deserialize("com.wixpress.common:wix-base-parent-ng:pom:100.0.0-SNAPSHOT")
-}
