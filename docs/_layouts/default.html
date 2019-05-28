@@ -23,7 +23,10 @@
 
     <header class="page-header" role="banner">
       {% if site.logo %}
-          <img src="{{site.logo | relative_url}}" alt="Logo" style="max-width: 50%; height: auto;"/></br>
+          <img src="{{site.logo | relative_url}}" alt="Logo" style="max-width: 35%; height: auto;"/>
+          <div style="line-height:150%;">
+            <br>
+          </div>
       {% else %}
           <h1 class="project-name">{{ site.heading | default: site.github.repository_name }}</h1>
           <h2 class="project-tagline">{{ page.description | default: site.description | default: site.github.project_tagline }}</h2>
