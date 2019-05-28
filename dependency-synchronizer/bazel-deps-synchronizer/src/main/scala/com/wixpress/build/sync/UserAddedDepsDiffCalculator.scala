@@ -75,7 +75,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
   private def readManagedNodes() = {
     log.info(s"read managed dependencies from external repo Bazel files...")
 
-    val managedDepsRepoReader = new BazelDependenciesReader(bazelRepoWithManagedDependencies.localWorkspace())
+    val managedDepsRepoReader = new BazelDependenciesReader(bazelRepoWithManagedDependencies.resetAndCheckoutMaster())
     val managedNodes = managedDepsRepoReader.allDependenciesAsMavenDependencyNodes()
     log.info(s"retrieved ${managedNodes.size} managed dependencies...")
     managedNodes
@@ -84,7 +84,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
   private def readCurrentClosure(externalDependencyNodes: Set[DependencyNode]) = {
     log.info("read local dependencies from Bazel files...")
 
-    val localRepoReader = new BazelDependenciesReader(bazelRepo.localWorkspace())
+    val localRepoReader = new BazelDependenciesReader(bazelRepo.resetAndCheckoutMaster())
     localRepoReader.allDependenciesAsMavenDependencyNodes(externalDependencyNodes.map(_.baseDependency))
   }
 

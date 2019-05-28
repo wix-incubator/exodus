@@ -54,7 +54,7 @@ class FakeBazelRepository() extends BazelRepository {
 
   def lastCommit: DummyCommit = commits.last
 
-  override def localWorkspace(): BazelLocalWorkspace = {
+  override def resetAndCheckoutMaster(): BazelLocalWorkspace = {
     throw new RuntimeException("this class is only for dummy commits purpose")
   }
 

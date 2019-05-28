@@ -66,7 +66,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
                |""".stripMargin
         )
 
-        fakeBazelRepository.allChangesInBranch(BazelMavenSynchronizer.BranchName) must contain(matchTo(expectedChange))
+        fakeBazelRepository.allChangesInBranch(someBranchName) must contain(matchTo(expectedChange))
       }
 
       "persist jar import with sha256" in new blankBazelWorkspaceAndNewManagedRootDependency {
@@ -184,7 +184,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         )
         val synchronizer = bazelMavenSynchronizerFor(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(dependencyManagementCoordinates, Set(baseDependency))
+        synchronizer.sync(dependencyManagementCoordinates, Set(baseDependency), someBranchName)
 
         bazelWorkspace must includeImportExternalTargetWith(artifact = baseDependency.coordinates,
           runtimeDependencies = Set.empty
@@ -203,7 +203,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         )
         val synchronizer = bazelMavenSynchronizerFor(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(dependencyManagementCoordinates,Set(baseDependency))
+        synchronizer.sync(dependencyManagementCoordinates,Set(baseDependency), someBranchName)
 
         bazelWorkspace must includeImportExternalTargetWith(artifact = baseDependency.coordinates,
           compileTimeDependenciesIgnoringVersion = Set(transitiveDependency.coordinates),
@@ -227,7 +227,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
         val synchronizer = bazelMavenSynchronizerFor(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(dependencyManagementCoordinates, Set(baseDependency))
+        synchronizer.sync(dependencyManagementCoordinates, Set(baseDependency), someBranchName)
 
         bazelWorkspace.versionOfImportedJar(baseDependency.coordinates) must beSome(baseDependency.version)
       }
@@ -242,7 +242,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
         )
         val synchronizer = bazelMavenSynchronizerFor(updatedResolver, fakeBazelRepository)
 
-        synchronizer.sync(dependencyManagementCoordinates, someCoordinatesOfMultipleVersions.map(_.asDependency))
+        synchronizer.sync(dependencyManagementCoordinates, someCoordinatesOfMultipleVersions.map(_.asDependency), someBranchName)
 
         bazelWorkspace.versionOfImportedJar(Coordinates("some-group", "some-artifact", "dont-care")) must beSome("3.5.8")
       }
@@ -326,6 +326,8 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
     val transitiveDependency = aDependency("transitive")
     val dependencyManagementCoordinates = Coordinates("some.group", "deps-management", "1.0", Packaging("pom"))
 
+    val someBranchName = "someString"
+
     def givenBazelWorkspaceWithDependency(mavenJarInBazel: MavenJarInBazel*) = {
       givenBazelWorkspace(mavenJarInBazel.toSet)
     }
@@ -346,7 +348,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
 
     def syncBasedOn(resolver: FakeMavenDependencyResolver, dependencies: Set[Dependency], storage: DependenciesRemoteStorage = _ => None) = {
       val synchronizer = new BazelMavenSynchronizer(resolver, fakeBazelRepository, storage, importExternalLoadStatement)
-      synchronizer.sync(dependencyManagementCoordinates, dependencies)
+      synchronizer.sync(dependencyManagementCoordinates, dependencies, someBranchName)
     }
 
     protected def givenNoDependenciesInBazelWorkspace() = {

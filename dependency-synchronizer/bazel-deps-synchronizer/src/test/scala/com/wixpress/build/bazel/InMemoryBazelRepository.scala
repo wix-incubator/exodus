@@ -8,7 +8,7 @@ class InMemoryBazelRepository(bazelLocalWorkspace: BazelLocalWorkspace) extends 
 
   private val branchToChangeLog = mutable.HashMap.empty[String, ListBuffer[Change]].withDefaultValue(ListBuffer.empty)
 
-  override def localWorkspace(): BazelLocalWorkspace = bazelLocalWorkspace
+  override def resetAndCheckoutMaster(): BazelLocalWorkspace = bazelLocalWorkspace
 
   override def persist(branchName: String, changeSet: Set[String], message: String): Unit = {
     val changeLog = branchToChangeLog(branchName)
