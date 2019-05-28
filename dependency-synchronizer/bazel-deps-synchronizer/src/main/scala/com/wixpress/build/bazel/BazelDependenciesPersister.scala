@@ -4,8 +4,8 @@ import com.wixpress.build.maven.Coordinates
 
 class BazelDependenciesPersister(commitHeader: String, bazelRepository: BazelRepository) {
 
-  def persistWithMessage(fileset: Set[String], dependenciesSet: Set[Coordinates]): Unit =
-    bazelRepository.persist("master", fileset, persistMessageBy(dependenciesSet))
+  def persistWithMessage(fileset: Set[String], dependenciesSet: Set[Coordinates], branchName: Option[String] = None): Unit =
+    bazelRepository.persist(branchName.getOrElse("master"), fileset, persistMessageBy(dependenciesSet))
 
   private def persistMessageBy(dependenciesSet: Set[Coordinates]): String = {
 

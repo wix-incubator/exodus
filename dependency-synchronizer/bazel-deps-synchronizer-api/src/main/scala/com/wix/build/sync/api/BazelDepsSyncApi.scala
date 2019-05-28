@@ -1,9 +1,6 @@
 package com.wix.build.sync.api
 
 
-import com.wixpress.build.maven.Coordinates
-
-
 object BazelSyncGreyhoundEvents{
   val BazelManagedDepsSyncEndedTopic : String = "BazelManagedDepsSyncEndedTopic"
 }

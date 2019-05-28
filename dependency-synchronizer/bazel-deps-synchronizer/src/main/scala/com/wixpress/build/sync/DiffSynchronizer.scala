@@ -27,7 +27,7 @@ case class DiffCalculator(maybeBazelRepositoryWithManagedDependencies: Option[Ba
                           dependenciesRemoteStorage: DependenciesRemoteStorage) {
   def calculateDivergentDependencies(localNodes: Set[DependencyNode]): Set[BazelDependencyNode] = {
     val managedNodes = maybeBazelRepositoryWithManagedDependencies.map{ repoWithManaged =>
-      val reader = new BazelDependenciesReader(repoWithManaged.localWorkspace())
+      val reader = new BazelDependenciesReader(repoWithManaged.resetAndCheckoutMaster())
       val managedDeps = reader.allDependenciesAsMavenDependencies()
 
       resolver.dependencyClosureOf(managedDeps, withManagedDependencies = managedDeps)
@@ -55,7 +55,7 @@ case class DefaultDiffWriter(targetRepository: BazelRepository,
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
 
   def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode], localDepsToDelete: Set[DependencyNode]): Unit = {
-    val localCopy = targetRepository.localWorkspace()
+    val localCopy = targetRepository.resetAndCheckoutMaster()
     val writer = new BazelDependenciesWriter(localCopy, neverLinkResolver, importExternalLoadStatement)
     //can be removed at phase 2
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom").map(_.toBazelNode)

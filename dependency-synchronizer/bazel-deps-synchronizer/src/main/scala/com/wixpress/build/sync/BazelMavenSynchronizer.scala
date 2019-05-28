@@ -14,17 +14,17 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
   private val conflictResolution = new HighestVersionConflictResolution()
 
-  def sync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]): Unit = {
+  def sync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency], branchName: String): Unit = {
     val dependenciesToUpdateWithChecksums = calcDepNodesToSync(dependencyManagementSource, dependencies)
 
-    persist(dependenciesToUpdateWithChecksums)
+    persist(dependenciesToUpdateWithChecksums, branchName)
   }
 
   def calcDepNodesToSync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]) = {
     import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksum
 
     logger.info(s"starting sync with managed dependencies in $dependencyManagementSource")
-    val localCopy = targetRepository.localWorkspace()
+    val localCopy = targetRepository.resetAndCheckoutMaster()
 
     val dependenciesToUpdate = newDependencyNodes(dependencyManagementSource, dependencies, localCopy)
     logger.info(s"syncing ${dependenciesToUpdate.size} dependencies")
@@ -65,12 +65,12 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     conflictResolution.resolve(possiblyConflictedDependencySet).forceCompileScope
   }
 
-  def persist(dependenciesToUpdate: Set[BazelDependencyNode]) = {
+  def persist(dependenciesToUpdate: Set[BazelDependencyNode], branchName: String) = {
     if (dependenciesToUpdate.nonEmpty) {
-      val localCopy = targetRepository.localWorkspace()
+      val localCopy = targetRepository.resetAndCheckoutMaster()
 
       val modifiedFiles = new BazelDependenciesWriter(localCopy, importExternalLoadStatement = importExternalLoadStatement).writeDependencies(dependenciesToUpdate)
-      persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates))
+      persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates), Some(branchName))
     }
   }
 }
@@ -93,6 +93,5 @@ class HighestVersionConflictResolution {
 }
 
 object BazelMavenSynchronizer {
-  val BranchName = "master"
   val PersistMessageHeader = "Automatic update of 'third_party' import files"
 }
