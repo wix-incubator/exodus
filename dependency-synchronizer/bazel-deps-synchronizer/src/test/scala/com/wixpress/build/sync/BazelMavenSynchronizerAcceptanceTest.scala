@@ -63,7 +63,7 @@ class BazelMavenSynchronizerAcceptanceTest extends SpecificationWithJUnit {
           message =
             s"""$PersistMessageHeader
                | - ${newDependency.coordinates.serialized}
-               |""".stripMargin
+               |#pr""".stripMargin
         )
 
         fakeBazelRepository.allChangesInBranch(someBranchName) must contain(matchTo(expectedChange))

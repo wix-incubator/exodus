@@ -46,6 +46,22 @@ class BazelDependenciesPersisterTest extends SpecificationWithJUnit {
              |${someDependencies.map(_.serialized).toSeq.sorted.map(c => s" - $c").mkString("\n")}
              |""".stripMargin))
     }
+
+    "given asPr = true add #pr" in new ctx {
+      val changedFiles = Set("some-file")
+      val coordinates = MavenMakers.someCoordinates("artifact")
+      val dependenciesSet = Set(coordinates)
+
+      persister.persistWithMessage(changedFiles, dependenciesSet, asPr = true)
+
+      bazelRepository.lastCommit should beEqualTo(DummyCommit(
+        branchName = branch,
+        changedFilePaths = changedFiles,
+        message =
+          s"""$header
+             | - ${coordinates.serialized}
+             |#pr""".stripMargin))
+    }
   }
 }
 

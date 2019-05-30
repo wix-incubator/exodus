@@ -70,7 +70,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
       val localCopy = targetRepository.resetAndCheckoutMaster()
 
       val modifiedFiles = new BazelDependenciesWriter(localCopy, importExternalLoadStatement = importExternalLoadStatement).writeDependencies(dependenciesToUpdate)
-      persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates), Some(branchName))
+      persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates), Some(branchName), asPr = true)
     }
   }
 }
