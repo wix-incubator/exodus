@@ -28,6 +28,10 @@ class FakeRemoteRepository() {
     this
   }
 
+  def commitThirdParties(thirdPartyFiles: Map[String, String]) = {
+    thirdPartyFiles foreach ( f => writeThirdPartyFile(f._1, f._2) )
+  }
+
 
   private val DefaultRemote = "origin"
   private val DefaultBranch = "master"
@@ -50,6 +54,28 @@ class FakeRemoteRepository() {
 
     git.commit()
       .setMessage("first commit")
+      .setAuthor(GitUserName, GitUserEmail)
+      .call()
+
+    git.push()
+      .setRemote(DefaultRemote)
+      .setRefSpecs(new RefSpec(DefaultBranch))
+      .call()
+  }
+
+
+  private def writeThirdPartyFile(fileName: String, content: String) = {
+    val thirdPartyFile  = localClone.path.createChild(thirdPartyImportFilesPathRoot, true).createChild(fileName)
+    val git = localClone.git
+    thirdPartyFile.overwrite(content)
+    git.add()
+      .addFilepattern(thirdPartyImportFilesPathRoot)
+      .addFilepattern(thirdPartyFile.name)
+      .call()
+
+
+    git.commit()
+      .setMessage("blahhhh")
       .setAuthor(GitUserName, GitUserEmail)
       .call()
 
