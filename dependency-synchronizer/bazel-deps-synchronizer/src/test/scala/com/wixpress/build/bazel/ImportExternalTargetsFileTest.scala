@@ -180,7 +180,7 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
       val rest = serializeJars(jars.tail)
 
       val headJar =
-        s"""    import_external(
+        s"""  import_external(
            |        name = "${jars.head.workspaceRuleName}",
            |        artifact = "${jars.head.serialized}",
            |    )""".stripMargin
