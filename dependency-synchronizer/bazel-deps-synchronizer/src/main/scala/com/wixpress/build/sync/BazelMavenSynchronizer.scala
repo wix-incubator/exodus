@@ -54,7 +54,7 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     logger.info(s"retrieved ${currentDependenciesFromBazel.size} dependencies from local workspace")
 
     val dependenciesToSync = uniqueDependenciesFrom(dependencies)
-    val newManagedDependencies = dependenciesToSync diff currentDependenciesFromBazel
+    val newManagedDependencies = dependenciesToSync
 
     logger.info(s"calculated ${newManagedDependencies.size} dependencies that need to added/updated")
 
