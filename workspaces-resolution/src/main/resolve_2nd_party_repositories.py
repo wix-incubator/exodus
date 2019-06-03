@@ -39,8 +39,10 @@ def get_build_type_from_env_var():
 def resolve_according_to_build_type(build_type, workspace_dir):
     if build_type == "branch_only":
         from resolving_lib.resolving_for_ci_branch_build import resolve_2nd_party_repositories
-    elif build_type == "build_master" or build_type == "cross_repo":
+    elif build_type == "build_master":
         from resolving_lib.resolving_for_ci_master_build import resolve_2nd_party_repositories
+    elif build_type == "cross_repo":
+        from resolving_lib.resolving_for_ci_crossrepo_build import resolve_2nd_party_repositories
     elif build_type == "merge_dry_run":
         from resolving_lib.resolving_for_ci_pr_build import resolve_2nd_party_repositories
     else:
