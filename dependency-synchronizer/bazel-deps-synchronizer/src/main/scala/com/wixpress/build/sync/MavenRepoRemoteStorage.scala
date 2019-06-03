@@ -15,12 +15,10 @@ class MavenRepoRemoteStorage(baseUrls: List[String]) extends DependenciesRemoteS
 
   override def checksumFor(node: DependencyNode): Option[String] = {
     val artifact = node.baseDependency.coordinates
-    getChecksum(artifact)
-      .orElse({
-        log.info("Fallback to calculating checksum by downloading the bytes...")
-        calculateChecksum(artifact)
-      })
-      .toOption
+    getChecksum(artifact).orElse({
+      log.info("Fallback to calculating checksum by downloading the bytes...")
+      calculateChecksum(artifact)
+    }).toOption
   }
 
   private def getChecksum(coordinates: Coordinates): Try[Sha256] = getWithFallback(getArtifactSha256, coordinates)
@@ -38,10 +36,8 @@ class MavenRepoRemoteStorage(baseUrls: List[String]) extends DependenciesRemoteS
       attempts.collectFirst {
         case Success(e) => e
       }.getOrElse {
-        val failures = attempts.collect {
-          case Failure(t) => t
-        }
-        log.warn(s"Could not fetch resource: ${failures.map(_.getMessage)}")
+        val failures = attempts.collect { case Failure(t) => t }
+        log.warn(s"Could not fetch resource $coordinates: ${failures.map(_.getMessage)}")
         throw CompositeThrowable(failures.toSet)
       }
     }
@@ -71,12 +67,10 @@ class MavenRepoRemoteStorage(baseUrls: List[String]) extends DependenciesRemoteS
     }
   }
 
-
   private def artifactNotFoundException(artifact: Coordinates, url: String) =
-    ArtifactNotFoundException(s"Could not find sha256 for artifact ${artifact.serialized} in $url")
+    ArtifactNotFoundException(s"Got 'NotFound' from $url")
 
   private def errorFetchingArtifactException[T](artifact: Coordinates, url: String, r: HttpResponse[T]) =
-    ErrorFetchingArtifactException(s"Error fetching artifact ${artifact.serialized} from $url \n Got response [${r.code} : ${r.statusLine}]")
-
+    ErrorFetchingArtifactException(s"Got Error [${r.code} : ${r.statusLine}] from $url")
 
 }
