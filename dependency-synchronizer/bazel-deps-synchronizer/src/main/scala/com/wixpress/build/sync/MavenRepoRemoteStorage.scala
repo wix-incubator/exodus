@@ -31,7 +31,7 @@ class MavenRepoRemoteStorage(baseUrls: List[String]) extends DependenciesRemoteS
 
   private def getWithFallback[T](getter: (Coordinates, String) => Try[T],
                                  coordinates: Coordinates): Try[T] = {
-    val attempts = baseUrls.iterator.map(url => getter(coordinates, url))
+    val attempts = baseUrls.par.map(url => getter(coordinates, url)).toList
     Try {
       attempts.collectFirst {
         case Success(e) => e
