@@ -69,7 +69,7 @@ class ArtifactoryRemoteStorage(host: String, token: String) extends Dependencies
     if (response.code != 404) {
       Success(response)
     } else {
-      printAndFail(new ArtifactNotFoundException(s"artifact: $artifact"))
+      printAndFail(ArtifactNotFoundException(s"artifact: $artifact"))
     }
   }
 
@@ -169,6 +169,10 @@ object ArtifactoryRemoteStorage {
       val classifier = coordinates.classifier.fold("")("-".concat)
       s"""$groupId/$artifactId/$version/$artifactId-$version$classifier.$packaging"""
     }
+
+    def toSha256Path: String = {
+      toArtifactPath + ".sha256"
+    }
   }
 
   implicit class DependencyNodeExtensions(node: DependencyNode) {
@@ -186,7 +190,7 @@ object ArtifactoryRemoteStorage {
       BazelDependencyNode(node.baseDependency, node.dependencies, maybeChecksum, maybeSrcChecksumIfRelevant, snapshotSources)
     }
 
-    def asSourceNode = {
+    def asSourceNode: DependencyNode = {
       val srcCoordinates = node.baseDependency.coordinates.copy(classifier = Some("sources"))
       val srcBaseDependency = node.baseDependency.copy(coordinates = srcCoordinates)
 
@@ -194,7 +198,7 @@ object ArtifactoryRemoteStorage {
     }
   }
 
-  def decorateNodesWithChecksum(closure: Set[DependencyNode])(dependenciesRemoteStorage: DependenciesRemoteStorage) = {
+  def decorateNodesWithChecksum(closure: Set[DependencyNode])(dependenciesRemoteStorage: DependenciesRemoteStorage): Set[BazelDependencyNode] = {
     closure.map(_.updateChecksumFrom(dependenciesRemoteStorage))
   }
 }
@@ -203,7 +207,9 @@ case class Artifact(checksums: Checksums)
 
 case class Checksums(sha1: Option[String], md5: Option[String], sha256: Option[String])
 
-class ArtifactNotFoundException(message: String) extends RuntimeException(message)
+case class ArtifactNotFoundException(message: String) extends RuntimeException(message)
+
+case class ErrorFetchingArtifactException(message: String) extends RuntimeException(message)
 
 object Utils {
   def retry[A](n: Int = 3)(fn: => Try[A]): Try[A] = {

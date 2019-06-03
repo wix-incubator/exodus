@@ -17,10 +17,20 @@ class MavenRepoRemoteStorageIT extends SpecificationWithJUnit  with BeforeAll wi
   sequential
 
   "MavenRepoRemoteStorage" should {
+    "first try to download the sha256 directly" in {
+      val storage = new MavenRepoRemoteStorage(List(s"http://localhost:$wireMockPort"))
+
+      val checksumResponse = "some-checksom"
+      givenMavenRepoReturnsSha256ChecksumOf(someArtifact, checksumResponse)
+
+      storage.checksumFor(aRootDependencyNode(asCompileDependency(someArtifact))) must beSome(checksumResponse)
+    }
+
     "download jar and calculate sha256" in {
       val storage = new MavenRepoRemoteStorage(List(s"http://localhost:$wireMockPort"))
 
       val binaryJar = byteArrayOf("/some-dep.binaryjar")
+      givenMavenRepoReturnsSha256NotFoundFor(someArtifact)
       givenMavenRepoReturnsBinaryJarOf(someArtifact, binaryJar)
 
       storage.checksumFor(aRootDependencyNode(asCompileDependency(someArtifact))) must beSome("bbce144202d10db79e2609423251310cc68a5060cd1689b8665fec394afe7873")
@@ -30,6 +40,8 @@ class MavenRepoRemoteStorageIT extends SpecificationWithJUnit  with BeforeAll wi
       val storage = new MavenRepoRemoteStorage(List(s"http://localhost:$wireMockPort", s"http://localhost:$secondWireMockPort"))
 
       val binaryJar = byteArrayOf("/some-dep.binaryjar")
+      givenMavenRepoReturnsSha256NotFoundFor(someArtifact)
+      givenSecondMavenRepoReturnsSha256NotFoundFor(someArtifact)
       givenMavenRepoReturnsNotFound(someArtifact)
       givenSecondMavenRepoReturnsBinaryJarOf(someArtifact, binaryJar)
 
@@ -38,7 +50,8 @@ class MavenRepoRemoteStorageIT extends SpecificationWithJUnit  with BeforeAll wi
 
     "return none on missing artifact" in {
       val storage = new MavenRepoRemoteStorage(List(s"http://localhost:$wireMockPort", s"http://localhost:$secondWireMockPort"))
-
+      givenMavenRepoReturnsSha256NotFoundFor(someArtifact)
+      givenSecondMavenRepoReturnsSha256NotFoundFor(someArtifact)
       givenMavenRepoReturnsNotFound(someArtifact)
       givenSecondMavenRepoReturnsNotFound(someArtifact)
 
@@ -67,6 +80,7 @@ class MavenRepoRemoteStorageIT extends SpecificationWithJUnit  with BeforeAll wi
   override def afterAll(): Unit = {wireMockServer.stop(); secondWireMockServer.stop()}
 }
 
+//noinspection TypeAnnotation
 object FakeWireMockMavenRepoTestSupport{
   val wireMockPort = 12876
   val wireMockServer = new WireMockServer(wireMockPort)
@@ -81,6 +95,16 @@ object FakeWireMockMavenRepoTestSupport{
       .willReturn(aResponse().withStatus(200)
         .withBody(jar)))
 
+  }
+
+  def givenMavenRepoReturnsSha256ChecksumOf(forArtifact: Coordinates, checksumResponse: String) = {
+    val relativeArtifactoryDownloadPath = s"/${forArtifact.toSha256Path}"
+
+    wireMockServer.givenThat(get(urlEqualTo(relativeArtifactoryDownloadPath))
+        .willReturn(
+          aResponse().withStatus(200)
+            .withHeader("Content-Type","application/x-checksum")
+            .withBody(checksumResponse)))
   }
 
   val notFoundResponseBuilder = aResponse().withStatus(404)
@@ -106,6 +130,18 @@ object FakeWireMockMavenRepoTestSupport{
 
   }
 
+  def givenMavenRepoReturnsSha256NotFoundFor(forArtifact: Coordinates) = {
+    val relativeArtifactoryDownloadPath = s"/${forArtifact.toSha256Path}"
+    wireMockServer.givenThat(get(urlEqualTo(relativeArtifactoryDownloadPath))
+      .willReturn(notFoundResponseBuilder))
+  }
+
+  def givenSecondMavenRepoReturnsSha256NotFoundFor(forArtifact: Coordinates) = {
+    val relativeArtifactoryDownloadPath = s"/${forArtifact.toSha256Path}"
+    secondWireMockServer.givenThat(get(urlEqualTo(relativeArtifactoryDownloadPath))
+      .willReturn(notFoundResponseBuilder))
+  }
+
   def givenSecondMavenRepoReturnsBinaryJarOf(forArtifact: Coordinates, jar: Array[Byte]) = {
     val relativeArtifactoryDownloadPath = s"/${forArtifact.toArtifactPath}"
 
@@ -122,5 +158,6 @@ object FakeWireMockMavenRepoTestSupport{
       .willReturn(notFoundResponseBuilder))
 
   }
+
 }
 

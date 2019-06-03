@@ -13,9 +13,9 @@ class FakeMavenRepository(port: Int = 0) {
     def asArtifact(ofType: String): Artifact = {
       val parent = artifact.parentCoordinates
       val groupId = artifact.groupId
-        .getOrElse(parent.map(_.groupId).getOrElse( throw new RuntimeException("missing groupId or parent.groupId")))
-      val version =  artifact.version
-        .getOrElse(parent.map(_.version).getOrElse( throw new RuntimeException("missing version or parent.version")))
+        .getOrElse(parent.map(_.groupId).getOrElse(throw new RuntimeException("missing groupId or parent.groupId")))
+      val version = artifact.version
+        .getOrElse(parent.map(_.version).getOrElse(throw new RuntimeException("missing version or parent.version")))
       new Artifact(groupId, artifact.artifactId, version, ofType)
     }
   }
@@ -34,9 +34,11 @@ class FakeMavenRepository(port: Int = 0) {
   }
 
   def addArtifacts(artifact: ArtifactDescriptor*): Unit = addArtifacts(artifact.toSet)
+
   def addCoordinates(coordinatesSet: Coordinates*): Unit = addCoordinates(coordinatesSet.toSet)
 
   def addArtifacts(artifacts: Set[ArtifactDescriptor]): Unit = artifacts.foreach(addSingleArtifact)
+
   def addCoordinates(coordinatesSet: Set[Coordinates]): Unit = coordinatesSet.foreach(addSingleCoordinates)
 
   def addSingleCoordinates(coordinates: Coordinates): Unit = addSingleArtifact(ArtifactDescriptor.anArtifact(coordinates))
@@ -58,5 +60,14 @@ class FakeMavenRepository(port: Int = 0) {
   def addJarArtifact(artifact: Coordinates, jar: Array[Byte]) =
     inMemoryArtifactStore.set(
       new Artifact(artifact.groupId, artifact.artifactId, artifact.version, artifact.classifier.orNull, "jar"), new ByteArrayInputStream(jar))
+
+  def addJarSha256(artifact: Coordinates, sha256: String) =
+    inMemoryArtifactStore.set(
+      new Artifact(
+        artifact.groupId,
+        artifact.artifactId,
+        artifact.version,
+        artifact.classifier.orNull,
+        artifact.packaging.value + ".sha256"), streamFrom(sha256))
 
 }
