@@ -3,7 +3,7 @@ package com.wix.build.maven.analysis
 import com.wix.bazel.migrator.model.SourceModule
 import com.wixpress.build.maven.{Coordinates, Dependency, Exclusion}
 
-class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies: Set[Coordinates]) {
+class ThirdPartyValidator(sourceModules: Set[SourceModule], managedDependencies: Iterable[Coordinates]) {
 
   private val simplifiedModuleToDirectDependenciesMap = sourceModules.map(moduleToDependencies).toMap
 

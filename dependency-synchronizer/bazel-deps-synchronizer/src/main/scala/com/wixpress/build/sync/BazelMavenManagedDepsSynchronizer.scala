@@ -2,31 +2,31 @@ package com.wixpress.build.sync
 
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven._
-import BazelMavenSynchronizer._
+import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksum
+import com.wixpress.build.sync.BazelMavenManagedDepsSynchronizer._
 import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
 
-class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, targetRepository: BazelRepository,
-                             dependenciesRemoteStorage: DependenciesRemoteStorage,
-                             importExternalLoadStatement: ImportExternalLoadStatement) {
+class BazelMavenManagedDepsSynchronizer(mavenDependencyResolver: MavenDependencyResolver, targetRepository: BazelRepository,
+                                        dependenciesRemoteStorage: DependenciesRemoteStorage,
+                                        importExternalLoadStatement: ImportExternalLoadStatement) {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
   private val conflictResolution = new HighestVersionConflictResolution()
 
-  def sync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency], branchName: String): Unit = {
-    val dependenciesToUpdateWithChecksums = calcDepNodesToSync(dependencyManagementSource, dependencies)
+  def sync(dependencyManagementSource: Coordinates, branchName: String): Unit = {
+    val managedDependenciesFromMaven = mavenDependencyResolver
+      .managedDependenciesOf(dependencyManagementSource)
+      .forceCompileScope
 
+    val dependenciesToUpdateWithChecksums = calcDepsNodesToSync2(managedDependenciesFromMaven, managedDependenciesFromMaven)
     persist(dependenciesToUpdateWithChecksums, branchName)
   }
 
-  def calcDepNodesToSync(dependencyManagementSource: Coordinates, dependencies: Set[Dependency]) = {
-    import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksum
-
-    logger.info(s"starting sync with managed dependencies in $dependencyManagementSource")
+  private def calcDepsNodesToSync2(dependencies: List[Dependency], managedDependencies: List[Dependency]) = {
     val localCopy = targetRepository.resetAndCheckoutMaster()
-
-    val dependenciesToUpdate = newDependencyNodes(dependencyManagementSource, dependencies, localCopy)
+    val dependenciesToUpdate = newDependencyNodes(dependencies, managedDependencies, localCopy)
     logger.info(s"syncing ${dependenciesToUpdate.size} dependencies")
 
     dependenciesToUpdate.headOption.foreach { depNode => logger.info(s"First dep to sync is ${depNode.baseDependency}.") }
@@ -41,13 +41,9 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
     }
   }
 
-  private def newDependencyNodes(dependencyManagementSource: Coordinates,
-                                 dependencies: Set[Dependency],
+  private def newDependencyNodes(dependencies: List[Dependency],
+                                 managedDependencies: List[Dependency],
                                  localWorkspace: BazelLocalWorkspace) = {
-
-    val managedDependenciesFromMaven = mavenDependencyResolver
-      .managedDependenciesOf(dependencyManagementSource)
-      .forceCompileScope
 
     val currentDependenciesFromBazel = new BazelDependenciesReader(localWorkspace).allDependenciesAsMavenDependencies()
 
@@ -58,14 +54,14 @@ class BazelMavenSynchronizer(mavenDependencyResolver: MavenDependencyResolver, t
 
     logger.info(s"calculated ${newManagedDependencies.size} dependencies that need to added/updated")
 
-    mavenDependencyResolver.dependencyClosureOf(newManagedDependencies, managedDependenciesFromMaven)
+    mavenDependencyResolver.dependencyClosureOf(newManagedDependencies, managedDependencies)
   }
 
-  private def uniqueDependenciesFrom(possiblyConflictedDependencySet: Set[Dependency]) = {
+  private def uniqueDependenciesFrom(possiblyConflictedDependencySet: List[Dependency]) = {
     conflictResolution.resolve(possiblyConflictedDependencySet).forceCompileScope
   }
 
-  def persist(dependenciesToUpdate: Set[BazelDependencyNode], branchName: String) = {
+  def persist(dependenciesToUpdate: Set[BazelDependencyNode], branchName: String): Unit = {
     if (dependenciesToUpdate.nonEmpty) {
       val localCopy = targetRepository.resetAndCheckoutMaster()
 
@@ -81,17 +77,22 @@ class HighestVersionConflictResolution {
       .mapValues(highestVersionIn)
       .values.toSet
 
-  def groupIdArtifactIdClassifier(dependency: Dependency) = {
+  def resolve(possiblyConflictedDependencies: List[Dependency]): List[Dependency] =
+    possiblyConflictedDependencies.groupBy(groupIdArtifactIdClassifier)
+      .mapValues(highestVersionIn)
+      .values.toList
+
+  def groupIdArtifactIdClassifier(dependency: Dependency): (String, String, Option[String]) = {
     import dependency.coordinates._
     (groupId, artifactId, classifier)
   }
 
-  private def highestVersionIn(dependencies: Set[Dependency]): Dependency = {
-    val exclusions = dependencies.flatMap(_.exclusions)
+  private def highestVersionIn(dependencies: Iterable[Dependency]): Dependency = {
+    val exclusions = dependencies.flatMap(_.exclusions).toSet
     dependencies.maxBy(d => new ComparableVersion(d.coordinates.version)).withExclusions(exclusions)
   }
 }
 
-object BazelMavenSynchronizer {
+object BazelMavenManagedDepsSynchronizer {
   val PersistMessageHeader = "Automatic update of 'third_party' import files"
 }

@@ -8,6 +8,7 @@ import com.wixpress.build.sync.DiffSynchronizer
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 
+//noinspection TypeAnnotation
 class DiffSynchronizerIT extends SpecificationWithJUnit {
   sequential
 
@@ -27,14 +28,14 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
       val synchronizer = givenSynchornizerFor(resolver)
 
 
-      val resolvedNodes = resolver.dependencyClosureOf(Set(managedDependency, transitiveDependencyCompileScope), Set())
+      val resolvedNodes = resolver.dependencyClosureOf(List(managedDependency, transitiveDependencyCompileScope), List.empty)
 
       synchronizer.sync(resolvedNodes)
 
       bazelWorkspace must includeImportExternalTargetWith(artifact = managedDependency.coordinates,
           runtimeDependencies = Set(transitiveDependency.coordinates))
 
-      bazelWorkspace must notIncludeImportExternalRulesInWorkspace((transitiveDependency.coordinates))
+      bazelWorkspace must notIncludeImportExternalRulesInWorkspace(transitiveDependency.coordinates)
     }
   }
 

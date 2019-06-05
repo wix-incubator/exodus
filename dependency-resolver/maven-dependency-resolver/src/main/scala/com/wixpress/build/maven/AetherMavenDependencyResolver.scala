@@ -32,23 +32,35 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
 
   private val artifactDescriptorStore = mutable.Map[Artifact, ArtifactDescriptorResult]() withDefault artifactDescriptorOf
 
-  override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = {
+  override def managedDependenciesOf(artifact: Coordinates): List[Dependency] = {
     val artifactDescriptor = artifactDescriptorStore(artifact.asAetherArtifact)
-    dependenciesSetFrom(artifactDescriptor.getManagedDependencies.asScala)
+    orderedUniqueDependenciesFrom(artifactDescriptor.getManagedDependencies.asScala)
   }
 
-  override def directDependenciesOf(coordinates: Coordinates): Set[Dependency] =
+  private def orderedUniqueDependenciesFrom(dependencies: Iterable[AetherDependency]): List[Dependency] = {
+    val deps = dependencies
+      .map(_.asDependency)
+      .map(validatedDependency)
+
+    val orderedDepSet = new mutable.LinkedHashSet[Dependency]()
+    for (dep <- deps){
+      orderedDepSet.add(dep)
+    }
+    orderedDepSet.toList
+  }
+
+  override def directDependenciesOf(coordinates: Coordinates): List[Dependency] =
     directDependenciesOf(artifactFromCoordinates(coordinates))
 
   private def artifactFromCoordinates(artifact: Coordinates) =
     new DefaultArtifact(artifact.groupId, artifact.artifactId, artifact.packaging.value, artifact.version)
 
-  def directDependenciesOf(pathToPom: Path): Set[Dependency] =
+  def directDependenciesOf(pathToPom: Path): List[Dependency] =
     directDependenciesOf(artifactFromPath(pathToPom))
 
   private def directDependenciesOf(artifact: DefaultArtifact) = {
     val artifactDescriptor = artifactDescriptorStore(artifact)
-    dependenciesSetFrom(artifactDescriptor.getDependencies.asScala)
+    orderedUniqueDependenciesFrom(artifactDescriptor.getDependencies.asScala)
   }
 
   private def artifactDescriptorOf(artifact: Artifact): ArtifactDescriptorResult = {
@@ -84,7 +96,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     Option(project.getParent).map(_.getVersion)
   }
 
-  override def dependencyClosureOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency], ignoreMissingDependencies: Boolean = true): Set[DependencyNode] = {
+  override def dependencyClosureOf(baseDependencies: List[Dependency], withManagedDependencies: List[Dependency], ignoreMissingDependencies: Boolean = true): Set[DependencyNode] = {
     try {
       withSession(ignoreMissingDependencies = ignoreMissingDependencies, session => {
         prioritizeManagedDeps(session)
@@ -107,19 +119,12 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
   private def fromAetherDependencyNode(node: AetherDependencyNode): DependencyNode = {
     DependencyNode(
       baseDependency = node.getDependency.asDependency,
-      dependencies = dependenciesSetFromDependencyNodes(node.getChildren.asScala)
+      dependencies = dependenciesSetFromDependencyNodes(node.getChildren.asScala).toSet
     )
   }
 
-  private def dependenciesSetFromDependencyNodes(dependencyNodes: Iterable[AetherDependencyNode]): Set[Dependency] = {
-    dependenciesSetFrom(dependencyNodes.map(_.getDependency))
-  }
-
-  private def dependenciesSetFrom(dependencies: Iterable[AetherDependency]): Set[Dependency] = {
-    dependencies
-      .map(_.asDependency)
-      .map(validatedDependency)
-      .toSet
+  private def dependenciesSetFromDependencyNodes(dependencyNodes: Iterable[AetherDependencyNode]): List[Dependency] = {
+    orderedUniqueDependenciesFrom(dependencyNodes.map(_.getDependency))
   }
 
   private def withSession[T](ignoreMissingDependencies:Boolean, f: DefaultRepositorySystemSession => T): T = {
@@ -147,10 +152,9 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     on.setConfigProperty(DependencyManagerUtils.CONFIG_PROP_VERBOSE, true)
   }
 
-  private def collectRequestOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency]) = {
+  private def collectRequestOf(baseDependencies: List[Dependency], withManagedDependencies: List[Dependency]) = {
     val managedDeps = withManagedDependencies
-      .map(_.asAetherDependency)
-      .toList.asJava
+      .map(_.asAetherDependency).asJava
     val dependencies = baseDependencies.map(_.asAetherDependency).toList.asJava
     (new CollectRequest)
       .setDependencies(dependencies)

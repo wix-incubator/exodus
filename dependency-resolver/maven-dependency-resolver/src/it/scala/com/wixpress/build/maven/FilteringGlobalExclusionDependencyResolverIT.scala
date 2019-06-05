@@ -36,8 +36,8 @@ class FilteringGlobalExclusionDependencyResolverIT extends SpecificationWithJUni
       val filteringGlobalExclusionDependencyResolver =
         new FilteringGlobalExclusionDependencyResolver(aetherMavenDependencyResolver, excluded)
 
-      filteringGlobalExclusionDependencyResolver.directDependenciesOf(interestingArtifact.coordinates) mustEqual
-        Set(secondLevelTransitiveDependency)
+      filteringGlobalExclusionDependencyResolver.directDependenciesOf(interestingArtifact.coordinates) must
+        contain(exactly(secondLevelTransitiveDependency))
     }
   }
 }
