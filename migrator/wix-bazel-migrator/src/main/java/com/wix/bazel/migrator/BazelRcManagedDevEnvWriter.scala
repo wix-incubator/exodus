@@ -40,7 +40,7 @@ object BazelRcManagedDevEnvWriter {
     "# build",
     "build:bazel16uplocal --action_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_BW_CMPTBL",
     "build --strategy=Scalac=worker",
-    "build --strict_java_deps=off",
+    "build --extra_toolchains=@core_server_build_tools//toolchains:wix_plus_one_global_toolchain",
     "build --strict_proto_deps=off",
     "build --experimental_remap_main_repo=true",
     "build --experimental_multi_threaded_digest=true",
