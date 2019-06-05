@@ -137,7 +137,7 @@ class MigratorInputs(configuration: RunConfiguration) {
 
   private def maybeManagedDependencies = {
     configuration.thirdPartyDependenciesSource.map(source =>
-      aetherResolver.managedDependenciesOf(Coordinates.deserialize(source))) getOrElse Set.empty
+      aetherResolver.managedDependenciesOf(Coordinates.deserialize(source))) getOrElse List.empty
   }
 
   implicit class DependencySetExtensions(dependencies: Set[Dependency]) {

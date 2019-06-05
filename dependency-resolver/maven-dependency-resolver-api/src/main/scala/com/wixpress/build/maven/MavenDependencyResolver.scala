@@ -2,15 +2,15 @@ package com.wixpress.build.maven
 
 trait MavenDependencyResolver {
 
-  def managedDependenciesOf(artifact: Coordinates): Set[Dependency]
+  def managedDependenciesOf(artifact: Coordinates): List[Dependency]
 
-  def dependencyClosureOf(baseDependencies: Set[Dependency], withManagedDependencies: Set[Dependency], ignoreMissingDependencies: Boolean = true): Set[DependencyNode]
+  def dependencyClosureOf(baseDependencies: List[Dependency], withManagedDependencies: List[Dependency], ignoreMissingDependencies: Boolean = true): Set[DependencyNode]
 
-  def directDependenciesOf(artifact: Coordinates): Set[Dependency]
+  def directDependenciesOf(artifact: Coordinates): List[Dependency]
 
   def allDependenciesOf(artifact: Coordinates): Set[Dependency] = {
     val directDependencies = directDependenciesOf(artifact)
-    dependencyClosureOf(directDependencies,managedDependenciesOf(artifact)).map(_.baseDependency)
+    dependencyClosureOf(directDependencies, managedDependenciesOf(artifact)).map(_.baseDependency)
   }
 
   protected def validatedDependency(dependency: Dependency): Dependency = {

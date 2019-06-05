@@ -6,20 +6,20 @@ import scala.annotation.tailrec
 
 class FakeMavenDependencyResolver(artifacts: Set[ArtifactDescriptor]) extends MavenDependencyResolver {
 
-  override def managedDependenciesOf(artifact: Coordinates): Set[Dependency] = accumulateManagedDeps(artifact).map(validatedDependency)
+  override def managedDependenciesOf(artifact: Coordinates): List[Dependency] = accumulateManagedDeps(artifact).map(validatedDependency).toList
 
-  override def dependencyClosureOf(baseArtifacts: Set[Dependency], withManagedDependencies: Set[Dependency], ignoreMissingDependencies: Boolean = true): Set[DependencyNode] =
+  override def dependencyClosureOf(baseArtifacts: List[Dependency], withManagedDependencies: List[Dependency], ignoreMissingDependencies: Boolean = true): Set[DependencyNode] =
     dependencyNodesFor(baseArtifacts, withManagedDependencies)
 
   @tailrec
-  private def dependencyNodesFor(dependencies: Set[Dependency],
-                                 withManagedDependencies: Set[Dependency],
+  private def dependencyNodesFor(dependencies: List[Dependency],
+                                 withManagedDependencies: List[Dependency],
                                  accDependencyNodes: Set[DependencyNode] = Set.empty): Set[DependencyNode] = {
-    val unvisitedDependencies = dependencies -- accDependencyNodes.map(_.baseDependency)
+    val unvisitedDependencies = dependencies.toSet -- accDependencyNodes.map(_.baseDependency)
     if (unvisitedDependencies.isEmpty) accDependencyNodes else {
-      val dependencyNodes = unvisitedDependencies.map(dependencyNodeFor(withManagedDependencies))
+      val dependencyNodes = unvisitedDependencies.map(dependencyNodeFor(withManagedDependencies.toSet))
       val transitiveDependencies = dependencyNodes.flatMap(_.dependencies)
-      dependencyNodesFor(transitiveDependencies, withManagedDependencies, accDependencyNodes ++ dependencyNodes)
+      dependencyNodesFor(transitiveDependencies.toList, withManagedDependencies, accDependencyNodes ++ dependencyNodes)
     }
   }
 
@@ -60,11 +60,11 @@ class FakeMavenDependencyResolver(artifacts: Set[ArtifactDescriptor]) extends Ma
       .map(_.version)
       .getOrElse(dependency.version))
 
-  override def directDependenciesOf(coordinates: Coordinates): Set[Dependency] = {
+  override def directDependenciesOf(coordinates: Coordinates): List[Dependency] = {
     accumulateDirectDeps(coordinates)
   }
 
-  private def accumulateDirectDeps(coordinates: Coordinates) = accumulateDeps(Set.empty,Some(coordinates),_.dependencies.toSet)
+  private def accumulateDirectDeps(coordinates: Coordinates) = accumulateDeps(Set.empty,Some(coordinates),_.dependencies.toSet).toList
 
   private def accumulateManagedDeps(coordinates: Coordinates) = accumulateDeps(Set.empty,Some(coordinates),_.managedDependencies.toSet)
 

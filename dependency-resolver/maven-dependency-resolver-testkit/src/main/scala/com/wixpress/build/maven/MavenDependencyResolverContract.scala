@@ -13,7 +13,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
   abstract class ctx extends Scope {
     def remoteArtifacts: Set[ArtifactDescriptor] = Set.empty
 
-    def emptyManagedDependencies = Set.empty[Dependency]
+    def emptyManagedDependencies = List.empty[Dependency]
 
     def someMultipleDependencies = {
       1 to 10
@@ -54,14 +54,14 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
         mavenDependencyResolver.managedDependenciesOf(managedDependenciesCoordinates) must contain(dependency)
       }
 
-      "all dependencies if pom has multiple managed dependencies" in new dependencyManagementCtx {
+      "all dependencies, ordered, if pom has multiple managed dependencies" in new dependencyManagementCtx {
         lazy val someDependency = randomDependency()
         lazy val someOtherDependency = randomDependency()
         override def managedDependencyArtifact = artifactWithManagedDeps(someDependency, someOtherDependency)
 
         private val retrievedManagedDependencies = mavenDependencyResolver.managedDependenciesOf(managedDependenciesCoordinates)
 
-        retrievedManagedDependencies must containTheSameElementsAs(Seq(someDependency, someOtherDependency))
+        retrievedManagedDependencies must be_===(List(someDependency, someOtherDependency))
       }
 
       "a dependency with exclusion if pom has a managed dependency with exclusion" in new dependencyManagementCtx {
@@ -69,7 +69,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
         override def managedDependencyArtifact = artifactWithManagedDeps(dependency)
 
         val dependencies = mavenDependencyResolver.managedDependenciesOf(managedDependenciesCoordinates)
-        dependencies mustEqual Set(dependency)
+        dependencies mustEqual List(dependency)
       }
 
       "throw MissingPomException when coordinates cannot be found in remote repository" in new ctx {
@@ -93,7 +93,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
         override def remoteArtifacts: Set[ArtifactDescriptor] = Set(anArtifact(interestingArtifact))
 
-        private val dependencies: Set[Dependency] = mavenDependencyResolver.directDependenciesOf(interestingArtifact)
+        val dependencies = mavenDependencyResolver.directDependenciesOf(interestingArtifact)
         dependencies must beEmpty
       }
 
@@ -240,7 +240,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
     "closure finder" >> {
       "given empty list of dependencies" should {
         "return no dependency node" in new ctx {
-          mavenDependencyResolver.dependencyClosureOf(Set.empty, emptyManagedDependencies) should beEmpty
+          mavenDependencyResolver.dependencyClosureOf(List.empty, emptyManagedDependencies) should beEmpty
         }
       }
 
@@ -250,7 +250,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
           override def remoteArtifacts = Set(anArtifact(dependency.coordinates))
 
-          mavenDependencyResolver.dependencyClosureOf(Set(dependency), emptyManagedDependencies) must contain(
+          mavenDependencyResolver.dependencyClosureOf(List(dependency), emptyManagedDependencies) must contain(
             DependencyNode(dependency, Set.empty)
           )
         }
@@ -272,13 +272,13 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
         "and given y is root and unmanaged, should return a set with " >> {
 
           "a dependency node for x with dependency on y" in new singleDependencyWithSingleDependency {
-            mavenDependencyResolver.dependencyClosureOf(Set(dependency), emptyManagedDependencies) must contain(
+            mavenDependencyResolver.dependencyClosureOf(List(dependency), emptyManagedDependencies) must contain(
               DependencyNode(dependency, Set(transitiveRoot))
             )
           }
 
           "dependency node for y with no dependencies" in new singleDependencyWithSingleDependency {
-            mavenDependencyResolver.dependencyClosureOf(Set(dependency), emptyManagedDependencies) must contain(
+            mavenDependencyResolver.dependencyClosureOf(List(dependency), emptyManagedDependencies) must contain(
               DependencyNode(dependency, Set(transitiveRoot))
             )
           }
@@ -292,7 +292,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
           override def remoteArtifacts: Set[ArtifactDescriptor] = super.remoteArtifacts + transitiveManagedRootArtifact
 
-          mavenDependencyResolver.dependencyClosureOf(Set(dependency), Set(transitiveManagedRoot)) must contain(
+          mavenDependencyResolver.dependencyClosureOf(List(dependency), List(transitiveManagedRoot)) must contain(
             DependencyNode(dependency, Set(transitiveManagedRoot))
           )
         }
@@ -302,7 +302,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
           "a dependency node for x with the  y as runtime dependency" in new singleDependencyWithSingleDependency {
           override def transitiveRoot: Dependency = aDependency("transitive", MavenScope.Runtime)
 
-          mavenDependencyResolver.dependencyClosureOf(Set(dependency), emptyManagedDependencies) must contain(
+          mavenDependencyResolver.dependencyClosureOf(List(dependency), emptyManagedDependencies) must contain(
             DependencyNode(dependency, Set(transitiveRoot))
           )
         }
@@ -312,7 +312,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
           "one dependency node for X with exclusion on y and no dependencies" in new singleDependencyWithSingleDependency {
           override def dependency: Dependency = aDependency("dep").copy(exclusions = Set(Exclusion(transitiveRoot)))
 
-          mavenDependencyResolver.dependencyClosureOf(Set(dependency), emptyManagedDependencies) must contain(
+          mavenDependencyResolver.dependencyClosureOf(List(dependency), emptyManagedDependencies) must contain(
             DependencyNode(dependency, Set.empty)
           )
         }
@@ -321,7 +321,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
         "and given y is excluded in x managed dependency, should return " +
           "one dependency node for X with exclusion on y and no dependencies" in new singleDependencyWithSingleDependency {
           val managedDependencyWithExclusion: Dependency = dependency.copy(exclusions = Set(Exclusion(transitiveRoot)))
-          mavenDependencyResolver.dependencyClosureOf(Set(dependency), Set(managedDependencyWithExclusion)) must contain(
+          mavenDependencyResolver.dependencyClosureOf(List(dependency), List(managedDependencyWithExclusion)) must contain(
             DependencyNode(managedDependencyWithExclusion, Set.empty)
           )
         }
@@ -330,7 +330,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
         "and given y is excluded in given dependency of x but not in managed dependency" in new singleDependencyWithSingleDependency {
           val dependencyWithExclusion: Dependency = dependency.copy(exclusions = Set(Exclusion(transitiveRoot)))
 
-          mavenDependencyResolver.dependencyClosureOf(Set(dependencyWithExclusion), Set(dependency)) must contain(
+          mavenDependencyResolver.dependencyClosureOf(List(dependencyWithExclusion), List(dependency)) must contain(
             DependencyNode(dependencyWithExclusion, Set.empty)
           )
         }
@@ -341,7 +341,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
           val managedDependencyWithExclusion: Dependency = dependency.copy(exclusions = Set(Exclusion(transitiveRoot)))
 
-          mavenDependencyResolver.dependencyClosureOf(Set(dependency), Set(managedDependencyWithExclusion)) must contain(
+          mavenDependencyResolver.dependencyClosureOf(List(dependency), List(managedDependencyWithExclusion)) must contain(
             DependencyNode(managedDependencyWithExclusion, Set.empty)
           )
         }
@@ -354,7 +354,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
 
         override def remoteArtifacts = rootArtifactOf(rootDependencies)
 
-        mavenDependencyResolver.dependencyClosureOf(rootDependencies.toSet, emptyManagedDependencies) must containTheSameElementsAs(
+        mavenDependencyResolver.dependencyClosureOf(rootDependencies.toList, emptyManagedDependencies) must containTheSameElementsAs(
           rootDependencies.map(DependencyNode(_, Set.empty))
         )
       }
@@ -370,7 +370,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
             anArtifact(dependency.coordinates).withDependency(transitiveDependencies: _*)
 
 
-          mavenDependencyResolver.dependencyClosureOf(Set(dependency), Set.empty) must containTheSameElementsAs(
+          mavenDependencyResolver.dependencyClosureOf(List(dependency), List.empty) must containTheSameElementsAs(
             Seq(
               DependencyNode(dependency, transitiveDependencies.toSet)
             ) ++ transitiveDependencies.map(DependencyNode(_, Set.empty))
@@ -393,7 +393,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
             anArtifact(dependencyWithExclusion.coordinates).withDependency(someRootDependency, someOtherRootDependency)
           )
 
-          mavenDependencyResolver.dependencyClosureOf(Set(dependencyWithExclusion), Set(dependencyWithDifferentExclusion)) must contain(
+          mavenDependencyResolver.dependencyClosureOf(List(dependencyWithExclusion), List(dependencyWithDifferentExclusion)) must contain(
             DependencyNode(dependencyWithExclusion.copy(exclusions = Set(Exclusion(someRootDependency), Exclusion(someOtherRootDependency))), Set.empty)
           )
         }
@@ -409,7 +409,7 @@ abstract class MavenDependencyResolverContract extends SpecificationWithJUnit {
               dependencies.tail.zipWithIndex.map(tuple=>anArtifact(tuple._1.coordinates).withDependency(dependencies(tuple._2)))).toSet
 
 
-          mavenDependencyResolver.dependencyClosureOf(Set(dependencies.last), Set.empty) must contain(
+          mavenDependencyResolver.dependencyClosureOf(List(dependencies.last), List.empty) must contain(
             DependencyNode(dependencies.head, Set.empty)
           )
         }

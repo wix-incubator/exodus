@@ -10,9 +10,9 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
 
   "Global Exclusion Filtering Dependency Resolver," >> {
     "return managed dependencies as implemented in the resolver given in its constructor" in {
-      val managedDependencies = Set(randomDependency())
+      val managedDependencies = List(randomDependency())
       val managedDependencyCoordinates = randomCoordinates()
-      val resolver = new FakeMavenDependencyResolver(Set(ArtifactDescriptor.anArtifact(managedDependencyCoordinates,List.empty,managedDependencies.toList)))
+      val resolver = new FakeMavenDependencyResolver(Set(ArtifactDescriptor.anArtifact(managedDependencyCoordinates,List.empty,managedDependencies)))
       val filteringGlobalExclusionDependencyResolver = new FilteringGlobalExclusionDependencyResolver(resolver, Set.empty)
 
       filteringGlobalExclusionDependencyResolver.managedDependenciesOf(managedDependencyCoordinates) must_== managedDependencies
@@ -27,7 +27,7 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
           new FilteringGlobalExclusionDependencyResolver(resolver, globalExcludesFrom(depFromExclude))
 
         filteringGlobalExclusionDependencyResolver.dependencyClosureOf(
-          Set(interestingArtifact), withManagedDependencies = Set.empty) mustEqual
+          List(interestingArtifact), withManagedDependencies = List.empty) mustEqual
           Set(DependencyNode(interestingArtifact, Set.empty))
       }
 
@@ -46,7 +46,7 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
           new FilteringGlobalExclusionDependencyResolver(resolver, globalExcludesFrom(depFromExclude))
 
         filteringGlobalExclusionDependencyResolver.dependencyClosureOf(
-          Set(interestingArtifact), withManagedDependencies = Set.empty) mustEqual
+          List(interestingArtifact), withManagedDependencies = List.empty) mustEqual
           Set(DependencyNode(interestingArtifact, Set.empty))
       }
 
@@ -65,7 +65,7 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
           new FilteringGlobalExclusionDependencyResolver(resolver, globalExcludesFrom(depFromExclude))
 
         filteringGlobalExclusionDependencyResolver.dependencyClosureOf(
-          Set(interestingArtifact), withManagedDependencies = Set.empty) mustEqual
+          List(interestingArtifact), withManagedDependencies = List.empty) mustEqual
           Set(
             DependencyNode(interestingArtifact, Set(transitiveDependency, anotherTransitiveDependency)),
             DependencyNode(transitiveDependency, Set.empty),
@@ -90,7 +90,7 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
           new FilteringGlobalExclusionDependencyResolver(resolver, globalExcludesFrom(depFromExclude, anotherDepFromExclude))
 
         filteringGlobalExclusionDependencyResolver.dependencyClosureOf(
-          Set(interestingArtifact), withManagedDependencies = Set.empty) mustEqual
+          List(interestingArtifact), withManagedDependencies = List.empty) mustEqual
           Set(
             DependencyNode(interestingArtifact, Set(transitiveDependency)),
             DependencyNode(transitiveDependency, Set.empty)
@@ -104,7 +104,7 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
 
         val directDependencies = filteringGlobalExclusionDependencyResolver.directDependenciesOf(interestingArtifact.coordinates)
 
-        directDependencies mustEqual Set.empty
+        directDependencies must beEmpty
       }
 
       trait RetainingConflictResolutionCtx extends Context {
@@ -130,15 +130,15 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
         override val dependencyOfExcludedDependency = directIncludedDependency.withVersion("transitive")
 
         filteringGlobalExclusionDependencyResolver.directDependenciesOf(interestingArtifact.coordinates) mustEqual
-          Set(directIncludedDependency)
+          List(directIncludedDependency)
       }
 
       "keep different scopes of dependency when retaining transitive dependency of excluded dependency" in new RetainingConflictResolutionCtx {
         override val directIncludedDependency = randomDependency(artifactIdPrefix = "dep", withVersion = "direct", withScope = MavenScope.Test)
         override val dependencyOfExcludedDependency = directIncludedDependency.withVersion("transitive").copy(scope = MavenScope.Runtime)
 
-        filteringGlobalExclusionDependencyResolver.directDependenciesOf(interestingArtifact.coordinates) mustEqual
-          Set(directIncludedDependency, dependencyOfExcludedDependency.withVersion(directIncludedDependency.version))
+        private val dependencies: List[Dependency] = filteringGlobalExclusionDependencyResolver.directDependenciesOf(interestingArtifact.coordinates)
+        dependencies must contain(exactly(directIncludedDependency, dependencyOfExcludedDependency.withVersion(directIncludedDependency.version)))
       }
 
       "retain transitive dependency of direct dependency that is in global exclude list as synthesized direct dependencies of artifact of interest with rules:" >> {
@@ -209,8 +209,7 @@ class FilteringGlobalExclusionDependencyResolverTest extends SpecificationWithJU
       val filteringGlobalExclusionDependencyResolver =
         new FilteringGlobalExclusionDependencyResolver(resolver, globalExcludesFrom(directExcludedDependency))
 
-      filteringGlobalExclusionDependencyResolver.directDependenciesOf(interestingArtifact.coordinates) mustEqual
-        Set(transitiveDependency.copy(scope = resultingScope))
+      filteringGlobalExclusionDependencyResolver.directDependenciesOf(interestingArtifact.coordinates) must contain(exactly(transitiveDependency.copy(scope = resultingScope)))
     }
   }
 

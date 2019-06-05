@@ -14,7 +14,7 @@ class UserAddedDepsDiffSynchronizer(calculator: DiffCalculatorAndAggregator,
 
   def syncThirdParties(userAddedDependencies: Set[Dependency], artifactIdToDebug: Option[String] = None): DiffResult = {
     val diffResult = calculator.resolveUpdatedLocalNodes(userAddedDependencies, artifactIdToDebug)
-    val report = new ConflictReportCreator().report(diffResult)
+    val report = ConflictReportCreator().report(diffResult)
 
     val setOfProblems = diffResult.checkForDepsClosureError().nodesWithMissingEdge
     if (setOfProblems.isEmpty){
@@ -97,7 +97,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
     debug2(addedMavenClosureLocalOverManaged, "addedMavenClosureLocalOverManaged", artifactIdToDebug)
 
     log.info("resolve userAddedDependencies full closure...")
-    aetherResolver.dependencyClosureOf(baseDependencies = userAddedDependencies, withManagedDependencies = addedMavenClosureLocalOverManaged, ignoreMissingDependenciesFlag)
+    aetherResolver.dependencyClosureOf(baseDependencies = userAddedDependencies.toList, withManagedDependencies = addedMavenClosureLocalOverManaged.toList, ignoreMissingDependenciesFlag)
   }
 
   private def calculateAffectedDivergentFromManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[BazelDependencyNode] = {

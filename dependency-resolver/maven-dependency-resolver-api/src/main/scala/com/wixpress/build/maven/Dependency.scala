@@ -24,7 +24,11 @@ case class Dependency(coordinates: Coordinates, scope: MavenScope, isNeverLink: 
 }
 
 object Dependency {
-  implicit class DependenciesExtended(dependencies:Set[Dependency]) {
+  implicit class DependenciesExtended(dependencies:List[Dependency]) {
+    def forceCompileScope: List[Dependency] = dependencies.map(_.forceCompileScope)
+  }
+
+  implicit class DependenciesSetExtended(dependencies:Set[Dependency]) {
     def forceCompileScope: Set[Dependency] = dependencies.map(_.forceCompileScope)
   }
 

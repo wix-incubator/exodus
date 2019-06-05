@@ -154,9 +154,9 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
 
     val providedDeps = externalBinaryDependencies
       .filter(_.scope == MavenScope.Provided)
-      .map(_.shortSerializedForm())
+      .map(_.shortSerializedForm()).toList
 
-    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope, managedDependenciesFromMaven())
+    val localNodes = filteringResolver.dependencyClosureOf(externalBinaryDependencies.forceCompileScope.toList, managedDependenciesFromMaven())
 
     localNodes.map {
       localNode =>
@@ -167,7 +167,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
     }
   }
 
-  private[migrator] def managedDependenciesFromMaven(): Set[maven.Dependency]
+  private[migrator] def managedDependenciesFromMaven(): List[maven.Dependency]
 }
 
 class PublicMigrator(configuration: RunConfiguration) extends Migrator(configuration) {
@@ -256,5 +256,5 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
   }
 
   // TODO: allow to provide managed dependencies from configuration
-  override private[migrator] def managedDependenciesFromMaven(): Set[maven.Dependency] = Set.empty
+  override private[migrator] def managedDependenciesFromMaven(): List[maven.Dependency] = List.empty
 }

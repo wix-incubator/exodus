@@ -3,7 +3,7 @@ package com.wixpress.build.sync
 import com.wixpress.build.bazel._
 import com.wixpress.build.maven.{BazelDependencyNode, DependencyNode, MavenDependencyResolver}
 import com.wixpress.build.sync.ArtifactoryRemoteStorage._
-import com.wixpress.build.sync.BazelMavenSynchronizer.PersistMessageHeader
+import com.wixpress.build.sync.BazelMavenManagedDepsSynchronizer.PersistMessageHeader
 import org.slf4j.LoggerFactory
 
 case class DiffSynchronizer(maybeBazelRepositoryWithManagedDependencies: Option[BazelRepository],
@@ -15,7 +15,7 @@ case class DiffSynchronizer(maybeBazelRepositoryWithManagedDependencies: Option[
   private val diffCalculator = DiffCalculator(maybeBazelRepositoryWithManagedDependencies, resolver, dependenciesRemoteStorage)
   private val diffWriter = DefaultDiffWriter(targetRepository,neverLinkResolver, importExternalLoadStatement)
 
-  def sync(localNodes: Set[DependencyNode]) = {
+  def sync(localNodes: Set[DependencyNode]): Unit = {
     val updatedLocalNodes = diffCalculator.calculateDivergentDependencies(localNodes)
 
     diffWriter.persistResolvedDependencies(updatedLocalNodes, localNodes)
@@ -28,7 +28,7 @@ case class DiffCalculator(maybeBazelRepositoryWithManagedDependencies: Option[Ba
   def calculateDivergentDependencies(localNodes: Set[DependencyNode]): Set[BazelDependencyNode] = {
     val managedNodes = maybeBazelRepositoryWithManagedDependencies.map{ repoWithManaged =>
       val reader = new BazelDependenciesReader(repoWithManaged.resetAndCheckoutMaster())
-      val managedDeps = reader.allDependenciesAsMavenDependencies()
+      val managedDeps = reader.allDependenciesAsMavenDependencies().toList
 
       resolver.dependencyClosureOf(managedDeps, withManagedDependencies = managedDeps)
     }.getOrElse(Set.empty)

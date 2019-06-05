@@ -28,7 +28,7 @@ class MavenBuildSystem(repoRoot: Path,
   private def withDirectDependencies(module: SourceModule): SourceModule =
     module.copy(
       dependencies = module.dependencies.copy(
-        directDependencies = dependencyResolver.directDependenciesOf(module.coordinates)))
+        directDependencies = dependencyResolver.directDependenciesOf(module.coordinates).toSet))
 }
 
 class MavenSourceModules(repoRoot: Path,

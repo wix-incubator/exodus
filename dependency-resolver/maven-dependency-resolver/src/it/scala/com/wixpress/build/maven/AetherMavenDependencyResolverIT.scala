@@ -13,14 +13,14 @@ class AetherMavenDependencyResolverIT extends MavenDependencyResolverContract wi
     override def transitiveRoot = aDependency("transitive").withScope(MavenScope.Runtime)
 
     mavenDependencyResolver.dependencyClosureOf(
-      Set(dependency, transitiveRoot.withScope(MavenScope.Compile)), emptyManagedDependencies) must contain(
+      List(dependency, transitiveRoot.withScope(MavenScope.Compile)), emptyManagedDependencies) must contain(
       DependencyNode(dependency, Set(transitiveRoot)))
   }
 
   "return only one entry for each dependency given transitive dependency has different scope" in new singleDependencyWithSingleDependency {
     override def transitiveRoot = aDependency("transitive").withScope(MavenScope.Runtime)
 
-    val nodes = mavenDependencyResolver.dependencyClosureOf(Set(dependency, transitiveRoot.withScope(MavenScope.Compile)), emptyManagedDependencies)
+    val nodes = mavenDependencyResolver.dependencyClosureOf(List(dependency, transitiveRoot.withScope(MavenScope.Compile)), emptyManagedDependencies)
     nodes.filter(_.baseDependency == dependency) must have size 1
     nodes.filter(_.baseDependency.coordinates == transitiveRoot.coordinates) must have size 1
   }
@@ -30,7 +30,7 @@ class AetherMavenDependencyResolverIT extends MavenDependencyResolverContract wi
 
     override def remoteArtifacts: Set[ArtifactDescriptor] = Set.empty
 
-    mavenDependencyResolver.dependencyClosureOf(Set(notExistsDependency), emptyManagedDependencies) must contain(DependencyNode(notExistsDependency, Set()))
+    mavenDependencyResolver.dependencyClosureOf(List(notExistsDependency), emptyManagedDependencies) must contain(DependencyNode(notExistsDependency, Set()))
   }
 
   "given dependency that is not in remote repository must explode if ignoreMissingDependencies=false" in new ctx {
@@ -38,7 +38,7 @@ class AetherMavenDependencyResolverIT extends MavenDependencyResolverContract wi
 
     override def remoteArtifacts: Set[ArtifactDescriptor] = Set.empty
 
-    mavenDependencyResolver.dependencyClosureOf(Set(notExistsDependency), emptyManagedDependencies, ignoreMissingDependencies = false) must
+    mavenDependencyResolver.dependencyClosureOf(List(notExistsDependency), emptyManagedDependencies, ignoreMissingDependencies = false) must
       throwA[IllegalArgumentException]
   }
 
