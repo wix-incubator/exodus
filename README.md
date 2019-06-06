@@ -1,6 +1,6 @@
 # EXODUS
 
-[![Build Status](https://travis-ci.com/wix-incubator/exodus.svg?branch=master)](https://travis-ci.com/wix-incubator/exodus)
+[![Build Status](https://travis-ci.com/wix/exodus.svg?branch=master)](https://travis-ci.com/wix-incubator/exodus)
 
 <img src="https://github.com/wix-incubator/exodus/blob/master/docs/assets/img/Blue-short2.png" width="350" alt="exodus logo"/>
 
