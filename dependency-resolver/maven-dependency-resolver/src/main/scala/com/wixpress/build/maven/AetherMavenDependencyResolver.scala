@@ -38,15 +38,9 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
   }
 
   private def orderedUniqueDependenciesFrom(dependencies: Iterable[AetherDependency]): List[Dependency] = {
-    val deps = dependencies
+    dependencies
       .map(_.asDependency)
-      .map(validatedDependency)
-
-    val orderedDepSet = new mutable.LinkedHashSet[Dependency]()
-    for (dep <- deps){
-      orderedDepSet.add(dep)
-    }
-    orderedDepSet.toList
+      .map(validatedDependency).toList.distinct
   }
 
   override def directDependenciesOf(coordinates: Coordinates): List[Dependency] =
