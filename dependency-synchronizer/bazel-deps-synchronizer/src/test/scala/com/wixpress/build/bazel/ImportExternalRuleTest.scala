@@ -83,7 +83,7 @@ class ImportExternalRuleTest extends SpecificationWithJUnit {
           |],""".stripMargin)
     }
 
-    "serialize rule with testonly" in {
+    "serialize rule with testonly_" in {
       val rule = ImportExternalRule(
         name = "name",
         artifact = "artifact",
@@ -92,17 +92,17 @@ class ImportExternalRuleTest extends SpecificationWithJUnit {
 
       val serialized = rule.serialized
       serialized must containIgnoringSpaces(
-        """testonly = 1,""".stripMargin)
+        """testonly_ = 1,""".stripMargin)
     }
 
-    "not serialize testonly for rules that do not need it" in {
+    "not serialize testonly_ for rules that do not need it" in {
       val rule = ImportExternalRule(
         name = "name",
         artifact = "artifact"
       )
 
       rule.serialized must not(containIgnoringSpaces(
-        """testonly = 1,""".stripMargin))
+        """testonly_ = 1,""".stripMargin))
     }
 
     "serialize rule with checksum" in {

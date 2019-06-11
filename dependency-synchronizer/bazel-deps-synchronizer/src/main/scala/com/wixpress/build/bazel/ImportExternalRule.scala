@@ -27,7 +27,7 @@ case class ImportExternalRule(name: String,
 
   private def serializedTestOnly =
     if (testOnly) """
-                    |      testonly = 1,""".stripMargin else ""
+                    |      testonly_ = 1,""".stripMargin else ""
 
   private def serializedChecksum =
     checksum.fold("")(sha256 => s"""
