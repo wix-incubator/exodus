@@ -147,9 +147,8 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
   }
 
   private def collectRequestOf(baseDependencies: List[Dependency], withManagedDependencies: List[Dependency]) = {
-    val managedDeps = withManagedDependencies
-      .map(_.asAetherDependency).asJava
-    val dependencies = baseDependencies.map(_.asAetherDependency).toList.asJava
+    val managedDeps = withManagedDependencies.map(_.asAetherDependency).asJava
+    val dependencies = baseDependencies.map(_.asAetherDependency).asJava
     (new CollectRequest)
       .setDependencies(dependencies)
       .setManagedDependencies(managedDeps)

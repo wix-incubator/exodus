@@ -234,6 +234,8 @@ class BazelMavenManagedDepsSynchronizerAcceptanceTest extends SpecificationWithJ
 
         bazelWorkspace.versionOfImportedJar(transitiveDependency.coordinates) must beSome(transitiveManagedDependency.version)
       }
+
+
     }
   }
   //why is fakeBazelRepository hardly used

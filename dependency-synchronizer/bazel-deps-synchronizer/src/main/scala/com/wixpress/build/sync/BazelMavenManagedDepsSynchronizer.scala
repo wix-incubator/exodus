@@ -4,7 +4,6 @@ import com.wixpress.build.bazel._
 import com.wixpress.build.maven._
 import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksum
 import com.wixpress.build.sync.BazelMavenManagedDepsSynchronizer._
-import org.apache.maven.artifact.versioning.ComparableVersion
 import org.slf4j.LoggerFactory
 
 class BazelMavenManagedDepsSynchronizer(mavenDependencyResolver: MavenDependencyResolver, targetRepository: BazelRepository,
@@ -13,23 +12,18 @@ class BazelMavenManagedDepsSynchronizer(mavenDependencyResolver: MavenDependency
 
   private val logger = LoggerFactory.getLogger(this.getClass)
   private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
-  private val conflictResolution = new HighestVersionConflictResolution()
 
   def sync(dependencyManagementSource: Coordinates, branchName: String): Unit = {
-    val managedDependenciesFromMaven = mavenDependencyResolver
-      .managedDependenciesOf(dependencyManagementSource)
-      .forceCompileScope
+    val managedDependenciesFromMaven = mavenDependencyResolver.managedDependenciesOf(dependencyManagementSource).forceCompileScope
+    logger.info(s"calculated ${managedDependenciesFromMaven.size} managed dependencies from the pom")
 
-    val dependenciesToUpdateWithChecksums = calcDepsNodesToSync2(managedDependenciesFromMaven, managedDependenciesFromMaven)
+    val dependenciesToUpdateWithChecksums = calcDepsNodesToSync(managedDependenciesFromMaven)
     persist(dependenciesToUpdateWithChecksums, branchName)
   }
 
-  private def calcDepsNodesToSync2(dependencies: List[Dependency], managedDependencies: List[Dependency]) = {
-    val localCopy = targetRepository.resetAndCheckoutMaster()
-    val dependenciesToUpdate = newDependencyNodes(dependencies, managedDependencies, localCopy)
-    logger.info(s"syncing ${dependenciesToUpdate.size} dependencies")
-
-    dependenciesToUpdate.headOption.foreach { depNode => logger.info(s"First dep to sync is ${depNode.baseDependency}.") }
+  private def calcDepsNodesToSync(managedDependencies: List[Dependency]) = {
+    val dependenciesToUpdate = mavenDependencyResolver.dependencyClosureOf(managedDependencies, managedDependencies)
+    logger.info(s"syncing ${dependenciesToUpdate.size} dependencies which are the closure of the ${managedDependencies.size} managed dependencies")
 
     if (dependenciesToUpdate.isEmpty)
       Set[BazelDependencyNode]()
@@ -41,26 +35,6 @@ class BazelMavenManagedDepsSynchronizer(mavenDependencyResolver: MavenDependency
     }
   }
 
-  private def newDependencyNodes(dependencies: List[Dependency],
-                                 managedDependencies: List[Dependency],
-                                 localWorkspace: BazelLocalWorkspace) = {
-
-    val currentDependenciesFromBazel = new BazelDependenciesReader(localWorkspace).allDependenciesAsMavenDependencies()
-
-    logger.info(s"retrieved ${currentDependenciesFromBazel.size} dependencies from local workspace")
-
-    val dependenciesToSync = uniqueDependenciesFrom(dependencies)
-    val newManagedDependencies = dependenciesToSync
-
-    logger.info(s"calculated ${newManagedDependencies.size} dependencies that need to added/updated")
-
-    mavenDependencyResolver.dependencyClosureOf(newManagedDependencies, managedDependencies)
-  }
-
-  private def uniqueDependenciesFrom(possiblyConflictedDependencySet: List[Dependency]) = {
-    conflictResolution.resolve(possiblyConflictedDependencySet).forceCompileScope
-  }
-
   def persist(dependenciesToUpdate: Set[BazelDependencyNode], branchName: String): Unit = {
     if (dependenciesToUpdate.nonEmpty) {
       val localCopy = targetRepository.resetAndCheckoutMaster()
@@ -68,28 +42,6 @@ class BazelMavenManagedDepsSynchronizer(mavenDependencyResolver: MavenDependency
       val modifiedFiles = new BazelDependenciesWriter(localCopy, importExternalLoadStatement = importExternalLoadStatement).writeDependencies(dependenciesToUpdate)
       persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates), Some(branchName), asPr = true)
     }
-  }
-}
-
-class HighestVersionConflictResolution {
-  def resolve(possiblyConflictedDependencies: Set[Dependency]): Set[Dependency] =
-    possiblyConflictedDependencies.groupBy(groupIdArtifactIdClassifier)
-      .mapValues(highestVersionIn)
-      .values.toSet
-
-  def resolve(possiblyConflictedDependencies: List[Dependency]): List[Dependency] =
-    possiblyConflictedDependencies.groupBy(groupIdArtifactIdClassifier)
-      .mapValues(highestVersionIn)
-      .values.toList
-
-  def groupIdArtifactIdClassifier(dependency: Dependency): (String, String, Option[String]) = {
-    import dependency.coordinates._
-    (groupId, artifactId, classifier)
-  }
-
-  private def highestVersionIn(dependencies: Iterable[Dependency]): Dependency = {
-    val exclusions = dependencies.flatMap(_.exclusions).toSet
-    dependencies.maxBy(d => new ComparableVersion(d.coordinates.version)).withExclusions(exclusions)
   }
 }
 

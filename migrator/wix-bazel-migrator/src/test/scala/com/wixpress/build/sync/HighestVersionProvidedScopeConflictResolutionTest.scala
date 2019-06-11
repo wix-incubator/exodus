@@ -1,5 +1,6 @@
 package com.wixpress.build.sync
 
+import com.wix.bazel.migrator.HighestVersionProvidedScopeConflictResolution
 import com.wixpress.build.maven.MavenScope
 
 //noinspection TypeAnnotation
