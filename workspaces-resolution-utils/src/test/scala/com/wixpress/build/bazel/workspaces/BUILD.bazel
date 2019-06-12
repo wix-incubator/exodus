@@ -1,12 +1,13 @@
 package(default_visibility = ["//visibility:public"])
 
 sources()
+
 specs2_unit_test(
     name = "workspaces",
     srcs = [
         ":sources",
     ],
     deps = [
-        "//workspaces-resolution-utils/src/main/scala/com/wixpress/build/bazel/workspaces:workspaces",
-    ]
+        "//workspaces-resolution-utils/src/main/scala/com/wixpress/build/bazel/workspaces",
+    ],
 )
