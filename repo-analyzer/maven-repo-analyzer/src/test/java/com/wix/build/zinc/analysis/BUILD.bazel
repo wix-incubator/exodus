@@ -10,9 +10,9 @@ specs2_unit_test(
     runtime_deps = [
     ],
     deps = [
-        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/zinc/analysis:analysis",
-                "@com_github_marschall_memoryfilesystem",
-                "//repo-analyzer/maven-repo-analyzer/src/test/java/resources",
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/zinc/analysis",
+        "//repo-analyzer/maven-repo-analyzer/src/test/java/resources",
+        "@com_github_marschall_memoryfilesystem",
     ],
 )
 

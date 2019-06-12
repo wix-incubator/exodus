@@ -44,6 +44,8 @@ filegroup(
 java_binary(
     name = "migrator_cli",
     main_class = "com.wix.bazel.migrator.MigratorApplication",
-    runtime_deps = ["//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/wixspecific:wixspecific",
-                    "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/transform_build/maven/analysis"],
+    runtime_deps = [
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/transform_build/maven/analysis",
+        
+    ],
 )
