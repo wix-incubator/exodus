@@ -96,8 +96,15 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
     val addedMavenClosureLocalOverManaged = managedBaseDepsThatAreNotPresentLocally ++ currentClosureFiltered
     debug2(addedMavenClosureLocalOverManaged, "addedMavenClosureLocalOverManaged", artifactIdToDebug)
 
+    resolveMavenClosure(userAddedDependencies, addedMavenClosureLocalOverManaged)
+  }
+
+  private def resolveMavenClosure(userAddedDependencies: Set[Dependency], addedMavenClosureLocalOverManaged: Set[Dependency]) = {
     log.info("resolve userAddedDependencies full closure...")
-    aetherResolver.dependencyClosureOf(baseDependencies = userAddedDependencies.toList, withManagedDependencies = addedMavenClosureLocalOverManaged.toList, ignoreMissingDependenciesFlag)
+    val start = System.currentTimeMillis()
+    val closure = aetherResolver.dependencyClosureOf(baseDependencies = userAddedDependencies.toList, withManagedDependencies = addedMavenClosureLocalOverManaged.toList, ignoreMissingDependenciesFlag)
+    log.info(s"closure resolving took ${System.currentTimeMillis() - start} ms")
+    closure
   }
 
   private def calculateAffectedDivergentFromManaged(managedNodes: Set[DependencyNode], aggregateNodes: Set[DependencyNode]):Set[BazelDependencyNode] = {
