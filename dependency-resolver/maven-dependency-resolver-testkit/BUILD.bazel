@@ -2,6 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 scala_library(
     name = "main_dependencies",
+    testonly = 1,
     deps = [
         "//dependency-resolver/maven-dependency-resolver-api:main_dependencies",
         "@commons_codec_commons_codec",

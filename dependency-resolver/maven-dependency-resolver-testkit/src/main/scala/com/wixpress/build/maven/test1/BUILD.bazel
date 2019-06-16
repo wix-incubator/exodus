@@ -2,6 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 scala_library(
     name = "test1",
+    testonly = 1,
     srcs = [
         "//dependency-resolver/maven-dependency-resolver-testkit/src/main/scala/com/wixpress/build/maven/test1:sources",
     ],
