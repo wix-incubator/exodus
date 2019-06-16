@@ -2,6 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 scala_library(
     name = "model",
+    testonly = 1,
     srcs = [
         "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model:sources",
     ],

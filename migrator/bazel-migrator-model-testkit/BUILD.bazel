@@ -2,6 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 scala_library(
     name = "main_dependencies",
+    testonly = 1,
     deps = [
         "//migrator/bazel-migrator-model:main_dependencies",
         "//models/maven-model:main_dependencies",
