@@ -1,8 +1,9 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations._
+import com.wixpress.build.bazel.LibraryRule.LibraryRuleType
 import com.wixpress.build.maven.MavenMakers._
-import com.wixpress.build.maven.{Coordinates, Packaging}
+import com.wixpress.build.maven.{Coordinates, Exclusion, Packaging}
 import org.specs2.matcher.{AlwaysMatcher, Matcher, MustThrownExpectations}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.SpecificationWithJUnit
@@ -17,7 +18,7 @@ class RuleResolverTest extends SpecificationWithJUnit {
 
     "return import external rule in case given regular jar coordinates" in new Context {
 
-      ruleResolver.`for`(artifact, runtimeDependencies, compileDependencies, checksum = someChecksum, neverlink = true) must containeRule(importExternalRule(
+      ruleResolver.`for`(artifact, runtimeDependencies, compileDependencies, checksum = someChecksum, neverlink = true) must containImportExternalRule(importExternalRule(
         name = artifact.workspaceRuleName,
         anArtifact = be_===(artifact.serialized),
         runtimeDeps = contain(allOf(runtimeDependencies.map(_.toLabel))),
@@ -82,12 +83,32 @@ class RuleResolverTest extends SpecificationWithJUnit {
         .ruleTargetLocator mustEqual LibraryRule.packageNameBy(artifact)
     }
 
-    "return import external rule with testonly in case " in new Context {
+    "return import external with testonly only if TestOnlyTargetsResolver indicates artifact is testonly" in new Context {
       testOnlyTargetsResolver.isTestOnlyTarget(artifact) returns true
 
-      ruleResolver.`for`(artifact) must containeRule(importExternalRule(
+      ruleResolver.`for`(otherArtifact) must containImportExternalRule(importExternalRule(
+        name = otherArtifact.workspaceRuleName,
+        anArtifact = be_===(otherArtifact.serialized),
+        testOnly = beFalse,
+      ))
+
+      ruleResolver.`for`(artifact) must containImportExternalRule(importExternalRule(
         name = artifact.workspaceRuleName,
         anArtifact = be_===(artifact.serialized),
+        testOnly = beTrue,
+      ))
+    }
+
+    "return library rule with testonly only if TestOnlyTargetsResolver indicates pom artifact is testonly" in new Context {
+      testOnlyTargetsResolver.isTestOnlyTarget(pomArtifact) returns true
+
+      ruleResolver.`for`(otherPomArtifact) must containLibraryRule(libraryRule(
+        name = otherPomArtifact.libraryRuleName,
+        testOnly = beFalse,
+      ))
+
+      ruleResolver.`for`(pomArtifact) must containLibraryRule(libraryRule(
+        name = pomArtifact.libraryRuleName,
         testOnly = beTrue,
       ))
     }
@@ -103,9 +124,11 @@ class RuleResolverTest extends SpecificationWithJUnit {
   }
 
   val artifact = someCoordinates("some-artifact")
+  val otherArtifact = someCoordinates("some-other-artifact")
   val transitiveDep = someCoordinates("some-transitiveDep")
   val transitiveDeps = Set(transitiveDep)
   val pomArtifact = someCoordinates("some-artifact").copy(packaging = Packaging("pom"))
+  val otherPomArtifact = someCoordinates("some-other-artifact").copy(packaging = Packaging("pom"))
   val runtimeDependencies: Set[BazelDep] = Set(ImportExternalDep(someCoordinates("runtime-dep")))
   val compileDependencies: Set[BazelDep] = Set(ImportExternalDep(someCoordinates("compile-dep")))
   val pomRuntimeDependencies: Set[BazelDep] = Set(LibraryRuleDep(someCoordinates("runtime-dep").copy(packaging = Packaging("pom"))))
@@ -113,9 +136,11 @@ class RuleResolverTest extends SpecificationWithJUnit {
   val someChecksum = Some("checksum")
   val someSrcChecksum = Some("src_checksum")
 
-  def containeRule(customMatcher: Matcher[ImportExternalRule]): Matcher[RuleToPersist] = {
+  def containImportExternalRule(customMatcher: Matcher[ImportExternalRule]): Matcher[RuleToPersist] =
     customMatcher ^^ {(_: RuleToPersist).rule.asInstanceOf[ImportExternalRule]}
-  }
+
+  def containLibraryRule(customMatcher: Matcher[LibraryRule]): Matcher[RuleToPersist] =
+    customMatcher ^^ {(_: RuleToPersist).rule.asInstanceOf[LibraryRule]}
 
   def importExternalRule(name: String,
                          anArtifact: Matcher[String] = AlwaysMatcher[String](),
@@ -124,7 +149,7 @@ class RuleResolverTest extends SpecificationWithJUnit {
                          checksum: Matcher[Option[String]] = AlwaysMatcher[Option[String]](),
                          srcChecksum: Matcher[Option[String]] = AlwaysMatcher[Option[String]](),
                          neverlink: Matcher[Boolean] = AlwaysMatcher[Boolean](),
-                         testOnly: Matcher[Boolean] = AlwaysMatcher[Boolean](),
+                         testOnly: Matcher[Boolean] = AlwaysMatcher[Boolean]()
                         ): Matcher[ImportExternalRule] =
     be_===(name) ^^ {
       (_: ImportExternalRule).name aka "rule name"
@@ -143,4 +168,38 @@ class RuleResolverTest extends SpecificationWithJUnit {
     } and testOnly ^^ {
       (_: ImportExternalRule).testOnly aka "testOnly"
     }
+
+  def libraryRule(name: String,
+                  sources: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
+                  jars: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
+                  exports: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
+                  runtimeDeps: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
+                  compileDeps: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
+                  exclusions: Matcher[Set[Exclusion]] = AlwaysMatcher[Set[Exclusion]](),
+                  data: Matcher[Set[String]] = AlwaysMatcher[Set[String]](),
+                  testOnly: Matcher[Boolean] = AlwaysMatcher[Boolean](),
+                  libraryRuleType: Matcher[LibraryRuleType] = AlwaysMatcher[LibraryRuleType]()
+                 ): Matcher[LibraryRule] =
+    be_===(name) ^^ {
+      (_: LibraryRule).name aka "rule name"
+    } and sources ^^ {
+      (_: LibraryRule).sources aka "sources"
+    } and jars ^^ {
+      (_: LibraryRule).jars aka "jars"
+    } and exports ^^ {
+      (_: LibraryRule).exports aka "exports"
+    } and runtimeDeps ^^ {
+      (_: LibraryRule).runtimeDeps aka "runtimeDeps"
+    } and compileDeps ^^ {
+      (_: LibraryRule).compileTimeDeps aka "compileTimeDeps"
+    } and exclusions ^^ {
+      (_: LibraryRule).exclusions aka "exclusions"
+    } and data ^^ {
+      (_: LibraryRule).data aka "data"
+    } and testOnly ^^ {
+      (_: LibraryRule).testOnly aka "testOnly"
+    } and libraryRuleType ^^ {
+      (_: LibraryRule).libraryRuleType aka "libraryRuleType"
+    }
 }
+

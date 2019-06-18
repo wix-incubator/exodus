@@ -28,7 +28,7 @@ class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
   def bazelExternalDependencyFor(coordinates: Coordinates): BazelExternalDependency = {
     val maybeImportExternalRule = findImportExternalRuleBy(coordinates)
     val maybeLibraryRule = findLibraryRuleBy(coordinates)
-    BazelExternalDependency( maybeImportExternalRule, maybeLibraryRule)
+    BazelExternalDependency(maybeImportExternalRule, maybeLibraryRule)
   }
 
   def findImportExternalRuleBy(coordinates: Coordinates): Option[ImportExternalRule] = {
@@ -143,14 +143,35 @@ object BazelWorkspaceDriver {
         srcChecksum = srcChecksum,
         snapshotSources = snapshotSources,
         neverlink = neverlink)))) ^^ {
-      (_:BazelWorkspaceDriver).bazelExternalDependencyFor(artifact) aka s"bazel workspace does not include import external rule target for $artifact"
+      (_: BazelWorkspaceDriver).bazelExternalDependencyFor(artifact) aka s"bazel workspace does not include external deps target for $artifact"
+    }
+
+  def includeLibraryTargetWith(artifact: Coordinates,
+                               runtimeDependencies: Set[Coordinates] = Set.empty,
+                               compileTimeDependenciesIgnoringVersion: Set[Coordinates] = Set.empty,
+                               exclusions: Set[Exclusion] = Set.empty,
+                               testOnly: Boolean = false,
+                               checksum: Option[String] = None,
+                               coordinatesToDep: Coordinates => BazelDep = resolveDepBy,
+                               srcChecksum: Option[String] = None,
+                               neverlink: Boolean = false,
+                               snapshotSources: Boolean = false): Matcher[BazelWorkspaceDriver] =
+
+    be_===(BazelExternalDependency(
+      importExternalRule = None,
+      libraryRule = Some(LibraryRule(
+        name = artifact.libraryRuleName,
+        testOnly = testOnly,
+      ))
+    )) ^^ {
+      (_: BazelWorkspaceDriver).bazelExternalDependencyFor(artifact) aka s"bazel workspace does not include external deps target for $artifact"
     }
 
   def notIncludeImportExternalRulesInWorkspace(coordinatesSet: Coordinates*): Matcher[BazelWorkspaceDriver] = notIncludeImportExternalRulesInWorkspace(coordinatesSet.toSet)
 
   def notIncludeImportExternalRulesInWorkspace(coordinatesSet: Set[Coordinates]): Matcher[BazelWorkspaceDriver] = coordinatesSet.map(notIncludeJarInWorkspace).reduce(_.and(_))
 
-  private def notIncludeJarInWorkspace(coordinates: Coordinates): Matcher[BazelWorkspaceDriver] = { driver:BazelWorkspaceDriver =>
+  private def notIncludeJarInWorkspace(coordinates: Coordinates): Matcher[BazelWorkspaceDriver] = { driver: BazelWorkspaceDriver =>
     (driver.bazelExternalDependencyFor(coordinates).importExternalRule.isEmpty, s"unexpected $coordinates were found in project")
   }
 
