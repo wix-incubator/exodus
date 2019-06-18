@@ -2,7 +2,7 @@ package com.wixpress.build.bazel
 
 import com.wixpress.build.maven.{Coordinates, Exclusion, Packaging}
 
-class RuleResolver(localWorkspaceName: String) {
+class RuleResolver(localWorkspaceName: String, testOnlyTargetsResolver: TestOnlyTargetsResolver) {
 
   def `for`( artifact: Coordinates,
              runtimeDependencies: Set[BazelDep] = Set.empty,
@@ -21,7 +21,8 @@ class RuleResolver(localWorkspaceName: String) {
           checksum,
           srcChecksum,
           snapshotSources,
-          neverlink = neverlink),
+          neverlink = neverlink,
+          testOnly = testOnlyTargetsResolver.isTestOnlyTarget(artifact)),
         ImportExternalRule.ruleLocatorFrom(artifact))
       case Packaging("pom") => RuleToPersist(
         LibraryRule.pomLibraryRule(artifact,

@@ -284,7 +284,7 @@ class ImportExternalTargetsFileTest extends SpecificationWithJUnit {
 
   val jars = List(artifactA, artifactB, artifactC)
 
-  val resolver = new RuleResolver("some_workspace")
+  val resolver = new RuleResolver("some_workspace", TestOnlyTargetsResolverForTest)
 
   def importExternalRuleWith(artifact: Coordinates,
                              runtimeDependencies: Set[Coordinates] = Set.empty,

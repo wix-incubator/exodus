@@ -33,7 +33,7 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
       synchronizer.sync(resolvedNodes)
 
       bazelWorkspace must includeImportExternalTargetWith(artifact = managedDependency.coordinates,
-          runtimeDependencies = Set(transitiveDependency.coordinates))
+        runtimeDependencies = Set(transitiveDependency.coordinates))
 
       bazelWorkspace must notIncludeImportExternalRulesInWorkspace(transitiveDependency.coordinates)
     }
@@ -56,14 +56,17 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
     }
 
     private def writerFor(localWorkspace: BazelLocalWorkspace, neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) = {
-      new BazelDependenciesWriter(localWorkspace, neverLinkResolver, importExternalLoadStatement = importExternalLoadStatement)
+      new BazelDependenciesWriter(localWorkspace,
+        maybeManagedDepsRepoPath = None,
+        neverLinkResolver,
+        importExternalLoadStatement = importExternalLoadStatement)
     }
 
     def givenAetherResolverForDependency(node: SingleDependency) = {
       val dependantDescriptor = ArtifactDescriptor.withSingleDependency(node.dependant.coordinates, node.dependency)
       val dependencyDescriptor = ArtifactDescriptor.rootFor(node.dependency.coordinates)
 
-      fakeMavenRepository.addArtifacts(Set(dependantDescriptor,dependencyDescriptor))
+      fakeMavenRepository.addArtifacts(Set(dependantDescriptor, dependencyDescriptor))
       fakeMavenRepository.start()
       new AetherMavenDependencyResolver(List(fakeMavenRepository.url))
     }
@@ -73,4 +76,5 @@ class DiffSynchronizerIT extends SpecificationWithJUnit {
     }
 
   }
+
 }

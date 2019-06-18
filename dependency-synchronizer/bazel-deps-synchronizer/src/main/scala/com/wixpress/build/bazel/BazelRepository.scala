@@ -6,4 +6,5 @@ trait BazelRepository {
 
   def persist(branchName: String, changedFilePaths: Set[String], message: String)
 
+  def repoPath: String
 }

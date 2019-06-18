@@ -8,4 +8,6 @@ class NoPersistenceBazelRepository(local: File) extends BazelRepository {
   override def resetAndCheckoutMaster(): BazelLocalWorkspace = new FileSystemBazelLocalWorkspace(local)
 
   override def persist(branchName: String, changedFilePaths: Set[String], message: String): Unit = ()
+
+  override def repoPath: String = local.pathAsString
 }
