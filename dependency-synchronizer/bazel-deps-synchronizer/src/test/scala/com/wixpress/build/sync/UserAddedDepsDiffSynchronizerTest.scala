@@ -192,17 +192,27 @@ class UserAddedDepsDiffSynchronizerTest extends SpecWithJUnit {
     val userAddedDepsDiffCalculator = new UserAddedDepsDiffCalculator(targetFakeBazelRepository, managedDepsFakeBazelRepository,
       resolver, false, _ => None, Set[Coordinates](), NeverLinkResolver())
 
-    def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator, DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(), importExternalLoadStatement))
+    def synchronizer = new UserAddedDepsDiffSynchronizer(userAddedDepsDiffCalculator,
+      DefaultDiffWriter(targetFakeBazelRepository,
+        maybeManagedDepsRepoPath = None,
+        NeverLinkResolver(),
+        importExternalLoadStatement))
 
     def writerFor() = {
-      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(), importExternalLoadStatement)
+      DefaultDiffWriter(targetFakeBazelRepository,
+        maybeManagedDepsRepoPath = None,
+        NeverLinkResolver(),
+        importExternalLoadStatement)
     }
   }
 
   trait linkableCtx extends ctx {
     def synchronizerWithLinkableArtifact(artifact: Coordinates) = new UserAddedDepsDiffSynchronizer(new UserAddedDepsDiffCalculator(
       targetFakeBazelRepository, managedDepsFakeBazelRepository, resolver, false, _ => None, Set[Coordinates](), NeverLinkResolver()),
-      DefaultDiffWriter(targetFakeBazelRepository, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)), importExternalLoadStatement))
+      DefaultDiffWriter(targetFakeBazelRepository,
+        maybeManagedDepsRepoPath = None,
+        NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)),
+        importExternalLoadStatement))
   }
 
   class AlwaysFailsDiffCalculator extends DiffCalculatorAndAggregator {

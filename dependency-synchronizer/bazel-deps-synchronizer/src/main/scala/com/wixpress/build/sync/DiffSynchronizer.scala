@@ -13,7 +13,11 @@ case class DiffSynchronizer(maybeBazelRepositoryWithManagedDependencies: Option[
                             importExternalLoadStatement: ImportExternalLoadStatement) {
 
   private val diffCalculator = DiffCalculator(maybeBazelRepositoryWithManagedDependencies, resolver, dependenciesRemoteStorage)
-  private val diffWriter = DefaultDiffWriter(targetRepository,neverLinkResolver, importExternalLoadStatement)
+  private val diffWriter = DefaultDiffWriter(
+    targetRepository,
+    maybeManagedDepsRepoPath = maybeBazelRepositoryWithManagedDependencies.map(_.repoPath),
+    neverLinkResolver,
+    importExternalLoadStatement)
 
   def sync(localNodes: Set[DependencyNode]): Unit = {
     val updatedLocalNodes = diffCalculator.calculateDivergentDependencies(localNodes)
@@ -26,7 +30,7 @@ case class DiffCalculator(maybeBazelRepositoryWithManagedDependencies: Option[Ba
                           resolver: MavenDependencyResolver,
                           dependenciesRemoteStorage: DependenciesRemoteStorage) {
   def calculateDivergentDependencies(localNodes: Set[DependencyNode]): Set[BazelDependencyNode] = {
-    val managedNodes = maybeBazelRepositoryWithManagedDependencies.map{ repoWithManaged =>
+    val managedNodes = maybeBazelRepositoryWithManagedDependencies.map { repoWithManaged =>
       val reader = new BazelDependenciesReader(repoWithManaged.resetAndCheckoutMaster())
       val managedDeps = reader.allDependenciesAsMavenDependencies().toList
 
@@ -49,6 +53,7 @@ trait DiffWriter {
 }
 
 case class DefaultDiffWriter(targetRepository: BazelRepository,
+                             maybeManagedDepsRepoPath: Option[String],
                              neverLinkResolver: NeverLinkResolver,
                              importExternalLoadStatement: ImportExternalLoadStatement) extends DiffWriter {
   private val log = LoggerFactory.getLogger(getClass)
@@ -56,7 +61,7 @@ case class DefaultDiffWriter(targetRepository: BazelRepository,
 
   def persistResolvedDependencies(divergentLocalDependencies: Set[BazelDependencyNode], libraryRulesNodes: Set[DependencyNode], localDepsToDelete: Set[DependencyNode]): Unit = {
     val localCopy = targetRepository.resetAndCheckoutMaster()
-    val writer = new BazelDependenciesWriter(localCopy, neverLinkResolver, importExternalLoadStatement)
+    val writer = new BazelDependenciesWriter(localCopy, maybeManagedDepsRepoPath, neverLinkResolver, importExternalLoadStatement)
     //can be removed at phase 2
     val nodesWithPomPackaging = libraryRulesNodes.filter(_.baseDependency.coordinates.packaging.value == "pom").map(_.toBazelNode)
 

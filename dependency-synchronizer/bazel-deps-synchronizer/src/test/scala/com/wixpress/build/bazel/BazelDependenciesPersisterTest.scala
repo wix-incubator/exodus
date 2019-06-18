@@ -78,6 +78,7 @@ class FakeBazelRepository() extends BazelRepository {
     commits.append(DummyCommit(branchName, changedFilePaths, message))
   }
 
+  override def repoPath: String = ""
 }
 
 case class DummyCommit(branchName: String, changedFilePaths: Set[String], message: String)

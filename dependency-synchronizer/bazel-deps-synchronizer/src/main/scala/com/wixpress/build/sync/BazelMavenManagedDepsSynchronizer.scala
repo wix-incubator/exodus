@@ -6,12 +6,13 @@ import com.wixpress.build.sync.ArtifactoryRemoteStorage.decorateNodesWithChecksu
 import com.wixpress.build.sync.BazelMavenManagedDepsSynchronizer._
 import org.slf4j.LoggerFactory
 
-class BazelMavenManagedDepsSynchronizer(mavenDependencyResolver: MavenDependencyResolver, targetRepository: BazelRepository,
+class BazelMavenManagedDepsSynchronizer(mavenDependencyResolver: MavenDependencyResolver,
+                                        managedDepsBazelRepository: BazelRepository,
                                         dependenciesRemoteStorage: DependenciesRemoteStorage,
                                         importExternalLoadStatement: ImportExternalLoadStatement) {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
-  private val persister = new BazelDependenciesPersister(PersistMessageHeader, targetRepository)
+  private val persister = new BazelDependenciesPersister(PersistMessageHeader, managedDepsBazelRepository)
 
   def sync(dependencyManagementSource: Coordinates, branchName: String): Unit = {
     val managedDependenciesFromMaven = mavenDependencyResolver.managedDependenciesOf(dependencyManagementSource).forceCompileScope
@@ -37,9 +38,12 @@ class BazelMavenManagedDepsSynchronizer(mavenDependencyResolver: MavenDependency
 
   def persist(dependenciesToUpdate: Set[BazelDependencyNode], branchName: String): Unit = {
     if (dependenciesToUpdate.nonEmpty) {
-      val localCopy = targetRepository.resetAndCheckoutMaster()
-
-      val modifiedFiles = new BazelDependenciesWriter(localCopy, importExternalLoadStatement = importExternalLoadStatement).writeDependencies(dependenciesToUpdate)
+      val localCopy = managedDepsBazelRepository.resetAndCheckoutMaster()
+      val modifiedFiles =
+        new BazelDependenciesWriter(
+          localCopy,
+          Some(managedDepsBazelRepository.repoPath),
+          importExternalLoadStatement = importExternalLoadStatement).writeDependencies(dependenciesToUpdate)
       persister.persistWithMessage(modifiedFiles, dependenciesToUpdate.map(_.baseDependency.coordinates), Some(branchName), asPr = true)
     }
   }
