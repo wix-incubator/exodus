@@ -124,6 +124,13 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).allThirdPartyImportTargetsFilesContent() must containTheSameElementsAs(Seq(thirdPartyImportFileContent, anotherThirdPartyImportFileContent))
     }
 
+    "Get All Third Party Import Targets Files content except manually managed files" in new blankWorkspaceCtx {
+      writeImportFiles(Map(someGroup -> thirdPartyImportFileContent))
+      writeCustomImportFiles(Map(anotherGroup -> anotherThirdPartyImportFileContent))
+
+      aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).allThirdPartyImportTargetsFilesContent() must containTheSameElementsAs(Seq(thirdPartyImportFileContent))
+    }
+
     "return empty workspace name if workspace does not exist" in new blankWorkspaceCtx {
       aFileSystemBazelLocalWorkspace(blankWorkspaceRootPath).localWorkspaceName mustEqual ""
     }
@@ -156,10 +163,22 @@ class FileSystemBazelLocalWorkspaceIT extends SpecificationWithJUnit {
     def writeImportFiles(files: Map[String, String]) = {
       val thirdPartyImportFilesDir = blankWorkspaceRootPath.createChild(thirdPartyImportFilesPathRoot, true)
 
-      files.foreach{f => val (group_name, content) = f
+      files.foreach { f =>
+        val (group_name, content) = f
         val thirdPartyImportFile = thirdPartyImportFilesDir.createChild(s"$group_name.bzl")
         thirdPartyImportFile.overwrite(content)
       }
+    }
+
+    def writeCustomImportFiles(files: Map[String, String]) = {
+      val thirdPartyCustomImportFilesDir = blankWorkspaceRootPath.createChild(thirdPartyImportFilesPathRoot + "/custom", true)
+
+      files.foreach { f =>
+        val (group_name, content) = f
+        val thirdPartyImportFile = thirdPartyCustomImportFilesDir.createChild(s"$group_name.bzl")
+        thirdPartyImportFile.overwrite(content)
+      }
+
     }
   }
 
