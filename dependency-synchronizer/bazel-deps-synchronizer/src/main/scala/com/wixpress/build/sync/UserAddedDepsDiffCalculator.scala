@@ -115,6 +115,7 @@ class UserAddedDepsDiffCalculator(bazelRepo: BazelRepository,
     // This is done for correctness. otherwise there could be a situation where nodes will be considered different just because one of the checksums is missing
     val divergentLocalDependencies = compareDependencyNodesSets(managedNodes, aggregateNodes, returnIdentical = false)
 
+    log.info(s"------------------------------      closure calculation done, next steps are LOCAL!     ---------------------------------------\n")
     log.info(s"started fetching sha256 checksums for (${divergentLocalDependencies.size}) divergent 3rd party dependencies from artifactory...")
     val decoratedNodes = decorateNodesWithChecksum(divergentLocalDependencies)(remoteStorage)
     log.info("completed fetching sha256 checksums.")
