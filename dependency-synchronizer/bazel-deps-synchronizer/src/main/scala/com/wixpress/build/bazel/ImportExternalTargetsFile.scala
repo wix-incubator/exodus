@@ -147,11 +147,6 @@ object ImportExternalTargetsFileReader {
     maybeMatch.map(_.group("neverlink")).contains("1")
   }
 
-  def extractTestOnly(ruleText: String) = {
-    val maybeMatch = TestOnlyFilter.findFirstMatchIn(ruleText)
-    maybeMatch.map(_.group("testonly_")).contains("1")
-  }
-
   private def extractsSnapshotSources(ruleText: String) = {
     val maybeMatch = SnapshotSourcesFilter.findFirstMatchIn(ruleText)
     maybeMatch.map(_.group("snapshot_sources")).contains("1")
@@ -191,8 +186,6 @@ object ImportExternalTargetsFileReader {
   val SrcSha256Filter = """(?s)srcjar_sha256\s*?=\s*?"(.+?)"""".r("src_checksum")
   val SnapshotSourcesFilter = """(?s)snapshot_sources\s*=\s*([0-1])""".r("snapshot_sources")
   val NeverlinkFilter = """(?s)neverlink\s*=\s*([0-1])""".r("neverlink")
-  val TestOnlyFilter = """(?s)testonly_\s*=\s*([0-1])""".r("testonly_")
-
 }
 
 case class ImportExternalTargetsFileReader(content: String) {
@@ -219,8 +212,7 @@ case class ImportExternalTargetsFileReader(content: String) {
       checksum = extractChecksum(ruleText),
       srcChecksum = extractSrcChecksum(ruleText),
       snapshotSources = extractsSnapshotSources(ruleText),
-      neverlink = extractNeverlink(ruleText),
-      testOnly = extractTestOnly(ruleText)))
+      neverlink = extractNeverlink(ruleText)))
     someRule
   }
 

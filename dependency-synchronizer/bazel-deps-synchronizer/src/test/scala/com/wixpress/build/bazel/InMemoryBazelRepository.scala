@@ -17,8 +17,6 @@ class InMemoryBazelRepository(bazelLocalWorkspace: BazelLocalWorkspace) extends 
   }
 
   def allChangesInBranch(branchName: String): List[Change] = branchToChangeLog(branchName).toList
-
-  override def repoPath: String = ""
 }
 
 case class Change(filePaths: Set[String], message: String)

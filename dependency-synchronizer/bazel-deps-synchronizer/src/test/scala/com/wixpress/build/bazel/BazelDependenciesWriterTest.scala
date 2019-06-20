@@ -23,9 +23,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
       val localWorkspace = new FakeLocalBazelWorkspace(localWorkspaceName = localWorkspaceName)
       val reader = new BazelDependenciesReader(localWorkspace)
 
-      def writer = writerFor(
-        localWorkspace,
-        testOnlyTargetsResolver = TestOnlyTargetsResolverForTest)
+      def writer = writerFor(localWorkspace)
 
       def labelOfPomArtifact(dependency: Dependency) = {
         val coordinates = dependency.coordinates
@@ -222,14 +220,8 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
       "write target with runtime dependencies from overrides" in new dependencyWithTransitiveDependencyofScope(MavenScope.Runtime) {
         def baseDependencyCoordinates = baseDependency.coordinates
-
         def customRuntimeDependency = "some_runtime_dep"
-
-        override def writer: BazelDependenciesWriter = writerFor(
-          localWorkspace,
-          testOnlyTargetsResolver = TestOnlyTargetsResolverForTest
-        )
-
+        override def writer: BazelDependenciesWriter = writerFor(localWorkspace)
         localWorkspace.setThirdPartyOverrides(
           runtimeOverrides(overrideCoordinatesFrom(baseDependencyCoordinates), customRuntimeDependency)
         )
@@ -247,13 +239,8 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
       "write target with compile time dependencies from overrides" in new dependencyWithTransitiveDependencyofScope(MavenScope.Compile) {
         def baseDependencyCoordinates = baseDependency.coordinates
-
         def customCompileTimeDependency = "some_compile_dep"
-
-        override def writer: BazelDependenciesWriter = writerFor(
-          localWorkspace,
-          testOnlyTargetsResolver = TestOnlyTargetsResolverForTest)
-
+        override def writer: BazelDependenciesWriter = writerFor(localWorkspace)
         localWorkspace.setThirdPartyOverrides(compileTimeOverrides(overrideCoordinatesFrom(baseDependencyCoordinates), customCompileTimeDependency))
 
         writer.writeDependencies(dependencyNode)
@@ -383,11 +370,7 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
 
         val artifact = someCoordinates("some-artifact")
 
-        def writer = writerFor(
-          localWorkspace,
-          NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)),
-          testOnlyTargetsResolver = TestOnlyTargetsResolverForTest
-        )
+        def writer = writerFor(localWorkspace, NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(artifact)))
 
         writer.writeDependencies(aRootBazelDependencyNode(asCompileDependency(artifact)))
 
@@ -407,11 +390,8 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
         val newTransitiveDependency = asCompileDependency(transitiveDep)
         val newDependencyNode = aBazelDependencyNode(asCompileDependency(artifact), Set(newTransitiveDependency))
 
-        def writer = writerFor(
-          localWorkspace,
-          NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(transitiveDep)),
-          testOnlyTargetsResolver = TestOnlyTargetsResolverForTest
-        )
+        def writer = writerFor(localWorkspace,
+          NeverLinkResolver(overrideGlobalNeverLinkDependencies = Set(transitiveDep)))
 
         writer.writeDependencies(newDependencyNode)
 
@@ -476,11 +456,9 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     }
   }
 
-  private def writerFor(localWorkspace: BazelLocalWorkspace,
-                        neverLinkResolver: NeverLinkResolver = NeverLinkResolver(),
-                        testOnlyTargetsResolver: TestOnlyTargetsResolver) = {
+  private def writerFor(localWorkspace: BazelLocalWorkspace, neverLinkResolver: NeverLinkResolver = NeverLinkResolver()) = {
     val statement = ImportExternalLoadStatement(importExternalRulePath = "@some_workspace//:import_external.bzl", importExternalMacroName = "some_import_external")
-    new BazelDependenciesWriter(localWorkspace, maybeManagedDepsRepoPath = None, neverLinkResolver, statement)
+    new BazelDependenciesWriter(localWorkspace, neverLinkResolver, statement)
   }
 
   private def containsExactlyOneRuleOfName(name: String): Matcher[String] = (countMatches(s"""name += +"$name"""".r, _: String)) ^^ equalTo(1)
@@ -566,8 +544,4 @@ class BazelDependenciesWriterTest extends SpecificationWithJUnit {
     def trimSpaces = string.replaceAll(" +", " ").replaceAll("(?m)^ ", "")
   }
 
-}
-
-object TestOnlyTargetsResolverForTest extends TestOnlyTargetsResolver {
-  override def isTestOnlyTarget(artifactCoordinates: Coordinates): Boolean = false
 }

@@ -87,19 +87,17 @@ object ImportExternalRule {
          checksum: Option[String] = None,
          srcChecksum: Option[String] = None,
          snapshotSources: Boolean = false,
-         neverlink: Boolean = false,
-         testOnly: Boolean = false): ImportExternalRule = {
+         neverlink: Boolean = false): ImportExternalRule = {
     ImportExternalRule(
       name = artifact.workspaceRuleName,
       artifact = artifact.serialized,
       compileTimeDeps = compileTimeDependencies.map(_.toLabel),
       runtimeDeps = runtimeDependencies.map(_.toLabel),
       exclusions = exclusions,
-      testOnly = testOnly,
       checksum = checksum,
       srcChecksum = srcChecksum,
       snapshotSources = snapshotSources,
-      neverlink = neverlink,
+      neverlink = neverlink
     )
   }
 

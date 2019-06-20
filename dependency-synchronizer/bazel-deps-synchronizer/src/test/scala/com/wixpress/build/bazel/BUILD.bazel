@@ -17,7 +17,6 @@ specs2_unit_test(
         "//models/maven-bazel-model-translation/src/main/scala/com/wix/build/maven/translation",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "@com_github_pathikrit_better_files_2_12",
-        "@com_wixpress_hoopoe_hoopoe_utest",
     ],
 )
 
