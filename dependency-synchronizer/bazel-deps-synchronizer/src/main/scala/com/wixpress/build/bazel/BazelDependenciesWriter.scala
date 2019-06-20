@@ -1,17 +1,14 @@
 package com.wixpress.build.bazel
 
 import com.wix.build.maven.translation.MavenToBazelTranslations.`Maven Coordinates to Bazel rules`
-import com.wixpress.build.bazel.ThirdPartyPaths._
 import com.wixpress.build.maven._
+import ThirdPartyPaths._
 
 class BazelDependenciesWriter(localWorkspace: BazelLocalWorkspace,
-                              maybeManagedDepsRepoPath: Option[String],
                               neverLinkResolver: NeverLinkResolver = NeverLinkResolver(),
                               importExternalLoadStatement: ImportExternalLoadStatement) {
-
   val importExternalTargetsFile = ImportExternalTargetsFile(importExternalLoadStatement, localWorkspace)
-  val testOnlyTargetsResolver = new SocialModeTestOnlyTargetsResolver(maybeManagedDepsRepoPath)
-  val ruleResolver = new RuleResolver(localWorkspace.localWorkspaceName, testOnlyTargetsResolver)
+  val ruleResolver = new RuleResolver(localWorkspace.localWorkspaceName)
   val annotatedDepNodeTransformer = new AnnotatedDependencyNodeTransformer(neverLinkResolver)
 
   def writeDependencies(dependencyNodes: BazelDependencyNode*): Set[String] =

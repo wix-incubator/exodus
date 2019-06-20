@@ -9,6 +9,7 @@ import org.specs2.matcher.Matcher
 import org.specs2.matcher.Matchers._
 
 class BazelWorkspaceDriver(bazelRepo: BazelLocalWorkspace) {
+  val ruleResolver = new RuleResolver(bazelRepo.localWorkspaceName)
 
   def writeDependenciesAccordingTo(dependencies: Set[MavenJarInBazel]): Unit = {
     val allJarsImports = dependencies.map(_.artifact) ++ dependencies.flatMap(_.runtimeDependencies)
@@ -75,14 +76,11 @@ object BazelWorkspaceDriver {
 
   implicit class BazelWorkspaceDriverExtensions(w: BazelLocalWorkspace) {
     def hasDependencies(dependencyNodes: BazelDependencyNode*) = {
-      new BazelDependenciesWriter(
-        localWorkspace = w,
-        maybeManagedDepsRepoPath = None,
+      new BazelDependenciesWriter(w,
         importExternalLoadStatement =
           ImportExternalLoadStatement(
             importExternalRulePath = "@some_workspace//:import_external.bzl",
-            importExternalMacroName = "some_import_external",
-          ))
+            importExternalMacroName = "some_import_external"))
         .writeDependencies(dependencyNodes.toSet)
     }
   }
@@ -103,7 +101,6 @@ object BazelWorkspaceDriver {
                                      runtimeDependencies: Set[Coordinates],
                                      compileTimeDependencies: Set[Coordinates],
                                      exclusions: Set[Exclusion],
-                                     testOnly: Boolean = false,
                                      checksum: Option[String],
                                      coordinatesToDep: Coordinates => BazelDep,
                                      srcChecksum: Option[String],
@@ -112,19 +109,13 @@ object BazelWorkspaceDriver {
     ImportExternalRule.of(artifact,
       runtimeDependencies.map(coordinatesToDep),
       compileTimeDependencies.map(coordinatesToDep),
-      exclusions,
-      testOnly = testOnly,
-      checksum = checksum,
-      srcChecksum = srcChecksum,
-      snapshotSources = snapshotSources,
-      neverlink = neverlink)
+      exclusions, checksum = checksum, srcChecksum = srcChecksum, snapshotSources = snapshotSources, neverlink = neverlink)
   }
 
   def includeImportExternalTargetWith(artifact: Coordinates,
                                       runtimeDependencies: Set[Coordinates] = Set.empty,
                                       compileTimeDependenciesIgnoringVersion: Set[Coordinates] = Set.empty,
                                       exclusions: Set[Exclusion] = Set.empty,
-                                      testOnly: Boolean = false,
                                       checksum: Option[String] = None,
                                       coordinatesToDep: Coordinates => BazelDep = resolveDepBy,
                                       srcChecksum: Option[String] = None,
@@ -137,7 +128,6 @@ object BazelWorkspaceDriver {
         runtimeDependencies = runtimeDependencies,
         compileTimeDependencies = compileTimeDependenciesIgnoringVersion,
         exclusions = exclusions,
-        testOnly = testOnly,
         checksum = checksum,
         coordinatesToDep,
         srcChecksum = srcChecksum,
