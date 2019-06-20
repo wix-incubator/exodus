@@ -108,7 +108,7 @@ class LibraryRuleTest extends SpecificationWithJUnit {
       )
 
       rule.serialized must containIgnoringSpaces(
-        """testonly_ = 1,""".stripMargin)
+        """testonly = 1,""".stripMargin)
     }
 
     "not serialize testonly for rules that do not need it" in {
@@ -117,7 +117,7 @@ class LibraryRuleTest extends SpecificationWithJUnit {
       )
 
       rule.serialized must not(containIgnoringSpaces(
-        """testonly_ = 1,""".stripMargin))
+        """testonly = 1,""".stripMargin))
     }
   }
   private def containIgnoringSpaces(target:String) = ((_: String).trimSpaces) ^^ contain(target.trimSpaces)

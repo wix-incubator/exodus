@@ -1,6 +1,5 @@
 package com.wixpress.build.bazel
 
-import com.wixpress.build.bazel.ImportExternalTargetsFileReader.TestOnlyFilter
 import com.wixpress.build.maven.Exclusion
 
 import scala.util.matching.Regex
@@ -52,9 +51,7 @@ class BazelBuildFile(val content: String) {
       exports = extractListByAttribute(ExportsFilter, ruleText),
       runtimeDeps = extractListByAttribute(RunTimeDepsFilter, ruleText),
       compileTimeDeps = extractListByAttribute(CompileTimeDepsFilter, ruleText),
-      exclusions = extractExclusions(ruleText),
-      testOnly = extractTestOnly(ruleText)
-    ))
+      exclusions = extractExclusions(ruleText)))
   }
 
   private def extractExclusions(ruleText: String) = {
@@ -69,18 +66,12 @@ class BazelBuildFile(val content: String) {
     listOfStringsFilter.findAllMatchIn(bracketsContentOrEmpty).map(_.group(StringsGroup)).toSet
   }
 
-  def extractTestOnly(ruleText: String) = {
-    val maybeMatch = TestOnlyFilter.findFirstMatchIn(ruleText)
-    maybeMatch.map(_.group("testonly_")).contains("1")
-  }
-
   private val BracketsContentGroup = "bracketsContent"
   private val ExportsFilter = """(?s)exports\s*?=\s*?\[(.+?)\]""".r(BracketsContentGroup)
   private val SrcsFilter = """(?s)srcs\s*?=\s*?\[(.+?)\]""".r(BracketsContentGroup)
   private val JarsFilter = """(?s)jars\s*?=\s*?\[(.+?)\]""".r(BracketsContentGroup)
   private val RunTimeDepsFilter = """(?s)runtime_deps\s*?=\s*?\[(.+?)\]""".r(BracketsContentGroup)
   private val CompileTimeDepsFilter = """(?s)\n\s*?deps\s*?=\s*?\[(.+?)\]""".r(BracketsContentGroup)
-  private val TestOnlyFilter = """(?s)testonly_\s*=\s*([0-1])""".r("testonly_")
 
   private val ExclusionsFilter = "(?m)^\\s*#\\s*EXCLUDES\\s+(.*?):(.*?)\\s*$".r("groupId", "artifactId")
 

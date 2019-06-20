@@ -32,7 +32,7 @@ case class LibraryRule(
 
   private def serializedTestOnly =
     if (testOnly) """
-      |    testonly_ = 1,""".stripMargin else ""
+      |    testonly = 1,""".stripMargin else ""
 
   private def serializedAttributes =
   toListEntry("jars",jars) +
@@ -68,15 +68,13 @@ object LibraryRule {
   def pomLibraryRule(artifact: Coordinates,
                      runtimeDependencies: Set[BazelDep],
                      compileTimeDependencies: Set[BazelDep],
-                     exclusions: Set[Exclusion],
-                     testOnly: Boolean = false): LibraryRule = {
+                     exclusions: Set[Exclusion]): LibraryRule = {
     LibraryRule(
       name = artifact.libraryRuleName,
       jars = Set.empty,
       exports = compileTimeDependencies.map(_.toLabel),
       runtimeDeps = runtimeDependencies.map(_.toLabel),
-      exclusions = exclusions,
-      testOnly = testOnly
+      exclusions = exclusions
     )
   }
 
