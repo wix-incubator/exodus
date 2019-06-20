@@ -4,14 +4,14 @@ import com.wixpress.build.maven.{Coordinates, Exclusion, Packaging}
 
 class RuleResolver(localWorkspaceName: String, testOnlyTargetsResolver: TestOnlyTargetsResolver) {
 
-  def `for`(artifact: Coordinates,
-            runtimeDependencies: Set[BazelDep] = Set.empty,
-            compileTimeDependencies: Set[BazelDep] = Set.empty,
-            exclusions: Set[Exclusion] = Set.empty,
-            checksum: Option[String] = None,
-            srcChecksum: Option[String] = None,
-            snapshotSources: Boolean = false,
-            neverlink: Boolean = false): RuleToPersist =
+  def `for`( artifact: Coordinates,
+             runtimeDependencies: Set[BazelDep] = Set.empty,
+             compileTimeDependencies: Set[BazelDep] = Set.empty,
+             exclusions: Set[Exclusion] = Set.empty,
+             checksum: Option[String] = None,
+             srcChecksum: Option[String] = None,
+             snapshotSources: Boolean = false,
+             neverlink: Boolean = false): RuleToPersist =
     artifact.packaging match {
       case Packaging("jar") => RuleToPersist(
         ImportExternalRule.of(artifact,
@@ -28,8 +28,7 @@ class RuleResolver(localWorkspaceName: String, testOnlyTargetsResolver: TestOnly
         LibraryRule.pomLibraryRule(artifact,
           runtimeDependencies,
           compileTimeDependencies,
-          exclusions,
-          testOnly = testOnlyTargetsResolver.isTestOnlyTarget(artifact)),
+          exclusions),
         LibraryRule.packageNameBy(artifact))
       case _ => throw new RuntimeException(s"no rule defined for ${artifact.serialized}")
     }
