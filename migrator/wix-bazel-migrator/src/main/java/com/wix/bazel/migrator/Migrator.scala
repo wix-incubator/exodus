@@ -3,7 +3,7 @@ package com.wix.bazel.migrator
 import java.nio.file.Files
 
 import better.files.FileOps
-import com.wix.bazel.migrator.BazelRcManagedDevEnvWriter.defaultOptions
+import com.wix.bazel.migrator.BazelRcManagedDevEnvWriter.defaultExodusOptions
 import com.wix.bazel.migrator.PreludeWriter._
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
 import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, MavenArchiveTargetsOverridesReader}
@@ -212,7 +212,7 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     ImportExternalLoadStatement(importExternalRulePath = "//:import_external.bzl", importExternalMacroName = "safe_exodus_maven_import_external")
 
   private def writeBazelRcManagedDevEnv: Unit = {
-    writeBazelRcManagedDevEnv(defaultOptions)
+    writeBazelRcManagedDevEnv(defaultExodusOptions)
   }
 
   private def writePrelude(supportScala: Boolean): Unit = {
