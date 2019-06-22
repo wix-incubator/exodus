@@ -5,7 +5,7 @@ import java.nio.file.Path
 import better.files.File
 import org.specs2.matcher.Matcher
 
-class BazelRcManagedDevEnvWriterIT extends BaseWriterIT {
+abstract class BazelRcManagedDevEnvWriterContract extends BaseWriterIT {
   "BazelRcWriter" should {
 
     "create file if it did not exist" in new ctx {
@@ -51,15 +51,17 @@ class BazelRcManagedDevEnvWriterIT extends BaseWriterIT {
 
       bazelRcManagedDevEnvWriter.resetFileWithDefaultOptions()
 
-      bazelRcManagedDevEnvPath must beRegularFile(withContentMatching = contentContainsExactlyLines(BazelRcManagedDevEnvWriter.defaultOptions))
+      bazelRcManagedDevEnvPath must beRegularFile(withContentMatching = contentContainsExactlyLines(defaultOptions))
     }
 
   }
 
   trait ctx extends baseCtx {
     val bazelRcManagedDevEnvPath: Path = path(withName = "tools/bazelrc/.bazelrc.managed.dev.env")
-    val bazelRcManagedDevEnvWriter: BazelRcManagedDevEnvWriter = new BazelRcManagedDevEnvWriter(repoRoot, BazelRcManagedDevEnvWriter.defaultOptions)
+    val bazelRcManagedDevEnvWriter: BazelRcManagedDevEnvWriter = new BazelRcManagedDevEnvWriter(repoRoot, defaultOptions)
   }
+
+  val defaultOptions: List[String]
 
   def contentContainsLine(line: String): Matcher[String] = contentContainsLines(List(line))
 
