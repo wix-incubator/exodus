@@ -7,3 +7,4 @@ target
 **/.settings
 .ijwb
 /bazel-*
+.DS_Store
