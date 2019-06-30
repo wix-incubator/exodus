@@ -4,14 +4,18 @@ You can run the Exodus migration locally or on [Jenkins](how-to-run-migration-je
 
 Here's the info you need to run it locally.
 
-### Clone the Exodus repo
+### Download the latest release
 
-Clone the following repository:
-https://github.com/wix-incubator/exodus
+1. go to releases page: https://github.com/wix/exodus/releases
 
-### Build the Exodus migration CLI
+2. download the latest release exodus.jar - e.g. https://github.com/wix/exodus/releases/download/v0.1/exodus.jar
 
-Use this command line:  
+#### You can also build Exodus from scratch:
+
+1. Clone the following repository:
+https://github.com/wix/exodus
+
+2. Use this command line to build:  
 ```
 cd <PATH TO YOUR LOCAL EXODUS REPO>
 bazel build //migrator/wix-bazel-migrator:migrator_cli_deploy.jar
@@ -32,7 +36,6 @@ If you chose Zinc to analyze the code, the Maven output includes the dependency 
 
 ### Run Exodus
 
-Run this command line in the directory where you cloned the Exodus repo.
 Be sure to replace the following path locations where indicated:
 * Path to the local .m2 repository
 * Path to the target repository
@@ -40,5 +43,7 @@ Be sure to replace the following path locations where indicated:
 Also change the `Drepo.url` to your target repository.
 
 ```
-$ java -Xmx12G -Dskip.classpath=false -Dskip.transformation=false -Dlocal.maven.repository.path=<PATH-TO-LOCAL> .m2 REPO  -Dfail.on.severe.conflicts=true -Drepo.root=<TARGET-REPO> -Drepo.url=git@github.com:YOUR-ORG/target-repo.git -jar bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar
+$ java -Xmx12G -Dskip.classpath=false -Dskip.transformation=false -Dlocal.maven.repository.path=<PATH-TO-LOCAL> .m2 REPO  -Dfail.on.severe.conflicts=true -Drepo.root=<TARGET-REPO> -Drepo.url=git@github.com:YOUR-ORG/target-repo.git -jar <path/to/downloads>/exodus.jar
 ```
+
+* If you've built exodus from scratch change <path/to/downloads>/exodus.jar to bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar to the donwload and run the command line in the directory where you cloned the Exodus repo.
