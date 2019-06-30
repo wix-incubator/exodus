@@ -6,14 +6,14 @@ Here's the info you need to run it locally.
 
 ### Download the latest release
 
-1. go to releases page: https://github.com/wix/exodus/releases
+1. go to releases page: [https://github.com/wix/exodus/releases](https://github.com/wix/exodus/releases)
 
-2. download the latest release exodus.jar - e.g. https://github.com/wix/exodus/releases/download/v0.1/exodus.jar
+2. download the latest release exodus.jar - e.g. [https://github.com/wix/exodus/releases/download/v0.1/exodus.jar](https://github.com/wix/exodus/releases/download/v0.1/exodus.jar)
 
 #### You can also build Exodus from scratch:
 
 1. Clone the following repository:
-https://github.com/wix/exodus
+[https://github.com/wix/exodus](https://github.com/wix/exodus)
 
 2. Use this command line to build:  
 ```
