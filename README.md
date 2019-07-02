@@ -9,3 +9,5 @@ Easily migrate your JVM code from Maven to Bazel.
 See the documentation [here](https://wix.github.io/exodus/). 
 
 ![exodus demo](https://github.com/wix/exodus/blob/master/docs/assets/img/exodus-demo.gif)
+
+current supported bazel version: 0.27.0
