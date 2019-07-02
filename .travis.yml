@@ -6,6 +6,8 @@ jdk:
 env:
   - V=0.27.0
 
+dist: xenial
+
 before_install:
   - |
     URL="https://github.com/bazelbuild/bazel/releases/download/${V}/bazel-${V}-installer-linux-x86_64.sh"
