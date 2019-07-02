@@ -10,7 +10,6 @@ dist: xenial
 
 before_install:
   - |
-    sudo apt-get install libstdc++6
     URL="https://github.com/bazelbuild/bazel/releases/download/${V}/bazel-${V}-installer-linux-x86_64.sh"
     wget -O install.sh "${URL}"
     chmod +x install.sh
