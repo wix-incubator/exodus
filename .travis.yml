@@ -6,6 +6,7 @@ jdk:
 env:
   - V=0.27.0
 
+dist: xenial
 
 before_install:
   - |
