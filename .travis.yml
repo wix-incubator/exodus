@@ -4,7 +4,7 @@ jdk:
   - oraclejdk8
 
 env:
-  - V=0.26.1
+  - V=0.27.0
 
 before_install:
   - |

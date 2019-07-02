@@ -16,6 +16,7 @@ scala_toolchain(
         "-Ywarn-unused-import",
         "-Ywarn-unused",
     ],
+    plus_one_deps_mode = "on",
     visibility = ["//visibility:public"],
 )
 

@@ -2,8 +2,8 @@ workspace(name = "exodus")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl","git_repository")
 
-protobuf_version="66dc42d891a4fc8e9190c524fd67961688a37bbe"
-protobuf_version_sha256="983975ab66113cbaabea4b8ec9f3a73406d89ed74db9ae75c74888e685f956f8"
+protobuf_version="09745575a923640154bcf307fba8aedff47f240a"
+protobuf_version_sha256="416212e14481cff8fd4849b1c1c1200a7f34808a54377e22d7447efdf54ad758"
 
 http_archive(
     name = "com_google_protobuf",
@@ -12,9 +12,18 @@ http_archive(
     sha256 = protobuf_version_sha256,
 )
 
+# bazel-skylib 0.8.0 released 2019.03.20 (https://github.com/bazelbuild/bazel-skylib/releases/tag/0.8.0)
+skylib_version = "0.8.0"
+http_archive(
+    name = "bazel_skylib",
+    type = "tar.gz",
+    url = "https://github.com/bazelbuild/bazel-skylib/releases/download/{}/bazel-skylib.{}.tar.gz".format (skylib_version, skylib_version),
+    sha256 = "2ef429f5d7ce7111263289644d233707dba35e39696377ebab8b0bc701f7818e",
+)
+
 scala_version = "2.12.6"
-rules_scala_version="c904132da6bb421a9106c79dd02bb31f228994b9" # update this as needed
-rules_scala_version_sha256="1f287926bab41b95ef6757a3f4d5c935c8f0dbfcdd82c8e8e209859115385a3a"
+rules_scala_version="69d3c5b5d9b51537231746e93b4383384c9ebcf4" # update this as needed
+rules_scala_version_sha256="925f693aecb0d50c4dbe27d8c6b83a8d9865fa61f326f00fd6b5d09bd599e137"
 http_archive(
     name = "io_bazel_rules_scala",
     url = "https://github.com/bazelbuild/rules_scala/archive/%s.zip"%rules_scala_version,
