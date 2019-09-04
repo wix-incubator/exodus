@@ -43,7 +43,7 @@ Be sure to replace the following path locations where indicated:
 Also change the `Drepo.url` to your target repository.
 
 ```
-$ java -Xmx12G -Dskip.classpath=false -Dskip.transformation=false -Dlocal.maven.repository.path=<PATH-TO-LOCAL> .m2 REPO  -Dfail.on.severe.conflicts=true -Drepo.root=<TARGET-REPO> -Drepo.url=git@github.com:YOUR-ORG/target-repo.git -jar <path/to/downloads>/exodus.jar
+$ java -Xmx12G -Dskip.classpath=false -Dskip.transformation=false -Dlocal.maven.repository.path=<PATH-TO-LOCAL-.m2-REPO>  -Dfail.on.severe.conflicts=true -Drepo.root=<TARGET-REPO> -Drepo.url=git@github.com:YOUR-ORG/target-repo.git -jar <path/to/downloads>/exodus.jar
 ```
 
 * If you've built exodus from scratch change <path/to/downloads>/exodus.jar to bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar to the donwload and run the command line in the directory where you cloned the Exodus repo.
