@@ -1,8 +1,8 @@
 language: java
 
 jdk:
-  - oraclejdk8
-
+  - openjdk8
+  
 env:
   - V=0.27.0
 
