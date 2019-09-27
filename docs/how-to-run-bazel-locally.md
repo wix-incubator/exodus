@@ -47,3 +47,5 @@ $ java -Xmx12G -Dskip.classpath=false -Dskip.transformation=false -Dlocal.maven.
 ```
 
 * If you've built exodus from scratch change <path/to/downloads>/exodus.jar to bazel-bin/migrator/wix-bazel-migrator/migrator_cli_deploy.jar to the donwload and run the command line in the directory where you cloned the Exodus repo.
+
+* make sure to us FULL absolute paths for `-Dlocal.maven.repository.path` and `-Drepo.root`
