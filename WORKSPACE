@@ -22,8 +22,8 @@ http_archive(
 )
 
 scala_version = "2.12.6"
-rules_scala_version="69d3c5b5d9b51537231746e93b4383384c9ebcf4" # update this as needed
-rules_scala_version_sha256="925f693aecb0d50c4dbe27d8c6b83a8d9865fa61f326f00fd6b5d09bd599e137"
+rules_scala_version="0f89c210ade8f4320017daf718a61de3c1ac4773" # update this as needed
+rules_scala_version_sha256="37eb013ea3e6a940da70df43fe2dd6f423d1ac0849042aa586f9ac157321018d"
 http_archive(
     name = "io_bazel_rules_scala",
     url = "https://github.com/bazelbuild/rules_scala/archive/%s.zip"%rules_scala_version,
