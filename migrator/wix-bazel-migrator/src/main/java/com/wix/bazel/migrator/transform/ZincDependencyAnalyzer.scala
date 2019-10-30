@@ -14,7 +14,9 @@ class ZincDepednencyAnalyzer(repoPath: Path) extends DependencyAnalyzer {
     // TODO: change type of passed module to not include dependencies!!!
     val strippedModule = module.copy(dependencies = emptyDependencies)
 
-    allCodeForStrippedModule(strippedModule)
+    val allCode = allCodeForStrippedModule(strippedModule)
+    println(s">>>> allCode: $allCode")
+    allCode
   }
 
   private def allCodeForStrippedModule(strippedModule: SourceModule) = {
