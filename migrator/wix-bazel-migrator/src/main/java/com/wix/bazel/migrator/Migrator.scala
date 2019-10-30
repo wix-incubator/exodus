@@ -110,15 +110,15 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
 
   private[migrator] def dependencyAnalyzer = {
     val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(sourceDependencyAnalyzer)
-    val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
+//    val cachingCodotaDependencyAnalyzer = new CachingEagerEvaluatingCodotaDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer)
     if (wixFrameworkMigration)
       new CompositeDependencyAnalyzer(
-        cachingCodotaDependencyAnalyzer,
+        exceptionFormattingDependencyAnalyzer,
         new ManualInfoDependencyAnalyzer(sourceModules),
         new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot))
     else
       new CompositeDependencyAnalyzer(
-        cachingCodotaDependencyAnalyzer,
+        exceptionFormattingDependencyAnalyzer,
         new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot))
   }
 
