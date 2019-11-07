@@ -10,7 +10,7 @@ Maven runs builds of coarse-grained code units ("modules"), which is partly what
 
 Exodus creates these smaller packages using a dependency analysis index. But first you have to use a tool to analyze the code to determine all the dependencies between the code units. 
 
-These are the avialable tools we have so far. As this is an open source project, we'd be happy to hear from you regarding any other options.
+These are the available tools we have so far. As this is an open source project, we'd be happy to hear from you regarding any other options.
 
 ### Scala-Maven-Plugin with Zinc (open source path)
 Exodus can use Zinc's dependency analysis output. All you have to do is configure a [Scala-Maven-plugin](http://davidb.github.io/scala-maven-plugin/index.html) to use incremental mode with Zinc as the [incremental compiler](http://davidb.github.io/scala-maven-plugin/example_incremental.html). Zinc provides dependency files as its output.
