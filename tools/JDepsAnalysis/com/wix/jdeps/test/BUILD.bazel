@@ -1,0 +1,9 @@
+package(default_visibility = ["//visibility:public"])
+
+sources()
+specs2_unit_test(
+    name = "test",
+    srcs = [
+        ":sources",
+    ],
+)

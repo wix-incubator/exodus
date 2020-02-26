@@ -1,0 +1,17 @@
+package(default_visibility = ["//visibility:public"])
+
+sources()
+
+scala_library(
+    name = "jdeps",
+    srcs = [
+        ":sources",
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model:model",
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis:analysis",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/transform_build/maven/analysis",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven:maven",
+        ]
+)
