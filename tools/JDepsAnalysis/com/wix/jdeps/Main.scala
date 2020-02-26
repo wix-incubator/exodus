@@ -44,7 +44,7 @@ trait JDepsParser {
 
 class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDepsAnalyzer{
   val jDepsParser:JDepsParser = ???
-  val jDepsCommand:JDepsCommand = ???
+  val jDepsCommand:JDepsCommand = new JDepsCommandImpl(repoPath)
 
   def jarPath(module:SourceModule):String = ???
 
