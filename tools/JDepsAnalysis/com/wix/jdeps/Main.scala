@@ -10,12 +10,10 @@ import com.wixpress.build.maven.{AetherMavenDependencyResolver, Dependency}
 case class JVMClass(fqnClass: String,
                     relativePathFromMonoRepoRoot: String,
                    ) {
-  val jarPath = ???
-  val mainJarPath = ???
-  val testJarPath = ???
+  val jarPath = {}
+  val mainJarPath = {}
+  val testJarPath = {}
 }
-case class ModuleDependencies(directDependencies: Set[Dependency] = Set.empty,
-                              allDependencies: Set[Dependency] = Set.empty)
 
 case class CodePath(module: SourceModule,
                             relativeSourceDirPathFromModuleRoot: String,
@@ -55,7 +53,7 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
 
   def extractJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] = {
     val a = jDepsCommand.analyzeClassesDependenciesPerJar(jarPath(module),filterRepoModules(module.dependencies.allDependencies).map(jarPath).toList)
-    jDepsParser.convert(a)
+    jDepsParser.convert(a, module.relativePathFromMonoRepoRoot)
   }
 
   override def analyze(module: SourceModule): Set[Code] = {
