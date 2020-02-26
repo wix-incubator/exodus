@@ -10,4 +10,4 @@ See the documentation [here](https://wix.github.io/exodus/).
 
 ![exodus demo](https://github.com/wix/exodus/blob/master/docs/assets/img/exodus-demo.gif)
 
-current supported bazel version: 0.27.0
+current supported bazel version: see `.bazelversion` file
