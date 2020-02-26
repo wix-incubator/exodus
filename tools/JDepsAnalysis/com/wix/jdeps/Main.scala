@@ -41,7 +41,7 @@ trait JDepsAnalyzer {
 }
 
 trait JDepsParser {
-  def convert(deps: ClassDependencies): Map[JVMClass, Set[JVMClass]]
+  def convert(deps: ClassDependencies, relativePathFromMonoRepoRoot: String): Map[JVMClass, Set[JVMClass]]
 }
 
 class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDepsAnalyzer{
