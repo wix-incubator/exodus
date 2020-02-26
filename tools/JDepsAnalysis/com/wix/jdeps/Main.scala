@@ -46,9 +46,23 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
   val jDepsParser:JDepsParser = ???
   val jDepsCommand:JDepsCommand = new JDepsCommandImpl(repoPath)
 
-  def jarPath(module:SourceModule):String = ???
+  def jarPath(module:SourceModule):String =  {
+    // maybe there's a better way then string manipulation
+    module.relativePathFromMonoRepoRoot + s"target/${module.coordinates.artifactId}-${module.coordinates.version}.jar"
+  }
 
-  def filterRepoModules(deps: Set[Dependency]):Set[SourceModule] = ???
+  def classesJar(module:SourceModule):String =  {
+    module.relativePathFromMonoRepoRoot + s"target/classes"
+  }
+
+  def testClassesJar(module:SourceModule):String =  {
+    module.relativePathFromMonoRepoRoot + s"target/test-classes"
+  }
+
+  def filterRepoModules(deps: Set[Dependency]):Set[SourceModule] = modules.filter(
+    m => deps.map(_.coordinates).contains(m.coordinates)
+  )
+
   def convertToCode(map: Map[JVMClass, Set[JVMClass]]): Set[Code] = ???
 
   def extractJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] = {
