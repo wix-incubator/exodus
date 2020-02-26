@@ -4,7 +4,7 @@ jdk:
   - openjdk8
   
 env:
-  - V=0.27.0
+  - V=2.1.1
 
 dist: xenial
 
