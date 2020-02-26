@@ -6,4 +6,6 @@ specs2_unit_test(
     srcs = [
         ":sources",
     ],
+    deps = ["//tools/JDepsAnalysis/com/wix/jdeps:jdeps",
+            "//models/maven-model/src/main/scala/com/wixpress/build/maven"]
 )

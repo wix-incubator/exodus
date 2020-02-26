@@ -2,22 +2,63 @@ package com.wix.jdeps.test
 
 import java.nio.file.Files
 
+import com.wix.bazel.migrator.model.{ModuleDependencies, SourceModule}
 import com.wix.jdeps.{ClassDependencies, JDepsParser, JVMClass}
+import com.wixpress.build.maven.Coordinates
 import org.specs2.mutable.SpecificationWithJUnit
+import scala.collection.JavaConverters._
+
+class JDepsParserImpl(sourceModules: Set[SourceModule]) extends JDepsParser {
+  override def convert(deps: ClassDependencies, relativePathFromMonoRepoRoot: String): Map[JVMClass, Set[JVMClass]] = {
+    val lines = Files.readAllLines(deps.dotFile).asScala.toList
+//    lines.drop(2).find()
+    Map.empty
+  }
+}
 
 class JDepsParserTest extends SpecificationWithJUnit {
   "JDepsParser" should {
-    "convert successfully the following file" in {
+    "remove 3rd party deps" in {
       val jdepsOutput = Files.createTempFile("jdeps-output", ".txt")
 
 
+      Files.write(jdepsOutput, jdepsOutputContent.getBytes )
 
-      val parser = new JDepsParser {
-        override def convert(deps: ClassDependencies): Map[JVMClass, Set[JVMClass]] = {
-          Map.empty
-        }
-      }
-      parser.convert(ClassDependencies(jdepsOutput)) mustEqual
+      val coreCommon = SourceModule("commons/core-common", Coordinates("exodus-demo.commons", "core-common", "0.0.1-SNAPSHOT"), Set.empty, ModuleDependencies())
+      val coreBusinessSomeService = SourceModule("products/some-service/core-business-some-service", Coordinates("exodus-demo.products", "core-business-some-service", "0.0.1-SNAPSHOT"), Set.empty, ModuleDependencies())
+      val coreRepositorySomeRepo = SourceModule("commons/core-common", Coordinates("exodus-demo.repositories", "core-repository-some-repo", "0.0.1-SNAPSHOT"), Set.empty, ModuleDependencies())
+      val parser = new JDepsParserImpl(Set(
+        coreCommon,
+        coreBusinessSomeService,
+        coreRepositorySomeRepo,
+      ))
+      val relativePath = "products/some-service/core-business-some-service"
+      parser.convert(ClassDependencies(jdepsOutput), relativePath) mustEqual Map(
+        JVMClass("exodus.demo.core.business.some.service.impl.DefaultSomeService", relativePath) -> Set(
+          JVMClass("exodus.demo.commons.core.something.SomeCommonBusinessUtil", coreCommon.relativePathFromMonoRepoRoot),
+          JVMClass("exodus.demo.core.business.some.service.api.SomeService", coreBusinessSomeService.relativePathFromMonoRepoRoot),
+          JVMClass("exodus.demo.core.repositories.some.repo.SomeRepository", coreRepositorySomeRepo.relativePathFromMonoRepoRoot),
+        )
+      )
     }
   }
+
+  val jdepsOutputContent = """
+                             |digraph "core-business-some-service-0.0.1-SNAPSHOT.jar" {
+                             |    // Path: products/some-service/core-business-some-service/target/core-business-some-service-0.0.1-SNAPSHOT.jar
+                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration" -> "java.lang.Object";
+                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration" -> "org.springframework.context.annotation.ComponentScan (not found)";
+                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration" -> "org.springframework.context.annotation.Configuration (not found)";
+                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration" -> "org.springframework.context.annotation.Import (not found)";
+                             |   "exodus.demo.core.business.some.service.api.SomeService" -> "java.lang.Object";
+                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "exodus.demo.commons.core.something.SomeCommonBusinessUtil (core-common-0.0.1-SNAPSHOT.jar)";
+                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "exodus.demo.core.business.some.service.api.SomeService (core-business-some-service-0.0.1-SNAPSHOT.jar)";
+                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "exodus.demo.core.repositories.some.repo.SomeRepository (core-repository-some-repo-0.0.1-SNAPSHOT.jar)";
+                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "java.lang.IllegalStateException";
+                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "java.lang.Object";
+                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "java.lang.String";
+                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "org.springframework.stereotype.Service (not found)";
+                             |}
+                             |
+                             |""".stripMargin
 }
