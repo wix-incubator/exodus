@@ -85,16 +85,14 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
         throw new RuntimeException(s"Cannot find location of $jvmClass"))
   }
 
-  private def convertSingleToCode(jvmClass: JVMClass, deps: Set[JVMClass], testCode: Boolean = false): Set[Code] = {
-    val codePath = toCodeModule(jvmClass)
-    deps.map {
-      d => Code(codePath, dependencies = deps.map(d => CodeDependency(toCodeModule(d), testCode)).toList)
-    }
+  private def convertSingleToCode(jvmClass: JVMClass, deps: Set[JVMClass], testCode: Boolean = false): Code = {
+    val codePath = toCodeModule(jvmClass, testCode)
+    Code(codePath, dependencies = deps.map(d => CodeDependency(toCodeModule(d), testCode)).toList)
   }
 
 
   private def convertToCode(codeMap: Map[JVMClass, Set[JVMClass]], testCode: Boolean = false): Set[Code] = {
-    codeMap.flatMap {
+    codeMap.map {
       case (jvmClass, deps) => convertSingleToCode(jvmClass, deps, testCode)
     }.toSet
   }
@@ -118,9 +116,9 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
     {
       val prodMap = extractJvmClasses(module)
       val prodCode = convertToCode(prodMap)
-      //val testMap = extractTestJvmClasses(module)
-      //val testCode = convertToCode(testMap, testCode = true)
-      prodCode //++ testCode
+      val testMap = extractTestJvmClasses(module)
+      val testCode = convertToCode(testMap, testCode = true)
+      prodCode ++ testCode
     }
   }
 
