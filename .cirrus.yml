@@ -1,5 +1,5 @@
 container:
-  image: l.gcr.io/google/bazel:latest
+  image: l.gcr.io/google/bazel:2.1.0
 task:
   test_script:
   - bazel test -k --remote_http_cache=http://$CIRRUS_HTTP_CACHE_HOST //...
