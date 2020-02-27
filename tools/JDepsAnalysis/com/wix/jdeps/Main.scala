@@ -8,12 +8,7 @@ import com.wixpress.build.maven.{AetherMavenDependencyResolver, Dependency, Mave
 
 
 case class JVMClass(fqnClass: String,
-                    sourceModule: SourceModule,
-                   ) {
-  val jarPath = {}
-  val mainJarPath = {}
-  val testJarPath = {}
-}
+                    sourceModule: SourceModule)
 
 case class CodePath(module: SourceModule,
                     relativeSourceDirPathFromModuleRoot: String,
@@ -33,19 +28,14 @@ trait JDepsCommand {
 
 trait JDepsAnalyzer {
   def analyze(module: SourceModule): Set[Code]
-
-  //private:
-  //  def classToClassDependencies(module: SourceModule ): Map[JVMClass, Set[JVMClass]]
-
-  //  def execute()
 }
 
 trait JDepsParser {
-  def convert(deps: ClassDependencies, relativePathFromMonoRepoRoot: String): Map[JVMClass, Set[JVMClass]]
+  def convert(deps: ClassDependencies, currentSourceModule: SourceModule): Map[JVMClass, Set[JVMClass]]
 }
 
 class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDepsAnalyzer {
-  val jDepsParser: JDepsParser = ???
+  val jDepsParser: JDepsParser = new JDepsParserImpl(modules)
   val jDepsCommand: JDepsCommand = new JDepsCommandImpl(repoPath)
 
   def jarPath(module: SourceModule): String = {
@@ -94,7 +84,7 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
         throw new RuntimeException(s"Cannot find location of $jvmClass"))
   }
 
-  private def convertToCode(jvmClass: JVMClass, deps: Set[JVMClass], testCode: Boolean = false): Set[Code] = {
+  private def convertSingleToCode(jvmClass: JVMClass, deps: Set[JVMClass], testCode: Boolean = false): Set[Code] = {
     val codePath = toCodeModule(jvmClass)
     deps.map {
       d => Code(codePath, dependencies = deps.map(d => CodeDependency(toCodeModule(d), testCode)).toList)
@@ -104,20 +94,20 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
 
   private def convertToCode(codeMap: Map[JVMClass, Set[JVMClass]], testCode: Boolean = false): Set[Code] = {
     codeMap.flatMap {
-      case (jvmClass, deps) => convertToCode(jvmClass, deps, testCode)
+      case (jvmClass, deps) => convertSingleToCode(jvmClass, deps, testCode)
     }.toSet
   }
 
   def extractJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] = {
-    val jarPath = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile)) + module).map(jarPath).toList
-    val productionDeps = jDepsCommand.analyzeClassesDependenciesPerJar(classesPath(module), jarPath)
-    jDepsParser.convert(productionDeps, module.relativePathFromMonoRepoRoot)
+    val pathToJar = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile)) + module).map(jarPath).toList
+    val productionDeps = jDepsCommand.analyzeClassesDependenciesPerJar(classesPath(module), pathToJar)
+    jDepsParser.convert(productionDeps, module)
   }
 
   def extractTestJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] = {
-    val jarPath = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile, MavenScope.Test)) + module).map(jarPath).toList
-    val testDeps = jDepsCommand.analyzeClassesDependenciesPerJar(testClassesPath(module), jarPath)
-    jDepsParser.convert(testDeps, module.relativePathFromMonoRepoRoot)
+    val pathToJar = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile, MavenScope.Test)) + module).map(jarPath).toList
+    val testDeps = jDepsCommand.analyzeClassesDependenciesPerJar(testClassesPath(module), pathToJar)
+    jDepsParser.convert(testDeps, module)
   }
 
   override def analyze(module: SourceModule): Set[Code] = {
@@ -133,7 +123,7 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
 object Simulator extends App {
   final val user = "natans"
   private val root = s"/Users/$user"
-  val localMavenRepository = new LocalMavenRepository(s"$root/.m2/repostiory")
+  val localMavenRepository = new LocalMavenRepository(s"$root/.m2/repository")
   val aetherResolver = new AetherMavenDependencyResolver(List(localMavenRepository).map(_.url))
   private val repoRoot = Paths.get(s"$root/workspace/poc/exodus-demo")
   private val sourceModules = SourceModules(repoRoot, aetherResolver).codeModules
