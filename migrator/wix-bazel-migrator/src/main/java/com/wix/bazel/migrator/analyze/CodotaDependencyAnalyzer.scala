@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.analyze
 
 import java.nio.file.{Files, Path, Paths}
 
@@ -8,13 +8,14 @@ import com.codota.service.model.DependencyInfo
 import com.codota.service.model.DependencyInfo.OptionalInternalDependency
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.wix.bazel.migrator.Retry._
+import com.wix.bazel.migrator.analyze.CodotaDependencyAnalyzer._
 import com.wix.bazel.migrator.model._
 import com.wix.bazel.migrator.overrides.GeneratedCodeOverridesReader
-import com.wix.bazel.migrator.transform.AnalyzeFailure.MissingAnalysisInCodota
-import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer._
-import com.wix.bazel.migrator.transform.FailureMetadata.InternalDepMissingExtended
+import com.wix.bazel.migrator.transform.failures.AnalyzeFailure.MissingAnalysisInCodota
+import com.wix.bazel.migrator.transform.failures.FailureMetadata.InternalDepMissingExtended
+import com.wix.bazel.migrator.transform.failures.{AnalyzeException, AnalyzeFailure, FailureMetadata}
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
+import com.wix.bazel.migrator.utils.Retry._
 import com.wixpress.build.maven
 import com.wixpress.build.maven.{Coordinates, MavenScope}
 import org.slf4j.LoggerFactory

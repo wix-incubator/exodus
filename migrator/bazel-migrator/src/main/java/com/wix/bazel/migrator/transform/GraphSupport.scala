@@ -1,5 +1,6 @@
 package com.wix.bazel.migrator.transform
 
+import com.wix.bazel.migrator.analyze.Code
 import org.jgrapht
 import org.jgrapht.graph.DefaultDirectedGraph
 

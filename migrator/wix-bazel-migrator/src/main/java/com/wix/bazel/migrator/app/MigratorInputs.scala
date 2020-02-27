@@ -1,14 +1,14 @@
-package com.wix.bazel.migrator
+package com.wix.bazel.migrator.app
 
 import java.io
 import java.net.URL
-import java.nio.file.{Files, Path}
+import java.nio.file.Path
 import java.time.temporal.ChronoUnit
 
-import better.files.File
+import com.wix.bazel.migrator.analyze.{CodotaDependencyAnalyzer, ZincDepednencyAnalyzer}
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.bazel.migrator.transform.{CodotaDependencyAnalyzer, ZincDepednencyAnalyzer}
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
+import com.wix.bazel.migrator.{HighestVersionProvidedScopeConflictResolution, Persister, RunConfiguration}
 import com.wix.build.maven.analysis._
 import com.wixpress.build.bazel.workspaces.WorkspaceName
 import com.wixpress.build.maven

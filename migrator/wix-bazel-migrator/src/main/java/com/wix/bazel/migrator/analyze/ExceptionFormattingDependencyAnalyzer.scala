@@ -1,9 +1,10 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.analyze
 
 import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonTypeInfo}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.wix.bazel.migrator.model.SourceModule
+import com.wix.bazel.migrator.transform.failures.{AnalyzeException, AnalyzeFailure}
 
 class ExceptionFormattingDependencyAnalyzer(dependencyAnalyzer: DependencyAnalyzer) extends DependencyAnalyzer {
   private val om = new ObjectMapper().registerModule(DefaultScalaModule)

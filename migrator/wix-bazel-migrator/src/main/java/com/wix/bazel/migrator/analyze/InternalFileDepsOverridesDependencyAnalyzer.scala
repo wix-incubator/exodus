@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.analyze
 
 import java.nio.file.Path
 

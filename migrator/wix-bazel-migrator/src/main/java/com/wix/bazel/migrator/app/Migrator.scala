@@ -1,10 +1,12 @@
-package com.wix.bazel.migrator
+package com.wix.bazel.migrator.app
 
 import java.nio.file.Files
 
 import better.files.FileOps
 import com.wix.bazel.migrator.BazelRcManagedDevEnvWriter.defaultExodusOptions
 import com.wix.bazel.migrator.PreludeWriter._
+import com.wix.bazel.migrator._
+import com.wix.bazel.migrator.analyze._
 import com.wix.bazel.migrator.external.registry.{CachingEagerExternalSourceModuleRegistry, CodotaExternalSourceModuleRegistry, CompositeExternalSourceModuleRegistry, ConstantExternalSourceModuleRegistry}
 import com.wix.bazel.migrator.overrides.{AdditionalDepsByMavenDepsOverrides, AdditionalDepsByMavenDepsOverridesReader, MavenArchiveTargetsOverridesReader}
 import com.wix.bazel.migrator.transform._

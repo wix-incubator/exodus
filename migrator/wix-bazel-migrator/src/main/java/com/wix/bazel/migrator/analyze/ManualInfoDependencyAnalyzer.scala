@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.analyze
 
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.SourceModules

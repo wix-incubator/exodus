@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator
+package com.wix.bazel.migrator.app
 
 import java.io.{PrintWriter, StringWriter}
 import java.nio.file.{Files, Paths, StandardOpenOption}
@@ -7,10 +7,11 @@ import com.codota.service.client.SearchClient
 import com.codota.service.connector.{ApacheServiceConnector, ConnectorSettings}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.wix.bazel.migrator.analyze.CodotaDependencyAnalyzer._
+import com.wix.bazel.migrator.analyze.{AnalyzeFailureMixin, ExceptionFormattingDependencyAnalyzer, IgnoringMavenDependenciesMixin, ThrowableMixin}
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.bazel.migrator.transform.AnalyzeFailure.Composite
-import com.wix.bazel.migrator.transform.CodotaDependencyAnalyzer._
-import com.wix.bazel.migrator.transform._
+import com.wix.bazel.migrator.transform.failures.AnalyzeFailure.Composite
+import com.wix.bazel.migrator.transform.failures.{AnalyzeException, AnalyzeFailure}
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}

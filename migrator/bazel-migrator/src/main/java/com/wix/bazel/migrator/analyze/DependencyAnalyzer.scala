@@ -1,7 +1,7 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.analyze
 
 import com.wix.bazel.migrator.model.SourceModule
 
-private[transform] trait DependencyAnalyzer {
+private[migrator] trait DependencyAnalyzer {
   def allCodeForModule(module: SourceModule): List[Code]
 }

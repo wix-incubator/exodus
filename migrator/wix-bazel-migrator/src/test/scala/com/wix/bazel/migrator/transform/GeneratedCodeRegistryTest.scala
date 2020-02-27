@@ -1,5 +1,6 @@
 package com.wix.bazel.migrator.transform
 
+import com.wix.bazel.migrator.analyze.GeneratedCodeRegistry
 import com.wix.bazel.migrator.overrides.{GeneratedCodeLink, GeneratedCodeLinksOverrides}
 import com.wixpress.build.maven.MavenMakers
 import org.specs2.matcher.Scope
