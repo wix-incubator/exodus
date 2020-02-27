@@ -5,6 +5,7 @@ import java.nio.file.{Files, Path, Paths}
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.{LocalMavenRepository, SourceModules}
 import com.wixpress.build.maven.{AetherMavenDependencyResolver, Dependency, MavenScope}
+
 case class JVMClass(fqnClass: String,
                     sourceModule: SourceModule)
 
@@ -98,44 +99,44 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
   def extractJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] = {
     val pathToJar = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile)) + module).map(jarPath).toList
     val maybeProductionDeps = jDepsCommand.analyzeClassesDependenciesPerJar(classesPath(module), pathToJar)
-    maybeProductionDeps.map(d=>jDepsParser.convert(d, module)).getOrElse(Map.empty)
+    maybeProductionDeps.map(d => jDepsParser.convert(d, module)).getOrElse(Map.empty)
   }
 
   def extractTestJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] =
-    maybeTestClassesPath(module).map ( testClassesPath => {
+    maybeTestClassesPath(module).map(testClassesPath => {
       val pathToJar = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile, MavenScope.Test)) + module).map(jarPath).toList
       val maybeTestDeps = jDepsCommand.analyzeClassesDependenciesPerJar(testClassesPath, pathToJar)
-      maybeTestDeps.map(d=>jDepsParser.convert(d, module)).getOrElse(Map.empty)
+      maybeTestDeps.map(d => jDepsParser.convert(d, module)).getOrElse(Map.empty)
     }).getOrElse(Map.empty)
 
-    override def analyze(module: SourceModule): Set[Code]
-
-    =
-    {
-      val prodMap = extractJvmClasses(module)
-      val prodCode = convertToCode(prodMap)
-      val testMap = extractTestJvmClasses(module)
-      val testCode = convertToCode(testMap, testCode = true)
-      prodCode ++ testCode
-    }
+  override def analyze(module: SourceModule): Set[Code] = {
+    val prodMap = extractJvmClasses(module)
+    val prodCode = convertToCode(prodMap)
+    val testMap = extractTestJvmClasses(module)
+    val testCode = convertToCode(testMap, testCode = true)
+    prodCode ++ testCode
   }
+}
 
 
-  object Simulator extends App {
-    final val user = sys.props.getOrElse("user.name","ors")
-    private val root = s"/Users/$user"
-    val localMavenRepository = new LocalMavenRepository(s"$root/.m2/repository")
-    val aetherResolver = new AetherMavenDependencyResolver(List(localMavenRepository).map(_.url))
-    private val repoRoot = Paths.get(s"$root/workspace/poc/exodus-demo")
-    private val sourceModules = SourceModules(repoRoot, aetherResolver).codeModules
+object Simulator extends App {
+  final val user = sys.props.getOrElse("user.name", "ors")
+  private val root = s"/Users/$user"
+  val localMavenRepository = new LocalMavenRepository(s"$root/.m2/repository")
+  val aetherResolver = new AetherMavenDependencyResolver(List(localMavenRepository).map(_.url))
+  private val repoRoot = Paths.get(s"$root/hackathon/java-design-patterns")
+  private val sourceModules = SourceModules(repoRoot, aetherResolver).codeModules
 
-    val jDepsAnalyzerImpl = new JDepsAnalyzerImpl(sourceModules, repoRoot)
+  val jDepsAnalyzerImpl = new JDepsAnalyzerImpl(sourceModules, repoRoot)
+  try {
     sourceModules.foreach(m => {
       val codes = jDepsAnalyzerImpl.analyze(m)
       println(s""">>>> codes: $codes""")
     })
+  } finally {
     localMavenRepository.stop
   }
+}
 
 
 
