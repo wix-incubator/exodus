@@ -4,10 +4,10 @@ import java.nio.file.{Files, Path, Paths}
 
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.{LocalMavenRepository, SourceModules}
-import com.wixpress.build.maven.{AetherMavenDependencyResolver, Dependency, MavenScope}
+import com.wixpress.build.maven.AetherMavenDependencyResolver
 
 case class JVMClass(fqnClass: String,
-                    sourceModule: SourceModule)
+                    analysisModule: AnalysisModule)
 
 case class CodePath(module: SourceModule,
                     relativeSourceDirPathFromModuleRoot: String,
@@ -26,16 +26,17 @@ trait JDepsCommand {
 }
 
 trait JDepsAnalyzer {
-  def analyze(module: SourceModule): Set[Code]
+  def analyze(module: AnalysisModule): Set[Code]
 }
 
 trait JDepsParser {
   def convert(deps: ClassDependencies, currentSourceModule: AnalysisModule): Map[JVMClass, Set[JVMClass]]
 }
 
-class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDepsAnalyzer {
+class JDepsAnalyzerImpl(modules: Set[AnalysisModule], repoPath: Path) extends JDepsAnalyzer {
   val jDepsParser: JDepsParser = new JDepsParserImpl(modules)
   val jDepsCommand: JDepsCommand = new JDepsCommandImpl(repoPath)
+  val sourceFileTracer = new JavaPSourceFileTracer(repoPath)
 
   // probably better if we use javap to get the file name
   private def toJavaSourcePath(fqn: String) = {
@@ -54,23 +55,19 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
     Files.exists(fullPath)
   }
 
-  private def toCodeModule(jvmClass: JVMClass, testCode: Boolean = false) = {
-    if (testCode)
-      TestCodePaths.map(p => CodePath(jvmClass.sourceModule, p, toJavaSourcePath(jvmClass.fqnClass))).find(exists).getOrElse(
-        throw new RuntimeException(s"Cannot find test location of $jvmClass"))
-    else
-      ProdCodePaths.map(p => CodePath(jvmClass.sourceModule, p, toJavaSourcePath(jvmClass.fqnClass))).find(exists).getOrElse(
-        throw new RuntimeException(s"Cannot find location of $jvmClass"))
+  private def toCodePath(jvmClass: JVMClass, testCode: Boolean = false): Option[CodePath] = {
+    val maybeClasspath  = if (testCode) jvmClass.analysisModule.maybeTestClassesPath else Some(jvmClass.analysisModule.classesPath)
+    maybeClasspath.map(cp=> sourceFileTracer.traceSourceFile(jvmClass.analysisModule.sourceModule, jvmClass.fqnClass,cp, testCode))
   }
 
-  private def convertSingleToCode(jvmClass: JVMClass, deps: Set[JVMClass], testCode: Boolean = false): Code = {
-    val codePath = toCodeModule(jvmClass, testCode)
-    Code(codePath, dependencies = deps.map(d => CodeDependency(toCodeModule(d), testCode)).toList)
+  private def convertSingleToCode(jvmClass: JVMClass, deps: Set[JVMClass], testCode: Boolean = false): Option[Code] = {
+    toCodePath(jvmClass, testCode).map(codePath=>
+    Code(codePath, dependencies = deps.flatMap(d => toCodePath(d).map(e=>CodeDependency(e, testCode)).toList).toList))
   }
 
 
   private def convertToCode(codeMap: Map[JVMClass, Set[JVMClass]], testCode: Boolean = false): Set[Code] = {
-    codeMap.map {
+    codeMap.flatMap {
       case (jvmClass, deps) => convertSingleToCode(jvmClass, deps, testCode)
     }.toSet
   }
@@ -83,12 +80,11 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
   def extractTestJvmClasses(module: AnalysisModule): Map[JVMClass, Set[JVMClass]] = {
     module.maybeTestClassesPath.map(classesPath => {
       val maybeTestDeps = jDepsCommand.analyzeClassesDependenciesPerJar(classesPath, module.testDependenciesJars)
-      maybeTestDeps.map(d => jDepsParser.convert(d,  module)).getOrElse(Map.empty)
+      maybeTestDeps.map(d => jDepsParser.convert(d, module)).getOrElse(Map.empty)
     }).getOrElse(Map.empty[JVMClass, Set[JVMClass]])
   }
 
-  override def analyze(module: SourceModule): Set[Code] = {
-    val analysisModule = AnalysisModule(module, modules, repoPath)
+  override def analyze(analysisModule: AnalysisModule): Set[Code] = {
     val prodMap = extractJvmClasses(analysisModule)
     val prodCode = convertToCode(prodMap)
     val testMap = extractTestJvmClasses(analysisModule)
@@ -105,10 +101,11 @@ object Simulator extends App {
   val aetherResolver = new AetherMavenDependencyResolver(List(localMavenRepository).map(_.url))
   private val repoRoot = Paths.get(s"$root/workspace/poc/exodus-demo")
   private val sourceModules = SourceModules(repoRoot, aetherResolver).codeModules
-
-  val jDepsAnalyzerImpl = new JDepsAnalyzerImpl(sourceModules, repoRoot)
+  val analysisModules = sourceModules.map(m => AnalysisModule(m, sourceModules, repoRoot))
+  val jDepsParser: JDepsParser = new JDepsParserImpl(analysisModules)
+  val jDepsAnalyzerImpl = new JDepsAnalyzerImpl(analysisModules, repoRoot)
   try {
-    sourceModules.foreach(m => {
+    analysisModules.foreach(m => {
       val codes = jDepsAnalyzerImpl.analyze(m)
       println(s""">>>> codes: $codes""")
     })

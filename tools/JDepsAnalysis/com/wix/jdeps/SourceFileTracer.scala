@@ -25,7 +25,6 @@ class JavaPSourceFileTracer(repoRoot: Path,
   private def findLocationIn(relativePathFromMonoRepoRoot: String, possibleLocations: Set[PossibleLocation], filePath: String): Option[String] =
     possibleLocations.find { location => {
       val possiblePath = repoRoot.resolve(relativePathFromMonoRepoRoot).resolve(location).resolve(filePath)
-      println(s"possible-path: ${possiblePath}")
       Files.exists(possiblePath)
     }
     }
@@ -37,13 +36,10 @@ class JavaPSourceFileTracer(repoRoot: Path,
       "-cp",
       pathToClasses,
       fqn)
-    println(s"${Command} args: " + cmdArgs.mkString(" "))
     val runResult = processRunner.run(repoRoot, "javap", cmdArgs)
     if (runResult.exitCode != 0) {
-      println(s"ERROR running ${Command}. StdErr:\n${runResult.stdErr}")
       throw new RuntimeException(s"Problem locating the source file of class $fqn in $pathToClasses")
     }
-    println(s"DEBUG - javap result ^^^ ${runResult.stdOut}")
     val filePath = packagePart + "/" + parseFileName(runResult.stdOut)
     val locations = MavenRelativeSourceDirPathFromModuleRoot.getPossibleLocationFor(testClass)
     findLocationIn(module.relativePathFromMonoRepoRoot, locations, filePath) match {

@@ -17,13 +17,11 @@ class JDepsCommandImpl(repoRoot: Path) extends JDepsCommand {
       "-cp",
       classpath,
       jarPath)
-    println("jdeps command: " + cmdArgs.mkString(" "))
     val process = (new ProcessBuilder).directory(repoRoot.toFile).command(cmdArgs:_*)
     process.redirectOutput()
     val process1 = process.start()
     val stream = process1.getInputStream
     process1.waitFor()
-    println(scala.io.Source.fromInputStream(stream).mkString)
     val path = dotDirectory.resolve(fileName + ".dot")
     if (Files.exists(path)) Some(ClassDependencies(path)) else None
   }
