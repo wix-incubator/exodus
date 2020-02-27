@@ -1,5 +1,6 @@
 package com.wix.bazel.migrator
 
+import com.wix.bazel.migrator.app.{JavaWriter, ScalaWriter, Writer}
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target.{Jvm, ModuleDeps, TargetDependency}
 import com.wix.bazel.migrator.model.TestType.UT

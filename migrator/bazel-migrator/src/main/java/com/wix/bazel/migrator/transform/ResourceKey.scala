@@ -2,6 +2,7 @@ package com.wix.bazel.migrator.transform
 
 import java.nio.file.Paths
 
+import com.wix.bazel.migrator.analyze.CodePath
 import com.wix.bazel.migrator.model.Target.TargetDependency
 import com.wix.bazel.migrator.model._
 import com.wix.bazel.migrator.transform.GraphSupport.CodesMap

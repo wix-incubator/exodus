@@ -30,7 +30,6 @@ scala_library(
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/zinc/analysis",
         "//workspaces-resolution-utils/src/main/scala/com/wixpress/build/bazel/workspaces",
-        "@com_codota_codota_sdk_java",
         "@com_fasterxml_jackson_core_jackson_annotations",
         "@com_fasterxml_jackson_core_jackson_core",
         "@com_fasterxml_jackson_core_jackson_databind",

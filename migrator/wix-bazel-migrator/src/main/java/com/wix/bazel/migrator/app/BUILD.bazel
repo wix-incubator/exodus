@@ -1,0 +1,27 @@
+package(default_visibility = ["//visibility:public"])
+
+sources()
+
+scala_library(
+    name = "app",
+    srcs = [
+        ":sources",
+    ],
+    deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/bazel",
+        "//dependency-synchronizer/bazel-deps-synchronizer/src/main/scala/com/wixpress/build/sync",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/transform_build/maven/analysis",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/external/registry",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform/failures",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/utils",
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
+        "@com_codota_codota_sdk_java",
+        "@com_fasterxml_jackson_core_jackson_databind",
+        "@com_fasterxml_jackson_module_jackson_module_scala_2_12",
+    ],
+)

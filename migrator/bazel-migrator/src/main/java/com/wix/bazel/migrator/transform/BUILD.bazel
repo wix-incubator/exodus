@@ -13,6 +13,7 @@ scala_library(
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "@org_jgrapht_jgrapht_core",
+        "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze:analyze",
     ],
 )
 

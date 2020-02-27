@@ -1,7 +1,8 @@
-package com.wix.bazel.migrator
+package com.wix.bazel.migrator.app
 
 import java.nio.file.{Files, Path, StandardOpenOption}
 
+import com.wix.bazel.migrator._
 import com.wix.bazel.migrator.model.CodePurpose.{Prod, Test}
 import com.wix.bazel.migrator.model.Target._
 import com.wix.bazel.migrator.model.{CodePurpose, Package, Scope, SourceModule, Target, TestType}

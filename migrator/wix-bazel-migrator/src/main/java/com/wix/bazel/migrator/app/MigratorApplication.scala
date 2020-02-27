@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator
+package com.wix.bazel.migrator.app
 
 import scala.io.Source
 

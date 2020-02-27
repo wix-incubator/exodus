@@ -1,8 +1,8 @@
 package com.wix.bazel.migrator.transform.makers
 
+import com.wix.bazel.migrator.analyze.Dependency
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.makers.ModuleMaker.aModule
-import com.wix.bazel.migrator.transform.Dependency
 import com.wix.bazel.migrator.transform.makers.CodePathMaker.sourceCodePath
 
 object DependencyMaker {

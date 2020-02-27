@@ -1,5 +1,6 @@
 package com.wix.bazel.migrator.transform
 
+import com.wix.bazel.migrator.analyze.{Code, DependencyAnalyzer}
 import com.wix.bazel.migrator.model
 import com.wix.bazel.migrator.model.Target.TargetDependency
 import com.wix.bazel.migrator.model.{Package, SourceModule, Target}

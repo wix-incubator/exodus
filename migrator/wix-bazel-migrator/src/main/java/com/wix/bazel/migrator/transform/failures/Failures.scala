@@ -1,4 +1,4 @@
-package com.wix.bazel.migrator.transform
+package com.wix.bazel.migrator.transform.failures
 
 import com.codota.service.model.DependencyInfo
 import com.wix.bazel.migrator.model.SourceModule

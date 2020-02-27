@@ -1,6 +1,6 @@
-package com.wix.bazel.migrator
+package com.wix.bazel.migrator.utils
 
-import com.wix.bazel.migrator.transform.AnalyzeFailure
+import com.wix.bazel.migrator.transform.failures.AnalyzeFailure
 
 import scala.util.{Failure, Success}
 
