@@ -124,7 +124,7 @@ object Simulator extends App {
   private val root = s"/Users/$user"
   val localMavenRepository = new LocalMavenRepository(s"$root/.m2/repository")
   val aetherResolver = new AetherMavenDependencyResolver(List(localMavenRepository).map(_.url))
-  private val repoRoot = Paths.get(s"$root/hackathon/java-design-patterns")
+  private val repoRoot = Paths.get(s"$root/workspace/poc/exodus-demo")
   private val sourceModules = SourceModules(repoRoot, aetherResolver).codeModules
 
   val jDepsAnalyzerImpl = new JDepsAnalyzerImpl(sourceModules, repoRoot)
