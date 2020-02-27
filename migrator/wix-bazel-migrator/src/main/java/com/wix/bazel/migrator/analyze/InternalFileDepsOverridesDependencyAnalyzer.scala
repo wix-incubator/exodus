@@ -2,7 +2,6 @@ package com.wix.bazel.migrator.analyze
 
 import java.nio.file.Path
 
-import com.wix.bazel.migrator.analyze
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.overrides.InternalFileDepsOverridesReader
 import com.wix.build.maven.analysis.SourceModules
@@ -57,7 +56,7 @@ class InternalFileDepsOverridesDependencyAnalyzer(sourceModules: SourceModules, 
   }
 
   private def dependencyOn(isCompileDependency: Boolean)(relativeFilePath: String): Dependency =
-    analyze.Dependency(codePathFrom(relativeFilePath), isCompileDependency)
+    Dependency(codePathFrom(relativeFilePath), isCompileDependency)
 
 
 }

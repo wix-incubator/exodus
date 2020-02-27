@@ -1,6 +1,5 @@
 package com.wix.bazel.migrator.analyze
 
-import com.wix.bazel.migrator.analyze
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.SourceModules
 
@@ -322,5 +321,5 @@ class ManualInfoDependencyAnalyzer(sourceModules: SourceModules) extends Depende
   }
   
   private def dependencyOn(relativeFilePath: String): Dependency =
-    analyze.Dependency(codePathFrom(relativeFilePath),isCompileDependency = false)
+    Dependency(codePathFrom(relativeFilePath),isCompileDependency = false)
 }
