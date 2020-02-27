@@ -8,7 +8,7 @@ trait ProcessRunner {
 
 class JavaProcessRunner extends ProcessRunner {
   override def run(runningDirectory: Path, command: String, args: List[String]): RunResult = {
-    val process = (new ProcessBuilder).directory(runningDirectory.toFile).command(args:_*)
+    val process = (new ProcessBuilder).directory(runningDirectory.toFile).command((command :: args):_*)
     val process1 = process.start()
     process1.waitFor()
     val stdOut = scala.io.Source.fromInputStream(process1.getInputStream).mkString

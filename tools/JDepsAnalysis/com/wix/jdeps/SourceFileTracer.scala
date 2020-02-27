@@ -25,7 +25,8 @@ class JavaPSourceFileTracer(repoRoot: Path,
   private def findLocationIn(relativePathFromMonoRepoRoot: String, possibleLocations: Set[PossibleLocation], filePath: String): Option[String] =
     possibleLocations.find { location => {
       val possiblePath = repoRoot.resolve(relativePathFromMonoRepoRoot).resolve(location).resolve(filePath)
-        Files.exists(possiblePath)
+      println(s"possible-path: ${possiblePath}")
+      Files.exists(possiblePath)
     }
     }
 
@@ -44,12 +45,16 @@ class JavaPSourceFileTracer(repoRoot: Path,
     }
     println(s"DEBUG - javap result ^^^ ${runResult.stdOut}")
     val filePath = packagePart + "/" + parseFileName(runResult.stdOut)
-    findLocationIn(module.relativePathFromMonoRepoRoot, MavenRelativeSourceDirPathFromModuleRoot.ProdCodeLocations, filePath) match {
+    val locations = MavenRelativeSourceDirPathFromModuleRoot.getPossibleLocationFor(testClass)
+    findLocationIn(module.relativePathFromMonoRepoRoot, locations, filePath) match {
       case Some(location) =>CodePath(module, location, filePath)
-      case None => throw new RuntimeException(s"Could not find location of $filePath in ${module.relativePathFromMonoRepoRoot}")
+      case None => {
+        throw new RuntimeException(s"Could not find location of $filePath in ${module.relativePathFromMonoRepoRoot}")
+      }
     }
   }
 }
+
 
 
 object MavenRelativeSourceDirPathFromModuleRoot {
@@ -58,9 +63,12 @@ object MavenRelativeSourceDirPathFromModuleRoot {
   private val testCodePrefixes = Set("src/test", "src/it", "src/e2e")
   private val languages = Set("java", "scala")
 
-  val ProdCodeLocations: Set[PossibleLocation] =
+  private val ProdCodeLocations: Set[PossibleLocation] =
     mainCodePrefixes.flatMap(prefix => languages.map(language => s"$prefix/$language"))
 
-  val TestCodeLocations: Set[PossibleLocation] =
+  private val TestCodeLocations: Set[PossibleLocation] =
     testCodePrefixes.flatMap(prefix => languages.map(language => s"$prefix/$language"))
+
+  def getPossibleLocationFor(testCode:Boolean): Set[PossibleLocation] =
+    if (testCode) TestCodeLocations else ProdCodeLocations
 }
