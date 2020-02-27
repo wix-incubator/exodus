@@ -25,7 +25,7 @@ trait JDepsCommand {
   def analyzeClassesDependenciesPerJar(jarPath: String, classPath: List[String]): Option[ClassDependencies]
 }
 
-trait JDepsAnalyzer {
+trait JDKToolsDependencyAnalyzer {
   def analyze(module: AnalysisModule): Set[Code]
 }
 
@@ -33,7 +33,7 @@ trait JDepsParser {
   def convert(deps: ClassDependencies, currentSourceModule: AnalysisModule): Map[JVMClass, Set[JVMClass]]
 }
 
-class JDepsAnalyzerImpl(modules: Set[AnalysisModule], repoPath: Path) extends JDepsAnalyzer {
+class JDKToolsDependencyAnalyzerImpl(modules: Set[AnalysisModule], repoPath: Path) extends JDKToolsDependencyAnalyzer {
   val jDepsParser: JDepsParser = new JDepsParserImpl(modules)
   val jDepsCommand: JDepsCommand = new JDepsCommandImpl(repoPath)
   val sourceFileTracer = new JavaPSourceFileTracer(repoPath)
@@ -103,7 +103,7 @@ object Simulator extends App {
   private val sourceModules = SourceModules(repoRoot, aetherResolver).codeModules
   val analysisModules = sourceModules.map(m => AnalysisModule(m, sourceModules, repoRoot))
   val jDepsParser: JDepsParser = new JDepsParserImpl(analysisModules)
-  val jDepsAnalyzerImpl = new JDepsAnalyzerImpl(analysisModules, repoRoot)
+  val jDepsAnalyzerImpl = new JDKToolsDependencyAnalyzerImpl(analysisModules, repoRoot)
   try {
     analysisModules.foreach(m => {
       val codes = jDepsAnalyzerImpl.analyze(m)
