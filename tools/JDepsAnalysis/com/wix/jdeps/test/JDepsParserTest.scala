@@ -3,7 +3,7 @@ package com.wix.jdeps.test
 import java.nio.file.Files
 
 import com.wix.bazel.migrator.model.{ModuleDependencies, SourceModule}
-import com.wix.jdeps.{ClassDependencies, JDepsParserImpl, JVMClass}
+import com.wix.jdeps.{AnalysisModule, ClassDependencies, JDepsParserImpl, JVMClass}
 import com.wixpress.build.maven.Coordinates
 import org.specs2.mutable.SpecificationWithJUnit
 
@@ -17,20 +17,25 @@ class JDepsParserTest extends SpecificationWithJUnit {
 
       Files.write(jdepsOutput, jdepsOutputContent.getBytes )
 
-      val coreCommon = SourceModule("commons/core-common", Coordinates("exodus-demo.commons", "core-common", "0.0.1-SNAPSHOT"), Set.empty, ModuleDependencies())
-      val coreBusinessSomeService = SourceModule("products/some-service/core-business-some-service", Coordinates("exodus-demo.products", "core-business-some-service", "0.0.1-SNAPSHOT"), Set.empty, ModuleDependencies())
-      val coreRepositorySomeRepo = SourceModule("repositories/some-repository/core-repository-some-repo", Coordinates("exodus-demo.repositories", "core-repository-some-repo", "0.0.1-SNAPSHOT"), Set.empty, ModuleDependencies())
+      val coreCommon = AnalysisModule(
+        SourceModule("commons/core-common", Coordinates("exodus-demo.commons", "core-common", "0.0.1-SNAPSHOT"), Set.empty, ModuleDependencies()),
+        "commons/core-common/target/core-common-0.0.1-SNAPSHOT.jar")
+      val coreBusinessSomeService = AnalysisModule(
+        SourceModule("products/some-service/core-business-some-service", Coordinates("exodus-demo.products", "core-business-some-service", "0.0.1-SNAPSHOT"), Set.empty, ModuleDependencies()),
+        "products/some-service/core-business-some-service/target/core-business-some-service-0.0.1-SNAPSHOT.jar")
+      val coreRepositorySomeRepo = AnalysisModule(
+        SourceModule("repositories/some-repository/core-repository-some-repo", Coordinates("exodus-demo.repositories", "core-repository-some-repo", "0.0.1-SNAPSHOT"), Set.empty, ModuleDependencies()),
+        "repositories/some-repository/core-repository-some-repo/target/")
       val parser = new JDepsParserImpl(Set(
-        coreCommon,
-        coreBusinessSomeService,
-        coreRepositorySomeRepo,
+        coreCommon.sourceModule,
+        coreBusinessSomeService.sourceModule,
+        coreRepositorySomeRepo.sourceModule,
       ))
-      val relativePath = coreBusinessSomeService.relativePathFromMonoRepoRoot
       parser.convert(ClassDependencies(jdepsOutput), coreBusinessSomeService) mustEqual Map(
-        JVMClass("exodus.demo.core.business.some.service.impl.DefaultSomeService", coreBusinessSomeService) -> Set(
-          JVMClass("exodus.demo.commons.core.something.SomeCommonBusinessUtil", coreCommon),
-          JVMClass("exodus.demo.core.business.some.service.api.SomeService", coreBusinessSomeService),
-          JVMClass("exodus.demo.core.repositories.some.repo.SomeRepository", coreRepositorySomeRepo),
+        JVMClass("exodus.demo.core.business.some.service.impl.DefaultSomeService", coreBusinessSomeService.sourceModule) -> Set(
+          JVMClass("exodus.demo.commons.core.something.SomeCommonBusinessUtil", coreCommon.sourceModule),
+          JVMClass("exodus.demo.core.business.some.service.api.SomeService", coreBusinessSomeService.sourceModule),
+          JVMClass("exodus.demo.core.repositories.some.repo.SomeRepository", coreRepositorySomeRepo.sourceModule),
         )
       )
     }

@@ -30,33 +30,12 @@ trait JDepsAnalyzer {
 }
 
 trait JDepsParser {
-  def convert(deps: ClassDependencies, currentSourceModule: SourceModule): Map[JVMClass, Set[JVMClass]]
+  def convert(deps: ClassDependencies, currentSourceModule: AnalysisModule): Map[JVMClass, Set[JVMClass]]
 }
 
 class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDepsAnalyzer {
   val jDepsParser: JDepsParser = new JDepsParserImpl(modules)
   val jDepsCommand: JDepsCommand = new JDepsCommandImpl(repoPath)
-
-  def jarPath(module: SourceModule): String = {
-    // maybe there's a better way then string manipulation
-    module.relativePathFromMonoRepoRoot + s"/target/${module.coordinates.artifactId}-${module.coordinates.version}.jar"
-  }
-
-  def classesPath(module: SourceModule): String = {
-    module.relativePathFromMonoRepoRoot + s"/target/classes"
-  }
-
-  def maybeTestClassesPath(module: SourceModule): Option[String] = {
-    val path = module.relativePathFromMonoRepoRoot + s"/target/test-classes"
-    if (Files.exists(repoPath.resolve(path))) Some(path) else None
-  }
-
-  def filterRepoModules(deps: Set[Dependency], scopes: Set[MavenScope]): Set[SourceModule] = {
-    val relevantDeps = deps.filter(d => scopes.contains(d.scope))
-    modules.filter(
-      m => relevantDeps.map(_.coordinates).contains(m.coordinates)
-    )
-  }
 
   // probably better if we use javap to get the file name
   private def toJavaSourcePath(fqn: String) = {
@@ -96,23 +75,23 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
     }.toSet
   }
 
-  def extractJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] = {
-    val pathToJar = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile)) + module).map(jarPath).toList
-    val maybeProductionDeps = jDepsCommand.analyzeClassesDependenciesPerJar(classesPath(module), pathToJar)
+  def extractJvmClasses(module: AnalysisModule): Map[JVMClass, Set[JVMClass]] = {
+    val maybeProductionDeps = jDepsCommand.analyzeClassesDependenciesPerJar(module.classesPath, module.dependenciesJars)
     maybeProductionDeps.map(d => jDepsParser.convert(d, module)).getOrElse(Map.empty)
   }
 
-  def extractTestJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] =
-    maybeTestClassesPath(module).map(testClassesPath => {
-      val pathToJar = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile, MavenScope.Test)) + module).map(jarPath).toList
-      val maybeTestDeps = jDepsCommand.analyzeClassesDependenciesPerJar(testClassesPath, pathToJar)
-      maybeTestDeps.map(d => jDepsParser.convert(d, module)).getOrElse(Map.empty)
-    }).getOrElse(Map.empty)
+  def extractTestJvmClasses(module: AnalysisModule): Map[JVMClass, Set[JVMClass]] = {
+    module.maybeTestClassesPath.map(classesPath => {
+      val maybeTestDeps = jDepsCommand.analyzeClassesDependenciesPerJar(classesPath, module.testDependenciesJars)
+      maybeTestDeps.map(d => jDepsParser.convert(d,  module)).getOrElse(Map.empty)
+    }).getOrElse(Map.empty[JVMClass, Set[JVMClass]])
+  }
 
   override def analyze(module: SourceModule): Set[Code] = {
-    val prodMap = extractJvmClasses(module)
+    val analysisModule = AnalysisModule(module, modules, repoPath)
+    val prodMap = extractJvmClasses(analysisModule)
     val prodCode = convertToCode(prodMap)
-    val testMap = extractTestJvmClasses(module)
+    val testMap = extractTestJvmClasses(analysisModule)
     val testCode = convertToCode(testMap, testCode = true)
     prodCode ++ testCode
   }

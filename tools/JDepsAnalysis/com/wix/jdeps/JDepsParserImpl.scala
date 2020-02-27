@@ -9,7 +9,7 @@ class JDepsParserImpl(sourceModules: Set[SourceModule]) extends JDepsParser {
   val locationPattern =  "(.*)\\).*".r("jar")
   val jarPattern =  "(.*).jar".r("artifactIdAndVersion")
 
-  override def convert(deps: ClassDependencies, currentSourceModule: SourceModule): Map[JVMClass, Set[JVMClass]] = {
+  override def convert(deps: ClassDependencies, currentAnalysisModule: AnalysisModule): Map[JVMClass, Set[JVMClass]] = {
     val lines = Files.readAllLines(deps.dotFile).asScala.toList
     println(s">>>> lines: $lines")
     val depsTokens = lines.filter(_.contains(" -> "))
@@ -32,7 +32,7 @@ class JDepsParserImpl(sourceModules: Set[SourceModule]) extends JDepsParser {
       //      println(s">>>> targetFQNAndJars: $targetFQNAndJars")
       val targets = targetFQNAndJars.map { item =>
         item.jar match {
-          case locationPattern(jar) => (item.targetFqn, toSourceModule(jar, currentSourceModule))
+          case locationPattern(jar) => (item.targetFqn, toSourceModule(jar, currentAnalysisModule))
 //          case _ =>
         }
       }
@@ -45,15 +45,16 @@ class JDepsParserImpl(sourceModules: Set[SourceModule]) extends JDepsParser {
 
     classToJars.map(pair => {
       val (sourceFQN, targets) = pair
-      (JVMClass(sourceFQN, currentSourceModule), targets.map(t => JVMClass(t._1, t._2)).toSet)
+      (JVMClass(sourceFQN, currentAnalysisModule.sourceModule), targets.map(t => JVMClass(t._1, t._2)).toSet)
     })
   }
 
-  private def toSourceModule(jar: String, currentSourceModule: SourceModule): Option[SourceModule] = {
+  private def toSourceModule(jar: String, currentSourceModule: AnalysisModule): Option[SourceModule] = {
     jar match {
-      case "classes" => Some(currentSourceModule)
-      case "test-classes" => Some(currentSourceModule)
-      case jarPattern(artifactIdAndVersion) => sourceModules.find(module => artifactIdAndVersion.contains(module.coordinates.artifactId))
+      case "classes" => Some(currentSourceModule.sourceModule)
+      case "test-classes" => Some(currentSourceModule.sourceModule)
+      case jarPattern(artifactIdAndVersion) =>
+        sourceModules.find(module => artifactIdAndVersion.contains(module.coordinates.artifactId))
       case _ => None
     }
   }
