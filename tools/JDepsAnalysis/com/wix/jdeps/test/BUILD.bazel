@@ -6,6 +6,12 @@ specs2_unit_test(
     srcs = [
         ":sources",
     ],
-    deps = ["//tools/JDepsAnalysis/com/wix/jdeps:jdeps",
-            "//models/maven-model/src/main/scala/com/wixpress/build/maven"]
+    deps = [
+        "//tools/JDepsAnalysis/com/wix/jdeps:jdeps",
+            "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+            "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers:makers",
+            "@org_mockito_mockito_core",
+            "@org_specs2_specs2_mock_2_12",
+            "@com_github_marschall_memoryfilesystem",
+            ]
 )
