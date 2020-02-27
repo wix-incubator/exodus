@@ -23,7 +23,7 @@ case class CodeDependency(codePath: CodePath, isCompileDependency: Boolean)
 case class ClassDependencies(dotFile: Path)
 
 trait JDepsCommand {
-  def analyzeClassesDependenciesPerJar(jarPath: String, classPath: List[String]): ClassDependencies
+  def analyzeClassesDependenciesPerJar(jarPath: String, classPath: List[String]): Option[ClassDependencies]
 }
 
 trait JDepsAnalyzer {
@@ -40,15 +40,16 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
 
   def jarPath(module: SourceModule): String = {
     // maybe there's a better way then string manipulation
-    module.relativePathFromMonoRepoRoot + s"target/${module.coordinates.artifactId}-${module.coordinates.version}.jar"
+    module.relativePathFromMonoRepoRoot + s"/target/${module.coordinates.artifactId}-${module.coordinates.version}.jar"
   }
 
   def classesPath(module: SourceModule): String = {
-    module.relativePathFromMonoRepoRoot + s"target/classes"
+    module.relativePathFromMonoRepoRoot + s"/target/classes"
   }
 
-  def testClassesPath(module: SourceModule): String = {
-    module.relativePathFromMonoRepoRoot + s"target/test-classes"
+  def maybeTestClassesPath(module: SourceModule): Option[String] = {
+    val path = module.relativePathFromMonoRepoRoot + s"/target/test-classes"
+    if (Files.exists(repoPath.resolve(path))) Some(path) else None
   }
 
   def filterRepoModules(deps: Set[Dependency], scopes: Set[MavenScope]): Set[SourceModule] = {
@@ -78,7 +79,7 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
   private def toCodeModule(jvmClass: JVMClass, testCode: Boolean = false) = {
     if (testCode)
       TestCodePaths.map(p => CodePath(jvmClass.sourceModule, p, toJavaSourcePath(jvmClass.fqnClass))).find(exists).getOrElse(
-        throw new RuntimeException(s"Cannot find location of $jvmClass"))
+        throw new RuntimeException(s"Cannot find test location of $jvmClass"))
     else
       ProdCodePaths.map(p => CodePath(jvmClass.sourceModule, p, toJavaSourcePath(jvmClass.fqnClass))).find(exists).getOrElse(
         throw new RuntimeException(s"Cannot find location of $jvmClass"))
@@ -100,40 +101,44 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
 
   def extractJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] = {
     val pathToJar = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile)) + module).map(jarPath).toList
-    val productionDeps = jDepsCommand.analyzeClassesDependenciesPerJar(classesPath(module), pathToJar)
-    jDepsParser.convert(productionDeps, module)
+    val maybeProductionDeps = jDepsCommand.analyzeClassesDependenciesPerJar(classesPath(module), pathToJar)
+    maybeProductionDeps.map(d=>jDepsParser.convert(d, module)).getOrElse(Map.empty)
   }
 
-  def extractTestJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] = {
-    val pathToJar = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile, MavenScope.Test)) + module).map(jarPath).toList
-    val testDeps = jDepsCommand.analyzeClassesDependenciesPerJar(testClassesPath(module), pathToJar)
-    jDepsParser.convert(testDeps, module)
+  def extractTestJvmClasses(module: SourceModule): Map[JVMClass, Set[JVMClass]] =
+    maybeTestClassesPath(module).map ( testClassesPath => {
+      val pathToJar = (filterRepoModules(module.dependencies.allDependencies, Set(MavenScope.Compile, MavenScope.Test)) + module).map(jarPath).toList
+      val maybeTestDeps = jDepsCommand.analyzeClassesDependenciesPerJar(testClassesPath, pathToJar)
+      maybeTestDeps.map(d=>jDepsParser.convert(d, module)).getOrElse(Map.empty)
+    }).getOrElse(Map.empty)
+
+    override def analyze(module: SourceModule): Set[Code]
+
+    =
+    {
+      val prodMap = extractJvmClasses(module)
+      val prodCode = convertToCode(prodMap)
+      //val testMap = extractTestJvmClasses(module)
+      //val testCode = convertToCode(testMap, testCode = true)
+      prodCode //++ testCode
+    }
   }
 
-  override def analyze(module: SourceModule): Set[Code] = {
-    val prodMap = extractJvmClasses(module)
-    val prodCode = convertToCode(prodMap)
-    val testMap = extractTestJvmClasses(module)
-    val testCode = convertToCode(testMap, testCode = true)
-    prodCode ++ testCode
+
+  object Simulator extends App {
+    final val user = "ors"
+    private val root = s"/Users/$user"
+    val localMavenRepository = new LocalMavenRepository(s"$root/.m2/repository")
+    val aetherResolver = new AetherMavenDependencyResolver(List(localMavenRepository).map(_.url))
+    private val repoRoot = Paths.get(s"$root/workspace/poc/exodus-demo")
+    private val sourceModules = SourceModules(repoRoot, aetherResolver).codeModules
+
+    val jDepsAnalyzerImpl = new JDepsAnalyzerImpl(sourceModules, repoRoot)
+    sourceModules.foreach(m => {
+      val codes = jDepsAnalyzerImpl.analyze(m)
+      println(s""">>>> codes: $codes""")
+    })
   }
-}
-
-
-object Simulator extends App {
-  final val user = "natans"
-  private val root = s"/Users/$user"
-  val localMavenRepository = new LocalMavenRepository(s"$root/.m2/repository")
-  val aetherResolver = new AetherMavenDependencyResolver(List(localMavenRepository).map(_.url))
-  private val repoRoot = Paths.get(s"$root/workspace/poc/exodus-demo")
-  private val sourceModules = SourceModules(repoRoot, aetherResolver).codeModules
-
-  val jDepsAnalyzerImpl = new JDepsAnalyzerImpl(sourceModules, repoRoot)
-  sourceModules.foreach(m => {
-    val codes = jDepsAnalyzerImpl.analyze(m)
-    println(s""">>>> codes: $codes""")
-  })
-}
 
 
 

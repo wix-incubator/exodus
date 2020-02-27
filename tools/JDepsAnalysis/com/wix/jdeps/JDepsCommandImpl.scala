@@ -2,9 +2,11 @@ package com.wix.jdeps
 
 import java.nio.file.{Files, Path, Paths}
 
+
+
 class JDepsCommandImpl(repoRoot: Path) extends JDepsCommand {
 
-  override def analyzeClassesDependenciesPerJar(jarPath: String, classPath: List[String]): ClassDependencies = {
+  override def analyzeClassesDependenciesPerJar(jarPath: String, classPath: List[String]): Option[ClassDependencies] = {
     val fileName = Paths.get(jarPath).getFileName.toString
     val dotDirectory = Files.createTempDirectory("dot")
     val classpath = classPath.mkString(":")
@@ -22,6 +24,7 @@ class JDepsCommandImpl(repoRoot: Path) extends JDepsCommand {
     val stream = process1.getInputStream
     process1.waitFor()
     println(scala.io.Source.fromInputStream(stream).mkString)
-    ClassDependencies(dotDirectory.resolve(fileName + ".dot"))
+    val path = dotDirectory.resolve(fileName + ".dot")
+    if (Files.exists(path)) Some(ClassDependencies(path)) else None
   }
 }

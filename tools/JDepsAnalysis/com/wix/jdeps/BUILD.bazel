@@ -15,3 +15,9 @@ scala_library(
         "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven:maven",
         ]
 )
+
+java_binary(
+    name = "runner",
+    runtime_deps = ["jdeps"],
+    main_class = "com.wix.jdeps.Simulator"
+)
