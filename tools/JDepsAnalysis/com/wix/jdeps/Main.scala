@@ -5,8 +5,6 @@ import java.nio.file.{Files, Path, Paths}
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.{LocalMavenRepository, SourceModules}
 import com.wixpress.build.maven.{AetherMavenDependencyResolver, Dependency, MavenScope}
-
-
 case class JVMClass(fqnClass: String,
                     sourceModule: SourceModule)
 
@@ -124,7 +122,7 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
 
 
   object Simulator extends App {
-    final val user = "ors"
+    final val user = sys.props.getOrElse("user.name","ors")
     private val root = s"/Users/$user"
     val localMavenRepository = new LocalMavenRepository(s"$root/.m2/repository")
     val aetherResolver = new AetherMavenDependencyResolver(List(localMavenRepository).map(_.url))
@@ -136,6 +134,7 @@ class JDepsAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDep
       val codes = jDepsAnalyzerImpl.analyze(m)
       println(s""">>>> codes: $codes""")
     })
+    localMavenRepository.stop
   }
 
 
