@@ -12,3 +12,4 @@ bazel_build:
       junit_result_artifacts:
         path: "bazel-testlogs/**/test.xml"
         format: junit
+        type: text/xml
