@@ -5,7 +5,7 @@ def dependencies():
   import_external(
       name = "org_apache_kafka_kafka_2_12",
       artifact = "org.apache.kafka:kafka_2.12:1.1.1",
-      jar_sha256 = "d7b77e3b150519724d542dfb5da1584b9cba08fb1272ff1e3b3d735937e22632",
+      artifact_sha256 = "d7b77e3b150519724d542dfb5da1584b9cba08fb1272ff1e3b3d735937e22632",
       srcjar_sha256 = "2a1a9ed91ad065bf62be64dbb4fd5e552ff90c42fc07e67ace4f82413304c3dd",
       deps = [
           "@com_101tec_zkclient",

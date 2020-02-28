@@ -5,7 +5,7 @@ def dependencies():
   import_external(
       name = "org_jruby_jruby_core",
       artifact = "org.jruby:jruby-core:9.2.0.0",
-      jar_sha256 = "0acf4f484d66d4c874eb4dee5e17f798564e06f647201759c0c0985414a355dc",
+      artifact_sha256 = "0acf4f484d66d4c874eb4dee5e17f798564e06f647201759c0c0985414a355dc",
       srcjar_sha256 = "5eb3d22eb1e8f6bc27903f57f596c63c6150bbe76d2262d8d1670a1fdfdacb9a",
       deps = [
           "@com_github_jnr_jffi",

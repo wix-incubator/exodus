@@ -5,7 +5,7 @@ def dependencies():
   import_external(
       name = "com_google_guava_guava",
       artifact = "com.google.guava:guava:25.1-jre",
-      jar_sha256 = "6db0c3a244c397429c2e362ea2837c3622d5b68bb95105d37c21c36e5bc70abf",
+      artifact_sha256 = "6db0c3a244c397429c2e362ea2837c3622d5b68bb95105d37c21c36e5bc70abf",
       srcjar_sha256 = "b7ffb578b2bd6445c958356e308d1c46c9ea6fb868fc9444bc8bda3a41875a1b",
       deps = [
           "@com_google_code_findbugs_jsr305",

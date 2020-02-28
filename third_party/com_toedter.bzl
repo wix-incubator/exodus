@@ -5,5 +5,5 @@ def dependencies():
   import_external(
       name = "com_toedter_jcalendar",
       artifact = "com.toedter:jcalendar:1.3.2",
-      jar_sha256 = "2aa64c67eee507d3f4b92b95d61ced3e5a96dba6de49c4baa6377735808866db",
+      artifact_sha256 = "2aa64c67eee507d3f4b92b95d61ced3e5a96dba6de49c4baa6377735808866db",
   )

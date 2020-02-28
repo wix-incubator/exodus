@@ -5,7 +5,7 @@ def dependencies():
   import_external(
       name = "org_twdata_maven_mojo_executor",
       artifact = "org.twdata.maven:mojo-executor:2.3.0",
-      jar_sha256 = "470b5e9e505f99f81ff3a75593bfe03f6d32ea52a167df1ba66cee833c8c08ce",
+      artifact_sha256 = "470b5e9e505f99f81ff3a75593bfe03f6d32ea52a167df1ba66cee833c8c08ce",
       srcjar_sha256 = "a4ef053f390b709303f8aacbffc458b82bb9c56982540cc9b0677f759793d5c8",
       deps = [
           "@org_apache_maven_maven_core",
