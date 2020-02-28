@@ -5,7 +5,7 @@ def dependencies():
   import_external(
       name = "com_github_tomakehurst_wiremock",
       artifact = "com.github.tomakehurst:wiremock:2.9.0",
-      jar_sha256 = "55e27b0e83ded39953c937647b2bdcdb3b41b190629b6dd5621fb126888deaff",
+      artifact_sha256 = "55e27b0e83ded39953c937647b2bdcdb3b41b190629b6dd5621fb126888deaff",
       srcjar_sha256 = "ad70c65a1c2efe00b5dc9061cde6b676ea903372cefb59f0802f653aa767e01e",
       deps = [
           "@com_fasterxml_jackson_core_jackson_annotations",

@@ -5,7 +5,7 @@ def dependencies():
   import_external(
       name = "com_gitblit_gitblit",
       artifact = "com.gitblit:gitblit:1.8.0",
-      jar_sha256 = "0759b12aaffc54687eb7f1c97873a950f08fb4522eda6dcc8841d58ee2fcc2f4",
+      artifact_sha256 = "0759b12aaffc54687eb7f1c97873a950f08fb4522eda6dcc8841d58ee2fcc2f4",
       srcjar_sha256 = "87d46681a0e570b04131d13ad6cc6403d549b40cb5b2ef81931dada43678a362",
       deps = [
           "@args4j_args4j",
