@@ -51,5 +51,9 @@ class WorkspaceNameTest extends SpecificationWithJUnit {
     "throw exception in case of malformed url is given when extracting organization" in {
       WorkspaceName.extractOrganization("some.bad.url") must throwA[InvalidGitURLException]
     }
+
+    "fail" in {
+      failure
+    }
   }
 }
