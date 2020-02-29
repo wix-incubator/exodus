@@ -8,7 +8,7 @@ import scala.collection.JavaConverters._
 
 class JDepsParserImpl(sourceModules: Set[SourceModule]) extends JDepsParser {
   private val jarPattern = "(.*).jar".r("artifactIdAndVersion")
-  private val dotFileLinePattern = " *\"([^\"]+)\" -> \"([^\"]+)\" *;".r("src", "dep")
+  private val dotFileLinePattern = " *\"([^\"]+)\" +-> +\"([^\"]+)\" *;".r("src", "dep")
   private val dependencyWithSourcePattern = "([^ ]+) \\(([^)]+)\\)".r("className", "resolvedFrom")
   private val providedDependencyPattern = "[^ ]+".r
 
@@ -22,7 +22,7 @@ class JDepsParserImpl(sourceModules: Set[SourceModule]) extends JDepsParser {
       case dependencyWithSourcePattern(_, resolvedFrom) if resolvedFrom == "not found" => emptyResult
       case dependencyWithSourcePattern(className, resolvedFrom) =>
         val maybeDependency = toSourceModule(resolvedFrom, currentModule)
-          .map(fromSourceModule => JVMClass(className, fromSourceModule))
+          .map(fromSourceModule => JVMClass(className, fromSourceModule, resolvedFrom == "test-classes"))
         JdepsEntry(sourceJvmClass, maybeDependency)
       case _ =>
         throw new RuntimeException(s"Could not match jdeps dependency with source '$jdepsTarget'")

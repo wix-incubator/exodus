@@ -7,7 +7,8 @@ import com.wix.build.maven.analysis.{LocalMavenRepository, SourceModules}
 import com.wixpress.build.maven.{AetherMavenDependencyResolver, Dependency, MavenScope}
 
 case class JVMClass(fqnClass: String,
-                    sourceModule: SourceModule)
+                    sourceModule: SourceModule,
+                    testClass: Boolean = false)
 
 case class CodePath(module: SourceModule,
                     relativeSourceDirPathFromModuleRoot: String,
@@ -66,7 +67,7 @@ class JDKToolsDependencyAnalyzerImpl(modules: Set[SourceModule], repoPath: Path)
 
   private def convertSingleToCode(jvmClass: JVMClass, deps: Set[JVMClass], testCode: Boolean = false): Option[Code] = {
     toCodePath(jvmClass, testCode).map(codePath =>
-      Code(codePath, dependencies = deps.flatMap(d => toCodePath(d).map(e => CodeDependency(e, testCode)).toList).toList))
+      Code(codePath, dependencies = deps.flatMap(d => toCodePath(d, d.testClass).map(e => CodeDependency(e, testCode)).toList).toList))
   }
 
 
@@ -105,6 +106,7 @@ class JDKToolsDependencyAnalyzerImpl(modules: Set[SourceModule], repoPath: Path)
 
   override def analyze(sourceModules: SourceModule): Set[Code] = {
     val prodMap = extractJvmClasses(sourceModules)
+
     val prodCode = convertToCode(prodMap)
     val testMap = extractTestJvmClasses(sourceModules)
     val testCode = convertToCode(testMap, testCode = true)
@@ -125,27 +127,28 @@ object Simulator extends App {
   try {
     sourceModules.foreach(m => {
       println("~~~~~")
-      println("~~~~~")
+      println(s"codes for ${m.relativePathFromMonoRepoRoot}")
       println("~~~~~")
       val codes = jDepsAnalyzerImpl.analyze(m)
       printCode(codes)
+      println("")
     })
   } finally {
     localMavenRepository.stop
   }
 
-  private def printCode(codes:Set[Code]): Unit ={
-    codes.foreach(code=>{
+  private def printCode(codes: Set[Code]): Unit = {
+    codes.foreach(code => {
       println(s"  >> codePath: ${fullRelativePathOf(code.codePath)}")
       println("  deps:")
-      code.dependencies.foreach(d=>{
+      code.dependencies.foreach(d => {
         println(s"    - ${fullRelativePathOf(d.codePath)}")
       })
       println("=====")
     })
   }
 
-  private def fullRelativePathOf(codePath:CodePath) = s"${codePath.module.relativePathFromMonoRepoRoot}/${codePath.relativeSourceDirPathFromModuleRoot}/${codePath.filePath}"
+  private def fullRelativePathOf(codePath: CodePath) = s"${codePath.module.relativePathFromMonoRepoRoot}/${codePath.relativeSourceDirPathFromModuleRoot}/${codePath.filePath}"
 }
 
 

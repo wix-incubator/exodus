@@ -40,14 +40,14 @@ class JDepsParserTest extends SpecificationWithJUnit {
 
   val jdepsOutputContent: String = """digraph "core-business-some-service-0.0.1-SNAPSHOT.jar" {
                              |    // Path: products/some-service/core-business-some-service/target/core-business-some-service-0.0.1-SNAPSHOT.jar
-                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration" -> "java.lang.Object";
-                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration" -> "org.springframework.context.annotation.ComponentScan (not found)";
-                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration" -> "org.springframework.context.annotation.Configuration (not found)";
+                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration"     -> "java.lang.Object";
+                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration" ->    "org.springframework.context.annotation.ComponentScan (not found)";
+                             |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration"   ->    "org.springframework.context.annotation.Configuration (not found)";
                              |   "exodus.demo.core.business.some.service.SomeServiceCoreConfiguration" -> "org.springframework.context.annotation.Import (not found)";
                              |   "exodus.demo.core.business.some.service.api.SomeService" -> "java.lang.Object";
                              |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "exodus.demo.commons.core.something.SomeCommonBusinessUtil (core-common-0.0.1-SNAPSHOT.jar)";
-                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "exodus.demo.core.business.some.service.api.SomeService (classes)";
-                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "exodus.demo.core.repositories.some.repo.SomeRepository (core-repository-some-repo-0.0.1-SNAPSHOT.jar)";
+                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService"   -> "exodus.demo.core.business.some.service.api.SomeService (classes)";
+                             |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" ->    "exodus.demo.core.repositories.some.repo.SomeRepository (core-repository-some-repo-0.0.1-SNAPSHOT.jar)";
                              |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "java.lang.IllegalStateException";
                              |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "java.lang.Object";
                              |   "exodus.demo.core.business.some.service.impl.DefaultSomeService" -> "java.lang.String";
