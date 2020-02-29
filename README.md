@@ -1,6 +1,6 @@
 # EXODUS
 
-[![Build Status](https://api.cirrus-ci.com/github/wix/exodus.svg)](https://cirrus-ci.com/github/wix/exodus)
+[![Build Status](https://api.cirrus-ci.com/github/wix/exodus/master.svg)](https://cirrus-ci.com/github/wix/exodus/master)
 
 
 <img src="https://github.com/wix/exodus/blob/master/docs/assets/img/Blue-short2.png" width="350" alt="exodus logo"/>
