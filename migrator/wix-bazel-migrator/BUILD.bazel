@@ -30,7 +30,6 @@ scala_library(
         "//dependency-resolver/maven-dependency-resolver-testkit:main_dependencies",
         "//migrator/bazel-migrator-model-testkit:main_dependencies",
         "//test-utils:main_dependencies",
-        "//third_party/com/wixpress/hoopoe:hoopoe_specs2",
         "@com_gitblit_gitblit",
         "@com_github_marschall_memoryfilesystem",
     ],
