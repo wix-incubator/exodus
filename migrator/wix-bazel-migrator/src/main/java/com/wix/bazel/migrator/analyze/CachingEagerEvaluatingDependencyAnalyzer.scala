@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 import scala.collection.parallel.ParMap
 
 //this is needed since currently the transformer isn't thread safe but the dependency analyzer is
-class CachingEagerEvaluatingCodotaDependencyAnalyzer(sourceModules: Set[SourceModule], dependencyAnalyzer: DependencyAnalyzer) extends DependencyAnalyzer {
+class CachingEagerEvaluatingDependencyAnalyzer(sourceModules: Set[SourceModule], dependencyAnalyzer: DependencyAnalyzer, performSourceAnalysis: Boolean) extends DependencyAnalyzer {
   private val log = LoggerFactory.getLogger(getClass)
   private val cachePath = Files.createDirectories(Paths.get("./cache"))
   private val objectMapper = new ObjectMapper()
@@ -28,7 +28,7 @@ class CachingEagerEvaluatingCodotaDependencyAnalyzer(sourceModules: Set[SourceMo
     .addMixIn(classOf[MavenScope], classOf[TypeAddingMixin])
 
   private val collectionType = objectMapper.getTypeFactory.constructCollectionType(classOf[util.Collection[Code]], classOf[Code])
-  private val clean = sys.props.getOrElse("clean.dependency.analysis.cache", "") == "true"
+  private val clean = performSourceAnalysis
 
   private def cachePathForSourceModule(m: SourceModule) = {
     cachePath.resolve(m.relativePathFromMonoRepoRoot + ".cache")
