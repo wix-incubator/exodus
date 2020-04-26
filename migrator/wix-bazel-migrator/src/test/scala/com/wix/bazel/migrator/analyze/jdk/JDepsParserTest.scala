@@ -1,13 +1,10 @@
-package com.wix.jdeps.test
+package com.wix.bazel.migrator.analyze.jdk
 
 import java.nio.file.Files
 
 import com.wix.bazel.migrator.model.{ModuleDependencies, SourceModule}
-import com.wix.jdeps.{ClassDependencies, JDepsParserImpl, JVMClass}
 import com.wixpress.build.maven.Coordinates
 import org.specs2.mutable.SpecificationWithJUnit
-
-
 
 
 class JDepsParserTest extends SpecificationWithJUnit {

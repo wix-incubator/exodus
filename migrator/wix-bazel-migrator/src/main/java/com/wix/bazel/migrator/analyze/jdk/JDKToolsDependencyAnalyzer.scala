@@ -1,26 +1,11 @@
-package com.wix.jdeps
+package com.wix.bazel.migrator.analyze.jdk
 
 import java.nio.file.{Files, Path, Paths}
 
+import com.wix.bazel.migrator.analyze.{Code, CodePath, Dependency => CodeDependency}
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.{LocalMavenRepository, SourceModules}
 import com.wixpress.build.maven.{AetherMavenDependencyResolver, Dependency, MavenScope}
-
-case class JVMClass(fqnClass: String,
-                    sourceModule: SourceModule,
-                    testClass: Boolean = false)
-
-case class CodePath(module: SourceModule,
-                    relativeSourceDirPathFromModuleRoot: String,
-                    filePath: String) {
-  def extension: String = filePath.split('.').last
-}
-
-case class Code(codePath: CodePath, dependencies: List[CodeDependency])
-
-case class CodeDependency(codePath: CodePath, isCompileDependency: Boolean)
-
-case class ClassDependencies(dotFile: Path)
 
 trait JDepsCommand {
   def analyzeClassesDependenciesPerJar(jarPath: String, classPath: List[String]): Option[ClassDependencies]
@@ -151,20 +136,8 @@ object Simulator extends App {
   private def fullRelativePathOf(codePath: CodePath) = s"${codePath.module.relativePathFromMonoRepoRoot}/${codePath.relativeSourceDirPathFromModuleRoot}/${codePath.filePath}"
 }
 
+case class JVMClass(fqnClass: String,
+                    sourceModule: SourceModule,
+                    testClass: Boolean = false)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+case class ClassDependencies(dotFile: Path)

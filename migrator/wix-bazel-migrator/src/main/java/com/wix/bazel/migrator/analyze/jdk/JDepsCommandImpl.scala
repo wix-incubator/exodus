@@ -1,7 +1,6 @@
-package com.wix.jdeps
+package com.wix.bazel.migrator.analyze.jdk
 
 import java.nio.file.{Files, Path, Paths}
-
 
 
 class JDepsCommandImpl(repoRoot: Path) extends JDepsCommand {

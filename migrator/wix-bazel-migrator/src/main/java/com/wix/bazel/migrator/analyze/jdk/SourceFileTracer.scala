@@ -1,9 +1,10 @@
-package com.wix.jdeps
+package com.wix.bazel.migrator.analyze.jdk
 
 import java.nio.file.{FileSystem, FileSystems, Files, Path}
 
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.jdeps.MavenRelativeSourceDirPathFromModuleRoot.PossibleLocation
+import MavenRelativeSourceDirPathFromModuleRoot.PossibleLocation
+import com.wix.bazel.migrator.analyze.CodePath
 
 trait SourceFileTracer {
   def traceSourceFile(module: SourceModule, fqn: String, pathToJar: String, testClass: Boolean): CodePath

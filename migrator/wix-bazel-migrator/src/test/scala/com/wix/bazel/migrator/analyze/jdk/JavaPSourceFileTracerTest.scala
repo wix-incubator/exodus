@@ -1,14 +1,13 @@
-package com.wix.jdeps.test
+package com.wix.bazel.migrator.analyze.jdk
 
 import java.nio.file.{FileSystem, Files, Path}
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import com.wix.bazel.migrator.model.SourceModule
-import com.wix.jdeps.{CodePath, JavaPSourceFileTracer, ProcessRunner, RunResult}
-import org.specs2.matcher.Scope
-import org.specs2.mutable.SpecificationWithJUnit
-import org.specs2.mock.Mockito
 import com.wix.bazel.migrator.model.makers.ModuleMaker._
+import org.specs2.matcher.Scope
+import org.specs2.mock.Mockito
+import org.specs2.mutable.SpecificationWithJUnit
 
 class JavaPSourceFileTracerTest extends SpecificationWithJUnit with Mockito {
   "JavaPSourceFileTracerTest" should {

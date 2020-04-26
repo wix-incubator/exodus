@@ -1,4 +1,4 @@
-package com.wix.jdeps
+package com.wix.bazel.migrator.analyze.jdk
 
 import java.nio.file.Path
 

@@ -1,11 +1,10 @@
-package com.wix.jdeps.test
+package com.wix.bazel.migrator.analyze.jdk
 
 import java.nio.file.{FileSystem, Files, Path}
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.model.makers.ModuleMaker.aModule
-import com.wix.jdeps.{MavenStandardModulesPathsResolver, ModulePathsResolver}
 import org.specs2.matcher.Scope
 import org.specs2.mutable.SpecificationWithJUnit
 

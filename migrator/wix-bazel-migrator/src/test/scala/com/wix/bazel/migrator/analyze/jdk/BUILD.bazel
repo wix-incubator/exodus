@@ -2,12 +2,12 @@ package(default_visibility = ["//visibility:public"])
 
 sources()
 specs2_unit_test(
-    name = "test",
+    name = "jdk",
     srcs = [
         ":sources",
     ],
     deps = [
-        "//tools/JDepsAnalysis/com/wix/jdeps:jdeps",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze/jdk:jdk",
             "//models/maven-model/src/main/scala/com/wixpress/build/maven",
             "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers:makers",
             "@org_mockito_mockito_core",
