@@ -9,6 +9,7 @@ case class RunConfiguration(repoRoot: File,
                             managedDepsRepo: Option[File],
                             codotaToken: Option[String],
                             performMavenClasspathResolution: Boolean = true,
+                            performDependencyAnalysis: Boolean = true,
                             performTransformation: Boolean = true,
                             failOnSevereConflicts: Boolean = false,
                             interRepoSourceDependency: Boolean = false,
@@ -64,6 +65,10 @@ object RunConfiguration {
       .required()
       .withFallback(() => booleanProperty("skip.classpath"))
       .action { case (skip, cfg) => cfg.copy(performMavenClasspathResolution = !skip) }
+
+    opt[Boolean]("skip-analysis")
+      .withFallback(() => booleanProperty("skip.analysis"))
+      .action { case (skip, cfg) => cfg.copy(performDependencyAnalysis = !skip) }
 
     opt[Boolean]("skip-transform")
       .required()
