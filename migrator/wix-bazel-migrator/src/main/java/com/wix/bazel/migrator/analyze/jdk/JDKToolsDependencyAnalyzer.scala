@@ -2,7 +2,7 @@ package com.wix.bazel.migrator.analyze.jdk
 
 import java.nio.file.{Files, Path, Paths}
 
-import com.wix.bazel.migrator.analyze.{Code, CodePath, Dependency => CodeDependency}
+import com.wix.bazel.migrator.analyze.{Code, CodePath, DependencyAnalyzer, Dependency => CodeDependency}
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.{LocalMavenRepository, SourceModules}
 import com.wixpress.build.maven.{AetherMavenDependencyResolver, Dependency, MavenScope}
@@ -11,15 +11,11 @@ trait JDepsCommand {
   def analyzeClassesDependenciesPerJar(jarPath: String, classPath: List[String]): Option[ClassDependencies]
 }
 
-trait JDKToolsDependencyAnalyzer {
-  def analyze(module: SourceModule): Set[Code]
-}
-
 trait JDepsParser {
   def convert(deps: ClassDependencies, currentSourceModule: SourceModule): Map[JVMClass, Set[JVMClass]]
 }
 
-class JDKToolsDependencyAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends JDKToolsDependencyAnalyzer {
+class JDKToolsDependencyAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends DependencyAnalyzer {
   val jDepsParser: JDepsParser = new JDepsParserImpl(modules)
   val jDepsCommand: JDepsCommand = new JDepsCommandImpl(repoPath)
   val sourceFileTracer = new JavaPSourceFileTracer(repoPath)
@@ -88,14 +84,13 @@ class JDKToolsDependencyAnalyzerImpl(modules: Set[SourceModule], repoPath: Path)
     })
       .getOrElse(Map.empty)
   }
-
-  override def analyze(sourceModules: SourceModule): Set[Code] = {
+  override def allCodeForModule(sourceModules: SourceModule): List[Code] = {
     val prodMap = extractJvmClasses(sourceModules)
 
     val prodCode = convertToCode(prodMap)
     val testMap = extractTestJvmClasses(sourceModules)
     val testCode = convertToCode(testMap, testCode = true)
-    prodCode ++ testCode
+    (prodCode ++ testCode).toList
   }
 }
 
@@ -114,7 +109,7 @@ object Simulator extends App {
       println("~~~~~")
       println(s"codes for ${m.relativePathFromMonoRepoRoot}")
       println("~~~~~")
-      val codes = jDepsAnalyzerImpl.analyze(m)
+      val codes = jDepsAnalyzerImpl.allCodeForModule(m)
       printCode(codes)
       println("")
     })
@@ -122,7 +117,7 @@ object Simulator extends App {
     localMavenRepository.stop
   }
 
-  private def printCode(codes: Set[Code]): Unit = {
+  private def printCode(codes: Iterable[Code]): Unit = {
     codes.foreach(code => {
       println(s"  >> codePath: ${fullRelativePathOf(code.codePath)}")
       println("  deps:")
