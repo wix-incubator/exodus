@@ -5,6 +5,7 @@ import java.net.URL
 import java.nio.file.Path
 import java.time.temporal.ChronoUnit
 
+import com.wix.bazel.migrator.analyze.jdk.JDKToolsDependencyAnalyzer
 import com.wix.bazel.migrator.analyze.{CodotaDependencyAnalyzer, ZincDepednencyAnalyzer}
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.bazel.migrator.utils.DependenciesDifferentiator
@@ -41,7 +42,7 @@ class MigratorInputs(configuration: RunConfiguration) {
       case Some(token) =>
         new CodotaDependencyAnalyzer(repoRoot, codeModules, token,
           configuration.interRepoSourceDependency, dependenciesDifferentiator)
-      case _ => new ZincDepednencyAnalyzer(repoRoot)
+      case _ => new JDKToolsDependencyAnalyzer(codeModules,repoRoot)
     }
   }
 

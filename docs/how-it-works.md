@@ -20,7 +20,7 @@ During this phase, Exodus analyzes:
 
 Based on the analysis described above, Exodus creates an internal, fine-grained, code graph using the following process:
 
-1. Query a code index for a list of files and their dependencies for each code module to form a file graph.
+1. Query a code index (created by running built-in jdk tools, jdeps and javap) for a list of files and their dependencies for each code module to form a file graph.
 
 1. Transform the graphs created above to a package-level graph since we don't want to maintain targets for specific files. Rather we're aiming for package level granularity as 1:1:1 meaning one target per one directory that represents one single package. 
 

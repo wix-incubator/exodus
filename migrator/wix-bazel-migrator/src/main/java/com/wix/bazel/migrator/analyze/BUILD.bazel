@@ -1,24 +1,27 @@
 package(default_visibility = ["//visibility:public"])
 
 sources()
+
 scala_library(
     name = "analyze",
     srcs = [
         ":sources",
     ],
     deps = [
-        "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze:analyze",
-        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven:maven",
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform/failures",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/utils",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/build/maven/analysis",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/zinc/analysis",
+        "@com_codota_codota_sdk_java",
         "@com_fasterxml_jackson_core_jackson_annotations",
         "@com_fasterxml_jackson_core_jackson_core",
         "@com_fasterxml_jackson_core_jackson_databind",
         "@com_fasterxml_jackson_module_jackson_module_scala_2_12",
         "@org_slf4j_slf4j_api",
-        "@com_codota_codota_sdk_java",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/utils:utils",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides:overrides",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/transform_build/maven/analysis",
-        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/zinc/analysis:analysis",
-
-    ]
+    ],
 )

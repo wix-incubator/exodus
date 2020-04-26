@@ -1,12 +1,13 @@
 package(default_visibility = ["//visibility:public"])
 
 sources()
+
 scala_library(
     name = "analyze",
     srcs = [
         ":sources",
     ],
     deps = [
-        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model:model",
-    ]
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+    ],
 )
