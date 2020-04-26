@@ -1,17 +1,20 @@
 package(default_visibility = ["//visibility:public"])
 
 sources()
+
 specs2_unit_test(
     name = "jdk",
     srcs = [
         ":sources",
     ],
     deps = [
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze/jdk:jdk",
-            "//models/maven-model/src/main/scala/com/wixpress/build/maven",
-            "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers:makers",
-            "@org_mockito_mockito_core",
-            "@org_specs2_specs2_mock_2_12",
-            "@com_github_marschall_memoryfilesystem",
-            ]
+        "//migrator/bazel-migrator-model-testkit/src/main/java/com/wix/bazel/migrator/model/makers",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze/jdk",
+        "//models/maven-model/src/main/scala/com/wixpress/build/maven",
+        "@com_github_marschall_memoryfilesystem",
+        "@org_mockito_mockito_core",
+        "@org_specs2_specs2_mock_2_12",
+    ],
 )

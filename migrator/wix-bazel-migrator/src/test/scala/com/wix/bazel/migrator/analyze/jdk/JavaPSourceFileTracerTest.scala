@@ -8,6 +8,7 @@ import com.wix.bazel.migrator.model.makers.ModuleMaker._
 import org.specs2.matcher.Scope
 import org.specs2.mock.Mockito
 import org.specs2.mutable.SpecificationWithJUnit
+import com.wix.bazel.migrator.analyze.CodePath
 
 class JavaPSourceFileTracerTest extends SpecificationWithJUnit with Mockito {
   "JavaPSourceFileTracerTest" should {
