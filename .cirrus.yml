@@ -6,26 +6,29 @@ bazel_build:
   environment:
     XDG_CACHE_HOME: /xdg_cache
 
-  bazelisk_installation_script:
-  - |
-    curl -LO "https://github.com/bazelbuild/bazelisk/releases/download/v1.1.0/bazelisk-linux-amd64"
-    mv bazelisk-linux-amd64 "/usr/bin/bazel"
-    chmod +x /usr/bin/bazel
+  task:
+    bazelisk_installation_script:
+      - |
+        rm /usr/local/bin/bazel
+        curl -LO "https://github.com/bazelbuild/bazelisk/releases/download/v1.3.0/bazelisk-linux-amd64"
+        mv bazelisk-linux-amd64 "/usr/bin/bazel"
+        chmod +x /usr/bin/bazel
+        which bazel
 
-  bazelisk_cache:
-    folder: $XDG_CACHE_HOME
-    fingerprint_script: cat .bazelversion
-    populate_script: mkdir -p  $XDG_CACHE_HOME && bazel version
+    bazelisk_cache:
+      folder: $XDG_CACHE_HOME
+      fingerprint_script: cat .bazelversion
+      populate_script: mkdir -p $XDG_CACHE_HOME && bazel version
 
-  bazel_repository_cache:
-    folder: /.repo_cache
-    fingerprint_script: cat */**.bzl && cat WORKSPACE
-    populate_script: mkdir -p /.repo_cache && bazel fetch --repository_cache=/.repo_cache //...
+    bazel_repository_cache:
+      folder: /.repo_cache
+      fingerprint_script: cat */**.bzl && cat WORKSPACE
+      populate_script: mkdir -p /.repo_cache && bazel fetch --repository_cache=/.repo_cache //...
 
-  test_script:
-  - bazel test --repository_cache=/.repo_cache -k --remote_http_cache=http://$CIRRUS_HTTP_CACHE_HOST //...
+    test_script:
+      - bazel  test  --repository_cache=/.repo_cache -k --remote_http_cache=http://$CIRRUS_HTTP_CACHE_HOST //...
 
-  always:
-    junit_result_artifacts:
-      path: "bazel-testlogs/**/test.xml"
-      format: junit
+    always:
+      junit_result_artifacts:
+        path: "bazel-testlogs/**/test.xml"
+        format: junit
