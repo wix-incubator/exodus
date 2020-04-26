@@ -36,7 +36,10 @@ class JDKToolsDependencyAnalyzer(modules: Set[SourceModule], repoPath: Path) ext
 
   private def convertSingleToCode(jvmClass: JVMClass, deps: Set[JVMClass], testCode: Boolean = false): Option[Code] = {
     toCodePath(jvmClass, testCode).map(codePath =>
-      Code(codePath, dependencies = deps.flatMap(d => toCodePath(d, d.testClass).map(e => CodeDependency(e, testCode)).toList).toList))
+      Code(codePath, dependencies = deps.flatMap(d => toCodePath(d, d.testClass).map(e => {
+        val CompileDependency = true //this dependency analyzer finds only compile dependencies
+        CodeDependency(e, CompileDependency)
+      }).toList).toList))
   }
 
 
