@@ -10,7 +10,6 @@ build:bazel16uplocal --action_env=PLACE_HOLDER=SO_USING_CONFIG_GROUP_WILL_WORK_B
 build --strategy=Scalac=worker
 build --extra_toolchains=//:global_toolchain
 build --strict_proto_deps=off
-build --experimental_remap_main_repo=true
 build --experimental_multi_threaded_digest=true
 
 # this flag makes Bazel keep the analysis cache when test flags such as 'test_arg' (and other 'test_xxx' flags) change
