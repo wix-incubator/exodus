@@ -12,7 +12,7 @@ specs2_unit_test(
     deps = [
         "//dependency-resolver/maven-dependency-resolver-api:tests_dependencies",
         "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/transform_build/maven/analysis",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator",
     ],
 )
 

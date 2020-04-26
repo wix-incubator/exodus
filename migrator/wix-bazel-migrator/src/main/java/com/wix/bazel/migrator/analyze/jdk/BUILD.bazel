@@ -12,7 +12,7 @@ scala_library(
         "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
         "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix:agg=bazel/migrator_bazel/migrator/transform_build/maven/analysis",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/build/maven/analysis",
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
     ],
 )

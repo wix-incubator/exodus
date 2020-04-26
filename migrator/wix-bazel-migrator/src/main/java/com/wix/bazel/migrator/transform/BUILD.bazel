@@ -1,3 +1,20 @@
-sources(
-    visibility = ["//migrator/wix-bazel-migrator/src/main/java/com/wix:__pkg__"],
+package(default_visibility = ["//visibility:public"])
+
+sources()
+
+scala_library(
+    name = "transform",
+    srcs = [
+        ":sources",
+    ],
+    resources = [
+    ],
+    runtime_deps = [
+    ],
+    deps = [
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven:maven",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/external/registry:registry",
+    ],
 )

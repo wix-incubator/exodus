@@ -1,3 +1,15 @@
-sources(
-    visibility = ["//migrator/wix-bazel-migrator/src/main/java/com/wix:__pkg__"],
+package(default_visibility = ["//visibility:public"])
+
+sources()
+
+scala_library(
+    name = "analysis",
+    srcs = [
+        ":sources",
+    ],
+    deps = [
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model:model",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides:overrides",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven:maven",
+    ],
 )
