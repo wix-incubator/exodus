@@ -12,6 +12,7 @@ scala_library(
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
         "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform/failures",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/utils",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/build/maven/analysis",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
