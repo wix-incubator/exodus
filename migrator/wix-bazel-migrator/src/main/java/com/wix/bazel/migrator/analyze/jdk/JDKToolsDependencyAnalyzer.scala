@@ -15,23 +15,11 @@ trait JDepsParser {
   def convert(deps: ClassDependencies, currentSourceModule: SourceModule): Map[JVMClass, Set[JVMClass]]
 }
 
-class JDKToolsDependencyAnalyzerImpl(modules: Set[SourceModule], repoPath: Path) extends DependencyAnalyzer {
+class JDKToolsDependencyAnalyzer(modules: Set[SourceModule], repoPath: Path) extends DependencyAnalyzer {
   val jDepsParser: JDepsParser = new JDepsParserImpl(modules)
   val jDepsCommand: JDepsCommand = new JDepsCommandImpl(repoPath)
   val sourceFileTracer = new JavaPSourceFileTracer(repoPath)
   val modulePathsResolver = new MavenStandardModulesPathsResolver(repoPath)
-
-  // probably better if we use javap to get the file name
-  private def toJavaSourcePath(fqn: String) = {
-    fqn.replace('.', '/') + ".java"
-  }
-
-  private val ProdCodePaths = Set("src/main/java", "src/main/scala")
-  private val TestCodePaths = Set(
-    "src/test/java", "src/test/scala",
-    "src/it/java", "src/it/scala",
-    "src/e2e/java", "src/e2e/scala"
-  )
 
   def exists(codePath: CodePath): Boolean = {
     val fullPath = repoPath.resolve(codePath.module.relativePathFromMonoRepoRoot).resolve(codePath.relativeSourceDirPathFromModuleRoot).resolve(codePath.filePath)
@@ -103,7 +91,7 @@ object Simulator extends App {
   private val repoRoot = Paths.get(s"$root/workspace/poc/exodus-demo")
   private val sourceModules = SourceModules(repoRoot, aetherResolver).codeModules
   val jDepsParser: JDepsParser = new JDepsParserImpl(sourceModules)
-  val jDepsAnalyzerImpl = new JDKToolsDependencyAnalyzerImpl(sourceModules, repoRoot)
+  val jDepsAnalyzerImpl = new JDKToolsDependencyAnalyzer(sourceModules, repoRoot)
   try {
     sourceModules.foreach(m => {
       println("~~~~~")
