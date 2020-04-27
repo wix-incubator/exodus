@@ -3,7 +3,7 @@ package(default_visibility = ["//visibility:public"])
 scala_library(
     name = "analysis",
     srcs = [
-        "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis:sources",
+        ":sources",
     ],
     runtime_deps = [
     ],
