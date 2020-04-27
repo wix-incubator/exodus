@@ -21,6 +21,7 @@ scala_library(
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform/failures",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/utils",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/build/maven/analysis",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
         "//workspaces-resolution-utils/src/main/scala/com/wixpress/build/bazel/workspaces",
