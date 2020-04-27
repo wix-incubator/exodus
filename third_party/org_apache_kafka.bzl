@@ -19,8 +19,10 @@ def dependencies():
           "@org_scala_lang_scala_reflect",
           "@org_slf4j_slf4j_api"
       ],
-    # EXCLUDES org.slf4j:slf4j-log4j12
-    # EXCLUDES log4j:log4j
+      excludes = [
+         "org.slf4j:slf4j-log4j12",
+         "log4j:log4j",
+      ],
   )
 
 

@@ -13,7 +13,9 @@ def dependencies():
           "@org_apache_httpcomponents_httpclient",
           "@org_slf4j_slf4j_api"
       ],
-    # EXCLUDES junit:
+      excludes = [
+         "junit:",
+      ],
   )
 
 
@@ -25,5 +27,7 @@ def dependencies():
       deps = [
           "@org_eclipse_jgit_org_eclipse_jgit"
       ],
-    # EXCLUDES junit:
+      excludes = [
+         "junit:",
+      ],
   )

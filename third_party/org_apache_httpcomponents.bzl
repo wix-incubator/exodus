@@ -11,7 +11,9 @@ def dependencies():
           "@commons_codec_commons_codec",
           "@org_apache_httpcomponents_httpcore"
       ],
-    # EXCLUDES commons-logging:commons-logging
+      excludes = [
+         "commons-logging:commons-logging",
+      ],
   )
 
 

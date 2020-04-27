@@ -36,7 +36,9 @@ def dependencies():
           "@org_codehaus_plexus_plexus_utils",
           "@org_mortbay_jetty_jetty"
       ],
-    # EXCLUDES org.mortbay.jetty:servlet-api
+      excludes = [
+         "org.mortbay.jetty:servlet-api",
+      ],
   )
 
 
@@ -57,7 +59,9 @@ def dependencies():
           "@org_codehaus_plexus_plexus_archiver",
           "@org_codehaus_plexus_plexus_utils"
       ],
-    # EXCLUDES org.mortbay.jetty:servlet-api
+      excludes = [
+         "org.mortbay.jetty:servlet-api",
+      ],
   )
 
 

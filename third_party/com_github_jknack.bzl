@@ -12,5 +12,7 @@ def dependencies():
           "@org_apache_commons_commons_lang3",
           "@org_slf4j_slf4j_api"
       ],
-    # EXCLUDES org.mozilla:rhino
+      excludes = [
+         "org.mozilla:rhino",
+      ],
   )

@@ -15,7 +15,9 @@ def dependencies():
       artifact = "com.github.jnr:jnr-constants:0.9.9",
       artifact_sha256 = "6862e69646fb726684d8610bc5a65740feab5f235d8d1dc7596113bd1ad54181",
       srcjar_sha256 = "3ccbb488bae6c8534a0666ca50aac683c8b2f8fb3a0d3ba7cd28813ac838e44d",
-    # EXCLUDES com.github.jnr:jnr-ffi
+      excludes = [
+         "com.github.jnr:jnr-ffi",
+      ],
   )
 
 
@@ -27,7 +29,9 @@ def dependencies():
       deps = [
           "@com_github_jnr_jnr_constants"
       ],
-    # EXCLUDES com.github.jnr:jnr-ffi
+      excludes = [
+         "com.github.jnr:jnr-ffi",
+      ],
   )
 
 
@@ -41,7 +45,9 @@ def dependencies():
           "@com_github_jnr_jnr_enxio",
           "@com_github_jnr_jnr_posix"
       ],
-    # EXCLUDES com.github.jnr:jnr-ffi
+      excludes = [
+         "com.github.jnr:jnr-ffi",
+      ],
   )
 
 
@@ -50,7 +56,9 @@ def dependencies():
       artifact = "com.github.jnr:jnr-x86asm:1.0.2",
       artifact_sha256 = "39f3675b910e6e9b93825f8284bec9f4ad3044cd20a6f7c8ff9e2f8695ebf21e",
       srcjar_sha256 = "3c983efd496f95ea5382ca014f96613786826136e0ce13d5c1cbc3097ea92ca0",
-    # EXCLUDES com.github.jnr:jnr-ffi
+      excludes = [
+         "com.github.jnr:jnr-ffi",
+      ],
   )
 
 
@@ -62,7 +70,9 @@ def dependencies():
       deps = [
           "@com_github_jnr_jnr_constants"
       ],
-    # EXCLUDES com.github.jnr:jnr-ffi
+      excludes = [
+         "com.github.jnr:jnr-ffi",
+      ],
   )
 
 

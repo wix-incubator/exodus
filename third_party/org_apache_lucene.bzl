@@ -7,11 +7,13 @@ def dependencies():
       artifact = "org.apache.lucene:lucene-highlighter:7.4.0",
       artifact_sha256 = "fc7790a21d2de5148eb314b6e8c8e6cc377def0c3f4eac45caaec00368e5b303",
       srcjar_sha256 = "fb22124cca90155226159c6facff36fb393c72d5c11f1293a3add758da085930",
-    # EXCLUDES org.apache.lucene:lucene-queries
-    # EXCLUDES org.apache.lucene:lucene-join
-    # EXCLUDES org.apache.lucene:lucene-analyzers-common
-    # EXCLUDES org.apache.lucene:lucene-core
-    # EXCLUDES org.apache.lucene:lucene-memory
+      excludes = [
+         "org.apache.lucene:lucene-queries",
+         "org.apache.lucene:lucene-join",
+         "org.apache.lucene:lucene-analyzers-common",
+         "org.apache.lucene:lucene-core",
+         "org.apache.lucene:lucene-memory",
+      ],
   )
 
 
@@ -20,7 +22,9 @@ def dependencies():
       artifact = "org.apache.lucene:lucene-memory:7.4.0",
       artifact_sha256 = "701dbfeff501f8e98b13424c8ee8f9e4eaf235af97de67d663ae2ff964d61839",
       srcjar_sha256 = "eb78f3641aaeba1a65e68868f74fe0da6c0f6aa5571478e945f92b20999e17dc",
-    # EXCLUDES org.apache.lucene:lucene-core
+      excludes = [
+         "org.apache.lucene:lucene-core",
+      ],
   )
 
 
@@ -29,7 +33,9 @@ def dependencies():
       artifact = "org.apache.lucene:lucene-queries:7.4.0",
       artifact_sha256 = "80173cb8d36119af9d55fd9f2e64cfe45d95020b69b8daebb8a6037e0e51de2b",
       srcjar_sha256 = "f8b78ed9e0c010fa8efff1fed630a8ec47dd72a142ec9d375600551277eb4728",
-    # EXCLUDES org.apache.lucene:lucene-core
+      excludes = [
+         "org.apache.lucene:lucene-core",
+      ],
   )
 
 
@@ -70,5 +76,7 @@ def dependencies():
       artifact = "org.apache.lucene:lucene-sandbox:7.4.0",
       artifact_sha256 = "825c7b194cc0280379a3354e04d16f1d768f731e94a3edae0812b4df0fd39267",
       srcjar_sha256 = "1665dae23c9c215f6a7b7a62d1c0d76e3b07f273bc76d409ae1a917f3bdac211",
-    # EXCLUDES org.apache.lucene:lucene-core
+      excludes = [
+         "org.apache.lucene:lucene-core",
+      ],
   )

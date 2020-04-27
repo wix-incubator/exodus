@@ -33,7 +33,9 @@ def dependencies():
       artifact = "org.codehaus.plexus:plexus-component-annotations:1.7.1",
       artifact_sha256 = "a7fee9435db716bff593e9fb5622bcf9f25e527196485929b0cd4065c43e61df",
       srcjar_sha256 = "18999359e8c1c5eb1f17a06093ceffc21f84b62b4ee0d9ab82f2e10d11049a78",
-    # EXCLUDES junit:junit
+      excludes = [
+         "junit:junit",
+      ],
   )
 
 

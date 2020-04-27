@@ -14,6 +14,8 @@ def dependencies():
           "@io_netty_netty_handler",
           "@org_slf4j_slf4j_api"
       ],
-    # EXCLUDES com.github.jnr:jnr-posix
-    # EXCLUDES com.codahale.metrics:metrics-core
+      excludes = [
+         "com.github.jnr:jnr-posix",
+         "com.codahale.metrics:metrics-core",
+      ],
   )

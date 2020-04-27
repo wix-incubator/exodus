@@ -7,5 +7,7 @@ def dependencies():
       artifact = "dom4j:dom4j:1.6.1",
       artifact_sha256 = "593552ffea3c5823c6602478b5002a7c525fd904a3c44f1abe4065c22edfac73",
       srcjar_sha256 = "4d37275f80991a37be460e73b01890172f82fd561253ba2130b62a7a5d07222d",
-    # EXCLUDES xml-apis:xml-apis
+      excludes = [
+         "xml-apis:xml-apis",
+      ],
   )

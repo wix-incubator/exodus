@@ -10,7 +10,9 @@ def dependencies():
       deps = [
           "@org_slf4j_slf4j_api"
       ],
-    # EXCLUDES org.mockito:
+      excludes = [
+         "org.mockito:",
+      ],
   )
 
 
@@ -23,7 +25,9 @@ def dependencies():
           "@org_apache_wicket_wicket",
           "@org_slf4j_slf4j_api"
       ],
-    # EXCLUDES org.mockito:
+      excludes = [
+         "org.mockito:",
+      ],
   )
 
 
@@ -36,5 +40,7 @@ def dependencies():
           "@org_apache_wicket_wicket",
           "@org_slf4j_slf4j_api"
       ],
-    # EXCLUDES org.mockito:
+      excludes = [
+         "org.mockito:",
+      ],
   )
