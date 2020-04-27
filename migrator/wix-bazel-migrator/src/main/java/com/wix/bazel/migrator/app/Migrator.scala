@@ -27,6 +27,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
   }
 
   def unSafeMigrate(): Unit
+
   def writeWorkspace(): Unit
 
   val importExternalLoadStatement: ImportExternalLoadStatement
@@ -37,7 +38,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
     CachingEagerExternalSourceModuleRegistry.build(
       externalSourceDependencies = externalSourceDependencies.map(_.coordinates),
       registry = new CompositeExternalSourceModuleRegistry(
-        registrySeq:_*))
+        registrySeq: _*))
   }
 
   lazy val mavenArchiveTargetsOverrides = MavenArchiveTargetsOverridesReader.from(repoRoot)
@@ -86,7 +87,7 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
     )
 
     val packagesFromCodeAnalysis = transformer.transform(codeModules)
-    val transformedPackages = packagesTransformers.foldLeft(packagesFromCodeAnalysis){
+    val transformedPackages = packagesTransformers.foldLeft(packagesFromCodeAnalysis) {
       (packages, packageTransformer) => packageTransformer.transform(packages)
     }
     Persister.persistTransformationResults(transformedPackages)
@@ -107,24 +108,16 @@ abstract class Migrator(configuration: RunConfiguration) extends MigratorInputs(
       case Some(path) => AdditionalDepsByMavenDepsOverridesReader.from(path)
       case None => AdditionalDepsByMavenDepsOverrides.empty
     }
-    new AdditionalDepsByMavenOverridesTransformer(overrides,configuration.interRepoSourceDependency, configuration.includeServerInfraInSocialModeSet)
+    new AdditionalDepsByMavenOverridesTransformer(overrides, configuration.interRepoSourceDependency, configuration.includeServerInfraInSocialModeSet)
   }
 
   private[migrator] def dependencyAnalyzer = {
     val exceptionFormattingDependencyAnalyzer = new ExceptionFormattingDependencyAnalyzer(sourceDependencyAnalyzer)
     val cachingSourceDependencyAnalyzer = new CachingEagerEvaluatingDependencyAnalyzer(codeModules, exceptionFormattingDependencyAnalyzer, configuration.performDependencyAnalysis)
-    if (wixFrameworkMigration)
-      new CompositeDependencyAnalyzer(
-        cachingSourceDependencyAnalyzer,
-        new ManualInfoDependencyAnalyzer(sourceModules),
-        new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot))
-    else
-      new CompositeDependencyAnalyzer(
-        cachingSourceDependencyAnalyzer,
-        new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot))
+    new CompositeDependencyAnalyzer(
+      cachingSourceDependencyAnalyzer,
+      new InternalFileDepsOverridesDependencyAnalyzer(sourceModules, repoRoot))
   }
-
-  private[migrator] def wixFrameworkMigration = configuration.repoUrl.contains("/wix-framework.git")
 
   private[migrator] def failIfFoundSevereConflictsIn(conflicts: ThirdPartyConflicts): Unit = {
     if (configuration.thirdPartyDependenciesSource.nonEmpty && conflicts.fail.nonEmpty) {
@@ -225,7 +218,7 @@ class PublicMigrator(configuration: RunConfiguration) extends Migrator(configura
     else
       basicImports :+ JavaTestImport
 
-    val allImports = if(configuration.keepJunit5Support) {
+    val allImports = if (configuration.keepJunit5Support) {
       basicSupportWithScalaOrJava :+ Junit5Import
     } else
       basicSupportWithScalaOrJava
