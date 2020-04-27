@@ -11,6 +11,8 @@ def dependencies():
           "@com_google_guava_guava",
           "@javax_inject_javax_inject"
       ],
-    # EXCLUDES com.google.code.findbugs:jsr305
-    # EXCLUDES aopalliance:aopalliance
+      excludes = [
+         "com.google.code.findbugs:jsr305",
+         "aopalliance:aopalliance",
+      ],
   )

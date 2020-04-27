@@ -58,5 +58,7 @@ def dependencies():
           "@ro_fortsoft_pf4j_pf4j",
           "@rome_rome"
       ],
-    # EXCLUDES org.eclipse.jetty.aggregate:jetty-all
+      excludes = [
+         "org.eclipse.jetty.aggregate:jetty-all",
+      ],
   )

@@ -11,5 +11,7 @@ def dependencies():
           "@com_google_code_gson_gson",
           "@com_google_protobuf_protobuf_java"
       ],
-    # EXCLUDES com.google.guava:guava
+      excludes = [
+         "com.google.guava:guava",
+      ],
   )

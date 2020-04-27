@@ -13,7 +13,9 @@ def dependencies():
           "@io_grpc_grpc_stub",
           "@org_scala_lang_scala_library"
       ],
-    # EXCLUDES com.google.api.grpc:proto-google-common-protos
+      excludes = [
+         "com.google.api.grpc:proto-google-common-protos",
+      ],
   )
 
 

@@ -12,6 +12,8 @@ def dependencies():
           "@net_bytebuddy_byte_buddy_agent",
           "@org_objenesis_objenesis"
       ],
-    # EXCLUDES org.hamcrest:hamcrest-all
-    # EXCLUDES org.hamcrest:hamcrest-core
+      excludes = [
+         "org.hamcrest:hamcrest-all",
+         "org.hamcrest:hamcrest-core",
+      ],
   )

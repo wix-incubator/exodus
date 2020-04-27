@@ -13,10 +13,12 @@ def dependencies():
           "@org_apache_yetus_audience_annotations",
           "@org_slf4j_slf4j_api"
       ],
-    # EXCLUDES log4j:log4j
-    # EXCLUDES com.sun.jdmk:jmxtools
-    # EXCLUDES com.sun.jmx:jmxri
-    # EXCLUDES javax.jms:jms
-    # EXCLUDES org.slf4j:slf4j-log4j12
-    # EXCLUDES junit:junit
+      excludes = [
+         "log4j:log4j",
+         "com.sun.jdmk:jmxtools",
+         "com.sun.jmx:jmxri",
+         "javax.jms:jms",
+         "org.slf4j:slf4j-log4j12",
+         "junit:junit",
+      ],
   )

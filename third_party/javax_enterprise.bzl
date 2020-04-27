@@ -11,7 +11,9 @@ def dependencies():
           "@javax_annotation_jsr250_api",
           "@javax_inject_javax_inject"
       ],
-    # EXCLUDES javax.el:el-api
-    # EXCLUDES org.jboss.ejb3:jboss-ejb3-api
-    # EXCLUDES org.jboss.interceptor:jboss-interceptor-api
+      excludes = [
+         "javax.el:el-api",
+         "org.jboss.ejb3:jboss-ejb3-api",
+         "org.jboss.interceptor:jboss-interceptor-api",
+      ],
   )

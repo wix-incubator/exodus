@@ -11,6 +11,8 @@ def dependencies():
           "@commons_lang_commons_lang",
           "@commons_logging_commons_logging"
       ],
-    # EXCLUDES commons-beanutils:commons-beanutils
-    # EXCLUDES commons-beanutils:commons-beanutils-core
+      excludes = [
+         "commons-beanutils:commons-beanutils",
+         "commons-beanutils:commons-beanutils-core",
+      ],
   )

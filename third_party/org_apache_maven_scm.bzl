@@ -35,5 +35,7 @@ def dependencies():
           "@org_apache_maven_scm_maven_scm_provider_git_commons",
           "@org_codehaus_plexus_plexus_utils"
       ],
-    # EXCLUDES org.eclipse.jgit:org.eclipse.jgit
+      excludes = [
+         "org.eclipse.jgit:org.eclipse.jgit",
+      ],
   )

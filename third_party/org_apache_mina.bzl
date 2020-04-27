@@ -10,5 +10,7 @@ def dependencies():
       deps = [
           "@org_slf4j_slf4j_api"
       ],
-    # EXCLUDES org.easymock:
+      excludes = [
+         "org.easymock:",
+      ],
   )

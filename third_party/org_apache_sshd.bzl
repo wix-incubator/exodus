@@ -10,7 +10,9 @@ def dependencies():
       deps = [
           "@org_apache_sshd_sshd_common"
       ],
-    # EXCLUDES org.easymock:
+      excludes = [
+         "org.easymock:",
+      ],
   )
 
 

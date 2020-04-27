@@ -14,6 +14,8 @@ def dependencies():
           "@org_joda_joda_convert",
           "@org_scala_lang_scala_library"
       ],
-    # EXCLUDES com.fasterxml.jackson.core:jackson-core
-    # EXCLUDES com.fasterxml.jackson.module:jackson-module-jaxb-annotations
+      excludes = [
+         "com.fasterxml.jackson.core:jackson-core",
+         "com.fasterxml.jackson.module:jackson-module-jaxb-annotations",
+      ],
   )

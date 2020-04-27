@@ -25,7 +25,9 @@ def dependencies():
           "@com_google_guava_guava",
           "@io_grpc_grpc_core"
       ],
-    # EXCLUDES com.google.protobuf:protobuf-lite
+      excludes = [
+         "com.google.protobuf:protobuf-lite",
+      ],
   )
 
 
@@ -40,7 +42,9 @@ def dependencies():
           "@io_grpc_grpc_protobuf",
           "@io_grpc_grpc_stub"
       ],
-    # EXCLUDES com.google.api.grpc:proto-google-common-protos
+      excludes = [
+         "com.google.api.grpc:proto-google-common-protos",
+      ],
   )
 
 

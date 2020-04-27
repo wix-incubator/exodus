@@ -10,9 +10,11 @@ def dependencies():
       deps = [
           "@org_apache_curator_curator_client"
       ],
-    # EXCLUDES org.slf4j:slf4j-log4j12
-    # EXCLUDES log4j:log4j
-    # EXCLUDES org.jboss.netty:netty
+      excludes = [
+         "org.slf4j:slf4j-log4j12",
+         "log4j:log4j",
+         "org.jboss.netty:netty",
+      ],
   )
 
 
@@ -26,9 +28,11 @@ def dependencies():
           "@org_apache_zookeeper_zookeeper",
           "@org_javassist_javassist"
       ],
-    # EXCLUDES org.slf4j:slf4j-log4j12
-    # EXCLUDES log4j:log4j
-    # EXCLUDES org.jboss.netty:netty
+      excludes = [
+         "org.slf4j:slf4j-log4j12",
+         "log4j:log4j",
+         "org.jboss.netty:netty",
+      ],
   )
 
 
@@ -52,9 +56,11 @@ def dependencies():
           "@org_apache_curator_curator_recipes",
           "@org_codehaus_jackson_jackson_mapper_asl"
       ],
-    # EXCLUDES org.slf4j:slf4j-log4j12
-    # EXCLUDES log4j:log4j
-    # EXCLUDES org.jboss.netty:netty
+      excludes = [
+         "org.slf4j:slf4j-log4j12",
+         "log4j:log4j",
+         "org.jboss.netty:netty",
+      ],
   )
 
 
