@@ -1,5 +1,7 @@
 package com.wixpress.build.maven
 
+import scala.util.{Failure, Success, Try}
+
 trait MavenDependencyResolver {
 
   def managedDependenciesOf(artifact: Coordinates): List[Dependency]
@@ -10,7 +12,11 @@ trait MavenDependencyResolver {
 
   def allDependenciesOf(artifact: Coordinates): Set[Dependency] = {
     val directDependencies = directDependenciesOf(artifact)
-    dependencyClosureOf(directDependencies, managedDependenciesOf(artifact)).map(_.baseDependency)
+    Try(dependencyClosureOf(directDependencies, managedDependenciesOf(artifact)).map(_.baseDependency)) match {
+      case Failure(e: DependencyResolverException) => throw DependencyResolverException(s"Could not get closure of ${artifact.serialized}\n${e.message}")
+      case Failure(e) => throw e
+      case Success(closure) => closure
+    }
   }
 
   protected def validatedDependency(dependency: Dependency): Dependency = {
@@ -29,3 +35,4 @@ trait MavenDependencyResolver {
 
 }
 
+case class DependencyResolverException(message: String) extends RuntimeException(message)
