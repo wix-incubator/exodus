@@ -75,11 +75,11 @@ class JDKToolsDependencyAnalyzer(modules: Set[SourceModule], repoPath: Path) ext
     })
       .getOrElse(Map.empty)
   }
-  override def allCodeForModule(sourceModules: SourceModule): List[Code] = {
-    val prodMap = extractJvmClasses(sourceModules)
+  override def allCodeForModule(sourceModule: SourceModule): List[Code] = {
+    val prodMap = extractJvmClasses(sourceModule)
 
     val prodCode = convertToCode(prodMap)
-    val testMap = extractTestJvmClasses(sourceModules)
+    val testMap = extractTestJvmClasses(sourceModule)
     val testCode = convertToCode(testMap, testCode = true)
     (prodCode ++ testCode).toList
   }

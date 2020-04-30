@@ -54,9 +54,8 @@ class MigratorInputs(configuration: RunConfiguration) {
 
   private def aetherMavenDependencyResolver(remoteRepoUrls: List[String]) = {
     val repoUrls =
-      maybeLocalMavenRepository.map(r => List(r.url)) getOrElse remoteRepoUrls
+      maybeLocalMavenRepository.map(r => List(r.url)).getOrElse(List.empty) ++ remoteRepoUrls
 
-    // use temporary localRepoPath (default param) to allow updates of pom files by migrator user. e.g. adding a direct dependency
     new AetherMavenDependencyResolver(repoUrls)
   }
 

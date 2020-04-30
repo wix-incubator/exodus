@@ -108,11 +108,13 @@ object RunConfiguration {
 
     opt[String](name = "remote-maven-repository-urls")
       .withFallback(() => sys.props.getOrElse("remote.maven.repository.urls", ""))
-      .text("comma delimited list of remote maven repositories (like artifactory, nexus)")
+      .text("comma delimited list of remote maven repositories (like artifactory, nexus, maven central, etc...)")
       .action {
         case (repos, cfg) if Option(repos).exists(_.nonEmpty) =>
           cfg.copy(remoteMavenRepositoriesUrls = repos.split(",").map(_.trim).filter(_.nonEmpty).toList)
-        case (_, cfg) => cfg.copy(remoteMavenRepositoriesUrls = List())
+        case (_, cfg) => cfg.copy(remoteMavenRepositoriesUrls =
+          List("https://repo.maven.apache.org/maven2/",
+            "https://maven-central.storage.googleapis.com"))
       }
 
     opt[String]("local-maven-repository-path")
