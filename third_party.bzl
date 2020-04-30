@@ -263,5 +263,6 @@ def dependencies():
             "http://gitblit.github.io/gitblit-maven",
             ],
         generate_compat_repositories = True,
+        # bazel 'run @maven//:pin' to acquire this json file
         maven_install_json = "//:maven_install.json",
     )
