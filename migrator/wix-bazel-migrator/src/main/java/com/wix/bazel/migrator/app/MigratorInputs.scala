@@ -54,10 +54,7 @@ class MigratorInputs(configuration: RunConfiguration) {
 
   private def aetherMavenDependencyResolver(remoteRepoUrls: List[String]) = {
     val repoUrls =
-      maybeLocalMavenRepository.map(r =>
-        List(r.url)).getOrElse(List.empty) ++ remoteRepoUrls ++ List(
-        "https://repo.maven.apache.org/maven2/",
-        "https://maven-central.storage.googleapis.com")
+      maybeLocalMavenRepository.map(r => List(r.url)).getOrElse(List.empty) ++ remoteRepoUrls
 
     new AetherMavenDependencyResolver(repoUrls)
   }
