@@ -102,7 +102,7 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     }
     catch {
       case e: DependencyCollectionException =>
-        throw new IllegalArgumentException(s"""|${e.getCause()} - ${e.getResult().getRequest}
+        throw new IllegalArgumentException(s"""|${e.getCause()}
                                                |===== Please double check that you have VPN on and that you have no typos.
                                                |if you REALLY meant to reference this jar and you know it exists even though there IS NO pom,
                                                |please rerun the tool with --ignoreMissingDependencies flag at the end =====
