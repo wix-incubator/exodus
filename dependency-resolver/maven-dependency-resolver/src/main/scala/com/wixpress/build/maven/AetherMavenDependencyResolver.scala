@@ -102,11 +102,14 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     }
     catch {
       case e: DependencyCollectionException =>
-        throw new IllegalArgumentException(s"""|${e.getCause()}
-                                               |===== Please double check that you have VPN on and that you have no typos.
-                                               |if you REALLY meant to reference this jar and you know it exists even though there IS NO pom,
-                                               |please rerun the tool with --ignoreMissingDependencies flag at the end =====
-                                               |""".stripMargin)
+        throw DependencyResolverException(
+          s"""|Closure request failed: ${e.getCause()}
+              |\tDirect deps (${baseDependencies.size}):
+              |${baseDependencies.map(d=> s"\t -\t${d.coordinates.serialized}").mkString("\n")}
+              |
+              |\tManaged deps (${withManagedDependencies.size}):
+              |${withManagedDependencies.map(d=> s"\t -\t${d.coordinates.serialized}").mkString("\n")}
+              |""".stripMargin)
     }
   }
 
@@ -121,13 +124,13 @@ class AetherMavenDependencyResolver(remoteRepoURLs: => List[String],
     orderedUniqueDependenciesFrom(dependencyNodes.map(_.getDependency))
   }
 
-  private def withSession[T](ignoreMissingDependencies:Boolean, f: DefaultRepositorySystemSession => T): T = {
+  private def withSession[T](ignoreMissingDependencies: Boolean, f: DefaultRepositorySystemSession => T): T = {
     val localRepo = new LocalRepository(localRepoPath.pathAsString)
     val session = MavenRepositorySystemUtils.newSession
     session.setArtifactDescriptorPolicy(new SimpleArtifactDescriptorPolicy(ignoreMissingDependencies, false))
     session.setLocalRepositoryManager(repositorySystem.newLocalRepositoryManager(session, localRepo))
     val result = Try(f(session)) recover {
-      case e: ArtifactDescriptorException => throw new MissingPomException(e.getMessage,e)
+      case e: ArtifactDescriptorException => throw new MissingPomException(e.getMessage, e)
       case e => throw e
     }
     result.get

@@ -39,7 +39,7 @@ class AetherMavenDependencyResolverIT extends MavenDependencyResolverContract wi
     override def remoteArtifacts: Set[ArtifactDescriptor] = Set.empty
 
     mavenDependencyResolver.dependencyClosureOf(List(notExistsDependency), emptyManagedDependencies, ignoreMissingDependencies = false) must
-      throwA[IllegalArgumentException]
+      throwA[DependencyResolverException]
   }
 
   trait singleDependencyWithSingleDependency extends ctx {
