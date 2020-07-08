@@ -6,6 +6,7 @@ import com.wix.bazel.migrator.analyze.{Code, CodePath, DependencyAnalyzer, Depen
 import com.wix.bazel.migrator.model.SourceModule
 import com.wix.build.maven.analysis.{LocalMavenRepository, SourceModules}
 import com.wixpress.build.maven.{AetherMavenDependencyResolver, Dependency, MavenScope}
+import org.slf4j.LoggerFactory
 
 trait JDepsCommand {
   def analyzeClassesDependenciesPerJar(jarPath: String, classPath: List[String]): Option[ClassDependencies]
@@ -20,6 +21,8 @@ class JDKToolsDependencyAnalyzer(modules: Set[SourceModule], repoPath: Path) ext
   val jDepsCommand: JDepsCommand = new JDepsCommandImpl(repoPath)
   val sourceFileTracer = new JavaPSourceFileTracer(repoPath)
   val modulePathsResolver = new MavenStandardModulesPathsResolver(repoPath)
+  private val log = LoggerFactory.getLogger(getClass)
+
 
   def exists(codePath: CodePath): Boolean = {
     val fullPath = repoPath.resolve(codePath.module.relativePathFromMonoRepoRoot).resolve(codePath.relativeSourceDirPathFromModuleRoot).resolve(codePath.filePath)
@@ -31,7 +34,7 @@ class JDKToolsDependencyAnalyzer(modules: Set[SourceModule], repoPath: Path) ext
       modulePathsResolver.resolveTestClassesPath(jvmClass.sourceModule)
     else
       modulePathsResolver.resolveClassesPath(jvmClass.sourceModule)
-    maybeClasspath.map(cp => sourceFileTracer.traceSourceFile(jvmClass.sourceModule, jvmClass.fqnClass, cp, testCode))
+    maybeClasspath.flatMap(cp => sourceFileTracer.traceSourceFile(jvmClass.sourceModule, jvmClass.fqnClass, cp, testCode))
   }
 
   private def convertSingleToCode(jvmClass: JVMClass, deps: Set[JVMClass], testCode: Boolean = false): Option[Code] = {
@@ -76,6 +79,7 @@ class JDKToolsDependencyAnalyzer(modules: Set[SourceModule], repoPath: Path) ext
       .getOrElse(Map.empty)
   }
   override def allCodeForModule(sourceModule: SourceModule): List[Code] = {
+    log.info(s"starting $sourceModule")
     val prodMap = extractJvmClasses(sourceModule)
 
     val prodCode = convertToCode(prodMap)

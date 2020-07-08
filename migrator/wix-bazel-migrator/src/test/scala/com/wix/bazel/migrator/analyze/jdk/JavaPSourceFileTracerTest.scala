@@ -29,7 +29,7 @@ class JavaPSourceFileTracerTest extends SpecificationWithJUnit with Mockito {
       )
       val res = tracer.traceSourceFile(module,fqn = fqn,pathToClasses = pathToClasses, testClass = false)
 
-      res mustEqual CodePath(module,relativeSourcePath,filePath)
+      res must beSome(CodePath(module,relativeSourcePath,filePath))
     }
   }
 
