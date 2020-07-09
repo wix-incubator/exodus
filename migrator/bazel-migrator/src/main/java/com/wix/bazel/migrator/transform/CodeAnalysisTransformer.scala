@@ -29,7 +29,7 @@ class CodeAnalysisTransformer(dependencyAnalyzer: DependencyAnalyzer) {
 
   private def addModuleTo(graph: CodeGraph,
                           keyToCodes: mutable.MultiMap[Vertex, Code])(module: SourceModule): Unit = {
-    dependencyAnalyzer.allCodeForModule(module).foreach { code =>
+    dependencyAnalyzer.allCodeForModule(module).par.foreach { code =>
       val resourceKey = ResourceKey.fromCodePath(code.codePath)
 
       keyToCodes.addBinding(resourceKey, code)
