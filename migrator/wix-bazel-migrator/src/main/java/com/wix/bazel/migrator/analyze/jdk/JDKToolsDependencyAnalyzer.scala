@@ -48,7 +48,9 @@ class JDKToolsDependencyAnalyzer(modules: Set[SourceModule], repoPath: Path) ext
 
   private def convertToCode(codeMap: Map[JVMClass, Set[JVMClass]], testCode: Boolean = false): Set[Code] = {
     codeMap.flatMap {
-      case (jvmClass, deps) => convertSingleToCode(jvmClass, deps, testCode)
+      case (jvmClass, deps) =>
+        log.info(s"starting $jvmClass")
+        convertSingleToCode(jvmClass, deps, testCode)
     }.toSet
   }
 
