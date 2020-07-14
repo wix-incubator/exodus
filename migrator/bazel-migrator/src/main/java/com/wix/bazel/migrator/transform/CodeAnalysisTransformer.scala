@@ -6,30 +6,35 @@ import com.wix.bazel.migrator.model.Target.TargetDependency
 import com.wix.bazel.migrator.model.{Package, SourceModule, Target}
 import com.wix.bazel.migrator.transform.GraphSupport._
 import org.jgrapht.alg.GabowStrongConnectivityInspector
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 
 class CodeAnalysisTransformer(dependencyAnalyzer: DependencyAnalyzer) {
+  private val log = LoggerFactory.getLogger(getClass)
 
   def transform(modules: Set[SourceModule]): Set[model.Package] = {
-    val cyclicGraphAndCodes = buildDirectedGraph(modules)
+    val codeModules = modules.par.map(dependencyAnalyzer.allCodeForModule).seq
+    val cyclicGraphAndCodes = buildDirectedGraph(codeModules)
     val dagAndCodes = cyclicToAcyclic(cyclicGraphAndCodes)
     val packages = dagToBazel(dagAndCodes)
     packages
   }
 
-  private def buildDirectedGraph(modules: Set[SourceModule]): GraphAndCodes = {
+  private def buildDirectedGraph(codeModules: Set[List[Code]]): GraphAndCodes = {
     val keyToCodes = newCodesMap
     val graph = CodeGraph.empty
-    modules.foreach(addModuleTo(graph, keyToCodes))
+    codeModules.foreach(addModuleTo(graph, keyToCodes))
     GraphAndCodes(graph, asImmutableMap(keyToCodes))
   }
 
   private def addModuleTo(graph: CodeGraph,
-                          keyToCodes: mutable.MultiMap[Vertex, Code])(module: SourceModule): Unit = {
-    dependencyAnalyzer.allCodeForModule(module).par.foreach { code =>
+                          keyToCodes: mutable.MultiMap[Vertex, Code])(codeModule: List[Code]): Unit = {
+    log.info(s"adding code ${codeModule.take(5)}... to graph")
+
+    codeModule.foreach { code =>
       val resourceKey = ResourceKey.fromCodePath(code.codePath)
 
       keyToCodes.addBinding(resourceKey, code)

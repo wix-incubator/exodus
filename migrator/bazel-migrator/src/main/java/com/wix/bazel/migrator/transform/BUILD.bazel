@@ -11,9 +11,10 @@ scala_library(
         "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
         "//migrator/bazel-migrator:main_dependencies",
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "@org_jgrapht_jgrapht_core",
-        "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze:analyze",
+        "@org_slf4j_slf4j_api",
     ],
 )
 
