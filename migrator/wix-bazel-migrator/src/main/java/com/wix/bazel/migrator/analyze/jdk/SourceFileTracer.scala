@@ -42,15 +42,17 @@ class JavaPSourceFileTracer(repoRoot: Path,
       fqn)
     val runResult = processRunner.run(repoRoot, "javap", cmdArgs)
     if (runResult.exitCode != 0) {
-      throw new RuntimeException(s"Problem locating the source file of class $fqn in $pathToClasses")
-    }
-    val filePath = packagePart + "/" + parseFileName(runResult.stdOut)
-    val locations = MavenRelativeSourceDirPathFromModuleRoot.getPossibleLocationFor(testClass)
-    findLocationIn(module.relativePathFromMonoRepoRoot, locations, filePath) match {
-      case Some(location) => Some(CodePath(module, location, filePath))
-      case None =>
-        log.warn(s"Could not find location of $filePath in ${module.relativePathFromMonoRepoRoot}")
-        None
+      log.warn(s"Problem locating the source file of class $fqn in $pathToClasses")
+      None
+    } else {
+      val filePath = packagePart + "/" + parseFileName(runResult.stdOut)
+      val locations = MavenRelativeSourceDirPathFromModuleRoot.getPossibleLocationFor(testClass)
+      findLocationIn(module.relativePathFromMonoRepoRoot, locations, filePath) match {
+        case Some(location) => Some(CodePath(module, location, filePath))
+        case None =>
+          log.warn(s"Could not find location of $filePath in ${module.relativePathFromMonoRepoRoot}")
+          None
+      }
     }
   }
 }
