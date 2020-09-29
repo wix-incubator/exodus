@@ -13,8 +13,9 @@ jobs:
     steps:
       - name: install bazelisk
         run: |
-            curl -L --output /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-${SYS_ENV_PLATFORM}-amd64
-            chmod +x /usr/local/bin/bazel
+            curl -L --output /usr/bin/bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-${SYS_ENV_PLATFORM}-amd64
+            chmod +x /usr/bin/bazel
+            which bazel
 
       - uses: actions/checkout@v2
 
