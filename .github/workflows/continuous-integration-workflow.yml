@@ -1,0 +1,32 @@
+name: Run all tests
+
+on: [push]
+
+jobs:
+  build:
+    # Job name is Greeting
+    name: ${{ matrix.test_script }} (${{ matrix.os }})
+    # This job runs on Linux
+    runs-on: ubuntu-latest
+    container:
+      image: l.gcr.io/google/bazel:3.5.0
+    steps:
+      - name: install bazelisk
+        run: |
+            sudo curl -L --output /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-${SYS_ENV_PLATFORM}-amd64
+            sudo chmod +x /usr/local/bin/bazel
+
+      - uses: actions/checkout@v2
+
+      - name: bazel cache
+        uses: actions/cache@v2
+        with:
+          path: .bazel_cache
+          key: ${{ github.ref }}
+          restore-keys: |
+            ${{ github.ref }}
+            refs/heads/master
+
+      - name: run bazel
+        run: |
+            bazel test --bazelrc=.bazelrc.remote test -k //...
