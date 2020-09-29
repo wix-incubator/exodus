@@ -1,12 +1,17 @@
 load("@io_bazel_rules_scala//scala:scala_toolchain.bzl", "scala_toolchain")
 load(
     "@io_bazel_rules_scala//scala:providers.bzl",
-    _declare_scalac_provider = "declare_scalac_provider",
+    "declare_deps_provider",
 )
 
 scala_toolchain(
     name = "global_toolchain_impl",
-    scalac_provider_attr = "//:scalac_default",
+    dep_providers = [
+        ":my_scala_compile_classpath_provider",
+        ":my_scala_library_classpath_provider",
+        ":my_scala_macro_classpath_provider",
+        ":my_scala_xml_provider",
+    ],
     scalacopts = [
         "-unchecked",
         "-deprecation",
@@ -17,6 +22,9 @@ scala_toolchain(
         "-Ywarn-unused",
     ],
     dependency_mode = "plus-one",
+    enable_code_coverage_aspect = "on",
+    #unused_dependency_checker_mode = "error",
+    #strict_deps_mode = "error",
     visibility = ["//visibility:public"],
 )
 
@@ -27,20 +35,38 @@ toolchain(
     visibility = ["//visibility:public"],
 )
 
-_declare_scalac_provider(
-    name = "scalac_default",
-    default_classpath = [
-        "@org_scala_lang_scala_library",
-        "@org_scala_lang_scala_reflect",
-    ],
-    default_macro_classpath = [
-        "@org_scala_lang_scala_library",
-        "@org_scala_lang_scala_reflect",
-    ],
-    default_repl_classpath = [
+
+declare_deps_provider(
+    name = "my_scala_compile_classpath_provider",
+    deps_id = "scala_compile_classpath",
+    visibility = ["//visibility:public"],
+    deps = [
         "@org_scala_lang_scala_library",
         "@org_scala_lang_scala_reflect",
         "@org_scala_lang_scala_compiler",
     ],
-    visibility = ["//visibility:public"],
+)
+
+declare_deps_provider(
+    name = "my_scala_library_classpath_provider",
+    deps_id = "scala_library_classpath",
+    deps = [
+        "@org_scala_lang_scala_library",
+        "@org_scala_lang_scala_reflect",
+    ],
+)
+
+declare_deps_provider(
+    name = "my_scala_macro_classpath_provider",
+    deps_id = "scala_macro_classpath",
+    deps = [
+        "@org_scala_lang_scala_library",
+        "@org_scala_lang_scala_reflect",
+    ],
+)
+
+declare_deps_provider(
+    name = "my_scala_xml_provider",
+    deps_id = "scala_xml",
+    deps = ["@org_scala_lang_modules_scala_xml_2_12"],
 )
