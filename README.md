@@ -1,7 +1,6 @@
 # EXODUS
 
-[![Build Status](https://api.cirrus-ci.com/github/wix/exodus.svg)](https://cirrus-ci.com/github/wix/exodus/master)
-
+![Run all tests](https://github.com/wix/exodus/workflows/Run%20all%20tests/badge.svg)
 
 <img src="https://github.com/wix/exodus/blob/master/docs/assets/img/Blue-short2.png" width="350" alt="exodus logo"/>
 
