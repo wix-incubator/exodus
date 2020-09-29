@@ -5,7 +5,7 @@ on: [push]
 jobs:
   build:
     # Job name is Greeting
-    name: ${{ matrix.test_script }} (${{ matrix.os }})
+    name: bazel test //...
     # This job runs on Linux
     runs-on: ubuntu-latest
     container:
