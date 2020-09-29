@@ -22,7 +22,7 @@ jobs:
       - name: bazel cache
         uses: actions/cache@v2
         with:
-          path: .bazel_cache
+          path: /github/home/.bazel_cache
           key: ${{ github.ref }}
           restore-keys: |
             ${{ github.ref }}
@@ -30,4 +30,4 @@ jobs:
 
       - name: run bazel
         run: |
-            bazel --bazelrc=.bazelrc.remote test -k //...
+            bazel --bazelrc=.bazelrc.remote test build --repository_cache=/github/home/.bazel_cache -k //...

@@ -15,5 +15,4 @@ build --bes_backend=grpcs://cloud.buildbuddy.io
 build --remote_cache=grpcs://cloud.buildbuddy.io
 build --remote_executor=grpcs://cloud.buildbuddy.io
 
-build --repository_cache=%workspace%/.bazel_cache
 build --remote_download_minimal
