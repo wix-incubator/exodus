@@ -68,3 +68,15 @@ pinned_maven_install()
 
 load("@maven//:compat.bzl", "compat_repositories")
 compat_repositories()
+
+http_archive(
+    name = "io_buildbuddy_toolchain",
+    strip_prefix = "toolchain-4b0d2482e099e4804c96fac34fcdf31771deb75a",
+    urls = ["https://github.com/buildbuddy-io/toolchain/archive/4b0d2482e099e4804c96fac34fcdf31771deb75a.tar.gz"],
+    sha256 = "7569eb8a5c25aab9b5047d0a3a00fecc2508ae9e72db615560f9676049df3476",
+)
+
+load("@io_buildbuddy_toolchain//:rules.bzl", "register_buildbuddy_toolchain")
+
+register_buildbuddy_toolchain(name = "buildbuddy_toolchain")
+
