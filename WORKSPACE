@@ -25,8 +25,8 @@ http_archive(
 )
 
 scala_version = "2.12.6"
-rules_scala_version="926aaca18ef9f0cc3fb29a5feee25d13eb9ab913" # update this as needed
-rules_scala_version_sha256="a9b6b38ca7b0e97c7849df1dc1387a7eedd1347d4236b36e8deadca155ead016"
+rules_scala_version="f0c8d0759c3eeec7e7e94cd61e507b9b771b7641" # update this as needed
+rules_scala_version_sha256="b0d698b6cc57b4474b412f056be66cbcc2a099295d6af7b0be5e83df0fc8911e"
 http_archive(
     name = "io_bazel_rules_scala",
     url = "https://github.com/bazelbuild/rules_scala/archive/%s.zip"%rules_scala_version,
@@ -34,6 +34,10 @@ http_archive(
     strip_prefix= "rules_scala-%s" % rules_scala_version,
     sha256 = rules_scala_version_sha256,
 )
+
+load("@io_bazel_rules_scala//:version.bzl", "bazel_version")
+bazel_version(name = "bazel_version")
+
 
 load("@io_bazel_rules_scala//scala:scala.bzl", "scala_repositories")
 scala_repositories((scala_version, {
