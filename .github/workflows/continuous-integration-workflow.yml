@@ -3,6 +3,7 @@ name: Run all tests
 on: [push]
 
 jobs:
+  
   build:
     # Job name is Greeting
     name: bazel test //...
