@@ -1,18 +1,16 @@
 load("@rules_jvm_external//:defs.bzl", "maven_install")
-load("@rules_jvm_external//:specs.bzl", "maven","parse")
+load("@rules_jvm_external//:specs.bzl", "maven", "parse")
 
-
-def dependency(coordinates,exclusions=None):
+def dependency(coordinates, exclusions = None):
     artifact = parse.parse_maven_coordinate(coordinates)
     return maven.artifact(
-            group =  artifact['group'],
-            artifact = artifact['artifact'],
-            packaging =  artifact.get('packaging'),
-            classifier = artifact.get('classifier'),
-            version =  artifact['version'],
-            exclusions = exclusions,
-        )
-
+        group = artifact["group"],
+        artifact = artifact["artifact"],
+        packaging = artifact.get("packaging"),
+        classifier = artifact.get("classifier"),
+        version = artifact["version"],
+        exclusions = exclusions,
+    )
 
 deps = [
     dependency("args4j:args4j:2.0.29"),
@@ -249,8 +247,6 @@ deps = [
     dependency("rome:rome:0.9"),
     dependency("rome:rome:0.9"),
     dependency("velocity:velocity:1.5"),
-
-
 ]
 
 def dependencies():
@@ -261,7 +257,7 @@ def dependencies():
             "https://mvnrepository.com/artifact",
             "https://maven-central.storage.googleapis.com",
             "http://gitblit.github.io/gitblit-maven",
-            ],
+        ],
         generate_compat_repositories = True,
         # bazel 'run @maven//:pin' to acquire this json file
         maven_install_json = "//:maven_install.json",

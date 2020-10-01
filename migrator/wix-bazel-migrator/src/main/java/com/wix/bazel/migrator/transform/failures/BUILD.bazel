@@ -1,13 +1,14 @@
 package(default_visibility = ["//visibility:public"])
 
 sources()
+
 scala_library(
     name = "failures",
     srcs = [
         ":sources",
     ],
     deps = [
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
         "@com_codota_codota_sdk_java",
-        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model:model"
-    ]
+    ],
 )

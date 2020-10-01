@@ -8,8 +8,8 @@ scala_library(
         ":sources",
     ],
     deps = [
-        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model:model",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides:overrides",
-        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven:maven",
+        "//dependency-resolver/maven-dependency-resolver/src/main/scala/com/wixpress/build/maven",
+        "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
     ],
 )

@@ -9,9 +9,9 @@ scala_library(
     runtime_deps = [
     ],
     deps = [
-        "@org_specs2_specs2_matcher_2_12",
-        "@org_specs2_specs2_fp_2_12",
         "//migrator/wix-bazel-migrator:tests_dependencies",
+        "@org_specs2_specs2_fp_2_12",
+        "@org_specs2_specs2_matcher_2_12",
     ],
 )
 

@@ -12,9 +12,9 @@ scala_library(
     runtime_deps = [
     ],
     deps = [
+        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven",
         "//migrator/bazel-migrator-model/src/main/java/com/wix/bazel/migrator/model",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/external/registry",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/overrides",
-        "//dependency-resolver/maven-dependency-resolver-api/src/main/scala/com/wixpress/build/maven:maven",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/external/registry:registry",
     ],
 )

@@ -9,9 +9,9 @@ scala_library(
     ],
     deps = [
         "//migrator/wix-bazel-migrator:main_dependencies",
+        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform/failures",
         "//models/maven-model/src/main/scala/com/wixpress/build/maven",
         "@com_fasterxml_jackson_core_jackson_annotations",
-        "//migrator/wix-bazel-migrator/src/main/java/com/wix/bazel/migrator/transform/failures:failures",
     ],
 )
 
