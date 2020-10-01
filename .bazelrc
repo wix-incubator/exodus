@@ -1,7 +1,3 @@
-#
-# DO NOT EDIT - this line imports shared managed bazel configuration
-#
-
 # build
 build --strategy=Scalac=worker
 build --extra_toolchains=//:global_toolchain
