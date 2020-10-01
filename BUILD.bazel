@@ -12,6 +12,8 @@ scala_toolchain(
         ":my_scala_macro_classpath_provider",
         ":my_scala_xml_provider",
     ],
+    dependency_mode = "plus-one",
+    enable_code_coverage_aspect = "on",
     scalacopts = [
         "-unchecked",
         "-deprecation",
@@ -21,8 +23,6 @@ scala_toolchain(
         "-Ywarn-unused-import",
         "-Ywarn-unused",
     ],
-    dependency_mode = "plus-one",
-    enable_code_coverage_aspect = "on",
     #unused_dependency_checker_mode = "error",
     #strict_deps_mode = "error",
     visibility = ["//visibility:public"],
@@ -35,15 +35,14 @@ toolchain(
     visibility = ["//visibility:public"],
 )
 
-
 declare_deps_provider(
     name = "my_scala_compile_classpath_provider",
     deps_id = "scala_compile_classpath",
     visibility = ["//visibility:public"],
     deps = [
+        "@org_scala_lang_scala_compiler",
         "@org_scala_lang_scala_library",
         "@org_scala_lang_scala_reflect",
-        "@org_scala_lang_scala_compiler",
     ],
 )
 

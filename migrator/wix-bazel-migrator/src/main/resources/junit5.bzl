@@ -1,4 +1,5 @@
 load("//:import_external.bzl", import_external = "safe_exodus_maven_import_external")
+
 """External dependencies & java_junit5_test rule"""
 
 JUNIT_JUPITER_GROUP_ID = "org.junit.jupiter"
