@@ -14,5 +14,6 @@ scala_library(
         "//migrator/bazel-migrator/src/main/java/com/wix/bazel/migrator/analyze",
         "//migrator/wix-bazel-migrator/src/main/java/com/wix/build/maven/analysis",
         "//repo-analyzer/maven-repo-analyzer/src/main/java/com/wix/build/maven/analysis",
+        "@org_slf4j_slf4j_api",
     ],
 )

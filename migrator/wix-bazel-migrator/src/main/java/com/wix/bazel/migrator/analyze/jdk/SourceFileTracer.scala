@@ -5,15 +5,18 @@ import java.nio.file.{FileSystem, FileSystems, Files, Path}
 import com.wix.bazel.migrator.model.SourceModule
 import MavenRelativeSourceDirPathFromModuleRoot.PossibleLocation
 import com.wix.bazel.migrator.analyze.CodePath
+import org.slf4j.LoggerFactory
 
 trait SourceFileTracer {
-  def traceSourceFile(module: SourceModule, fqn: String, pathToJar: String, testClass: Boolean): CodePath
+  def traceSourceFile(module: SourceModule, fqn: String, pathToJar: String, testClass: Boolean): Option[CodePath]
 }
 
 class JavaPSourceFileTracer(repoRoot: Path,
                             processRunner: ProcessRunner = new JavaProcessRunner,
                             fileSystem: FileSystem = FileSystems.getDefault) extends SourceFileTracer {
   private val Command = "javap"
+  private val log = LoggerFactory.getLogger(getClass)
+
 
   private def parseFileName(stdOut: String) = {
     val firstLine = stdOut.split("\n")(0)
@@ -31,7 +34,7 @@ class JavaPSourceFileTracer(repoRoot: Path,
     }
 
 
-  override def traceSourceFile(module: SourceModule, fqn: String, pathToClasses: String, testClass: Boolean): CodePath = {
+  override def traceSourceFile(module: SourceModule, fqn: String, pathToClasses: String, testClass: Boolean): Option[CodePath] = {
     val packagePart = fqn.splitAt(fqn.lastIndexOf('.'))._1.replace('.', '/')
     val cmdArgs = List(
       "-cp",
@@ -39,14 +42,16 @@ class JavaPSourceFileTracer(repoRoot: Path,
       fqn)
     val runResult = processRunner.run(repoRoot, "javap", cmdArgs)
     if (runResult.exitCode != 0) {
-      throw new RuntimeException(s"Problem locating the source file of class $fqn in $pathToClasses")
-    }
-    val filePath = packagePart + "/" + parseFileName(runResult.stdOut)
-    val locations = MavenRelativeSourceDirPathFromModuleRoot.getPossibleLocationFor(testClass)
-    findLocationIn(module.relativePathFromMonoRepoRoot, locations, filePath) match {
-      case Some(location) =>CodePath(module, location, filePath)
-      case None => {
-        throw new RuntimeException(s"Could not find location of $filePath in ${module.relativePathFromMonoRepoRoot}")
+      log.warn(s"Problem locating the source file of class $fqn in $pathToClasses")
+      None
+    } else {
+      val filePath = packagePart + "/" + parseFileName(runResult.stdOut)
+      val locations = MavenRelativeSourceDirPathFromModuleRoot.getPossibleLocationFor(testClass)
+      findLocationIn(module.relativePathFromMonoRepoRoot, locations, filePath) match {
+        case Some(location) => Some(CodePath(module, location, filePath))
+        case None =>
+          log.warn(s"Could not find location of $filePath in ${module.relativePathFromMonoRepoRoot}")
+          None
       }
     }
   }
