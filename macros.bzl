@@ -24,7 +24,7 @@ def maven_proto(name, artifact, deps = []):
   http_archive(
       name = name,
       url = _convert_to_url(artifact),
-      build_file_content = """load("@server_infra//framework/grpc/generator-bazel/src/main/rules:wix_scala_proto_repositories.bzl", "WIX_PROTOS")
+      build_file_content = """load("@server_infra//framework/protos:well_known_protos.bzl", "WIX_PROTOS")
 proto_library(name = "proto", srcs = glob(["**/*.proto"]), deps = {deps} + WIX_PROTOS, visibility = ["//visibility:public"])""".format(deps = deps)
   )
 
