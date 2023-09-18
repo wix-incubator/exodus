@@ -44,7 +44,7 @@
     </developers>
 
     <properties>
-        <jgit.version>4.8.0.201706111038-r</jgit.version>
+        <jgit.version>6.6.1.202309021850-r</jgit.version>
         <gitblit.version>1.8.0</gitblit.version>
         <org.apache.maven.maven-artifact.version>3.5.0</org.apache.maven.maven-artifact.version>
     </properties>
